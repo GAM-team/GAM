@@ -12,6 +12,48 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, yieldGAPIpages
+from gam.util.args import (
+    UTF8,
+    checkArgumentPresent,
+    formatLocalTime,
+    formatLocalTimestamp,
+    getArgument,
+    getCharacter,
+    getChoice,
+    getInteger,
+    getOrderBySortOrder,
+    getString,
+    getTimeOrDeltaFromNow,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    DEFAULT_SKIP_OBJECTS,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    getPageMessage,
+    invalidQuery,
+    printEntity,
+    printEntityKVList,
+    printGettingAllAccountEntities,
+    printGotAccountEntities,
+    printLine,
+)
+from gam.util.entity import _validateDeviceQuery, getDeviceQueries, getEntityList, getEntityToModify
+from gam.util.errors import unknownArgumentExit, usageErrorExit
+from gam.util.fileio import UNKNOWN
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -31,23 +73,23 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def getMobileDeviceEntity():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  if _getMain().checkArgumentPresent('query'):
-    query = _getMain().getString(Cmd.OB_QUERY)
+  cd = buildGAPIObject(API.DIRECTORY)
+  if checkArgumentPresent('query'):
+    query = getString(Cmd.OB_QUERY)
   else:
-    resourceId = _getMain().getString(Cmd.OB_MOBILE_DEVICE_ENTITY)
+    resourceId = getString(Cmd.OB_MOBILE_DEVICE_ENTITY)
     if resourceId[:6].lower() == 'query:':
       query = resourceId[6:]
     else:
       Cmd.Backup()
       query = None
   if not query:
-    return ([{'resourceId': device, 'email': []} for device in _getMain().getEntityList(Cmd.OB_MOBILE_ENTITY)], cd, True)
-  _getMain()._validateDeviceQuery(Ent.MOBILE_DEVICE, query)
+    return ([{'resourceId': device, 'email': []} for device in getEntityList(Cmd.OB_MOBILE_ENTITY)], cd, True)
+  _validateDeviceQuery(Ent.MOBILE_DEVICE, query)
   try:
-    _getMain().printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
-    devices = _getMain().callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
-                            pageMessage=_getMain().getPageMessage(),
+    printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
+    devices = callGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
+                            pageMessage=getPageMessage(),
                             throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             customerId=GC.Values[GC.CUSTOMER_ID], query=query,
@@ -55,7 +97,7 @@ def getMobileDeviceEntity():
     return ([{'resourceId': device['resourceId'], 'email': device.get('email', [])} for device in devices], cd, False)
   except GAPI.invalidInput:
     Cmd.Backup()
-    _getMain().usageErrorExit(Msg.INVALID_QUERY)
+    usageErrorExit(Msg.INVALID_QUERY)
   except (GAPI.badRequest, GAPI.resourceNotFound):
     accessErrorExit(cd)
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
@@ -63,12 +105,12 @@ def getMobileDeviceEntity():
 
 def _getUpdateDeleteMobileOptions(myarg, options):
   if myarg in {'matchusers', 'ifusers'}:
-    _, matchUsers = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-    options['matchUsers'] = {_getMain().normalizeEmailAddressOrUID(user) for user in matchUsers}
+    _, matchUsers = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+    options['matchUsers'] = {normalizeEmailAddressOrUID(user) for user in matchUsers}
   elif myarg == 'doit':
     options['doit'] = True
   else:
-    _getMain().unknownArgumentExit()
+    unknownArgumentExit()
 
 def _getMobileDeviceUser(mobileDevice, options):
   if options['matchUsers']:
@@ -77,10 +119,10 @@ def _getMobileDeviceUser(mobileDevice, options):
         if deviceUser.lower() in options['matchUsers']:
           return (deviceUser, True)
       return (mobileDevice['email'][0], False)
-    return (_getMain().UNKNOWN, False)
+    return (UNKNOWN, False)
   if mobileDevice['email']:
     return (mobileDevice['email'][0], True)
-  return (_getMain().UNKNOWN, True)
+  return (UNKNOWN, True)
 
 # gam update mobile|mobiles <MobileDeviceEntity> action <MobileAction>
 #	[doit] [matchusers <UserTypeEntity>]
@@ -89,13 +131,13 @@ def doUpdateMobileDevices():
   body = {}
   options = {'doit': doit, 'matchUsers': set()}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'action':
-      body['action'] = _getMain().getChoice(MOBILE_ACTION_CHOICE_MAP, mapChoice=True)
+      body['action'] = getChoice(MOBILE_ACTION_CHOICE_MAP, mapChoice=True)
     else:
       _getUpdateDeleteMobileOptions(myarg, options)
   if not body:
-    _getMain().entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, None], Msg.NO_ACTION_SPECIFIED)
+    entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, None], Msg.NO_ACTION_SPECIFIED)
     return
   i = 0
   count = len(entityList)
@@ -104,23 +146,23 @@ def doUpdateMobileDevices():
     resourceId = device['resourceId']
     deviceUser, status = _getMobileDeviceUser(device, options)
     if not status:
-      _getMain().entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USER_NOT_IN_MATCHUSERS, i, count)
+      entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USER_NOT_IN_MATCHUSERS, i, count)
     elif not options['doit']:
-      _getMain().entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
+      entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
     else:
       try:
-        _getMain().callGAPI(cd.mobiledevices(), 'action',
+        callGAPI(cd.mobiledevices(), 'action',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND,
                                GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                  customerId=GC.Values[GC.CUSTOMER_ID], resourceId=resourceId, body=body)
-        _getMain().printEntityKVList([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser],
+        printEntityKVList([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser],
                           [Msg.ACTION_APPLIED, body['action']], i, count)
       except GAPI.internalError:
-        _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
+        entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
       except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
-        _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
+        entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
       except GAPI.permissionDenied as e:
         ClientAPIAccessDeniedExit(str(e))
 
@@ -130,7 +172,7 @@ def doDeleteMobileDevices():
   entityList, cd, doit = getMobileDeviceEntity()
   options = {'doit': doit, 'matchUsers': set()}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     _getUpdateDeleteMobileOptions(myarg, options)
   i = 0
   count = len(entityList)
@@ -139,21 +181,21 @@ def doDeleteMobileDevices():
     resourceId = device['resourceId']
     deviceUser, status = _getMobileDeviceUser(device, options)
     if not status:
-      _getMain().entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USER_NOT_IN_MATCHUSERS, i, count)
+      entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USER_NOT_IN_MATCHUSERS, i, count)
     elif not options['doit']:
-      _getMain().entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
+      entityActionNotPerformedWarning([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
     else:
       try:
-        _getMain().callGAPI(cd.mobiledevices(), 'delete',
+        callGAPI(cd.mobiledevices(), 'delete',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                  customerId=GC.Values[GC.CUSTOMER_ID], resourceId=resourceId)
-        _getMain().entityActionPerformed([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], i, count)
+        entityActionPerformed([Ent.MOBILE_DEVICE, resourceId, Ent.USER, deviceUser], i, count)
       except GAPI.internalError:
-        _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
+        entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
       except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound) as e:
-        _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
+        entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
       except (GAPI.forbidden, GAPI.permissionDenied) as e:
         ClientAPIAccessDeniedExit(str(e))
 
@@ -210,7 +252,7 @@ def _getMobileFieldsArguments(myarg, parameters):
   elif myarg in _getMain().PROJECTION_CHOICE_MAP:
     parameters['projection'] = _getMain().PROJECTION_CHOICE_MAP[myarg]
     parameters['fieldsList'] = []
-  elif _getMain().getFieldsList(myarg, MOBILE_FIELDS_CHOICE_MAP, parameters['fieldsList'], initialField='resourceId'):
+  elif getFieldsList(myarg, MOBILE_FIELDS_CHOICE_MAP, parameters['fieldsList'], initialField='resourceId'):
     pass
   else:
     return False
@@ -221,42 +263,42 @@ def _getMobileFieldsArguments(myarg, parameters):
 def doInfoMobileDevices():
   entityList, cd, _ = getMobileDeviceEntity()
   parameters = _initMobileFieldsParameters()
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getMobileFieldsArguments(myarg, parameters):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
-  fields = _getMain().getFieldsFromFieldsList(parameters['fieldsList'])
+  fields = getFieldsFromFieldsList(parameters['fieldsList'])
   i = 0
   count = len(entityList)
   for device in entityList:
     i += 1
     resourceId = device['resourceId']
     try:
-      mobile = _getMain().callGAPI(cd.mobiledevices(), 'get',
+      mobile = callGAPI(cd.mobiledevices(), 'get',
                         bailOnInternalError=True,
                         throwReasons=[GAPI.INTERNAL_ERROR, GAPI.RESOURCE_ID_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         customerId=GC.Values[GC.CUSTOMER_ID], resourceId=resourceId, projection=parameters['projection'], fields=fields)
       if FJQC.formatJSON:
-        _getMain().printLine(json.dumps(_getMain().cleanJSON(mobile, timeObjects=MOBILE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+        printLine(json.dumps(cleanJSON(mobile, timeObjects=MOBILE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
       else:
-        _getMain().printEntity([Ent.MOBILE_DEVICE, resourceId], i, count)
+        printEntity([Ent.MOBILE_DEVICE, resourceId], i, count)
         Ind.Increment()
         attrib = 'deviceId'
         if attrib in mobile:
-          mobile[attrib] = mobile[attrib].encode('unicode-escape').decode(_getMain().UTF8)
+          mobile[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
         attrib = 'securityPatchLevel'
         if attrib in mobile and int(mobile[attrib]):
-          mobile[attrib] = _getMain().formatLocalTimestamp(mobile[attrib])
-        _getMain().showJSON(None, mobile, timeObjects=MOBILE_TIME_OBJECTS)
+          mobile[attrib] = formatLocalTimestamp(mobile[attrib])
+        showJSON(None, mobile, timeObjects=MOBILE_TIME_OBJECTS)
         Ind.Decrement()
     except GAPI.internalError:
-      _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
+      entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.resourceIdNotFound, GAPI.badRequest, GAPI.resourceNotFound) as e:
-      _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
+      entityActionFailedWarning([Ent.MOBILE_DEVICE, resourceId], str(e), i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
@@ -293,14 +335,14 @@ def doPrintMobileDevices():
 
   def _printMobile(mobile):
     if FJQC.formatJSON:
-      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(_getMain().flattenJSON(mobile, listLimit=listLimit, timeObjects=MOBILE_TIME_OBJECTS)):
+      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(mobile, listLimit=listLimit, timeObjects=MOBILE_TIME_OBJECTS)):
         csvPF.WriteRowNoFilter({'resourceId': mobile['resourceId'],
-                                'JSON': json.dumps(_getMain().cleanJSON(mobile, listLimit=listLimit, timeObjects=MOBILE_TIME_OBJECTS),
+                                'JSON': json.dumps(cleanJSON(mobile, listLimit=listLimit, timeObjects=MOBILE_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
       return
     row = {}
     for attrib in mobile:
-      if attrib in _getMain().DEFAULT_SKIP_OBJECTS:
+      if attrib in DEFAULT_SKIP_OBJECTS:
         pass
       elif attrib in {'name', 'email', 'otherAccountsInfo'}:
         if listLimit > 0:
@@ -308,11 +350,11 @@ def doPrintMobileDevices():
         elif listLimit == 0:
           row[attrib] = delimiter.join(mobile[attrib])
       elif attrib == 'deviceId':
-        row[attrib] = mobile[attrib].encode('unicode-escape').decode(_getMain().UTF8)
+        row[attrib] = mobile[attrib].encode('unicode-escape').decode(UTF8)
       elif attrib in MOBILE_TIME_OBJECTS:
-        row[attrib] = _getMain().formatLocalTime(mobile[attrib])
+        row[attrib] = formatLocalTime(mobile[attrib])
       elif attrib == 'securityPatchLevel' and int(mobile[attrib]):
-        row[attrib] = _getMain().formatLocalTimestamp(mobile[attrib])
+        row[attrib] = formatLocalTimestamp(mobile[attrib])
       elif attrib != 'applications':
         row[attrib] = mobile[attrib]
     attrib = 'applications'
@@ -337,10 +379,10 @@ def doPrintMobileDevices():
         appRow[attrib] = _appDetails(app)
         csvPF.WriteRowTitles(appRow)
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   parameters = _initMobileFieldsParameters()
-  csvPF = _getMain().CSVPrintFile('resourceId')
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile('resourceId')
+  FJQC = FormatJSONQuoteChar(csvPF)
   orderBy = sortOrder = None
   oneAppPerRow = False
   queryTimes = {}
@@ -350,21 +392,21 @@ def doPrintMobileDevices():
   appsLimit = -1
   showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'query', 'queries'}:
-      queries = _getMain().getDeviceQueries(myarg, Ent.MOBILE_DEVICE)
+      queries = getDeviceQueries(myarg, Ent.MOBILE_DEVICE)
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()[0:19]
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg == 'orderby':
-      orderBy, sortOrder = _getMain().getOrderBySortOrder(MOBILE_ORDERBY_CHOICE_MAP)
+      orderBy, sortOrder = getOrderBySortOrder(MOBILE_ORDERBY_CHOICE_MAP)
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif myarg == 'listlimit':
-      listLimit = _getMain().getInteger(minVal=-1)
+      listLimit = getInteger(minVal=-1)
     elif myarg == 'appslimit':
-      appsLimit = _getMain().getInteger(minVal=-1)
+      appsLimit = getInteger(minVal=-1)
     elif myarg == 'oneappperrow':
       oneAppPerRow = True
     elif _getMobileFieldsArguments(myarg, parameters):
@@ -377,15 +419,15 @@ def doPrintMobileDevices():
     csvPF.SetSortTitles(['resourceId', 'deviceId', 'serialNumber', 'name', 'email', 'status'])
   if appsLimit >= 0:
     parameters['projection'] = 'FULL'
-  fields = _getMain().getItemFieldsFromFieldsList('mobiledevices', parameters['fieldsList'])
+  fields = getItemFieldsFromFieldsList('mobiledevices', parameters['fieldsList'])
   _getMain().substituteQueryTimes(queries, queryTimes)
   itemCount = 0
   for query in queries:
-    _getMain().printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
-    pageMessage = _getMain().getPageMessage()
+    printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)
+    pageMessage = getPageMessage()
     totalItems = 0
     try:
-      feed = _getMain().yieldGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
+      feed = yieldGAPIpages(cd.mobiledevices(), 'list', 'mobiledevices',
                             pageMessage=pageMessage,
                             throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                           GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
@@ -398,16 +440,16 @@ def doPrintMobileDevices():
           continue
         for mobile in mobiles:
           _printMobile(mobile)
-      _getMain().printGotAccountEntities(totalItems)
+      printGotAccountEntities(totalItems)
     except GAPI.invalidInput:
-      _getMain().entityActionFailedWarning([Ent.MOBILE_DEVICE, None], _getMain().invalidQuery(query))
+      entityActionFailedWarning([Ent.MOBILE_DEVICE, None], invalidQuery(query))
       return
     except (GAPI.badRequest, GAPI.resourceNotFound):
       accessErrorExit(cd)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
   if showItemCountOnly:
-    _getMain().writeStdout(f'{itemCount}\n')
+    writeStdout(f'{itemCount}\n')
     return
   csvPF.writeCSVfile('Mobile')
 

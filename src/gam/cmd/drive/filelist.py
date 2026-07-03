@@ -104,6 +104,54 @@ from gam.cmd.drive.filetree import (
     initFileTree,
     noFileSelectFileIdEntity,
 )
+from gam.util.api import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
+from gam.util.args import (
+    NEVER_TIME,
+    OrderBy,
+    formatFileSize,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getInteger,
+    getString,
+    getTimeOrDeltaFromNow,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    addFieldToFieldsList,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
+    invalidQuery,
+    printEntity,
+    printGettingAllEntityItemsForWhom,
+    printGotEntityItemsForWhom,
+    printKeyValueList,
+    printLine,
+    setGettingAllEntityItemsForWhom,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.fileio import UNKNOWN
+from gam.util.output import (
+    _stripControlCharsFromName,
+    flushStderr,
+    setSysExitRC,
+    writeStderr,
+    writeStdout,
+)
 
 def __getattr__(name):
   """Fall back to gam module for any undefined names."""
@@ -156,12 +204,12 @@ def printFileList(users):
   def _printFileInfoRow(baserow, fileInfo):
     row = baserow.copy()
     if not FJQC.formatJSON:
-      csvPF.WriteRowTitles(_getMain().flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
+      csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                        simpleLists=simpleLists, delimiter=delimiter))
     else:
       if addCSVData and includeCSVDataInJSON:
         fileInfo.update(addCSVData)
-      row['JSON'] = json.dumps(_getMain().cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
+      row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowTitlesJSONNoFilter(row)
 
@@ -184,9 +232,9 @@ def printFileList(users):
       if buildTree and not incrementalPrint:
         getSharedDriveACLsCount += 1
         if getSharedDriveACLsCount % 100 == 0:
-          _getMain().writeStderr(f'{Msg.GOT} {getSharedDriveACLsCount} {Ent.Plural(Ent.DRIVE_FILE_OR_FOLDER_ACL)} {Msg.FOR} {gettingEntity}\n')
+          writeStderr(f'{Msg.GOT} {getSharedDriveACLsCount} {Ent.Plural(Ent.DRIVE_FILE_OR_FOLDER_ACL)} {Msg.FOR} {gettingEntity}\n')
       try:
-        f_file['permissions'] = _getMain().callGAPIpages(drive.permissions(), 'list', 'permissions',
+        f_file['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                               throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
                                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                               fileId=f_file['id'], fields=permissionsFields, supportsAllDrives=True)
@@ -202,7 +250,7 @@ def printFileList(users):
     row = {'Owner': user}
     fileInfo = f_file.copy()
     if cleanFileName:
-      fileInfo['name'] = _getMain()._stripControlCharsFromName(fileInfo['name'])
+      fileInfo['name'] = _stripControlCharsFromName(fileInfo['name'])
     if not pmselect and 'permissions' in fileInfo:
       fileInfo['permissions'] = DLP.GetFileMatchingPermission(fileInfo)
     if DFF.showSharedDriveNames and driveId:
@@ -221,7 +269,7 @@ def printFileList(users):
     if not countsOnly:
       if not oneItemPerRow or 'permissions' not in fileInfo:
         if not FJQC.formatJSON:
-          csvPF.WriteRowTitles(_getMain().flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
+          csvPF.WriteRowTitles(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                            simpleLists=simpleLists, delimiter=delimiter))
         else:
           if 'id' in fileInfo:
@@ -229,10 +277,10 @@ def printFileList(users):
           if 'name' in fileInfo:
             row['name'] = fileInfo['name']
           if 'owners' in fileInfo:
-            _getMain().flattenJSON({'owners': fileInfo['owners']}, flattened=row, skipObjects=skipObjects)
+            flattenJSON({'owners': fileInfo['owners']}, flattened=row, skipObjects=skipObjects)
           if addCSVData and includeCSVDataInJSON:
             fileInfo.update(addCSVData)
-          row['JSON'] = json.dumps(_getMain().cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
+          row['JSON'] = json.dumps(cleanJSON(fileInfo, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowTitlesJSONNoFilter(row)
       else:
@@ -242,7 +290,7 @@ def printFileList(users):
         if 'name' in fileInfo:
           baserow['name'] = fileInfo['name']
         if 'owners' in fileInfo:
-          _getMain().flattenJSON({'owners': fileInfo['owners']}, flattened=baserow, skipObjects=skipObjects)
+          flattenJSON({'owners': fileInfo['owners']}, flattened=baserow, skipObjects=skipObjects)
         for permission in fileInfo.pop('permissions'):
           fileInfo['permission'] = permission
           pdetails = fileInfo['permission'].pop('permissionDetails', [])
@@ -254,7 +302,7 @@ def printFileList(users):
               _printFileInfoRow(baserow, fileInfo)
     else:
       if not countsRowFilter:
-        csvPFco.UpdateMimeTypeCounts(_getMain().flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
+        csvPFco.UpdateMimeTypeCounts(flattenJSON(fileInfo, flattened=row, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS,
                                                  simpleLists=simpleLists, delimiter=delimiter), mimeTypeInfo, sizeField)
       else:
         mimeTypeInfo.setdefault(fileInfo['mimeType'], {'count': 0, 'size': 0})
@@ -281,13 +329,13 @@ def printFileList(users):
     if selectSubQuery:
       q += ' and ('+selectSubQuery+')'
     if depth == 0:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=q)
-      pageMessage = _getMain().getPageMessageForWhom()
+      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=q)
+      pageMessage = getPageMessageForWhom()
     else:
-      _getMain().setGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, query=q)
-      pageMessage = _getMain().getPageMessageForWhom(clearLastGotMsgLen=False)
+      setGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, query=q)
+      pageMessage = getPageMessageForWhom(clearLastGotMsgLen=False)
     try:
-      children = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+      children = callGAPIpages(drive.files(), 'list', 'files',
                                pageMessage=pageMessage, noFinalize=True,
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                            GAPI.BAD_REQUEST],
@@ -298,7 +346,7 @@ def printFileList(users):
       for childEntryInfo in children:
         childFileId = childEntryInfo['id']
         if showLabels is not None:
-          labels = _getMain().callGAPIitems(drive.files(), 'listLabels', 'labels',
+          labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                  throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                  fileId=childFileId)
@@ -313,11 +361,11 @@ def printFileList(users):
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest) as e:
       errMsg = str(e)
       if 'Invalid field selection' in errMsg or "Only a 'published' value is supported." in errMsg:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], errMsg, i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], errMsg, i, count)
       else:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], _getMain().invalidQuery(selectSubQuery), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(selectSubQuery), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
   def writeMimeTypeCountsRow(user, sourceId, sourceName, mimeTypeInfo):
     countTotal = sizeTotal = 0
@@ -331,7 +379,7 @@ def printFileList(users):
     if showSize:
       row['Size'] = sizeTotal
     if showSizeUnits:
-      row['SizeUnits'] = _getMain().formatFileSize(sizeTotal)
+      row['SizeUnits'] = formatFileSize(sizeTotal)
     if addCSVData:
       row.update(addCSVData)
     for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
@@ -343,9 +391,9 @@ def printFileList(users):
     else:
       csvPFco.WriteRowTitles(row)
 
-  csvPF = _getMain().CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
+  csvPF = CSVPrintFile('Owner', indexedTitles=DRIVE_INDEXED_TITLES)
   csvPFco = None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   addPathsToJSON = continueOnInvalidQuery = countsRowFilter = buildTree = countsOnly = filepath = fullpath = folderPathOnly = parentPathOnly = \
     getPermissionDetailsForMyDrive = getPermissionsForSharedDrives = mimeTypeInQuery = noRecursion = oneItemPerRow = stripCRsFromName = \
     showParentsIdsAsList = showDepth = showParent = showSize = showSizeUnits = showMimeTypeSize = showSource = False
@@ -371,7 +419,7 @@ def printFileList(users):
   addCSVData = {}
   includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif DLP.ProcessArgument(myarg, fileIdEntity):
@@ -380,34 +428,34 @@ def printFileList(users):
       pass
     elif myarg == 'select':
       if fileIdEntity:
-        _getMain().usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
+        usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
       if not DLP.fileIdEntity:
         fileIdEntity = getDriveFileEntity(DLP=DLP)
       else:
         fileIdEntity = getDriveFileEntitySharedDriveOnly()
     elif myarg == 'selectsubquery':
-      selectSubQuery = _getMain().getString(Cmd.OB_QUERY, minLen=0)
+      selectSubQuery = getString(Cmd.OB_QUERY, minLen=0)
     elif myarg == 'norecursion':
-      noRecursion = _getMain().getBoolean()
+      noRecursion = getBoolean()
     elif myarg == 'mimetypeinquery':
-      mimeTypeInQuery = _getMain().getBoolean()
+      mimeTypeInQuery = getBoolean()
     elif myarg == 'depth':
-      maxdepth = _getMain().getInteger(minVal=-1)
+      maxdepth = getInteger(minVal=-1)
     elif myarg == 'showdepth':
       showDepth = True
     elif myarg == 'showparent':
-      showParent = _getMain().getBoolean()
+      showParent = getBoolean()
     elif myarg == 'nodataheaders':
-      nodataFields = _getMain().getString(Cmd.OB_FIELD_NAME_LIST).replace('_', '').replace(',', ' ').split()
+      nodataFields = getString(Cmd.OB_FIELD_NAME_LIST).replace('_', '').replace(',', ' ').split()
     elif myarg in {'filepath', 'fullpath'}:
       filepath = True
       fullpath = myarg == 'fullpath'
     elif myarg == 'folderpathonly':
-      folderPathOnly = _getMain().getBoolean()
+      folderPathOnly = getBoolean()
     elif myarg == 'parentpathonly':
-      parentPathOnly = _getMain().getBoolean()
+      parentPathOnly = getBoolean()
     elif myarg == 'pathdelimiter':
-      pathDelimiter = _getMain().getCharacter()
+      pathDelimiter = getCharacter()
     elif myarg == 'addpathstojson':
       addPathsToJSON = True
     elif myarg == 'buildtree':
@@ -416,12 +464,12 @@ def printFileList(users):
       countsRowFilter = True
     elif myarg == 'countsonly':
       countsOnly = True
-      csvPFco = _getMain().CSVPrintFile(['Owner', 'Total'], 'sortall')
+      csvPFco = CSVPrintFile(['Owner', 'Total'], 'sortall')
       csvPFco.SetZeroBlankMimeTypeCounts(True)
     elif myarg == 'summary':
-      summary = _getMain().getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
+      summary = getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'summaryuser':
-      summaryUser = _getMain().getString(Cmd.OB_STRING)
+      summaryUser = getString(Cmd.OB_STRING)
     elif myarg == 'showsource':
       showSource = True
     elif myarg == 'showsize':
@@ -431,9 +479,9 @@ def printFileList(users):
     elif myarg == 'showmimetypesize':
       showMimeTypeSize = showSize = True
     elif myarg == 'sizefield':
-      sizeField = _getMain().getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif myarg == 'showparentsidsaslist':
       showParentsIdsAsList = True
       simpleLists.append('parentsIds')
@@ -442,7 +490,7 @@ def printFileList(users):
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif myarg == 'showlabels':
-      showLabels = _getMain().getChoice(SHOWLABELS_CHOICES)
+      showLabels = getChoice(SHOWLABELS_CHOICES)
     elif myarg == 'showshareddrivepermissions':
       permissionsFieldsList = DRIVEFILE_BASIC_PERMISSION_FIELDS.copy()
     elif myarg == 'pmfilter':
@@ -451,11 +499,11 @@ def printFileList(users):
       oneItemPerRow = True
       csvPF.RemoveIndexedTitles('permissions')
     elif myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
-      includeCSVDataInJSON = _getMain().getBoolean()
+      includeCSVDataInJSON = getBoolean()
     elif myarg == 'continueoninvalidquery':
-      continueOnInvalidQuery = _getMain().getBoolean()
+      continueOnInvalidQuery = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg)
   if countsOnly:
@@ -503,16 +551,16 @@ def printFileList(users):
     _setGetPermissionsForMyDriveSharedDrives(DFF.fieldsList, permissionsFieldsList)
   if DFF.fieldsList:
     _setSelectionFields()
-    fields = _getMain().getFieldsFromFieldsList(DFF.fieldsList)
-    pagesFields = _getMain().getItemFieldsFromFieldsList('files', DFF.fieldsList)
+    fields = getFieldsFromFieldsList(DFF.fieldsList)
+    pagesFields = getItemFieldsFromFieldsList('files', DFF.fieldsList)
   elif not DFF.allFields:
     _setSelectionFields()
     if not countsOnly and not set(DFF.fieldsList)-skipObjects:
       for field in ['name', 'webviewlink']:
         skipObjects.discard(DRIVE_FIELDS_CHOICE_MAP[field])
         csvPF.AddField(field, DRIVE_FIELDS_CHOICE_MAP, DFF.fieldsList)
-    fields = _getMain().getFieldsFromFieldsList(DFF.fieldsList)
-    pagesFields = _getMain().getItemFieldsFromFieldsList('files', DFF.fieldsList)
+    fields = getFieldsFromFieldsList(DFF.fieldsList)
+    pagesFields = getItemFieldsFromFieldsList('files', DFF.fieldsList)
   else:
     fields = pagesFields = '*'
     DFF.SetAllParentsSubFields()
@@ -563,7 +611,7 @@ def printFileList(users):
     csvPF.SetNodataFields(True, nodataFields, DRIVE_LIST_FIELDS, DRIVE_SUBFIELDS_CHOICE_MAP, oneItemPerRow)
   else:
     csvPF.SetNodataFields(False, nodataFields, None, None, False)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
@@ -574,7 +622,7 @@ def printFileList(users):
         (not showParentsIdsAsList and DFF.parentsSubFields['isRoot'])):
       try:
         if not fileIdEntity['shareddrive']:
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                             fileId=ROOT, fields='id,name')
           rootFolderId = result['id']
@@ -582,17 +630,17 @@ def printFileList(users):
         else:
           rootFolderId = fileIdEntity['shareddrive']['driveId']
           if not fileIdEntity['shareddrivename']:
-            fileIdEntity['shareddrivename'] = _getMain().callGAPI(drive.drives(), 'get',
+            fileIdEntity['shareddrivename'] = callGAPI(drive.drives(), 'get',
                                                      throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND, GAPI.NOT_FOUND],
                                                      driveId=rootFolderId, fields='name')['name']
           rootFolderName = fileIdEntity['shareddrivename']
         if not showParentsIdsAsList and DFF.parentsSubFields['isRoot']:
           DFF.parentsSubFields['rootFolderId'] = rootFolderId
       except (GAPI.fileNotFound, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     if filepath:
       filePathInfo = initFilePathInfo(pathDelimiter)
@@ -601,14 +649,14 @@ def printFileList(users):
     getSharedDriveACLsCount = 0
     if buildTree:
       gettingEntity = _getGettingEntity(user, fileIdEntity)
-      _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
+      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
       if not incrementalPrint:
         fileTree, status = initFileTree(drive, fileIdEntity.get('shareddrive'), DLP, shareddriveFields, showParent, user, i, count)
         if not status:
           continue
       try:
-        feed = _getMain().yieldGAPIpages(drive.files(), 'list', 'files',
-                              pageMessage=_getMain().getPageMessageForWhom(), maxItems=DLP.maxItems,
+        feed = yieldGAPIpages(drive.files(), 'list', 'files',
+                              pageMessage=getPageMessageForWhom(), maxItems=DLP.maxItems,
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                           GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                           GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
@@ -619,7 +667,7 @@ def printFileList(users):
         for files in feed:
           if showLabels is not None:
             for f_file in files:
-              labels = _getMain().callGAPIitems(drive.files(), 'listLabels', 'labels',
+              labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                      throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                      fileId=f_file['id'])
@@ -629,7 +677,7 @@ def printFileList(users):
           else:
             for f_file in files:
               if stripCRsFromName:
-                f_file['name'] = _getMain()._stripControlCharsFromName(f_file['name'])
+                f_file['name'] = _stripControlCharsFromName(f_file['name'])
               _printFileInfo(drive, user, f_file, False)
         if incrementalPrint:
           if countsOnly:
@@ -646,20 +694,20 @@ def printFileList(users):
       except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest) as e:
         errMsg = str(e)
         if 'Invalid field selection' in errMsg or "Only a 'published' value is supported." in errMsg:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], errMsg, i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], errMsg, i, count)
           break
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], _getMain().invalidQuery(DLP.fileIdEntity['query']), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
         if not continueOnInvalidQuery:
           break
         continue
       except GAPI.fileNotFound:
-        _getMain().printGotEntityItemsForWhom(0)
+        printGotEntityItemsForWhom(0)
         continue
       except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     else:
       fileTree = {}
@@ -676,14 +724,14 @@ def printFileList(users):
         fileEntryInfo = fileEntry['info']
       else:
         try:
-          fileEntryInfo = _getMain().callGAPI(drive.files(), 'get',
+          fileEntryInfo = callGAPI(drive.files(), 'get',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID],
                                    fileId=fileId, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
                                    fields=fields, supportsAllDrives=True)
           if stripCRsFromName:
-            fileEntryInfo['name'] = _getMain()._stripControlCharsFromName(fileEntryInfo['name'])
+            fileEntryInfo['name'] = _stripControlCharsFromName(fileEntryInfo['name'])
           if showLabels is not None:
-            labels = _getMain().callGAPIitems(drive.files(), 'listLabels', 'labels',
+            labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                    fileId=fileId)
@@ -691,16 +739,16 @@ def printFileList(users):
           if filepath:
             fileTree[fileId] = {'info': fileEntryInfo}
         except GAPI.invalid as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], str(e), j, jcount)
           continue
         except GAPI.fileNotFound:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
           continue
         except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       if fullpath:
         getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=True,
@@ -713,8 +761,8 @@ def printFileList(users):
       if fileEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and not noRecursion:
         _printChildDriveFolderContents(drive, fileEntryInfo, user, i, count, 0)
         if GC.Values[GC.SHOW_GETTINGS] and not GC.Values[GC.SHOW_GETTINGS_GOT_NL]:
-          _getMain().writeStderr('\r\n')
-          _getMain().flushStderr()
+          writeStderr('\r\n')
+          flushStderr()
       if countsOnly:
         if showSource:
           if summary != FILECOUNT_SUMMARY_NONE:
@@ -736,7 +784,7 @@ def printFileList(users):
   titlePrefix = f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} ' if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None else ''
   if not countsOnly:
     if not csvPF.rows:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     sortTitles = ['Owner']
     if addCSVData:
       sortTitles.extend(sorted(addCSVData.keys()))
@@ -748,7 +796,7 @@ def printFileList(users):
     csvPF.writeCSVfile(f'{titlePrefix}Drive Files')
   else:
     if not csvPFco.rows:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     if summary != FILECOUNT_SUMMARY_NONE:
       writeMimeTypeCountsRow(summaryUser, 'Various', 'Various', summaryMimeTypeInfo)
     csvPFco.todrive = csvPF.todrive
@@ -799,12 +847,12 @@ FILECOMMENTS_SUBFIELDS_CHOICE_MAP = {
   }
 
 def _getCommentFields(fieldsList):
-  for field in _getMain()._getFieldsList():
+  for field in _getFieldsList():
     if field.find('.') == -1:
       if field in FILECOMMENTS_FIELDS_CHOICE_MAP:
-        _getMain().addFieldToFieldsList(field, FILECOMMENTS_FIELDS_CHOICE_MAP, fieldsList)
+        addFieldToFieldsList(field, FILECOMMENTS_FIELDS_CHOICE_MAP, fieldsList)
       else:
-        _getMain().invalidChoiceExit(field, FILECOMMENTS_FIELDS_CHOICE_MAP, True)
+        invalidChoiceExit(field, FILECOMMENTS_FIELDS_CHOICE_MAP, True)
     else:
       field, subField = field.split('.', 1)
       if field in FILECOMMENTS_SUBFIELDS_CHOICE_MAP:
@@ -812,18 +860,18 @@ def _getCommentFields(fieldsList):
           if subField in FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field]:
             fieldsList.append(f'{FILECOMMENTS_FIELDS_CHOICE_MAP[field]}.{FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field][subField]}')
           else:
-            _getMain().invalidChoiceExit(subField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field], True)
+            invalidChoiceExit(subField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field], True)
         else:
           subField, subSubField = subField.split('.', 1)
           if subField in FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field]:
             if subSubField in FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField]:
               fieldsList.append(f'{FILECOMMENTS_FIELDS_CHOICE_MAP[field]}.{FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field][subField]}.{FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField][subSubField]}')
             else:
-              _getMain().invalidChoiceExit(subSubField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField], True)
+              invalidChoiceExit(subSubField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[subField], True)
           else:
-            _getMain().invalidChoiceExit(subField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field], True)
+            invalidChoiceExit(subField, FILECOMMENTS_SUBFIELDS_CHOICE_MAP[field], True)
       else:
-        _getMain().invalidChoiceExit(field, FILECOMMENTS_SUBFIELDS_CHOICE_MAP, True)
+        invalidChoiceExit(field, FILECOMMENTS_SUBFIELDS_CHOICE_MAP, True)
 
 FILECOMMENTS_INDEXED_TITLES = ['replies']
 FILECOMMENTS_TIME_OBJECTS = {'createdTime', 'modifiedTime'}
@@ -839,11 +887,11 @@ def _showComment(comment, stripPhotoLinks, timeObjects, i=0, count=0, FJQC=None)
   if stripPhotoLinks:
     _stripCommentPhotoLinks(comment)
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(comment, timeObjects=FILECOMMENTS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(comment, timeObjects=FILECOMMENTS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.DRIVE_FILE_COMMENT, comment['id']], i, count)
+  printEntity([Ent.DRIVE_FILE_COMMENT, comment['id']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, comment, ['id'], timeObjects)
+  showJSON(None, comment, ['id'], timeObjects)
   Ind.Decrement()
 
 # gam <UserTypeEntity> show filecomments <DriveFileEntity>
@@ -859,7 +907,7 @@ def _showComment(comment, stripPhotoLinks, timeObjects, i=0, count=0, FJQC=None)
 #	[formatjson [quotechar <Character>]]
 def printShowFileComments(users):
   def _printComment(comment, commentId, replyId, baserow):
-    row = _getMain().flattenJSON(comment, flattened=baserow.copy(), timeObjects=timeObjects)
+    row = flattenJSON(comment, flattened=baserow.copy(), timeObjects=timeObjects)
     row['commentId'] = commentId
     row['replyId'] = replyId
     if not FJQC.formatJSON:
@@ -871,12 +919,12 @@ def printShowFileComments(users):
       row['replyId'] = replyId
       if replyId:
         comment['reply']['id'] = replyId
-      row['JSON'] = json.dumps(_getMain().cleanJSON(comment, timeObjects=timeObjects),
+      row['JSON'] = json.dumps(cleanJSON(comment, timeObjects=timeObjects),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
 
-  csvPF = _getMain().CSVPrintFile(['User', 'fileId']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'fileId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   fileIdEntity = getDriveFileEntity()
   countsOnly = positiveCountsOnly = False
@@ -884,19 +932,19 @@ def printShowFileComments(users):
   kwargs = {}
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'showdeleted':
       kwargs['includeDeleted'] = True
     elif myarg == 'start':
-      kwargs['startModifiedTime'] = _getMain().getTimeOrDeltaFromNow()
+      kwargs['startModifiedTime'] = getTimeOrDeltaFromNow()
     elif myarg == 'showphotolinks':
       stripPhotoLinks = False
     elif myarg == 'fields':
       _getCommentFields(fieldsList)
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'countsonly':
       countsOnly = True
     elif myarg == 'positivecountsonly':
@@ -921,11 +969,11 @@ def printShowFileComments(users):
         if field.startswith('replies.'):
           fieldsList.append('replies.id')
           break
-    fields = _getMain().getItemFieldsFromFieldsList('comments', fieldsList)
+    fields = getItemFieldsFromFieldsList('comments', fieldsList)
   else:
     fields = '*'
   timeObjects = FILECOMMENTS_TIME_OBJECTS
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity,
@@ -937,15 +985,15 @@ def printShowFileComments(users):
     for fileId in fileIdEntity['list']:
       j += 1
       try:
-        comments = _getMain().callGAPIpages(drive.comments(), 'list', 'comments',
+        comments = callGAPIpages(drive.comments(), 'list', 'comments',
                                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST],
                                  fileId=fileId, fields=fields, **kwargs)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.badRequest) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_ID, fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_ID, fileId], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       kcount = len(comments)
       if countsOnly:
@@ -955,10 +1003,10 @@ def printShowFileComments(users):
       if not csvPF:
         if countsOnly:
           if not positiveCountsOnly or kcount > 0:
-            _getMain().printKeyValueList([Ent.Singular(Ent.DRIVE_FILE_ID), fileId, 'comments', kcount, 'replies', numReplies])
+            printKeyValueList([Ent.Singular(Ent.DRIVE_FILE_ID), fileId, 'comments', kcount, 'replies', numReplies])
         else:
           if not FJQC.formatJSON:
-            _getMain().entityPerformActionNumItems([Ent.DRIVE_FILE_ID, fileId], kcount, Ent.DRIVE_FILE_COMMENT, j, jcount)
+            entityPerformActionNumItems([Ent.DRIVE_FILE_ID, fileId], kcount, Ent.DRIVE_FILE_COMMENT, j, jcount)
           Ind.Increment()
           if not countsOnly:
             k = 0
@@ -1008,29 +1056,29 @@ def printShowFileComments(users):
 #	[fullpath] [folderpathonly|parentpathonly [<Boolean>]] [pathdelimiter <Character>]
 #	[followshortcuts [<Boolean>]]
 def printShowFilePaths(users):
-  csvPF = _getMain().CSVPrintFile(['Owner', 'id', 'name', 'paths'], 'sortall', ['paths']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['Owner', 'id', 'name', 'paths'], 'sortall', ['paths']) if Act.csvFormat() else None
   fileIdEntity = getDriveFileEntity()
   fullpath = folderPathOnly = parentPathOnly = followShortcuts = oneItemPerRow = returnPathOnly = stripCRsFromName = False
   pathDelimiter = '/'
-  OBY = _getMain().OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
+  OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'fullpath':
       fullpath = True
     elif myarg == 'folderpathonly':
-      folderPathOnly = _getMain().getBoolean()
+      folderPathOnly = getBoolean()
     elif myarg == 'parentpathonly':
-      parentPathOnly = _getMain().getBoolean()
+      parentPathOnly = getBoolean()
     elif myarg == 'pathdelimiter':
-      pathDelimiter = _getMain().getCharacter()
+      pathDelimiter = getCharacter()
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif csvPF is None and myarg == 'returnpathonly':
       returnPathOnly = True
     elif myarg == 'followshortcuts':
-      followShortcuts = _getMain().getBoolean()
+      followShortcuts = getBoolean()
     elif csvPF and myarg == 'oneitemperrow':
       oneItemPerRow = True
       csvPF.RemoveTitles('paths')
@@ -1040,12 +1088,12 @@ def printShowFilePaths(users):
     elif myarg == 'orderby':
       OBY.GetChoice()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   fieldsList = FILEPATH_FIELDS_TITLES
   if followShortcuts:
     fieldsList.append('shortcutDetails')
   pathFields = ','.join(fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     if returnPathOnly:
@@ -1067,28 +1115,28 @@ def printShowFilePaths(users):
     for fileId in fileIdEntity['list']:
       j += 1
       try:
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=fileId, fields=pathFields, supportsAllDrives=True)
         if followShortcuts and result['mimeType'] == MIMETYPE_GA_SHORTCUT:
           fileId = result['shortcutDetails']['targetId']
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId, fields=pathFields, supportsAllDrives=True)
         if returnPathOnly and result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == MY_DRIVE and not result.get('parents'):
-          _getMain().writeStdout(f'{MY_DRIVE}\n')
+          writeStdout(f'{MY_DRIVE}\n')
           continue
         if stripCRsFromName:
-          result['name'] = _getMain()._stripControlCharsFromName(result['name'])
+          result['name'] = _stripControlCharsFromName(result['name'])
         driveId = result.get('driveId')
         if driveId:
           if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == _getMain().TEAM_DRIVE:
             result['name'] = _getSharedDriveNameFromId(drive, driveId)
             if returnPathOnly:
               if fullpath:
-                _getMain().writeStdout(f'{SHARED_DRIVES}/{result["name"]}\n')
+                writeStdout(f'{SHARED_DRIVES}/{result["name"]}\n')
               else:
-                _getMain().writeStdout(f'{result["name"]}\n')
+                writeStdout(f'{result["name"]}\n')
               continue
         if fullpath:
           extendFileTree(fileTree, [result], None, False)
@@ -1097,15 +1145,15 @@ def printShowFilePaths(users):
                                             fullpath=fullpath, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
         if returnPathOnly:
           for path in paths:
-            _getMain().writeStdout(f'{path}\n')
+            writeStdout(f'{path}\n')
         elif not csvPF:
           kcount = len(paths)
-          _getMain().entityPerformActionNumItems([entityType, f'{result["name"]} ({fileId})'], kcount, Ent.DRIVE_PATH, j, jcount)
+          entityPerformActionNumItems([entityType, f'{result["name"]} ({fileId})'], kcount, Ent.DRIVE_PATH, j, jcount)
           Ind.Increment()
           k = 0
           for path in paths:
             k += 1
-            _getMain().printEntity([Ent.DRIVE_PATH, path], k, kcount)
+            printEntity([Ent.DRIVE_PATH, path], k, kcount)
           Ind.Decrement()
         else:
           if oneItemPerRow:
@@ -1115,11 +1163,11 @@ def printShowFilePaths(users):
             else:
               csvPF.WriteRow({'Owner': user, 'id': fileId, 'name': result['name']})
           else:
-            csvPF.WriteRowTitles(_getMain().flattenJSON({'paths': paths}, flattened={'Owner': user, 'id': fileId, 'name': result['name']}))
+            csvPF.WriteRowTitles(flattenJSON({'paths': paths}, flattened={'Owner': user, 'id': fileId, 'name': result['name']}))
       except GAPI.fileNotFound:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
@@ -1128,29 +1176,29 @@ def printShowFilePaths(users):
 # gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	[stripcrsfromname]
 def printFileParentTree(users):
-  csvPF = _getMain().CSVPrintFile(['Owner', 'isBase', 'baseId', 'id', 'name', 'parentId', 'depth', 'isRoot'], 'sortall')
+  csvPF = CSVPrintFile(['Owner', 'isBase', 'baseId', 'id', 'name', 'parentId', 'depth', 'isRoot'], 'sortall')
   fileIdEntity = getDriveFileEntity()
   stripCRsFromName = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.FILE_PARENT_TREE)
     if jcount == 0:
       continue
     try:
-      rootId = _getMain().callGAPI(drive.files(), 'get',
+      rootId = callGAPI(drive.files(), 'get',
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                               fileId=ROOT, fields='id')['id']
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
     j = 0
     for fileId in fileIdEntity['list']:
@@ -1159,11 +1207,11 @@ def printFileParentTree(users):
       baseId = fileId
       while True:
         try:
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId, fields='id,name,mimeType,parents,driveId', supportsAllDrives=True)
           if stripCRsFromName:
-            result['name'] = _getMain()._stripControlCharsFromName(result['name'])
+            result['name'] = _stripControlCharsFromName(result['name'])
           result['isRoot'] = False
           if not result.get('parents', []):
             if fileId == rootId:
@@ -1180,10 +1228,10 @@ def printFileParentTree(users):
           fileList.append(result)
           fileId = result['parents'][0]
         except GAPI.fileNotFound:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
           break
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       kcount = len(fileList)
       isBase = True
@@ -1198,32 +1246,32 @@ def printFileParentTree(users):
 def _initLastModification():
   return {'lastModifiedFileId': '', 'lastModifiedFileName': '',
           'lastModifiedFileMimeType': '', 'lastModifiedFilePath': '',
-          'lastModifyingUser': '', 'lastModifiedTime': _getMain().NEVER_TIME,
+          'lastModifyingUser': '', 'lastModifiedTime': NEVER_TIME,
           'fileEntryInfo': {}}
 
 def _checkUpdateLastModifiction(f_file, userLastModification):
   if f_file.get('modifiedTime', NEVER_TIME) > userLastModification['lastModifiedTime'] and 'lastModifyingUser' in f_file:
     userLastModification['lastModifiedFileId'] = f_file['id']
-    userLastModification['lastModifiedFileName'] = _getMain()._stripControlCharsFromName(f_file['name'])
+    userLastModification['lastModifiedFileName'] = _stripControlCharsFromName(f_file['name'])
     userLastModification['lastModifiedFileMimeType'] = f_file['mimeType']
     userLastModification['lastModifiedTime'] = f_file['modifiedTime']
     userLastModification['lastModifyingUser'] = f_file['lastModifyingUser'].get('emailAddress',
-                                                                                f_file['lastModifyingUser'].get('displayName', _getMain().UNKNOWN))
+                                                                                f_file['lastModifyingUser'].get('displayName', UNKNOWN))
     userLastModification['fileEntryInfo'] = f_file.copy()
 
 def _getLastModificationPath(drive, userLastModification, pathDelimiter):
   if userLastModification['fileEntryInfo']:
     filePathInfo = initFilePathInfo(pathDelimiter)
     _, paths, _ = getFilePaths(drive, {}, userLastModification['fileEntryInfo'], filePathInfo)
-    userLastModification['lastModifiedFilePath'] = paths[0] if paths else _getMain().UNKNOWN
+    userLastModification['lastModifiedFilePath'] = paths[0] if paths else UNKNOWN
 
 def _showLastModification(lastModification):
-  _getMain().printKeyValueList(['lastModifiedFileId', lastModification['lastModifiedFileId']])
-  _getMain().printKeyValueList(['lastModifiedFileName', lastModification['lastModifiedFileName']])
-  _getMain().printKeyValueList(['lastModifiedFileMimeType', lastModification['lastModifiedFileMimeType']])
-  _getMain().printKeyValueList(['lastModifiedFilePath', lastModification['lastModifiedFilePath']])
-  _getMain().printKeyValueList(['lastModifyingUser', lastModification['lastModifyingUser']])
-  _getMain().printKeyValueList(['lastModifiedTime', formatLocalTime(lastModification['lastModifiedTime'])])
+  printKeyValueList(['lastModifiedFileId', lastModification['lastModifiedFileId']])
+  printKeyValueList(['lastModifiedFileName', lastModification['lastModifiedFileName']])
+  printKeyValueList(['lastModifiedFileMimeType', lastModification['lastModifiedFileMimeType']])
+  printKeyValueList(['lastModifiedFilePath', lastModification['lastModifiedFilePath']])
+  printKeyValueList(['lastModifyingUser', lastModification['lastModifyingUser']])
+  printKeyValueList(['lastModifiedTime', formatLocalTime(lastModification['lastModifiedTime'])])
 
 def _updateLastModificationRow(row, lastModification):
   row.update({'lastModifiedFileId': lastModification['lastModifiedFileId'],

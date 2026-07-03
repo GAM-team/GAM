@@ -13,6 +13,34 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    OrderBy,
+    checkForExtraneousArguments,
+    getArgument,
+    getChoice,
+    getString,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    getTodriveOnly,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityPerformAction,
+    getPageMessage,
+    performActionNumItems,
+    printEntity,
+    printGettingAllAccountEntities,
+    printLine,
+)
+from gam.util.entity import convertUIDtoEmailAddress, getEntityArgument
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -42,22 +70,22 @@ def quotedCIUserInvitatonsEmail(customer, email):
 
 def _getCIUserInvitationsEntity(ci=None, email=None):
   if ci is None:
-    ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
+    ci = buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
   customer = _getMain()._getCustomersCustomerIdWithC()
   if email is None:
-    email = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+    email = getString(Cmd.OB_EMAIL_ADDRESS)
   pattern = re.compile(rf'^{customer}/userinvitations/(.+)$')
   mg = pattern.match(email)
   if mg:
     email = mg.group(1)
   else:
-    email = _getMain().normalizeEmailAddressOrUID(email, noUid=True)
+    email = normalizeEmailAddressOrUID(email, noUid=True)
   return (quotedCIUserInvitatonsEmail(customer, email), email, ci)
 
 def _getIsInvitableUser(ci, email):
   name, _, ci = _getCIUserInvitationsEntity(ci, email)
   try:
-    result = _getMain().callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
+    result = callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                       name=name)
     return (result['isInvitableUser'], ci)
@@ -70,72 +98,72 @@ def _getIsInvitableUser(ci, email):
 # gam cancel userinvitation <EmailAddress>
 def doCIUserInvitationsAction():
   name, user, ci = _getCIUserInvitationsEntity()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   if Act.Get() == Act.CANCEL:
     action = 'cancel'
   else:
     Act.Set(Act.SEND)
     action = 'send'
-  _getMain().entityPerformAction([Ent.USER_INVITATION, user])
+  entityPerformAction([Ent.USER_INVITATION, user])
   try:
-    result = _getMain().callGAPI(ci.customers().userinvitations(), action,
+    result = callGAPI(ci.customers().userinvitations(), action,
                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                       name=name)
     name = result.get('response', {}).get('name')
     if name:
       result['response']['name'] = isolateCIUserInvitatonsEmail(name)
     Ind.Increment()
-    _getMain().showJSON(None, result)
+    showJSON(None, result)
     Ind.Decrement()
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
+    entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
+    entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
 
 CI_USERINVITATION_TIME_OBJECTS = {'updateTime'}
 
 def _showUserInvitation(invitation, FJQC, i=0, count=0):
   if FJQC is not None and FJQC.formatJSON:
     invitation['email'] = isolateCIUserInvitatonsEmail(invitation['name'])
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.USER_INVITATION, isolateCIUserInvitatonsEmail(invitation['name'])], i, count)
+  printEntity([Ent.USER_INVITATION, isolateCIUserInvitatonsEmail(invitation['name'])], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS)
+  showJSON(None, invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS)
   Ind.Decrement()
 
 # gam check userinvitation|isinvitable <EmailAddress>
 def doCheckCIUserInvitations():
   name, user, ci = _getCIUserInvitationsEntity()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   try:
-    result = _getMain().callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
+    result = callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                       name=name)
-    _getMain().printEntity([Ent.USER_INVITATION, user])
+    printEntity([Ent.USER_INVITATION, user])
     Ind.Increment()
-    _getMain().showJSON(None, result)
+    showJSON(None, result)
     Ind.Decrement()
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
+    entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
+    entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
 
 def infoCIUserInvitations(name, user, ci, FJQC):
   try:
-    invitation = _getMain().callGAPI(ci.customers().userinvitations(), 'get',
+    invitation = callGAPI(ci.customers().userinvitations(), 'get',
                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                           name=name)
     _showUserInvitation(invitation, FJQC)
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
+    entityUnknownWarning(Ent.USER_INVITATION, f'{user}')
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
+    entityActionFailedWarning([Ent.USER_INVITATION, f'{user}'], str(e))
 
 # gam info userinvitation <EmailAddress> [formatjson]
 def doInfoCIUserInvitations():
   name, user, ci = _getCIUserInvitationsEntity()
-  FJQC = _getMain().FormatJSONQuoteChar(formatJSONOnly=True)
+  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   infoCIUserInvitations(name, user, ci, FJQC)
 
 CI_USERINVITATION_ORDERBY_CHOICE_MAP = {
@@ -161,44 +189,44 @@ CI_USERINVITATION_STATE_CHOICE_MAP = {
 def doPrintShowCIUserInvitations():
   def _printUserInvitation(invitation):
     invitation['email'] = isolateCIUserInvitatonsEmail(invitation['name'])
-    row = _getMain().flattenJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS)
+    row = flattenJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'email': invitation['email'],
-                              'JSON': json.dumps(_getMain().cleanJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(invitation, timeObjects=CI_USERINVITATION_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
   customer = _getMain()._getCustomersCustomerIdWithC()
-  csvPF = _getMain().CSVPrintFile(['email']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
-  OBY = _getMain().OrderBy(CI_USERINVITATION_ORDERBY_CHOICE_MAP)
+  csvPF = CSVPrintFile(['email']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CI_USERINVITATION_ORDERBY_CHOICE_MAP)
   ifilter = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'state':
-      state = _getMain().getChoice(CI_USERINVITATION_STATE_CHOICE_MAP, mapChoice=True)
+      state = getChoice(CI_USERINVITATION_STATE_CHOICE_MAP, mapChoice=True)
       ifilter = f"state=='{state}'"
     elif myarg == 'orderby':
       OBY.GetChoice()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  _getMain().printGettingAllAccountEntities(Ent.USER_INVITATION, ifilter)
-  pageMessage = _getMain().getPageMessage()
+  printGettingAllAccountEntities(Ent.USER_INVITATION, ifilter)
+  pageMessage = getPageMessage()
   try:
-    invitations = _getMain().callGAPIpages(ci.customers().userinvitations(), 'list', 'userInvitations',
+    invitations = callGAPIpages(ci.customers().userinvitations(), 'list', 'userInvitations',
                                 throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                 pageMessage=pageMessage,
                                 parent=customer, filter=ifilter, orderBy=OBY.orderBy)
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.USER_INVITATION, None], str(e))
+    entityActionFailedWarning([Ent.USER_INVITATION, None], str(e))
     return
   if not csvPF:
     jcount = len(invitations)
-    _getMain().performActionNumItems(jcount, Ent.USER_INVITATION)
+    performActionNumItems(jcount, Ent.USER_INVITATION)
     Ind.Increment()
     j = 0
     for invitation in invitations:
@@ -215,25 +243,25 @@ def doPrintShowCIUserInvitations():
 # /batch is broken for Cloud Identity. Once fixed move this to using batch.
 # Current serial implementation will be SLOW...
 def checkCIUserIsInvitable(users):
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
   customer = _getMain()._getCustomersCustomerIdWithC()
-  csvPF = _getMain().CSVPrintFile(['invitableUsers'])
-  _getMain().getTodriveOnly(csvPF)
-  i, count, users = _getMain().getEntityArgument(users)
+  csvPF = CSVPrintFile(['invitableUsers'])
+  getTodriveOnly(csvPF)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = _getMain().convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user)
     name = quotedCIUserInvitatonsEmail(customer, user)
     try:
-      result = _getMain().callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
+      result = callGAPI(ci.customers().userinvitations(), 'isInvitableUser',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.PERMISSION_DENIED],
                         name=name)
       if result.get('isInvitableUser'):
         csvPF.WriteRow({'invitableUsers': user})
     except GAPI.notFound:
-      _getMain().entityUnknownWarning(Ent.USER_INVITATION, f'{user}', i, count)
+      entityUnknownWarning(Ent.USER_INVITATION, f'{user}', i, count)
     except (GAPI.invalid, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedWarning([Ent.USER_INVITATION, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER_INVITATION, user], str(e), i, count)
       return
   csvPF.writeCSVfile('Invitable Users')
 

@@ -15,6 +15,66 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    FALSE_VALUES,
+    TRUE_FALSE,
+    TRUE_VALUES,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    encodeOrgUnitPath,
+    getArgument,
+    getArgumentEmptyAllowed,
+    getChoice,
+    getEmailAddress,
+    getHHMM,
+    getInteger,
+    getIntegerEmptyAllowed,
+    getJSON,
+    getString,
+    integerLimits,
+    makeOrgUnitPathRelative,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    getPageMessage,
+    getPageMessageForWhom,
+    invalidQuery,
+    performActionNumItems,
+    printBlankLine,
+    printEntity,
+    printGettingAllAccountEntities,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    printKeyValueListWithCount,
+    printLine,
+)
+from gam.util.entity import convertEmailAddressToUID, convertOrgUnitIDtoPath, getGroupEmailFromID
+from gam.util.errors import (
+    entityDoesNotExistExit,
+    invalidArgumentExit,
+    invalidChoiceExit,
+    missingArgumentExit,
+    missingChoiceExit,
+    unknownArgumentExit,
+    usageErrorExit,
+)
+from gam.util.fileio import UNKNOWN, setFilePath
+from gam.util.orgunits import getOrgUnitId
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -36,11 +96,11 @@ def __getattr__(name):
 def _getOrgunitsOrgUnitIdPath(cd, orgUnit):
   if orgUnit.startswith('orgunits/'):
     orgUnit = f'id:{orgUnit[9:]}'
-  orgUnitPath, orgUnitId = _getMain().getOrgUnitId(cd, orgUnit)
+  orgUnitPath, orgUnitId = getOrgUnitId(cd, orgUnit)
   return (orgUnitPath, f'orgunits/{orgUnitId[3:]}')
 
 def _getChromePolicySchemaName():
-  name = _getMain().getString(Cmd.OB_SCHEMA_NAME)
+  name = getString(Cmd.OB_SCHEMA_NAME)
   if not name.startswith('customers'):
     name = f'customers/{GC.Values[GC.CUSTOMER_ID]}/policySchemas/{name}'
   return name
@@ -49,11 +109,11 @@ def _getChromePolicySchema(cp, name, fields):
   if not name.startswith('customers'):
     name = f'customers/{GC.Values[GC.CUSTOMER_ID]}/policySchemas/{name}'
   try:
-    return _getMain().callGAPI(cp.customers().policySchemas(), 'get',
+    return callGAPI(cp.customers().policySchemas(), 'get',
                     throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                     name=name, fields=fields)
   except GAPI.notFound:
-    _getMain().entityDoesNotExistExit(Ent.CHROME_POLICY_SCHEMA, name)
+    entityDoesNotExistExit(Ent.CHROME_POLICY_SCHEMA, name)
   except (GAPI.badRequest, GAPI.forbidden):
     accessErrorExit(None)
 
@@ -176,23 +236,23 @@ def simplifyChromeSchemaDisplay(schema):
 def _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail):
   if groupEmail:
     Cmd.Backup()
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
-  targetName, targetResource = _getOrgunitsOrgUnitIdPath(cd, _getMain().getString(Cmd.OB_ORGUNIT_PATH))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'group'))
+  targetName, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
   return (targetName, targetName, targetResource, Ent.ORGANIZATIONAL_UNIT, cp.customers().policies().orgunits())
 
 def _getPolicyGroupTarget(cd, cp, myarg, orgUnit):
   if orgUnit:
     Cmd.Backup()
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
-  targetName = _getMain().getEmailAddress(returnUIDprefix='uid:')
-  targetResource = f"groups/{_getMain().convertEmailAddressToUID(targetName, cd, emailType='group')}"
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'ou|org|orgunit'))
+  targetName = getEmailAddress(returnUIDprefix='uid:')
+  targetResource = f"groups/{convertEmailAddressToUID(targetName, cd, emailType='group')}"
   return (targetName, targetName, targetResource, Ent.GROUP, cp.customers().policies().groups())
 
 def checkPolicyArgs(targetResource, printer_id, app_id):
   if not targetResource:
-    _getMain().missingArgumentExit('ou|org|orgunit|group')
+    missingArgumentExit('ou|org|orgunit|group')
   if printer_id and app_id:
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('printerid', 'appid'))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('printerid', 'appid'))
 
 def setPolicyKVList(baseList, printer_id, app_id):
   kvList = baseList[:]
@@ -218,14 +278,14 @@ def updatePolicyRequests(body, targetResource, printer_id, app_id):
 #	((ou|org|orgunit <OrgUnitItem>)|(group <GroupItem>))
 #	[(printerid <PrinterID>)|(appid <AppID>)]
 def doDeleteChromePolicy():
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getMain()._getCustomersCustomerIdWithC()
   app_id = groupEmail = orgUnit = printer_id = targetResource = None
   body = {'requests': []}
   schemaNameList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
       orgUnit, targetName, targetResource, entityType, service = _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail)
       function = 'batchInherit'
@@ -233,16 +293,16 @@ def doDeleteChromePolicy():
       groupEmail, targetName, targetResource, entityType, service = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
       function = 'batchDelete'
     elif myarg == 'printerid':
-      printer_id = _getMain().getString(Cmd.OB_PRINTER_ID)
+      printer_id = getString(Cmd.OB_PRINTER_ID)
     elif myarg == 'appid':
-      app_id = _getMain().getString(Cmd.OB_APP_ID)
+      app_id = getString(Cmd.OB_APP_ID)
     else:
       schema = _getChromePolicySchema(cp, Cmd.Previous(), 'name')
       schemaName = schema['name'].split('/')[-1]
       schemaNameList.append(schemaName)
       body['requests'].append({'policySchema': schemaName})
-      if _getMain().checkArgumentPresent('json'):
-        jsonData = _getMain().getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
+      if checkArgumentPresent('json'):
+        jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
         if 'additionalTargetKeys' in jsonData:
           body['requests'][-1].setdefault('policyTargetKey', {'additionalTargetKeys': {}})
           for atk in jsonData['additionalTargetKeys']:
@@ -250,7 +310,7 @@ def doDeleteChromePolicy():
   checkPolicyArgs(targetResource, printer_id, app_id)
   count = len(body['requests'])
   if count != 1:
-    _getMain().entityPerformActionNumItems([entityType, targetName], count, Ent.CHROME_POLICY)
+    entityPerformActionNumItems([entityType, targetName], count, Ent.CHROME_POLICY)
     if count == 0:
       return
   kvList = setPolicyKVList([entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)], printer_id, app_id)
@@ -264,7 +324,7 @@ def doDeleteChromePolicy():
         # In order to delete an app (explicitly remove it from management) you should send a batchInherit request in which
         # the policySchema is the schema for the given app type, with an asterisk (*) in place of a specific policy.
         try:
-          result = _getMain().callGAPI(cp.customers().policies(), 'resolve', 'resolvedPolicies',
+          result = callGAPI(cp.customers().policies(), 'resolve', 'resolvedPolicies',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                                           GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
                             customer=customer, body={'policySchemaFilter': request['policySchema'], 'policyTargetKey': request['policyTargetKey']})
@@ -275,14 +335,14 @@ def doDeleteChromePolicy():
         except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded):
           continue
   try:
-    _getMain().callGAPI(service, function,
+    callGAPI(service, function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                            GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=customer, body=body)
-    _getMain().entityActionPerformed(kvList)
+    entityActionPerformed(kvList)
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
-    _getMain().entityActionFailedWarning(kvList, str(e))
+    entityActionFailedWarning(kvList, str(e))
 
 CHROME_SCHEMA_SPECIAL_CASES = {
 # duration
@@ -511,8 +571,8 @@ def doUpdateChromePolicy():
     hours, minutes = value.split(':')
     return {vtype: {'hours': int(hours), 'minutes': int(minutes)}}
 
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   cv = None
   customer = _getMain()._getCustomersCustomerIdWithC()
   app_id = channelMap = groupEmail = orgUnit = printer_id = targetResource = None
@@ -520,15 +580,15 @@ def doUpdateChromePolicy():
   schemaNameList = []
   convertCRsNLs = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
       orgUnit, targetName, targetResource, entityType, service = _getPolicyOrgUnitTarget(cd, cp, myarg, groupEmail)
     elif myarg == 'group':
       groupEmail, targetName, targetResource, entityType, service = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
     elif myarg == 'printerid':
-      printer_id = _getMain().getString(Cmd.OB_PRINTER_ID)
+      printer_id = getString(Cmd.OB_PRINTER_ID)
     elif myarg == 'appid':
-      app_id = _getMain().getString(Cmd.OB_APP_ID)
+      app_id = getString(Cmd.OB_APP_ID)
     elif myarg == 'convertcrnl':
       convertCRsNLs = True
     else:
@@ -537,7 +597,7 @@ def doUpdateChromePolicy():
                                'updateMask': ''})
       schemaNameList.append(schemaName)
       while Cmd.ArgumentsRemaining():
-        field = _getMain().getArgumentEmptyAllowed()
+        field = getArgumentEmptyAllowed()
         # Allow an empty field/value pair which makes processing an input CSV file with schemas with different numbers of fields easy
         if not field:
           if Cmd.ArgumentsRemaining():
@@ -549,7 +609,7 @@ def doUpdateChromePolicy():
             break # field is actually a new policy name or orgunit
         # JSON
         if field == 'json':
-          jsonData = _getMain().getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
+          jsonData = getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group'])
           schemaNameAppId = schemaName
           if 'additionalTargetKeys' in jsonData:
             body['requests'][-1].setdefault('policyTargetKey', {'additionalTargetKeys': {}})
@@ -586,15 +646,15 @@ def doUpdateChromePolicy():
                 if channelMap is None:
                   cv, channelMap = _getMain().getPlatformChannelMap(cv, Ent.CHROME_CHANNEL)
                 if channel not in channelMap:
-                  _getMain().invalidChoiceExit(value, channelMap, True)
+                  invalidChoiceExit(value, channelMap, True)
                 cv, status, milestone = _getMain().getRelativeMilestone(cv, channelMap[channel], int(mg.group(2)))
                 if not status:
                   Cmd.Backup()
-                  _getMain().invalidArgumentExit(f'{milestone} for {casedField}: {value}')
+                  invalidArgumentExit(f'{milestone} for {casedField}: {value}')
                 value =  f'{milestone}.'
               elif value and not CHROME_TARGET_VERSION_PATTERN.match(value):
                 Cmd.Backup()
-                _getMain().invalidArgumentExit(f'{Msg.CHROME_TARGET_VERSION_FORMAT} for {casedField}: {value}')
+                invalidArgumentExit(f'{Msg.CHROME_TARGET_VERSION_FORMAT} for {casedField}: {value}')
             body['requests'][-1]['policyValue']['value'][casedField] = value
             body['requests'][-1]['updateMask'] += f'{casedField},'
           break
@@ -604,37 +664,37 @@ def doUpdateChromePolicy():
           casedField = tmschema['casedField']
           vtype = tmschema['type']
           if vtype == 'downloadUri':
-            value = _getMain().getString(Cmd.OB_STRING)
+            value = getString(Cmd.OB_STRING)
           elif vtype != 'timeOfDay':
             if 'default' not in tmschema:
-              value = _getMain().getInteger(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'])
+              value = getInteger(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'])
             else:
-              value = _getMain().getIntegerEmptyAllowed(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'], default=tmschema['default'])
+              value = getIntegerEmptyAllowed(minVal=tmschema['minVal'], maxVal=tmschema['maxVal'], default=tmschema['default'])
           else:
-            value = _getMain().getHHMM()
+            value = getHHMM()
           body['requests'][-1]['policyValue']['value'][casedField] = getSpecialVtypeValue(vtype, value)
           body['requests'][-1]['updateMask'] += f'{casedField},'
           continue
         if field not in schema['settings']:
           Cmd.Backup()
-          _getMain().missingChoiceExit(schema['settings'])
+          missingChoiceExit(schema['settings'])
         field_settings = schema['settings'][field]
         casedField = field_settings['name']
         vtype = field_settings['type']
-        value = _getMain().getString(Cmd.OB_STRING, minLen=0 if vtype in {'TYPE_STRING', 'TYPE_LIST'}  else 1)
+        value = getString(Cmd.OB_STRING, minLen=0 if vtype in {'TYPE_STRING', 'TYPE_LIST'}  else 1)
         if vtype in ['TYPE_INT64', 'TYPE_INT32', 'TYPE_UINT64']:
           if not value.isnumeric():
             Cmd.Backup()
-            _getMain().invalidArgumentExit(_getMain().integerLimits(None, None))
+            invalidArgumentExit(integerLimits(None, None))
           value = int(value)
         elif vtype == 'TYPE_BOOL':
           value = value.lower()
-          if value in _getMain().TRUE_VALUES:
+          if value in TRUE_VALUES:
             value = True
-          elif value in _getMain().FALSE_VALUES:
+          elif value in FALSE_VALUES:
             value = False
           else:
-            _getMain().invalidChoiceExit(value, _getMain().TRUE_FALSE, True)
+            invalidChoiceExit(value, TRUE_FALSE, True)
         elif vtype == 'TYPE_ENUM':
           value = value.upper()
           prefix = field_settings['enum_prefix']
@@ -644,7 +704,7 @@ def doUpdateChromePolicy():
           elif value.replace(prefix, '') in enum_values:
             pass
           else:
-            _getMain().invalidChoiceExit(value, enum_values, True)
+            invalidChoiceExit(value, enum_values, True)
         elif vtype == 'TYPE_LIST':
           value = value.split(',') if value else []
         elif vtype == 'TYPE_STRING' and convertCRsNLs:
@@ -656,15 +716,15 @@ def doUpdateChromePolicy():
             if channelMap is None:
               cv, channelMap = _getMain().getPlatformChannelMap(cv, Ent.CHROME_CHANNEL)
             if channel not in channelMap:
-              _getMain().invalidChoiceExit(value, channelMap, True)
+              invalidChoiceExit(value, channelMap, True)
             cv, status, milestone = _getMain().getRelativeMilestone(cv, channelMap[channel], int(mg.group(2)))
             if not status:
               Cmd.Backup()
-              _getMain().invalidArgumentExit(f'{milestone} for {casedField}: {value}')
+              invalidArgumentExit(f'{milestone} for {casedField}: {value}')
             value = f'{milestone}.'
           elif value and not CHROME_TARGET_VERSION_PATTERN.match(value):
             Cmd.Backup()
-            _getMain().invalidArgumentExit(Msg.CHROME_TARGET_VERSION_FORMAT)
+            invalidArgumentExit(Msg.CHROME_TARGET_VERSION_FORMAT)
         if field_settings['namedType']:
           body['requests'][-1]['policyValue']['value'][casedField] = {field_settings['namedType']: value}
         else:
@@ -676,19 +736,19 @@ def doUpdateChromePolicy():
     body['requests'].pop()
   kvList = setPolicyKVList([entityType, targetName, Ent.CHROME_POLICY, ','.join(schemaNameList)], printer_id, app_id)
   if count != 1:
-    _getMain().entityPerformActionNumItems(kvList, count, Ent.CHROME_POLICY)
+    entityPerformActionNumItems(kvList, count, Ent.CHROME_POLICY)
     if count == 0:
       return
   updatePolicyRequests(body, targetResource, printer_id, app_id)
   try:
-    _getMain().callGAPI(service, 'batchModify',
+    callGAPI(service, 'batchModify',
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                            GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=customer, body=body)
-    _getMain().entityActionPerformed(kvList)
+    entityActionPerformed(kvList)
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable, GAPI.quotaExceeded) as e:
-    _getMain().entityActionFailedWarning(kvList, str(e))
+    entityActionFailedWarning(kvList, str(e))
 
 CHROME_POLICY_INDEXED_TITLES = ['fields']
 
@@ -722,19 +782,19 @@ def doPrintShowChromePolicies():
       norm['printerId'] = printer_id
     if entityType == Ent.ORGANIZATIONAL_UNIT:
       orgUnitId = policy.get('targetKey', {}).get('targetResource')
-      norm['orgUnitPath'] = _getMain().convertOrgUnitIDtoPath(cd, orgUnitId) if orgUnitId else _getMain().UNKNOWN
+      norm['orgUnitPath'] = convertOrgUnitIDtoPath(cd, orgUnitId) if orgUnitId else UNKNOWN
       parentOrgUnitId = policy.get('sourceKey', {}).get('targetResource')
-      norm['parentOrgUnitPath'] = _getMain().convertOrgUnitIDtoPath(cd, parentOrgUnitId) if parentOrgUnitId else _getMain().UNKNOWN
+      norm['parentOrgUnitPath'] = convertOrgUnitIDtoPath(cd, parentOrgUnitId) if parentOrgUnitId else UNKNOWN
       norm['direct'] = orgUnitId == parentOrgUnitId
     else:
       groupId = policy.get('targetKey', {}).get('targetResource')
       if groupId is not None:
         groupId = groupId.split('/')[1]
-        norm['group'] = _getMain().getGroupEmailFromID(groupId, cd)
+        norm['group'] = getGroupEmailFromID(groupId, cd)
         if norm['group'] is None:
           norm['group'] = groupId
       else:
-        norm['group'] = _getMain().UNKNOWN
+        norm['group'] = UNKNOWN
     norm['additionalTargetKeys'] = []
     for setting, value in sorted(policy.get('targetKey', {}).get('additionalTargetKeys', {}).items()):
       norm['additionalTargetKeys'].append({'name': setting, 'value': value})
@@ -775,15 +835,15 @@ def doPrintShowChromePolicies():
     policy = normalizedPolicy(policy)
     if (entityType == Ent.GROUP) or showPolicies in (CHROME_POLICY_SHOW_ALL, policy['direct']):
       if FJQC.formatJSON:
-        _getMain().printLine(json.dumps(_getMain().cleanJSON(policy), ensure_ascii=False, sort_keys=True))
+        printLine(json.dumps(cleanJSON(policy), ensure_ascii=False, sort_keys=True))
         return
-      _getMain().printKeyValueListWithCount([policy['name']], j, jcount)
+      printKeyValueListWithCount([policy['name']], j, jcount)
       Ind.Increment()
-      _getMain().showJSON(None, policy, sortDictKeys=False)
+      showJSON(None, policy, sortDictKeys=False)
       Ind.Decrement()
 
   def _printPolicyRow(policy):
-    row = _getMain().flattenJSON(policy)
+    row = flattenJSON(policy)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
@@ -792,12 +852,12 @@ def doPrintShowChromePolicies():
                                 'orgUnitPath': policy['orgUnitPath'],
                                 'parentOrgUnitPath': policy['parentOrgUnitPath'],
                                 'direct': policy['direct'],
-                                'JSON': json.dumps(_getMain().cleanJSON(policy),
+                                'JSON': json.dumps(cleanJSON(policy),
                                                    ensure_ascii=False, sort_keys=True)})
       else:
         csvPF.WriteRowNoFilter({'name': policy['name'],
                                 'group': policy['group'],
-                                'JSON': json.dumps(_getMain().cleanJSON(policy),
+                                'JSON': json.dumps(cleanJSON(policy),
                                                    ensure_ascii=False, sort_keys=True)})
 
 
@@ -820,31 +880,31 @@ def doPrintShowChromePolicies():
       if targetName == '/':
         policy['parentOrgUnitPath'] = '/'
       else:
-        targetName = _getMain().makeOrgUnitPathRelative(targetName)
-        policy['parentOrgUnitPath'] = _getMain().callGAPI(cd.orgunits(), 'get',
+        targetName = makeOrgUnitPathRelative(targetName)
+        policy['parentOrgUnitPath'] = callGAPI(cd.orgunits(), 'get',
                                                throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
                                                customerId=GC.Values[GC.CUSTOMER_ID],
-                                               orgUnitPath=_getMain().encodeOrgUnitPath(targetName),
+                                               orgUnitPath=encodeOrgUnitPath(targetName),
                                                fields='parentOrgUnitPath')['parentOrgUnitPath']
       policy['direct'] = False
     else:
       policy['group'] = targetName
     _printPolicyRow(policy)
 
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getMain()._getCustomersCustomerIdWithC()
-  csvPF = _getMain().CSVPrintFile(['name'], indexedTitles=CHROME_POLICY_INDEXED_TITLES) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['name'], indexedTitles=CHROME_POLICY_INDEXED_TITLES) if Act.csvFormat() else None
   if csvPF:
     csvPF.SetNoEscapeChar(True)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   app_id = groupEmail = orgUnit = printer_id = targetResource = None
   showPolicies = CHROME_POLICY_SHOW_ALL
   psFilters = []
   showNoPolicy = False
   policiesShown = 0
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'ou', 'org', 'orgunit'}:
@@ -852,20 +912,20 @@ def doPrintShowChromePolicies():
     elif myarg == 'group':
       groupEmail, targetName, targetResource, entityType, _ = _getPolicyGroupTarget(cd, cp, myarg, orgUnit)
     elif myarg == 'printerid':
-      printer_id = _getMain().getString(Cmd.OB_PRINTER_ID)
+      printer_id = getString(Cmd.OB_PRINTER_ID)
     elif myarg == 'appid':
-      app_id = _getMain().getString(Cmd.OB_APP_ID)
+      app_id = getString(Cmd.OB_APP_ID)
     elif myarg == 'filter':
-      for psFilter in _getMain().getString(Cmd.OB_STRING).replace(',', ' ').split():
+      for psFilter in getString(Cmd.OB_STRING).replace(',', ' ').split():
         psFilters.append(psFilter)
     elif myarg == 'namespace':
-      for psFilter in _getMain().getString(Cmd.OB_STRING).replace(',', ' ').split():
+      for psFilter in getString(Cmd.OB_STRING).replace(',', ' ').split():
         if psFilter.endswith('.*'):
           psFilters.append(psFilter)
         else:
           psFilters.append(f'{psFilter}.*')
     elif myarg == 'show':
-      showPolicies = _getMain().getChoice(CHROME_POLICY_SHOW_CHOICE_MAP, mapChoice=True)
+      showPolicies = getChoice(CHROME_POLICY_SHOW_CHOICE_MAP, mapChoice=True)
     elif csvPF and myarg == 'shownopolicy':
       showNoPolicy = True
     else:
@@ -926,18 +986,18 @@ def doPrintShowChromePolicies():
   for psFilter in psFilters:
     body['policySchemaFilter'] = psFilter
     body['pageToken'] = None
-    _getMain().printGettingAllEntityItemsForWhom(Ent.CHROME_POLICY, targetName, query=body['policySchemaFilter'])
+    printGettingAllEntityItemsForWhom(Ent.CHROME_POLICY, targetName, query=body['policySchemaFilter'])
     try:
-      policies.extend(_getMain().callGAPIpages(cp.customers().policies(), 'resolve', 'resolvedPolicies',
-                                    pageMessage=_getMain().getPageMessageForWhom(),
+      policies.extend(callGAPIpages(cp.customers().policies(), 'resolve', 'resolvedPolicies',
+                                    pageMessage=getPageMessageForWhom(),
                                     throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                                                   GAPI.SERVICE_NOT_AVAILABLE, GAPI.QUOTA_EXCEEDED],
                                     customer=customer, body=body, pageArgsInBody=True))
     except (GAPI.notFound, GAPI.permissionDenied, GAPI.quotaExceeded) as e:
-      _getMain().entityActionFailedWarning([entityType, targetName], str(e))
+      entityActionFailedWarning([entityType, targetName], str(e))
       continue
     except (GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.CHROME_POLICY, body['policySchemaFilter']], str(e))
+      entityActionFailedWarning([Ent.CHROME_POLICY, body['policySchemaFilter']], str(e))
       continue
     # sort policies first by app/printer id then by schema name
     policies = sorted(policies,
@@ -947,7 +1007,7 @@ def doPrintShowChromePolicies():
     jcount = len(policies)
     if not FJQC.formatJSON:
       kvList = setPolicyKVList([entityType, targetName], printer_id, app_id)
-      _getMain().entityPerformActionModifierNumItems(kvList, Msg.MAXIMUM_OF, jcount, Ent.CHROME_POLICY)
+      entityPerformActionModifierNumItems(kvList, Msg.MAXIMUM_OF, jcount, Ent.CHROME_POLICY)
     Ind.Increment()
     j = 0
     for policy in policies:
@@ -971,39 +1031,39 @@ CHROME_IMAGE_SCHEMAS_MAP = {
 
 # gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 def doCreateChromePolicyImage():
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
+  cp = buildGAPIObject(API.CHROMEPOLICY)
   parent = _getMain()._getCustomersCustomerIdWithC()
-  schema = _getMain().getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)
+  schema = getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)
   parameters = {_getMain().DFA_URL: None}
-  parameters[DFA_LOCALFILEPATH] = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
+  parameters[DFA_LOCALFILEPATH] = setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
   try:
     f = open(parameters[DFA_LOCALFILEPATH], 'rb')
     f.close()
   except IOError as e:
     Cmd.Backup()
-    _getMain().usageErrorExit(f'{parameters[DFA_LOCALFILEPATH]}: {str(e)}')
+    usageErrorExit(f'{parameters[DFA_LOCALFILEPATH]}: {str(e)}')
   parameters[DFA_LOCALFILENAME] = os.path.basename(parameters[DFA_LOCALFILEPATH])
   parameters[DFA_LOCALMIMETYPE] = mimetypes.guess_type(parameters[DFA_LOCALFILEPATH])[0]
   if parameters[DFA_LOCALMIMETYPE] is None:
     parameters[DFA_LOCALMIMETYPE] = 'image/jpeg'
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   media_body = _getMain().getMediaBody(parameters)
   try:
-    result = _getMain().callGAPI(cp.media(), 'upload',
+    result = callGAPI(cp.media(), 'upload',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
                       customer=parent, media_body=media_body,
                       body={'policyField': f"{schema['name']}.{schema['field']}"})
-    _getMain().entityActionPerformed([Ent.CHROME_POLICY_IMAGE, f"{schema['name']} {schema['field']} {result['downloadUri']}"])
+    entityActionPerformed([Ent.CHROME_POLICY_IMAGE, f"{schema['name']} {schema['field']} {result['downloadUri']}"])
   except (GAPI.invalidArgument, GAPI.forbidden) as e:
-    _getMain().entityActionFailedWarning([Ent.CHROME_POLICY_IMAGE, f"{schema['name']}", Ent.FILE, f"{parameters[DFA_LOCALFILEPATH]}"], str(e))
+    entityActionFailedWarning([Ent.CHROME_POLICY_IMAGE, f"{schema['name']}", Ent.FILE, f"{parameters[DFA_LOCALFILEPATH]}"], str(e))
 
 def _showChromePolicySchema(schema, FJQC, i=0, count=0):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(schema), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(schema), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CHROME_POLICY_SCHEMA, schema['name']], i, count)
+  printEntity([Ent.CHROME_POLICY_SCHEMA, schema['name']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, schema,
+  showJSON(None, schema,
            dictObjectsKey={'messageType': 'name', 'field': 'name',
                            'fieldDescriptions': 'field', 'knownValueDescriptions': 'value'})
   Ind.Decrement()
@@ -1027,27 +1087,27 @@ CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP = {
 #	<ChromePolicySchemaFieldName>* [fields <ChromePolicySchemaFieldNameList>]
 #	[formatjson]
 def doInfoChromePolicySchemas():
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  if _getMain().checkArgumentPresent('std'):
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  if checkArgumentPresent('std'):
     doInfoChromePolicySchemasStd(cp)
     return
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   fieldsList = []
   name = _getChromePolicySchemaName()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
-    if _getMain().getFieldsList(myarg, CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
+    myarg = getArgument()
+    if getFieldsList(myarg, CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
   try:
-    schema = _getMain().callGAPI(cp.customers().policySchemas(), 'get',
+    schema = callGAPI(cp.customers().policySchemas(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                       name=name, fields=fields)
     _showChromePolicySchema(schema, FJQC, 0, 0)
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.CHROME_POLICY_SCHEMA, name)
+    entityUnknownWarning(Ent.CHROME_POLICY_SCHEMA, name)
   except (GAPI.badRequest, GAPI.forbidden):
     accessErrorExit(None)
 
@@ -1061,7 +1121,7 @@ def doInfoChromePolicySchemas():
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowChromePolicySchemas():
   def _printChromePolicySchema(schema):
-    row = _getMain().flattenJSON(schema)
+    row = flattenJSON(schema)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
@@ -1070,17 +1130,17 @@ def doPrintShowChromePolicySchemas():
         row['policyDescription'] = schema['policyDescription']
       if 'policyApiLifecycle' in schema:
         row['policyApiLifecycleStage'] = schema['policyApiLifecycle'].get('policyApiLifecycleStage', '')
-      row['JSON'] = json.dumps(_getMain().cleanJSON(schema), ensure_ascii=False, sort_keys=True)
+      row['JSON'] = json.dumps(cleanJSON(schema), ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
 
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  if _getMain().checkArgumentPresent('std'):
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  if checkArgumentPresent('std'):
     if not Act.csvFormat():
       doShowChromePolicySchemasStd(cp)
       return
-    _getMain().unknownArgumentExit()
+    unknownArgumentExit()
   parent = _getMain()._getCustomersCustomerIdWithC()
-  csvPF = _getMain().CSVPrintFile(['name', 'schemaName', 'policyDescription',
+  csvPF = CSVPrintFile(['name', 'schemaName', 'policyDescription',
                         'policyApiLifecycle.policyApiLifecycleStage',
                         'policyApiLifecycle.description',
                         'policyApiLifecycle.endSupport.year',
@@ -1089,16 +1149,16 @@ def doPrintShowChromePolicySchemas():
                         'policyApiLifecycle.deprecatedInFavorOf',
                         'policyApiLifecycle.deprecatedInFavorOf.0'],
                         'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   pfilter = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'filter':
-      pfilter = _getMain().getString(Cmd.OB_STRING)
-    elif _getMain().getFieldsList(myarg, CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
+      pfilter = getString(Cmd.OB_STRING)
+    elif getFieldsList(myarg, CHROME_POLICY_SCHEMA_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
@@ -1110,18 +1170,18 @@ def doPrintShowChromePolicySchemas():
       jsonTitles.append('policyApiLifecycleStage')
     jsonTitles.append('JSON')
     csvPF.SetJSONTitles(jsonTitles)
-  fields = _getMain().getItemFieldsFromFieldsList('policySchemas', fieldsList)
-  _getMain().printGettingAllAccountEntities(Ent.CHROME_POLICY_SCHEMA, pfilter)
-  pageMessage = _getMain().getPageMessage()
+  fields = getItemFieldsFromFieldsList('policySchemas', fieldsList)
+  printGettingAllAccountEntities(Ent.CHROME_POLICY_SCHEMA, pfilter)
+  pageMessage = getPageMessage()
   try:
-    schemas = _getMain().callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
+    schemas = callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
                             pageMessage=pageMessage,
                             throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                             parent=parent, filter=pfilter, fields=fields)
     if not csvPF:
       jcount = len(schemas)
       if not FJQC.formatJSON:
-        _getMain().performActionNumItems(jcount, Ent.CHROME_POLICY_SCHEMA)
+        performActionNumItems(jcount, Ent.CHROME_POLICY_SCHEMA)
       Ind.Increment()
       j = 0
       for schema in schemas:
@@ -1132,7 +1192,7 @@ def doPrintShowChromePolicySchemas():
       for schema in schemas:
         _printChromePolicySchema(schema)
   except GAPI.invalidInput as e:
-    _getMain().entityActionFailedWarning([Ent.CHROME_POLICY, None], _getMain().invalidQuery(pfilter) if pfilter else str(e))
+    entityActionFailedWarning([Ent.CHROME_POLICY, None], invalidQuery(pfilter) if pfilter else str(e))
   except (GAPI.badRequest, GAPI.forbidden):
     accessErrorExit(None)
   if csvPF:
@@ -1142,15 +1202,15 @@ def _showChromePolicySchemaStd(schema):
   def _printEntry(mtypeName, mtypeEntry):
     vtype = mtypeEntry['type']
     if vtype != 'TYPE_MESSAGE':
-      _getMain().printKeyValueList([f'{mtypeName}', f'{vtype}'])
+      printKeyValueList([f'{mtypeName}', f'{vtype}'])
     else:
-      _getMain().printKeyValueList([f'{mtypeName}'])
+      printKeyValueList([f'{mtypeName}'])
     Ind.Increment()
     if vtype == 'TYPE_ENUM':
       enums = mtypeEntry['subtype']['enums']
       descriptions = mtypeEntry['descriptions']
       for i, v in enumerate(enums):
-        _getMain().printKeyValueList([f'{v}', f'{descriptions[i]}'])
+        printKeyValueList([f'{v}', f'{descriptions[i]}'])
     elif vtype == 'TYPE_MESSAGE':
       for mfieldName, mfield in mtypeEntry['subtype']['field'].items():
         # managedBookmarks is recursive
@@ -1158,10 +1218,10 @@ def _showChromePolicySchemaStd(schema):
           _printEntry(mfieldName, mfield)
     else:
       for description in mtypeEntry.get('descriptions', []):
-        _getMain().printKeyValueList([description])
+        printKeyValueList([description])
     Ind.Decrement()
 
-  _getMain().printKeyValueList([f'{schema.get("name")}', f'{schema.get("description")}'])
+  printKeyValueList([f'{schema.get("name")}', f'{schema.get("description")}'])
   Ind.Increment()
   for mtypeEntry in schema['settings'].values():
     if mtypeEntry['subfield']:
@@ -1173,15 +1233,15 @@ def _showChromePolicySchemaStd(schema):
 # gam info chromeschema std <SchemaName>
 def doInfoChromePolicySchemasStd(cp):
   name = _getChromePolicySchemaName()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   try:
-    schema = _getMain().callGAPI(cp.customers().policySchemas(), 'get',
+    schema = callGAPI(cp.customers().policySchemas(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                       name=name)
     _, schema_dict = simplifyChromeSchemaDisplay(schema)
     _showChromePolicySchemaStd(schema_dict)
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.CHROME_POLICY_SCHEMA, name)
+    entityUnknownWarning(Ent.CHROME_POLICY_SCHEMA, name)
   except (GAPI.badRequest, GAPI.forbidden):
     accessErrorExit(None)
 
@@ -1189,13 +1249,13 @@ def doInfoChromePolicySchemasStd(cp):
 def doShowChromePolicySchemasStd(cp):
   sfilter = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'filter':
-      sfilter = _getMain().getString(Cmd.OB_STRING)
+      sfilter = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   parent = _getMain()._getCustomersCustomerIdWithC()
-  result = _getMain().callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
+  result = callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          parent=parent, filter=sfilter)
   schemas = {}
@@ -1204,51 +1264,51 @@ def doShowChromePolicySchemasStd(cp):
     schemas[schema_name.lower()] = schema_dict
   for _, schema in sorted(schemas.items()):
     _showChromePolicySchemaStd(schema)
-    _getMain().printBlankLine()
+    printBlankLine()
 
 # gam create chromenetwork
 #	<OrgUnitItem> <String> <JSONData>
 def doCreateChromeNetwork():
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getMain()._getCustomersCustomerIdWithC()
   body = {}
-  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, _getMain().getString(Cmd.OB_ORGUNIT_PATH))
-  body['name'] = _getMain().getString(Cmd.OB_STRING)
-  body.update(_getMain().getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group']))
-  _getMain().checkForExtraneousArguments()
+  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
+  body['name'] = getString(Cmd.OB_STRING)
+  body.update(getJSON(['direct', 'name', 'orgUnitPath', 'parentOrgUnitPath', 'group']))
+  checkForExtraneousArguments()
   kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_NETWORK_NAME, body['name']]
   try:
-    result = _getMain().callGAPI(cp.customers().policies().networks(), 'defineNetwork',
+    result = callGAPI(cp.customers().policies().networks(), 'defineNetwork',
                       bailOnInternalError=True,
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT,
                                     GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       customer=customer, body=body)
-    _getMain().entityActionPerformed(kvList+[Ent.CHROME_NETWORK_ID, result['networkId']])
+    entityActionPerformed(kvList+[Ent.CHROME_NETWORK_ID, result['networkId']])
   except (GAPI.alreadyExists, GAPI.permissionDenied, GAPI.invalidArgument,
           GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvList, str(e))
+    entityActionFailedWarning(kvList, str(e))
 
 # gam delete chromenetwork
 #	 <OrgUnitItem> <NetworkID>
 def doDeleteChromeNetwork():
-  cp = _getMain().buildGAPIObject(API.CHROMEPOLICY)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cp = buildGAPIObject(API.CHROMEPOLICY)
+  cd = buildGAPIObject(API.DIRECTORY)
   customer = _getMain()._getCustomersCustomerIdWithC()
   body = {}
-  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, _getMain().getString(Cmd.OB_ORGUNIT_PATH))
-  body['networkId'] = _getMain().getString(Cmd.OB_NETWORK_ID)
-  _getMain().checkForExtraneousArguments()
+  orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
+  body['networkId'] = getString(Cmd.OB_NETWORK_ID)
+  checkForExtraneousArguments()
   kvList = [Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_NETWORK_ID, body['networkId']]
   try:
-    _getMain().callGAPI(cp.customers().policies().networks(), 'removeNetwork',
+    callGAPI(cp.customers().policies().networks(), 'removeNetwork',
              throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                            GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE],
              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
              customer=customer, body=body)
-    _getMain().entityActionPerformed(kvList)
+    entityActionPerformed(kvList)
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvList, str(e))
+    entityActionFailedWarning(kvList, str(e))
 
 # Device command utilities

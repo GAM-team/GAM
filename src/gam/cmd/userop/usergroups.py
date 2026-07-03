@@ -28,6 +28,40 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getDeliverySettings,
+    getREPattern,
+    getString,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, cleanJSON, flattenJSON
+from gam.util.display import (
+    badRequestWarning,
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityActionPerformedMessage,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    entityPerformActionSubItemModifierNumItems,
+    getPageMessageForWhom,
+    printEntity,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printLine,
+    userLookerStudioServiceNotEnabledWarning,
+)
+from gam.util.entity import ALL_GROUP_ROLES, getEntityArgument, getEntityList, getUserObjectEntity
+from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
+from gam.util.output import setSysExitRC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -56,29 +90,29 @@ def processLookerStudioPermissions(users):
   assetIdEntity = None
   showDetails = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getMain().getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = _getMain().getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
     elif myarg == 'role':
       permissions.setdefault('permissions', {})
       if action in {Act.ADD, Act.UPDATE}:
-        role = _getMain().getChoice(LOOKERSTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+        role = getChoice(LOOKERSTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
       else:
-        role = _getMain().getChoice(LOOKERSTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+        role = getChoice(LOOKERSTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
       permissions['permissions'].setdefault(role, {'members': []})
-      permissions['permissions'][role]['members'].extend(_getMain().getEntityList(Cmd.OB_LOOKERSTUDIO_PERMISSION_ENTITY))
+      permissions['permissions'][role]['members'].extend(getEntityList(Cmd.OB_LOOKERSTUDIO_PERMISSION_ENTITY))
     elif myarg == 'nodetails':
       showDetails = False
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not permissions:
     if action in {Act.ADD, Act.UPDATE}:
-      _getMain().missingArgumentExit('role editor|owner|viewer members')
+      missingArgumentExit('role editor|owner|viewer members')
     else:
-      _getMain().missingArgumentExit('members')
-  i, count, users = _getMain().getEntityArgument(users)
+      missingArgumentExit('members')
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, ds, assets, jcount = _getMain()._validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
@@ -88,7 +122,7 @@ def processLookerStudioPermissions(users):
       assets, jcount = _getMain()._getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
-    _getMain().entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.LOOKERSTUDIO_PERMISSION, modifier, jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.LOOKERSTUDIO_PERMISSION, modifier, jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
     j = 0
     for asset in assets:
       j += 1
@@ -96,22 +130,22 @@ def processLookerStudioPermissions(users):
         try:
           body = {'name': asset['name'], 'members': permissions['permissions'][role]['members']}
           if action in {Act.DELETE, Act.UPDATE}:
-            results = _getMain().callGAPI(ds.assets().permissions(), 'revokeAllPermissions',
+            results = callGAPI(ds.assets().permissions(), 'revokeAllPermissions',
                                throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], body=body)
           if action in {Act.ADD, Act.UPDATE}:
             body['role'] = role
-            results = _getMain().callGAPI(ds.assets().permissions(), 'addMembers',
+            results = callGAPI(ds.assets().permissions(), 'addMembers',
                                throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], body=body)
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
           if showDetails:
             _getMain()._showLookerStudioPermissions(user, asset, results, j, jcount, None)
         except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
           continue
         except GAPI.serviceNotAvailable:
-          _getMain().userLookerStudioServiceNotEnabledWarning(user, i, count)
+          userLookerStudioServiceNotEnabledWarning(user, i, count)
           break
 
 # gam <UserTypeEntity> print lookerstudiopermissions [todrive <ToDriveAttribute>*]
@@ -130,35 +164,35 @@ def processLookerStudioPermissions(users):
 #	[formatjson]
 def printShowLookerStudioPermissions(users):
   def _printLookerStudioPermissions(user, asset, permissions):
-    row = _getMain().flattenJSON(permissions, flattened={'User': user, 'assetId': asset['name']},
+    row = flattenJSON(permissions, flattened={'User': user, 'assetId': asset['name']},
                       simpleLists=['members'], delimiter=delimiter)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'User': user, 'assetId': asset['name'],
-                              'JSON': json.dumps(_getMain().cleanJSON(permissions), ensure_ascii=False, sort_keys=True)})
+                              'JSON': json.dumps(cleanJSON(permissions), ensure_ascii=False, sort_keys=True)})
 
-  csvPF = _getMain().CSVPrintFile(['User', 'assetId']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'assetId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   parameters, assetTypes = _getMain().initLookerStudioAssetSelectionParameters()
   assetIdEntity = None
   role = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getMain().getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = _getMain().getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
     elif myarg == 'role':
-      role = _getMain().getChoice(LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+      role = getChoice(LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, ds, assets, jcount = _getMain()._validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
@@ -170,7 +204,7 @@ def printShowLookerStudioPermissions(users):
         continue
     if not csvPF:
       if not FJQC.formatJSON:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
     elif jcount == 0 and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
       csvPF.WriteRowNoFilter({'User': user})
       continue
@@ -178,14 +212,14 @@ def printShowLookerStudioPermissions(users):
     for asset in assets:
       j += 1
       try:
-        permissions = _getMain().callGAPI(ds.assets(), 'getPermissions',
+        permissions = callGAPI(ds.assets(), 'getPermissions',
                                throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                name=asset['name'], role=role)
       except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
         continue
       except GAPI.serviceNotAvailable:
-        _getMain().userLookerStudioServiceNotEnabledWarning(user, i, count)
+        userLookerStudioServiceNotEnabledWarning(user, i, count)
         break
       if not csvPF:
         Ind.Increment()
@@ -200,36 +234,36 @@ def _validateSubkeyRoleGetGroups(user, role, origUser, userGroupLists, i, count)
   roleLower = role.lower()
   if roleLower in GROUP_ROLES_MAP:
     return (GROUP_ROLES_MAP[roleLower], userGroupLists[origUser][role])
-  _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.ROLE, role], Msg.INVALID_ROLE.format(','.join(sorted(GROUP_ROLES_MAP))), i, count)
+  entityActionNotPerformedWarning([Ent.USER, user, Ent.ROLE, role], Msg.INVALID_ROLE.format(','.join(sorted(GROUP_ROLES_MAP))), i, count)
   return (None, None)
 
 def _addUserToGroups(cd, user, addGroupsSet, addGroups, i, count):
   jcount = len(addGroupsSet)
-  _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_TO, jcount, Ent.GROUP, i, count)
+  entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_TO, jcount, Ent.GROUP, i, count)
   Ind.Increment()
   j = 0
   for group in sorted(addGroupsSet):
     j += 1
     role = addGroups[group]['role']
     body = {'email': user, 'role': role}
-    if addGroups[group]['delivery_settings'] != _getMain().DELIVERY_SETTINGS_UNDEFINED:
+    if addGroups[group]['delivery_settings'] != DELIVERY_SETTINGS_UNDEFINED:
       body['delivery_settings'] = addGroups[group]['delivery_settings']
     try:
-      _getMain().callGAPI(cd.members(), 'insert',
+      callGAPI(cd.members(), 'insert',
                throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.DUPLICATE, GAPI.MEMBER_NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,
                                                         GAPI.INVALID_MEMBER, GAPI.CYCLIC_MEMBERSHIPS_NOT_ALLOWED,
                                                         GAPI.CONDITION_NOT_MET, GAPI.CONFLICT],
                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                groupKey=group, body=body, fields='')
-      _getMain().entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
+      entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
-      _getMain().entityUnknownWarning(Ent.GROUP, group, j, jcount)
+      entityUnknownWarning(Ent.GROUP, group, j, jcount)
     except (GAPI.duplicate, GAPI.cyclicMembershipsNotAllowed, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.GROUP, group, role, user], str(e), j, jcount)
+      entityActionFailedWarning([Ent.GROUP, group, role, user], str(e), j, jcount)
     except GAPI.conflict:
-      _getMain().entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
+      entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
     except (GAPI.memberNotFound, GAPI.resourceNotFound, GAPI.invalidMember) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
   Ind.Decrement()
@@ -237,29 +271,29 @@ def _addUserToGroups(cd, user, addGroupsSet, addGroups, i, count):
 # gam <UserTypeEntity> add group|groups
 #	([<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)+
 def addUserToGroups(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  baseRole = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-  baseDeliverySettings = _getMain().getDeliverySettings()
-  groupKeys = _getMain().getEntityList(Cmd.OB_GROUP_ENTITY)
+  cd = buildGAPIObject(API.DIRECTORY)
+  baseRole = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+  baseDeliverySettings = getDeliverySettings()
+  groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
   subkeyRoleField = GM.Globals[GM.CSV_SUBKEY_FIELD]
   if not isinstance(groupKeys, dict):
     userGroupLists = None
     addGroups = {}
     for group in groupKeys:
-      addGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
+      addGroups[normalizeEmailAddressOrUID(group)] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
     while Cmd.ArgumentsRemaining():
-      role = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-      deliverySettings = _getMain().getDeliverySettings()
-      for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
-        addGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': deliverySettings}
+      role = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+      deliverySettings = getDeliverySettings()
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+        addGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': deliverySettings}
   else:
     userGroupLists = groupKeys
-    _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+    checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if userGroupLists:
       roleList = [baseRole]
       if not subkeyRoleField:
@@ -273,39 +307,39 @@ def addUserToGroups(users):
           if role is None:
             continue
         for group in groupKeys:
-          addGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': DELIVERY_SETTINGS_UNDEFINED}
+          addGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': DELIVERY_SETTINGS_UNDEFINED}
     _addUserToGroups(cd, user, set(addGroups), addGroups, i, count)
 
 def _deleteUserFromGroups(cd, user, deleteGroupsSet, deleteGroups, i, count):
   jcount = len(deleteGroupsSet)
-  _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_FROM, jcount, Ent.GROUP, i, count)
+  entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_FROM, jcount, Ent.GROUP, i, count)
   Ind.Increment()
   j = 0
   for group in sorted(deleteGroupsSet):
     j += 1
     role = deleteGroups[group]['role']
     try:
-      _getMain().callGAPI(cd.members(), 'delete',
+      callGAPI(cd.members(), 'delete',
                throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND, GAPI.INVALID_MEMBER,
                                                         GAPI.CONDITION_NOT_MET, GAPI.CONFLICT],
                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                groupKey=group, memberKey=user)
-      _getMain().entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
+      entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
-      _getMain().entityUnknownWarning(Ent.GROUP, group, j, jcount)
+      entityUnknownWarning(Ent.GROUP, group, j, jcount)
     except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
+      entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
     except GAPI.conflict:
-      _getMain().entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
+      entityActionPerformedMessage([Ent.GROUP, group, role, user], Msg.ACTION_MAY_BE_DELAYED, j, jcount)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
   Ind.Decrement()
 
 def _getUserGroupOptionalDomainCustomerId():
-  if _getMain().checkArgumentPresent('domain'):
-    return {'domain': _getMain().getString(Cmd.OB_DOMAIN_NAME).lower()}
-  if _getMain().checkArgumentPresent('customerid'):
-    return {'customer': _getMain().getString(Cmd.OB_CUSTOMER_ID)}
+  if checkArgumentPresent('domain'):
+    return {'domain': getString(Cmd.OB_DOMAIN_NAME).lower()}
+  if checkArgumentPresent('customerid'):
+    return {'customer': getString(Cmd.OB_CUSTOMER_ID)}
   return {}
 
 def _setUserGroupArgs(user, kwargs):
@@ -331,7 +365,7 @@ def checkUserGroupMatchPattern(groupEmail, matchPattern):
 #	[(domain <DomainName>)|(customerid <CustomerID>)|
 #	 (emailmatchpattern [not] <REMatchPattern>)|<GroupEntity>]
 def deleteUserFromGroups(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   groupKeys = None
   matchPattern = {}
   kwargs = _getUserGroupOptionalDomainCustomerId()
@@ -339,31 +373,31 @@ def deleteUserFromGroups(users):
     kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
     deleteGroups = {}
     if Cmd.ArgumentsRemaining():
-      if not _getMain().checkArgumentPresent('emailmatchpattern'):
-        groupKeys = _getMain().getEntityList(Cmd.OB_GROUP_ENTITY)
+      if not checkArgumentPresent('emailmatchpattern'):
+        groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
         userGroupLists = groupKeys if isinstance(groupKeys, dict) else None
         for group in groupKeys:
-          deleteGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': Ent.MEMBER}
+          deleteGroups[normalizeEmailAddressOrUID(group)] = {'role': Ent.MEMBER}
       else:
-        matchPattern = {'not': _getMain().checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE)}
-      _getMain().checkForExtraneousArguments()
+        matchPattern = {'not': checkArgumentPresent('not'), 'pattern': getREPattern(re.IGNORECASE)}
+      checkForExtraneousArguments()
   else:
-    _getMain().checkForExtraneousArguments()
+    checkForExtraneousArguments()
   role = Ent.MEMBER
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if groupKeys is None:
       _setUserGroupArgs(user, kwargs)
       try:
-        result = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
+        result = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
       except (GAPI.invalidMember, GAPI.invalidInput):
-        _getMain().badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
+        badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
         continue
       except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
         accessErrorExit(cd)
@@ -377,30 +411,30 @@ def deleteUserFromGroups(users):
       userGroupKeys = userGroupLists[origUser]
       deleteGroups = {}
       for group in userGroupKeys:
-        deleteGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role}
+        deleteGroups[normalizeEmailAddressOrUID(group)] = {'role': role}
     _deleteUserFromGroups(cd, user, set(deleteGroups), deleteGroups, i, count)
 
 def _updateUserGroups(cd, user, updateGroupsSet, updateGroups, i, count):
   jcount = len(updateGroupsSet)
-  _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP, i, count)
+  entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP, i, count)
   Ind.Increment()
   j = 0
   for group in sorted(updateGroupsSet):
     j += 1
     role = updateGroups[group]['role']
     body = {'email': user, 'role': role}
-    if updateGroups[group]['delivery_settings'] != _getMain().DELIVERY_SETTINGS_UNDEFINED:
+    if updateGroups[group]['delivery_settings'] != DELIVERY_SETTINGS_UNDEFINED:
       body['delivery_settings'] = updateGroups[group]['delivery_settings']
     try:
-      _getMain().callGAPI(cd.members(), 'patch',
+      callGAPI(cd.members(), 'patch',
                throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND, GAPI.INVALID_MEMBER, GAPI.CONDITION_NOT_MET],
                retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                groupKey=group, memberKey=user, body=body, fields='')
-      _getMain().entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
+      entityActionPerformed([Ent.GROUP, group, role, user], j, jcount)
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
-      _getMain().entityUnknownWarning(Ent.GROUP, group, j, jcount)
+      entityUnknownWarning(Ent.GROUP, group, j, jcount)
     except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
+      entityActionFailedWarning([Ent.USER, user, Ent.GROUP, group], str(e), j, jcount)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
   Ind.Decrement()
@@ -409,45 +443,45 @@ def _updateUserGroups(cd, user, updateGroupsSet, updateGroups, i, count):
 #	[(domain <DomainName>)|(customerid <CustomerID>)]) [<GroupRole>] [[delivery] <DeliverySetting>]
 #	([<GroupRole>] [[delivery] <DeliverySetting>] [<GroupEntity>])*
 def updateUserGroups(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   groupKeys = None
   kwargs = _getUserGroupOptionalDomainCustomerId()
-  baseRole = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-  baseDeliverySettings = _getMain().getDeliverySettings()
+  baseRole = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+  baseDeliverySettings = getDeliverySettings()
   if not kwargs:
     kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
     if Cmd.ArgumentsRemaining():
-      groupKeys = _getMain().getEntityList(Cmd.OB_GROUP_ENTITY)
+      groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
       subkeyRoleField = GM.Globals[GM.CSV_SUBKEY_FIELD]
       if not isinstance(groupKeys, dict):
         userGroupLists = None
         updateGroups = {}
         for group in groupKeys:
-          updateGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
+          updateGroups[normalizeEmailAddressOrUID(group)] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
         while Cmd.ArgumentsRemaining():
-          role = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-          deliverySettings = _getMain().getDeliverySettings()
-          for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
-            updateGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': deliverySettings}
+          role = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+          deliverySettings = getDeliverySettings()
+          for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+            updateGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': deliverySettings}
       else:
         userGroupLists = groupKeys
-        _getMain().checkForExtraneousArguments()
+        checkForExtraneousArguments()
   else:
-    _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+    checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if groupKeys is None:
       _setUserGroupArgs(user, kwargs)
       try:
-        result = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
+        result = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
       except (GAPI.invalidMember, GAPI.invalidInput):
-        _getMain().badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
+        badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
         continue
       except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
         accessErrorExit(cd)
@@ -469,39 +503,39 @@ def updateUserGroups(users):
           if role is None:
             continue
         for group in groupKeys:
-          updateGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': DELIVERY_SETTINGS_UNDEFINED}
+          updateGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': DELIVERY_SETTINGS_UNDEFINED}
     _updateUserGroups(cd, user, set(updateGroups), updateGroups, i, count)
 
 # gam <UserTypeEntity> sync group|groups
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
 #	[<GroupRole>] [[delivery] <DeliverySetting>] (<GroupEntity>)*
 def syncUserWithGroups(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   kwargs = _getUserGroupOptionalDomainCustomerId()
   if not kwargs:
     kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
-  baseRole = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-  baseDeliverySettings = _getMain().getDeliverySettings()
-  groupKeys = _getMain().getEntityList(Cmd.OB_GROUP_ENTITY)
+  baseRole = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+  baseDeliverySettings = getDeliverySettings()
+  groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
   subkeyRoleField = GM.Globals[GM.CSV_SUBKEY_FIELD]
   if not isinstance(groupKeys, dict):
     userGroupLists = None
     syncGroups = {}
     for group in groupKeys:
-      syncGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
+      syncGroups[normalizeEmailAddressOrUID(group)] = {'role': baseRole, 'delivery_settings': baseDeliverySettings}
     while Cmd.ArgumentsRemaining():
-      role = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-      deliverySettings = _getMain().getDeliverySettings()
-      for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
-        syncGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': deliverySettings}
+      role = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+      deliverySettings = getDeliverySettings()
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+        syncGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': deliverySettings}
   else:
     userGroupLists = groupKeys
-    _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+    checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if userGroupLists:
       roleList = [baseRole]
       if not subkeyRoleField:
@@ -515,16 +549,16 @@ def syncUserWithGroups(users):
           if role is None:
             continue
         for group in groupKeys:
-          syncGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': DELIVERY_SETTINGS_UNDEFINED}
+          syncGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': DELIVERY_SETTINGS_UNDEFINED}
     currGroups = {}
     _setUserGroupArgs(user, kwargs)
     try:
-      entityList = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
+      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
-      _getMain().badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
+      badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
       continue
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
       accessErrorExit(cd)
@@ -533,16 +567,16 @@ def syncUserWithGroups(users):
     for groupEntity in entityList:
       groupEmail = groupEntity['email']
       try:
-        result = _getMain().callGAPI(cd.members(), 'get',
+        result = callGAPI(cd.members(), 'get',
                           throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND, GAPI.INVALID_MEMBER, GAPI.CONDITION_NOT_MET],
                           retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                           groupKey=groupEmail, memberKey=user, fields='role,delivery_settings')
         currGroups[groupEmail] = {'role': result.get('role', Ent.MEMBER),
-                                  'delivery_settings': result.get('delivery_settings', _getMain().DELIVERY_SETTINGS_UNDEFINED)}
+                                  'delivery_settings': result.get('delivery_settings', DELIVERY_SETTINGS_UNDEFINED)}
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
-        _getMain().entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
+        entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
       except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), i, count)
     currGroupsSet = set(currGroups)
     syncGroupsSet = set(syncGroups)
     removeGroupsSet = currGroupsSet-syncGroupsSet
@@ -551,7 +585,7 @@ def syncUserWithGroups(users):
     for group in currGroupsSet.intersection(syncGroupsSet):
       if (syncGroups[group]['role'] != currGroups[group]['role'] or
           (syncGroups[group]['delivery_settings'] != currGroups[group]['delivery_settings'] and
-           syncGroups[group]['delivery_settings'] != _getMain().DELIVERY_SETTINGS_UNDEFINED)):
+           syncGroups[group]['delivery_settings'] != DELIVERY_SETTINGS_UNDEFINED)):
         updateGroupsSet.add(group)
     if removeGroupsSet or addGroupsSet or updateGroupsSet:
       if removeGroupsSet:
@@ -564,14 +598,14 @@ def syncUserWithGroups(users):
         Act.Set(Act.UPDATE)
         _updateUserGroups(cd, user, updateGroupsSet, syncGroups, i, count)
     else:
-      _getMain().printEntityKVList([Ent.USER, user], [Msg.NO_CHANGES], i, count)
+      printEntityKVList([Ent.USER, user], [Msg.NO_CHANGES], i, count)
 
 def _getUserGroupDomainCustomerId(myarg, kwargs):
   if myarg == 'domain':
-    kwargs['domain'] = _getMain().getString(Cmd.OB_DOMAIN_NAME).lower()
+    kwargs['domain'] = getString(Cmd.OB_DOMAIN_NAME).lower()
     kwargs.pop('customer', None)
   elif myarg == 'customerid':
-    kwargs['customer'] = _getMain().getString(Cmd.OB_CUSTOMER_ID)
+    kwargs['customer'] = getString(Cmd.OB_CUSTOMER_ID)
     kwargs.pop('domain', None)
   else:
     return False
@@ -587,17 +621,17 @@ def checkUserInGroups(users):
     role = result.get('role', Ent.MEMBER)
     if role in rolesSet:
       if not csvPF:
-        _getMain().printEntity([Ent.USER, user, Ent.GROUP, groupEmail, Ent.ROLE, role], j, jcount)
+        printEntity([Ent.USER, user, Ent.GROUP, groupEmail, Ent.ROLE, role], j, jcount)
       else:
         csvPF.WriteRow({'user': user, 'group': groupEmail, 'role': role})
     else:
       if not csvPF:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail, Ent.ROLE, role], Msg.ROLE_NOT_IN_SET.format(rolesSet), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail, Ent.ROLE, role], Msg.ROLE_NOT_IN_SET.format(rolesSet), j, jcount)
       else:
         csvPF.WriteRow({'user': user, 'group': groupEmail, 'role': notMemberOrRole})
       _setCheckError()
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   csvPF = None
   groupKeys = []
   checkGroupsSet = set()
@@ -605,66 +639,66 @@ def checkUserInGroups(users):
   includeDerivedMembership = False
   sysRC = {'sysRC' : 0}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'role', 'roles'}:
-      for role in _getMain().getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
+      for role in getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
         if role in GROUP_ROLES_MAP:
           rolesSet.add(GROUP_ROLES_MAP[role])
         else:
-          _getMain().invalidChoiceExit(role, GROUP_ROLES_MAP, True)
+          invalidChoiceExit(role, GROUP_ROLES_MAP, True)
     elif myarg == 'includederivedmembership':
       includeDerivedMembership = True
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['user', 'group', 'role'])
+      csvPF = CSVPrintFile(['user', 'group', 'role'])
     else:
       Cmd.Backup()
-      groupKeys = _getMain().getEntityList(Cmd.OB_GROUP_ENTITY)
+      groupKeys = getEntityList(Cmd.OB_GROUP_ENTITY)
   if not rolesSet:
-    rolesSet = _getMain().ALL_GROUP_ROLES
+    rolesSet = ALL_GROUP_ROLES
   notMemberOrRole = Msg.NOT_AN_ENTITY.format('|'.join(rolesSet))
   userGroupLists = groupKeys if isinstance(groupKeys, dict) else None
   for group in groupKeys:
-    checkGroupsSet.add(_getMain().normalizeEmailAddressOrUID(group))
-  i, count, users = _getMain().getEntityArgument(users)
+    checkGroupsSet.add(normalizeEmailAddressOrUID(group))
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if userGroupLists:
       userGroupKeys = userGroupLists[origUser]
       checkGroupsSet = set()
       for group in userGroupKeys:
-        checkGroupsSet.add(_getMain().normalizeEmailAddressOrUID(group))
+        checkGroupsSet.add(normalizeEmailAddressOrUID(group))
     jcount = len(checkGroupsSet)
-    _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_IN, jcount, Ent.GROUP, i, count)
+    entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_IN, jcount, Ent.GROUP, i, count)
     Ind.Increment()
     j = 0
     for groupEmail in sorted(checkGroupsSet):
       j += 1
       if not includeDerivedMembership:
         try:
-          result = _getMain().callGAPI(cd.members(), 'get',
+          result = callGAPI(cd.members(), 'get',
                             throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND, GAPI.INVALID_MEMBER, GAPI.CONDITION_NOT_MET],
                             retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                             groupKey=groupEmail, memberKey=user, fields='role')
           _checkMember(result)
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
-          _getMain().entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
+          entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
           _setCheckError()
         except GAPI.memberNotFound:
           if not csvPF:
-            _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], Msg.NOT_A_MEMBER, j, jcount)
+            entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], Msg.NOT_A_MEMBER, j, jcount)
           else:
             csvPF.WriteRow({'user': user, 'group': groupEmail, 'role': notMemberOrRole})
           _setCheckError()
         except (GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           _setCheckError()
         except (GAPI.forbidden, GAPI.permissionDenied) as e:
           ClientAPIAccessDeniedExit(str(e))
       else:
         try:
-          result = _getMain().callGAPIpages(cd.members(), 'list', 'members',
+          result = callGAPIpages(cd.members(), 'list', 'members',
                                  throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                                  includeDerivedMembership=includeDerivedMembership,
                                  groupKey=groupEmail, fields='nextPageToken,members(email,role,type)', maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
@@ -675,22 +709,22 @@ def checkUserInGroups(users):
             break
           else:
             if not csvPF:
-              _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], Msg.NOT_A_MEMBER, j, jcount)
+              entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], Msg.NOT_A_MEMBER, j, jcount)
             else:
               csvPF.WriteRow({'user': user, 'group': groupEmail, 'role': notMemberOrRole})
             _setCheckError()
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid):
-          _getMain().entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
+          entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
           _setCheckError()
         except (GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           _setCheckError()
         except (GAPI.forbidden, GAPI.permissionDenied) as e:
           ClientAPIAccessDeniedExit(str(e))
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('User Check Groups')
-  _getMain().setSysExitRC(sysRC['sysRC'])
+  setSysExitRC(sysRC['sysRC'])
 
 # gam <UserTypeEntity> print groups [todrive <ToDriveAttribute>*]
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
@@ -699,23 +733,23 @@ def checkUserInGroups(users):
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
 #	[roles <GroupRoleList>] [countsonly|totalonly|nodetails]
 def printShowUserGroups(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
-  csvPF = _getMain().CSVPrintFile(['User', 'Group', 'Role', 'Status', 'Delivery'], 'sortall') if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'Group', 'Role', 'Status', 'Delivery'], 'sortall') if Act.csvFormat() else None
   rolesSet = set()
   countsOnly = noDetails = totalOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getUserGroupDomainCustomerId(myarg, kwargs):
       pass
     elif myarg in {'role', 'roles'}:
-      for role in _getMain().getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
+      for role in getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
         if role in GROUP_ROLES_MAP:
           rolesSet.add(GROUP_ROLES_MAP[role])
         else:
-          _getMain().invalidChoiceExit(role, GROUP_ROLES_MAP, True)
+          invalidChoiceExit(role, GROUP_ROLES_MAP, True)
     elif myarg == 'countsonly':
       countsOnly = True
     elif myarg == 'totalonly':
@@ -723,10 +757,10 @@ def printShowUserGroups(users):
     elif myarg == 'nodetails':
       noDetails = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not rolesSet:
-    rolesSet = _getMain().ALL_GROUP_ROLES
-  allRoles = rolesSet == _getMain().ALL_GROUP_ROLES
+    rolesSet = ALL_GROUP_ROLES
+  allRoles = rolesSet == ALL_GROUP_ROLES
   if noDetails:
     if csvPF:
       titles = ['User', 'Group']
@@ -746,28 +780,28 @@ def printShowUserGroups(users):
             titles.append(role)
       csvPF.SetTitles(titles)
       csvPF.SetSortTitles([])
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if csvPF:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.GROUP, user, i, count)
-      pageMessage = _getMain().getPageMessageForWhom()
+      printGettingAllEntityItemsForWhom(Ent.GROUP, user, i, count)
+      pageMessage = getPageMessageForWhom()
     else:
       pageMessage = None
     _setUserGroupArgs(user, kwargs)
     try:
-      entityList = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
+      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                  pageMessage=pageMessage,
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
-      _getMain().badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
+      badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
       continue
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
       if kwargs.get('domain'):
-        _getMain().badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
+        badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
         return
       accessErrorExit(cd)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
@@ -775,15 +809,15 @@ def printShowUserGroups(users):
     jcount = len(entityList)
     if totalOnly:
       if not csvPF:
-        _getMain().printEntityKVList([Ent.USER, user], ['Total', jcount])
+        printEntityKVList([Ent.USER, user], ['Total', jcount])
       else:
         csvPF.WriteRow({'User': user, 'Total': jcount})
       continue
     if not csvPF:
       if allRoles:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP, i, count)
       else:
-        _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.GROUP, i, count)
+        entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.GROUP, i, count)
     elif jcount == 0 and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
       csvPF.WriteRowNoFilter({'User': user})
       continue
@@ -794,7 +828,7 @@ def printShowUserGroups(users):
         j += 1
         groupEmail = groupEntity['email']
         if not csvPF:
-          _getMain().printEntity([Ent.GROUP, groupEmail], j, jcount)
+          printEntity([Ent.GROUP, groupEmail], j, jcount)
         else:
           csvPF.WriteRow({'User': user, 'Group': groupEmail})
       Ind.Decrement()
@@ -808,7 +842,7 @@ def printShowUserGroups(users):
       j += 1
       groupEmail = groupEntity['email']
       try:
-        result = _getMain().callGAPI(cd.members(), 'get',
+        result = callGAPI(cd.members(), 'get',
                           throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND, GAPI.INVALID_MEMBER, GAPI.CONDITION_NOT_MET],
                           retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                           groupKey=groupEmail, memberKey=user, fields='role,status,delivery_settings')
@@ -819,13 +853,13 @@ def printShowUserGroups(users):
           if countsOnly:
             userCounts[role] += 1
           elif not csvPF:
-            _getMain().printEntity([Ent.GROUP, groupEmail, Ent.ROLE, role, Ent.STATUS, status, Ent.DELIVERY, delivery_settings], j, jcount)
+            printEntity([Ent.GROUP, groupEmail, Ent.ROLE, role, Ent.STATUS, status, Ent.DELIVERY, delivery_settings], j, jcount)
           else:
             csvPF.WriteRow({'User': user, 'Group': groupEmail, 'Role': role, 'Status': status, 'Delivery': delivery_settings})
       except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
-        _getMain().entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
+        entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
       except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
     if countsOnly:
       for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
         if role in rolesSet:
@@ -835,7 +869,7 @@ def printShowUserGroups(users):
         for role in [Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER]:
           if role in rolesSet:
             kvList.extend([role, userCounts[role]])
-        _getMain().printEntityKVList([Ent.USER, user], kvList)
+        printEntityKVList([Ent.USER, user], kvList)
       else:
         csvPF.WriteRow(userCounts)
     Ind.Decrement()
@@ -852,29 +886,29 @@ def printShowUserGroups(users):
 #	[roles <GroupRoleList>]
 #	[formatjson]
 def printShowGroupTree(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
-  csvPF = _getMain().CSVPrintFile(['User', 'Group', 'Name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'Group', 'Name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showParentsAsList = False
   rolesSet = set()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getUserGroupDomainCustomerId(myarg, kwargs):
       pass
     elif myarg in {'role', 'roles'}:
-      for role in _getMain().getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
+      for role in getString(Cmd.OB_GROUP_ROLE_LIST).lower().replace(',', ' ').split():
         if role in GROUP_ROLES_MAP:
           rolesSet.add(GROUP_ROLES_MAP[role])
         else:
-          _getMain().invalidChoiceExit(role, GROUP_ROLES_MAP, True)
+          invalidChoiceExit(role, GROUP_ROLES_MAP, True)
     elif csvPF and myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif csvPF and myarg == 'showparentsaslist':
-      showParentsAsList = _getMain().getBoolean()
+      showParentsAsList = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if csvPF:
@@ -889,20 +923,20 @@ def printShowGroupTree(users):
       if rolesSet:
         csvPF.AddJSONTitles('Role')
       csvPF.AddJSONTitles('JSON')
-  allRoles = rolesSet == _getMain().ALL_GROUP_ROLES
+  allRoles = rolesSet == ALL_GROUP_ROLES
   groupParents = {}
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     _setUserGroupArgs(user, kwargs)
     try:
-      groups = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
+      groups = callGAPIpages(cd.groups(), 'list', 'groups',
                              throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
       continue
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
@@ -910,9 +944,9 @@ def printShowGroupTree(users):
     jcount = len(groups)
     if not csvPF and not FJQC.formatJSON:
       if allRoles:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP_TREE, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.GROUP_TREE, i, count)
       else:
-        _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.GROUP_TREE, i, count)
+        entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.GROUP_TREE, i, count)
     Ind.Increment()
     for group in groups:
       j += 1
@@ -921,7 +955,7 @@ def printShowGroupTree(users):
         _getMain().getGroupParents(cd, groupParents, groupEmail, group['name'], kwargs)
       if rolesSet:
         try:
-          result = _getMain().callGAPI(cd.members(), 'get',
+          result = callGAPI(cd.members(), 'get',
                             throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND, GAPI.INVALID_MEMBER, GAPI.CONDITION_NOT_MET],
                             retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                             groupKey=groupEmail, memberKey=user, fields='role')
@@ -929,10 +963,10 @@ def printShowGroupTree(users):
           if role not in rolesSet:
             continue
         except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.invalid, GAPI.forbidden):
-          _getMain().entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
+          entityUnknownWarning(Ent.GROUP, groupEmail, j, jcount)
           continue
         except (GAPI.memberNotFound, GAPI.invalidMember, GAPI.conditionNotMet, GAPI.serviceNotAvailable) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.GROUP, groupEmail], str(e), j, jcount)
           continue
       else:
         role = None
@@ -950,14 +984,14 @@ def printShowGroupTree(users):
           groupInfo['role'] = role
         _getMain().addJsonGroupParents(groupParents, groupInfo, groupEmail)
         if not csvPF:
-          _getMain().printLine(json.dumps(_getMain().cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True))
+          printLine(json.dumps(cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True))
         else:
-          row = _getMain().flattenJSON(groupInfo)
+          row = flattenJSON(groupInfo)
           if csvPF.CheckRowTitles(row):
             row = {'User': user, 'Group': groupEmail, 'Name': group['name']}
             if rolesSet:
               row['Role'] = role
-            row['JSON'] = json.dumps(_getMain().cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True)
+            row['JSON'] = json.dumps(cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
     Ind.Decrement()
   if csvPF:
@@ -967,39 +1001,39 @@ def printShowGroupTree(users):
 #	[(domain <DomainName>)|(customerid <CustomerID>)]
 #	[delimiter <Character>] [quotechar <Character>]
 def printUserGroupsList(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
-  csvPF = _getMain().CSVPrintFile(['User', 'Groups', 'GroupsList'])
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'Groups', 'GroupsList'])
+  FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getUserGroupDomainCustomerId(myarg, kwargs):
       pass
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     else:
       FJQC.GetQuoteChar(myarg)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
-    _getMain().printGettingAllEntityItemsForWhom(Ent.GROUP, user, i, count)
+    user = normalizeEmailAddressOrUID(user)
+    printGettingAllEntityItemsForWhom(Ent.GROUP, user, i, count)
     _setUserGroupArgs(user, kwargs)
     try:
-      entityList = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
-                                 pageMessage=_getMain().getPageMessageForWhom(),
+      entityList = callGAPIpages(cd.groups(), 'list', 'groups',
+                                 pageMessage=getPageMessageForWhom(),
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  orderBy='email', fields='nextPageToken,groups(email)', **kwargs)
     except (GAPI.invalidMember, GAPI.invalidInput):
-      _getMain().badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
+      badRequestWarning(Ent.GROUP, Ent.MEMBER, user)
       continue
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.badRequest):
       if kwargs.get('domain'):
-        _getMain().badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
+        badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
         return
       accessErrorExit(cd)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:

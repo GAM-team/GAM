@@ -12,6 +12,53 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import checkEntityAFDNEorAccessErrorExit
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, yieldGAPIpages
+from gam.util.args import (
+    OrderBy,
+    checkForExtraneousArguments,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getInteger,
+    getOrderBySortOrder,
+    getString,
+    getStringWithCRsNLs,
+    getTimeOrDeltaFromNow,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getRawFields,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    getPageMessage,
+    invalidQuery,
+    performActionNumItems,
+    printEntity,
+    printGettingAllAccountEntities,
+    printGettingEntityItemForWhom,
+    printLine,
+)
+from gam.util.entity import (
+    convertEntityToList,
+    getDeviceQueries,
+    getEntitiesFromCSVFile,
+    getEntitiesFromFile,
+    getEntityList,
+    getEntityToModify,
+    getItemsToModify,
+)
+from gam.util.errors import entityActionFailedExit, missingArgumentExit, unknownArgumentExit
+from gam.util.orgunits import getOrgUnitItem
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -31,27 +78,27 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def doDeleteBrowsers():
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  deviceId = _getMain().getString(Cmd.OB_DEVICE_ID)
-  _getMain().checkForExtraneousArguments()
+  deviceId = getString(Cmd.OB_DEVICE_ID)
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(cbcm.chromebrowsers(), 'delete',
+    callGAPI(cbcm.chromebrowsers(), 'delete',
              throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
              customer=customerId, deviceId=deviceId)
-    _getMain().entityActionPerformed([Ent.CHROME_BROWSER, deviceId])
+    entityActionPerformed([Ent.CHROME_BROWSER, deviceId])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-    _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
+    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
 
 BROWSER_TIME_OBJECTS = {'firstRecordTime', 'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime', 'safeBrowsingWarningsResetTime'}
 
 def _showBrowser(browser, FJQC, i=0, count=0):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(browser), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CHROME_BROWSER, browser['deviceId']], i, count)
+  printEntity([Ent.CHROME_BROWSER, browser['deviceId']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, browser, timeObjects=BROWSER_TIME_OBJECTS, dictObjectsKey={'machinePolicies': 'name'})
+  showJSON(None, browser, timeObjects=BROWSER_TIME_OBJECTS, dictObjectsKey={'machinePolicies': 'name'})
   Ind.Decrement()
 
 BROWSER_FIELDS_CHOICE_MAP = {
@@ -100,40 +147,40 @@ BROWSER_FULL_ACCESS_FIELDS = {'browsers', 'lastDeviceUsers', 'lastStatusReportTi
 #	 (rawfields <BrowserFieldNameList>))
 #	[formatjson]
 def doInfoBrowsers():
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  deviceId = _getMain().getString(Cmd.OB_DEVICE_ID)
+  deviceId = getString(Cmd.OB_DEVICE_ID)
   projection = 'BASIC'
   fieldsList = []
   rawFields = None
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'annotated':
       projection = 'BASIC'
       fieldsList = BROWSER_ANNOTATED_FIELDS_LIST
     elif myarg in _getMain().PROJECTION_CHOICE_MAP:
       projection = _getMain().PROJECTION_CHOICE_MAP[myarg]
       fieldsList = []
-    elif _getMain().getFieldsList(myarg, BROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='deviceId'):
+    elif getFieldsList(myarg, BROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='deviceId'):
       pass
     elif myarg == 'rawfields':
       projection = 'FULL'
-      rawFields = _getMain()._getRawFields('deviceId')
+      rawFields = _getRawFields('deviceId')
     else:
       FJQC.GetFormatJSON(myarg)
   if projection == 'BASIC' and set(fieldsList).intersection(BROWSER_FULL_ACCESS_FIELDS):
     projection = 'FULL'
-  fields = _getMain().getFieldsFromFieldsList(fieldsList) if not rawFields else rawFields
+  fields = getFieldsFromFieldsList(fieldsList) if not rawFields else rawFields
   try:
-    browser = _getMain().callGAPI(cbcm.chromebrowsers(), 'get',
+    browser = callGAPI(cbcm.chromebrowsers(), 'get',
                        throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
                        customer=customerId, deviceId=deviceId, projection=projection, fields=fields)
     _showBrowser(browser, FJQC)
   except GAPI.invalidArgument as e:
-    _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
+    entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-    _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
+    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
 
 # gam move browsers ou|org|orgunit <OrgUnitPath>
 #	((ids <DeviceIDList>) |
@@ -142,7 +189,7 @@ def doInfoBrowsers():
 #	 <FileSelector> | <CSVFileSelector>)
 #	[batchsize <Integer>]
 def doMoveBrowsers():
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
   deviceIds = []
   batch_size = GC.Values[GC.BATCH_SIZE]
@@ -150,32 +197,32 @@ def doMoveBrowsers():
   queries = []
   queryTimes = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit'}:
-      orgUnitPath = _getMain().getOrgUnitItem()
+      orgUnitPath = getOrgUnitItem()
     elif myarg == 'ids':
-      deviceIds.extend(_getMain().convertEntityToList(_getMain().getString(Cmd.OB_DEVICE_ID_LIST, minLen=0)))
+      deviceIds.extend(convertEntityToList(getString(Cmd.OB_DEVICE_ID_LIST, minLen=0)))
     elif myarg == 'file':
-      deviceIds.extend(_getMain().getEntitiesFromFile(False))
+      deviceIds.extend(getEntitiesFromFile(False))
     elif myarg in {'csv', 'csvfile'}:
-      deviceIds.extend(_getMain().getEntitiesFromCSVFile(False))
+      deviceIds.extend(getEntitiesFromCSVFile(False))
     elif myarg in {'query', 'queries'}:
-      queries = _getMain().getDeviceQueries(myarg, Ent.CHROME_BROWSER)
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()[0:19]
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg == 'browserou':
-      deviceIds.extend(_getMain().getItemsToModify(Cmd.ENTITY_BROWSER_OU, _getMain().getOrgUnitItem(pathOnly=True, absolutePath=True)))
+      deviceIds.extend(getItemsToModify(Cmd.ENTITY_BROWSER_OU, getOrgUnitItem(pathOnly=True, absolutePath=True)))
     elif myarg == 'browserous':
-      deviceIds.extend(_getMain().getItemsToModify(Cmd.ENTITY_BROWSER_OUS, _getMain().getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True)))
+      deviceIds.extend(getItemsToModify(Cmd.ENTITY_BROWSER_OUS, getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True)))
     elif myarg == 'batchsize':
-      batch_size = _getMain().getInteger(minVal=1, maxVal=600)
+      batch_size = getInteger(minVal=1, maxVal=600)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not orgUnitPath:
-    _getMain().missingArgumentExit('orgunit')
+    missingArgumentExit('orgunit')
   _getMain().substituteQueryTimes(queries, queryTimes)
   if queries:
-    deviceIds.extend(_getMain().getItemsToModify(Cmd.ENTITY_BROWSER_QUERIES, queries))
+    deviceIds.extend(getItemsToModify(Cmd.ENTITY_BROWSER_QUERIES, queries))
   body = {'org_unit_path': orgUnitPath}
   bcount = 0
   jcount = len(deviceIds)
@@ -184,19 +231,19 @@ def doMoveBrowsers():
     kcount = min(jcount-bcount, batch_size)
     try:
       body['resource_ids'] = deviceIds[bcount:bcount+kcount]
-      _getMain().callGAPI(cbcm.chromebrowsers(), 'moveChromeBrowsersToOu',
+      callGAPI(cbcm.chromebrowsers(), 'moveChromeBrowsersToOu',
                mapNotFound=False,
                throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                customer=customerId, body=body)
       for deviceId in deviceIds:
         j += 1
-        _getMain().entityActionPerformed([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_BROWSER, deviceId], j, jcount)
+        entityActionPerformed([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_BROWSER, deviceId], j, jcount)
       bcount += kcount
     except GAPI.invalidOrgunit:
-      _getMain().entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.INVALID_ORGUNIT)
+      entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.INVALID_ORGUNIT)
       break
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden) as e:
-      _getMain().entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_BROWSER, f'IDs: {deviceIds[bcount]} - {deviceIds[bcount+kcount-1]}'], str(e))
+      entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CHROME_BROWSER, f'IDs: {deviceIds[bcount]} - {deviceIds[bcount+kcount-1]}'], str(e))
       bcount += kcount
 
 UPDATE_BROWSER_ARGUMENT_TO_PROPERTY_MAP = {
@@ -216,44 +263,44 @@ BROWSER_DEVICEID_ANNOTATED_FIELDS = 'deviceId,annotatedAssetId,annotatedLocation
 
 # gam update browser <BrowserEntity> <BrowserAttibute>+ [updatenotes <String>]
 def doUpdateBrowsers():
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  _, entityList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_BROWSER, browserAllowed=True, crosAllowed=False, userAllowed=False)
+  _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_BROWSER, browserAllowed=True, crosAllowed=False, userAllowed=False)
   body = {}
   updateNotes = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in UPDATE_BROWSER_ARGUMENT_TO_PROPERTY_MAP:
       up = UPDATE_BROWSER_ARGUMENT_TO_PROPERTY_MAP[myarg]
       if up == 'annotatedNotes':
-        body[up] = _getMain().getStringWithCRsNLs()
+        body[up] = getStringWithCRsNLs()
         updateNotes = body[up] if myarg == 'updatenotes' and body[up].find('#notes#') != -1 else None
       else:
-        body[up] = _getMain().getString(Cmd.OB_STRING)
+        body[up] = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   i = 0
   count = len(entityList)
   for deviceId in entityList:
     i += 1
     try:
-      browser = _getMain().callGAPI(cbcm.chromebrowsers(), 'get',
+      browser = callGAPI(cbcm.chromebrowsers(), 'get',
                          throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                          customer=customerId, deviceId=deviceId,
                          projection='BASIC', fields=BROWSER_DEVICEID_ANNOTATED_FIELDS)
       if updateNotes:
         body['annotatedNotes'] = updateNotes.replace('#notes#', browser['annotatedNotes'])
       browser.update(body)
-      _getMain().callGAPI(cbcm.chromebrowsers(), 'update',
+      callGAPI(cbcm.chromebrowsers(), 'update',
                throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                customer=customerId, deviceId=deviceId,
                body=browser, projection='BASIC', fields="deviceId")
-      _getMain().entityActionPerformed([Ent.CHROME_BROWSER, deviceId], i, count)
+      entityActionPerformed([Ent.CHROME_BROWSER, deviceId], i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId, i, count)
 
 def _getChromeProfileName():
-  profileName = _getMain().getString(Cmd.OB_CHROMEPROFILE_NAME)
+  profileName = getString(Cmd.OB_CHROMEPROFILE_NAME)
   if not profileName.startswith('customers'):
     customerId = _getMain()._getCustomerId()
     profileName = f'customers/{customerId}/profiles/{profileName}'
@@ -261,16 +308,16 @@ def _getChromeProfileName():
 
 # gam delete chromeprofile <ChromeProfileName>
 def doDeleteChromeProfile():
-  cm = _getMain().buildGAPIObject(API.CHROMEMANAGEMENT)
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   profileName = _getChromeProfileName()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(cm.customers().profiles(), 'delete',
+    callGAPI(cm.customers().profiles(), 'delete',
              throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
              name=profileName)
-    _getMain().entityActionPerformed([Ent.CHROME_PROFILE, profileName])
+    entityActionPerformed([Ent.CHROME_PROFILE, profileName])
   except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
 
 CHROMEPROFILE_TIME_OBJECTS = {
   'firstEnrollmentTime',
@@ -282,12 +329,12 @@ CHROMEPROFILE_TIME_OBJECTS = {
 
 def _showChromeProfile(profile, FJQC, i=0, count=0):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
+    printLine(json.dumps(cleanJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
               ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CHROME_PROFILE, profile['name']], i, count)
+  printEntity([Ent.CHROME_PROFILE, profile['name']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
+  showJSON(None, profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
   Ind.Decrement()
 
 CHROMEPROFILE_FIELDS_CHOICE_MAP = {
@@ -322,24 +369,24 @@ CHROMEPROFILE_FIELDS_CHOICE_MAP = {
 #	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
 #	[formatjson]
 def doInfoChromeProfile():
-  cm = _getMain().buildGAPIObject(API.CHROMEMANAGEMENT)
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   profileName = _getChromeProfileName()
   fieldsList = []
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
-    if _getMain().getFieldsList(myarg, CHROMEPROFILE_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
+    myarg = getArgument()
+    if getFieldsList(myarg, CHROMEPROFILE_FIELDS_CHOICE_MAP, fieldsList, initialField='name'):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
   try:
-    profile = _getMain().callGAPI(cm.customers().profiles(), 'get',
+    profile = callGAPI(cm.customers().profiles(), 'get',
                        throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                        name=profileName, fields=fields)
     _showChromeProfile(profile, FJQC)
   except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
 
 CHROMEPROFILE_ORDERBY_CHOICE_MAP = {
   'affiliationstate': 'affiliationState',
@@ -371,34 +418,34 @@ CHROMEPROFILE_ORDERBY_CHOICE_MAP = {
 #	[formatjson [quotechar <Character>]]
 def doPrintShowChromeProfiles():
   def _printProfile(profile):
-    row = _getMain().flattenJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
+    row = flattenJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'name': profile['name'], 'profileId': profile['profileId'],
-                              'JSON': json.dumps(_getMain().cleanJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(profile, timeObjects=CHROMEPROFILE_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  cm = _getMain().buildGAPIObject(API.CHROMEMANAGEMENT)
-  csvPF = _getMain().CSVPrintFile(['name', 'profileId']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
-  OBY = _getMain().OrderBy(CHROMEPROFILE_ORDERBY_CHOICE_MAP)
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  csvPF = CSVPrintFile(['name', 'profileId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CHROMEPROFILE_ORDERBY_CHOICE_MAP)
   sortHeaders = False
   fieldsList = []
   cbfilter = None
   filterTimes = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif _getMain().getFieldsList(myarg, CHROMEPROFILE_FIELDS_CHOICE_MAP, fieldsList, initialField=['name', 'profileId']):
+    elif getFieldsList(myarg, CHROMEPROFILE_FIELDS_CHOICE_MAP, fieldsList, initialField=['name', 'profileId']):
       pass
     elif myarg == 'orderby':
       OBY.GetChoice()
     elif myarg.startswith('filtertime'):
-      filterTimes[myarg] = _getMain().getTimeOrDeltaFromNow()
+      filterTimes[myarg] = getTimeOrDeltaFromNow()
     elif myarg in {'filter', 'filters'}:
-      cbfilter = _getMain().getString(Cmd.OB_STRING)
+      cbfilter = getString(Cmd.OB_STRING)
     elif myarg == 'sortheaders':
       sortHeaders = True
     else:
@@ -406,13 +453,13 @@ def doPrintShowChromeProfiles():
   if filterTimes and cbfilter is not None:
     for filterTimeName, filterTimeValue in filterTimes.items():
       cbfilter = cbfilter.replace(f'#{filterTimeName}#', filterTimeValue)
-  fields = _getMain().getItemFieldsFromFieldsList('chromeBrowserProfiles', fieldsList)
+  fields = getItemFieldsFromFieldsList('chromeBrowserProfiles', fieldsList)
   customerId = _getMain()._getCustomerId()
   parent = f'customers/{customerId}'
-  _getMain().printGettingAllAccountEntities(Ent.CHROME_PROFILE, cbfilter)
-  pageMessage = _getMain().getPageMessage()
+  printGettingAllAccountEntities(Ent.CHROME_PROFILE, cbfilter)
+  pageMessage = getPageMessage()
   try:
-    feed = _getMain().yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
+    feed = yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
                           pageMessage=pageMessage,
                           throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                           parent=parent, pageSize=200,
@@ -421,7 +468,7 @@ def doPrintShowChromeProfiles():
       if not csvPF:
         jcount = len(profiles)
         if not FJQC.formatJSON:
-          _getMain().performActionNumItems(jcount, Ent.CHROME_PROFILE)
+          performActionNumItems(jcount, Ent.CHROME_PROFILE)
         Ind.Increment()
         j = 0
         for profile in profiles:
@@ -432,7 +479,7 @@ def doPrintShowChromeProfiles():
         for profile in profiles:
           _printProfile(profile)
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, cbfilter], str(e))
+    entityActionFailedExit([Ent.CHROME_PROFILE, cbfilter], str(e))
   if csvPF:
     if sortHeaders:
       csvPF.SetSortTitles(['name', 'profileId'])
@@ -440,28 +487,28 @@ def doPrintShowChromeProfiles():
 
 def _getChromeProfileNameList():
   if not Cmd.PeekArgumentPresent(['select', 'commands', 'filter', 'filters']):
-    return _getMain().getString(Cmd.OB_CHROMEPROFILE_NAME_LIST).replace(',', ' ').split()
+    return getString(Cmd.OB_CHROMEPROFILE_NAME_LIST).replace(',', ' ').split()
   return []
 
 def _initChromeProfileNameParameters():
-  cm = _getMain().buildGAPIObject(API.CHROMEMANAGEMENT)
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   return (cm, {'profileNameList': _getChromeProfileNameList(),
                'commandNameList': [],
                'customerId': _getMain()._getCustomerId(),
                'cbfilter': None, 'filterTimes': {},
-               'OBY': _getMain().OrderBy(CHROMEPROFILE_ORDERBY_CHOICE_MAP)})
+               'OBY': OrderBy(CHROMEPROFILE_ORDERBY_CHOICE_MAP)})
 
 def _getChromeProfileNameParameters(myarg, parameters):
   if not parameters['cbfilter'] and not parameters['commandNameList'] and myarg == 'select':
-    parameters['profileNameList'].extend(_getMain().getEntityList(Cmd.OB_CHROMEPROFILE_NAME_LIST))
+    parameters['profileNameList'].extend(getEntityList(Cmd.OB_CHROMEPROFILE_NAME_LIST))
   elif not parameters['cbfilter'] and not parameters['profileNameList'] and myarg == 'commands':
-    parameters['commandNameList'].extend(_getMain().getEntityList(Cmd.OB_CHROMEPROFILE_COMMAND_NAME_LIST))
+    parameters['commandNameList'].extend(getEntityList(Cmd.OB_CHROMEPROFILE_COMMAND_NAME_LIST))
   elif not parameters['profileNameList'] and not parameters['commandNameList'] and myarg == 'orderby':
     parameters['OBY'].GetChoice()
   elif not parameters['profileNameList'] and not parameters['commandNameList'] and myarg.startswith('filtertime'):
-    parameters['filterTimes'][myarg] = _getMain().getTimeOrDeltaFromNow()
+    parameters['filterTimes'][myarg] = getTimeOrDeltaFromNow()
   elif not parameters['profileNameList'] and not parameters['commandNameList'] and myarg in {'filter', 'filters'}:
-    parameters['cbfilter'] = _getMain().getString(Cmd.OB_STRING)
+    parameters['cbfilter'] = getString(Cmd.OB_STRING)
   else:
     return False
   return True
@@ -481,10 +528,10 @@ def _getChromeProfileNameEntityForCommand(cm, parameters):
   if parameters['filterTimes']:
     for filterTimeName, filterTimeValue in parameters['filterTimes'].items():
       parameters['cbfilter'] = parameters['cbfilter'].replace(f'#{filterTimeName}#', filterTimeValue)
-  _getMain().printGettingAllAccountEntities(Ent.CHROME_PROFILE, parameters['cbfilter'])
-  pageMessage = _getMain().getPageMessage()
+  printGettingAllAccountEntities(Ent.CHROME_PROFILE, parameters['cbfilter'])
+  pageMessage = getPageMessage()
   try:
-    feed = _getMain().yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
+    feed = yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
                           pageMessage=pageMessage,
                           throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                           parent=f'customers/{parameters["customerId"]}', pageSize=200,
@@ -494,7 +541,7 @@ def _getChromeProfileNameEntityForCommand(cm, parameters):
       for profile in profiles:
         parameters['profileNameList'].append(profile['name'])
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, parameters['cbfilter']], str(e))
+    entityActionFailedExit([Ent.CHROME_PROFILE, parameters['cbfilter']], str(e))
 
 CHROMEPROFILECOMMAND_TIME_OBJECTS = {
   'clientExecutionTime',
@@ -503,21 +550,21 @@ CHROMEPROFILECOMMAND_TIME_OBJECTS = {
 
 def _showChromeProfileCommand(profcmd, FJQC, i=0, count=0):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
+    printLine(json.dumps(cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
               ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CHROME_PROFILE_COMMAND, profcmd['name']], i, count)
+  printEntity([Ent.CHROME_PROFILE_COMMAND, profcmd['name']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
+  showJSON(None, profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
   Ind.Decrement()
 
 def _printChromeProfileCommand(profcmd, csvPF, FJQC):
-  row = _getMain().flattenJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
+  row = flattenJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
   if not FJQC.formatJSON:
     csvPF.WriteRowTitles(row)
   elif csvPF.CheckRowTitles(row):
     csvPF.WriteRowNoFilter({'name': profcmd['name'],
-                            'JSON': json.dumps(_getMain().cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
+                            'JSON': json.dumps(cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
                                                ensure_ascii=False, sort_keys=True)})
 
 # gam create chromeprofilecommand <ChromeProfileNameEntity>
@@ -527,17 +574,17 @@ def doCreateChromeProfileCommand():
   cm, parameters = _initChromeProfileNameParameters()
   body = {'commandType': 'clearBrowsingData', 'payload': {}}
   csvPF = None
-  FJQC = _getMain().FormatJSONQuoteChar(None)
+  FJQC = FormatJSONQuoteChar(None)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getChromeProfileNameParameters(myarg, parameters):
       pass
     elif myarg == 'clearcache':
-      body['payload']['clearCache'] = _getMain().getBoolean()
+      body['payload']['clearCache'] = getBoolean()
     elif myarg == 'clearcookies':
-      body['payload']['clearCookies'] = _getMain().getBoolean()
+      body['payload']['clearCookies'] = getBoolean()
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['name'], 'sortall')
+      csvPF = CSVPrintFile(['name'], 'sortall')
       FJQC.SetCsvPF(csvPF)
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
@@ -549,7 +596,7 @@ def doCreateChromeProfileCommand():
   for profileName in parameters['profileNameList']:
     i +=1
     try:
-      profcmd = _getMain().callGAPI(cm.customers().profiles().commands(), 'create',
+      profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                          parent=profileName, body=body)
       if csvPF is None:
@@ -557,39 +604,39 @@ def doCreateChromeProfileCommand():
       else:
         _printChromeProfileCommand(profcmd, csvPF, FJQC)
     except (GAPI.notFound) as e:
-      _getMain().entityActionFailedWarning([Ent.CHROME_PROFILE_COMMAND, profileName], str(e), i, count)
+      entityActionFailedWarning([Ent.CHROME_PROFILE_COMMAND, profileName], str(e), i, count)
     except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedExit([Ent.CHROME_PROFILE_COMMAND, profileName], str(e))
+      entityActionFailedExit([Ent.CHROME_PROFILE_COMMAND, profileName], str(e))
   if csvPF:
     csvPF.writeCSVfile('Chrome Profile Commands')
 
 # gam info chromeprofilecommand <ChromeProfileCommandName>
 #	[formatjson]
 def doInfoChromeProfileCommand():
-  cm = _getMain().buildGAPIObject(API.CHROMEMANAGEMENT)
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   profileCommandName = _getChromeProfileName()
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     FJQC.GetFormatJSON(myarg)
   try:
-    profcmd = _getMain().callGAPI(cm.customers().profiles().commands(), 'get',
+    profcmd = callGAPI(cm.customers().profiles().commands(), 'get',
                        throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                        name=profileCommandName)
     _showChromeProfileCommand(profcmd, FJQC)
   except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, profileCommandName], str(e))
+    entityActionFailedExit([Ent.CHROME_PROFILE, profileCommandName], str(e))
 
 # gam show chromeprofilecommands <ChromeProfileNameEntity>
 #	[formatjson]
 # gam print chromeprofilecommands <ChromeProfilNameEntity> [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]]
 def doPrintShowChromeProfileCommands():
-  csvPF = _getMain().CSVPrintFile(['name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   cm, parameters = _initChromeProfileNameParameters()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getChromeProfileNameParameters(myarg, parameters):
@@ -602,10 +649,10 @@ def doPrintShowChromeProfileCommands():
     i = 0
     for profileName in parameters['profileNameList']:
       i +=1
-      _getMain().printGettingEntityItemForWhom(Ent.CHROME_PROFILE_COMMAND, profileName, i, count)
-      pageMessage = _getMain().getPageMessage()
+      printGettingEntityItemForWhom(Ent.CHROME_PROFILE_COMMAND, profileName, i, count)
+      pageMessage = getPageMessage()
       try:
-        profcmds = _getMain().callGAPIpages(cm.customers().profiles().commands(), 'list', 'chromeBrowserProfileCommands',
+        profcmds = callGAPIpages(cm.customers().profiles().commands(), 'list', 'chromeBrowserProfileCommands',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                  parent=profileName, pageSize=100)
@@ -621,16 +668,16 @@ def doPrintShowChromeProfileCommands():
           for profcmd in profcmds:
             _printChromeProfileCommand(profcmd, csvPF, FJQC)
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning([Ent.CHROME_PROFILE, profileName], str(e), i, count)
+        entityActionFailedWarning([Ent.CHROME_PROFILE, profileName], str(e), i, count)
       except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-        _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
+        entityActionFailedExit([Ent.CHROME_PROFILE, profileName], str(e))
   elif parameters['commandNameList']:
     count = len(parameters['commandNameList'])
     i = 0
     for profileCommandName in parameters['commandNameList']:
       i +=1
       try:
-        profcmd = _getMain().callGAPI(cm.customers().profiles().commands(), 'get',
+        profcmd = callGAPI(cm.customers().profiles().commands(), 'get',
                            throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                            name=profileCommandName)
         if not csvPF:
@@ -638,9 +685,9 @@ def doPrintShowChromeProfileCommands():
         else:
           _printChromeProfileCommand(profcmd, csvPF, FJQC)
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning([Ent.CHROME_PROFILE_COMMAND, profileCommandName], str(e), i, count)
+        entityActionFailedWarning([Ent.CHROME_PROFILE_COMMAND, profileCommandName], str(e), i, count)
       except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-        _getMain().entityActionFailedExit([Ent.CHROME_PROFILE, profileCommandName], str(e))
+        entityActionFailedExit([Ent.CHROME_PROFILE, profileCommandName], str(e))
   if csvPF:
     csvPF.writeCSVfile('Chrome Profile Commands')
 
@@ -686,18 +733,18 @@ BROWSER_ORDERBY_CHOICE_MAP = {
 #	[sortheaders] [formatjson [quotechar <Character>]]
 def doPrintShowBrowsers():
   def _printBrowser(browser):
-    row = _getMain().flattenJSON(browser, timeObjects=BROWSER_TIME_OBJECTS)
+    row = flattenJSON(browser, timeObjects=BROWSER_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'deviceId': browser['deviceId'],
-                              'JSON': json.dumps(_getMain().cleanJSON(browser, timeObjects=BROWSER_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(browser, timeObjects=BROWSER_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  csvPF = _getMain().CSVPrintFile(['deviceId']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['deviceId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   rawFields = None
   projection = 'BASIC'
@@ -708,25 +755,25 @@ def doPrintShowBrowsers():
   queryTimes = {}
   sortHeaders = sortRows = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'query', 'queries'}:
-      queries = _getMain().getDeviceQueries(myarg, Ent.CHROME_BROWSER)
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()[0:19]
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg in {'ou', 'org', 'orgunit', 'browserou'}:
-      orgUnitPath = _getMain().getOrgUnitItem(pathOnly=True, absolutePath=True)
+      orgUnitPath = getOrgUnitItem(pathOnly=True, absolutePath=True)
     elif myarg == 'select':
-      _, entityList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_BROWSER, browserAllowed=True, crosAllowed=False, userAllowed=False)
+      _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_BROWSER, browserAllowed=True, crosAllowed=False, userAllowed=False)
     elif myarg == 'orderby':
-      orderBy, sortOrder = _getMain().getOrderBySortOrder(BROWSER_ORDERBY_CHOICE_MAP, 'DESCENDING', True)
+      orderBy, sortOrder = getOrderBySortOrder(BROWSER_ORDERBY_CHOICE_MAP, 'DESCENDING', True)
     elif myarg == 'annotated':
       projection = 'BASIC'
       fieldsList = BROWSER_ANNOTATED_FIELDS_LIST
     elif (myarg == 'projection') or myarg in _getMain().PROJECTION_CHOICE_MAP:
       if myarg == 'projection':
-        projection = _getMain().getChoice(_getMain().PROJECTION_CHOICE_MAP, mapChoice=True)
+        projection = getChoice(_getMain().PROJECTION_CHOICE_MAP, mapChoice=True)
       else:
         projection = _getMain().PROJECTION_CHOICE_MAP[myarg]
       fieldsList = []
@@ -736,11 +783,11 @@ def doPrintShowBrowsers():
       fieldsList = []
     elif myarg == 'sortheaders':
       sortHeaders = True
-    elif _getMain().getFieldsList(myarg, BROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='deviceId'):
+    elif getFieldsList(myarg, BROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='deviceId'):
       pass
     elif myarg == 'rawfields':
       projection = 'FULL'
-      rawFields = _getMain()._getRawFields('deviceId')
+      rawFields = _getRawFields('deviceId')
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if projection == 'BASIC' and set(fieldsList).intersection(BROWSER_FULL_ACCESS_FIELDS):
@@ -749,12 +796,12 @@ def doPrintShowBrowsers():
     sortHeaders = False
   _getMain().substituteQueryTimes(queries, queryTimes)
   if entityList is None:
-    fields = _getMain().getItemFieldsFromFieldsList('browsers', fieldsList) if not rawFields else f'nextPageToken,browsers({rawFields})'
+    fields = getItemFieldsFromFieldsList('browsers', fieldsList) if not rawFields else f'nextPageToken,browsers({rawFields})'
     for query in queries:
-      _getMain().printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
-      pageMessage = _getMain().getPageMessage()
+      printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
+      pageMessage = getPageMessage()
       try:
-        feed = _getMain().yieldGAPIpages(cbcm.chromebrowsers(), 'list', 'browsers',
+        feed = yieldGAPIpages(cbcm.chromebrowsers(), 'list', 'browsers',
                               pageMessage=pageMessage, messageAttribute='deviceId',
                               throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -764,7 +811,7 @@ def doPrintShowBrowsers():
           if not csvPF:
             jcount = len(browsers)
             if not FJQC.formatJSON:
-              _getMain().performActionNumItems(jcount, Ent.CHROME_BROWSER)
+              performActionNumItems(jcount, Ent.CHROME_BROWSER)
             Ind.Increment()
             j = 0
             for browser in browsers:
@@ -776,31 +823,31 @@ def doPrintShowBrowsers():
               _printBrowser(browser)
       except GAPI.invalidInput as e:
         if query:
-          _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, None], _getMain().invalidQuery(query))
+          entityActionFailedWarning([Ent.CHROME_BROWSER, None], invalidQuery(query))
         else:
-          _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
+          entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
         return
       except (GAPI.invalidArgument, GAPI.invalidOrgunit, GAPI.forbidden) as e:
-        _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
+        entityActionFailedWarning([Ent.CHROME_BROWSER, None], str(e))
         return
       except (GAPI.badRequest, GAPI.resourceNotFound):
         accessErrorExit(None)
   else:
     sortRows = True
     jcount = len(entityList)
-    fields = _getMain().getFieldsFromFieldsList(fieldsList) if not rawFields else rawFields
+    fields = getFieldsFromFieldsList(fieldsList) if not rawFields else rawFields
     j = 0
     for deviceId in entityList:
       j += 1
       try:
-        browser = _getMain().callGAPI(cbcm.chromebrowsers(), 'get',
+        browser = callGAPI(cbcm.chromebrowsers(), 'get',
                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
                            customer=customerId, deviceId=deviceId, projection=projection, fields=fields)
         _printBrowser(browser)
       except GAPI.invalidArgument as e:
-        _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
+        entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-        _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
+        checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
   if csvPF:
     if sortRows and orderBy:
       csvPF.SortRows(orderBy, reverse=sortOrder == 'DESCENDING')
@@ -812,56 +859,56 @@ BROWSER_TOKEN_TIME_OBJECTS = {'createTime', 'expireTime', 'revokeTime'}
 
 def _showBrowserToken(browser, FJQC, i=0, count=0):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(browser), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, browser['token']], i, count)
+  printEntity([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, browser['token']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS)
+  showJSON(None, browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS)
   Ind.Decrement()
 
 # gam create browsertoken
 #	[ou|org|orgunit|browserou <OrgUnitPath>] [expire|expires <Time>]
 #	[formatjson]
 def doCreateBrowserToken():
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   body = {'token_type': 'CHROME_BROWSER'}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'ou', 'org', 'orgunit', 'browserou'}:
-      body['org_unit_path'] = _getMain().getOrgUnitItem(pathOnly=True, absolutePath=True)
+      body['org_unit_path'] = getOrgUnitItem(pathOnly=True, absolutePath=True)
     elif myarg in ['expire', 'expires']:
-      body['expire_time'] = _getMain().getTimeOrDeltaFromNow()
+      body['expire_time'] = getTimeOrDeltaFromNow()
     else:
       FJQC.GetFormatJSON(myarg)
   try:
-    browser = _getMain().callGAPI(cbcm.enrollmentTokens(), 'create',
+    browser = callGAPI(cbcm.enrollmentTokens(), 'create',
                        throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
                        customer=customerId, body=body)
     if not FJQC.formatJSON:
-      _getMain().entityActionPerformed([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, browser['token']])
+      entityActionPerformed([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, browser['token']])
     Ind.Increment()
     _showBrowserToken(browser, FJQC, 0, 0)
     Ind.Decrement()
   except (GAPI.invalidInput, GAPI.invalidOrgunit) as e:
-    _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
+    entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
     accessErrorExit(None)
 
 # gam revoke browsertoken <BrowserTokenPermanentID>
 def doRevokeBrowserToken():
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  tokenPermanentId = _getMain().getString(Cmd.OB_BROWSER_ENROLLEMNT_TOKEN_ID)
-  _getMain().checkForExtraneousArguments()
+  tokenPermanentId = getString(Cmd.OB_BROWSER_ENROLLEMNT_TOKEN_ID)
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(cbcm.enrollmentTokens(), 'revoke',
+    callGAPI(cbcm.enrollmentTokens(), 'revoke',
              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
              customer=customerId, tokenPermanentId=tokenPermanentId)
-    _getMain().entityActionPerformed([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, tokenPermanentId])
+    entityActionPerformed([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, tokenPermanentId])
   except (GAPI.invalid, GAPI.invalidInput, GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidOrgunit) as e:
-    _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, tokenPermanentId], str(e))
+    entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, tokenPermanentId], str(e))
   except GAPI.forbidden:
     accessErrorExit(None)
 
@@ -895,18 +942,18 @@ BROWSER_TOKEN_FIELDS_CHOICE_MAP = {
 #	[sortheaders] [formatjson [quotechar <Character>]]
 def doPrintShowBrowserTokens():
   def _printBrowserToken(browser):
-    row = _getMain().flattenJSON(browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS)
+    row = flattenJSON(browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'token': browser['token'],
-                              'JSON': json.dumps(_getMain().cleanJSON(browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  cbcm = _getMain().buildGAPIObject(API.CBCM)
+  cbcm = buildGAPIObject(API.CBCM)
   customerId = _getMain()._getCustomerIdNoC()
-  csvPF = _getMain().CSVPrintFile(['token']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['token']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   orderBy = 'token'
   sortOrder = 'ASCENDING'
@@ -915,42 +962,42 @@ def doPrintShowBrowserTokens():
   queryTimes = {}
   sortHeaders = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'query', 'queries'}:
-      queries = _getMain().getDeviceQueries(myarg, Ent.CHROME_BROWSER)
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()[0:19]
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif myarg in {'ou', 'org', 'orgunit', 'browserou'}:
-      orgUnitPath = _getMain().getOrgUnitItem(pathOnly=True, absolutePath=True)
+      orgUnitPath = getOrgUnitItem(pathOnly=True, absolutePath=True)
     elif myarg == 'orderby':
-      orderBy, sortOrder = _getMain().getOrderBySortOrder(BROWSER_TOKEN_FIELDS_CHOICE_MAP, 'DESCENDING', True)
+      orderBy, sortOrder = getOrderBySortOrder(BROWSER_TOKEN_FIELDS_CHOICE_MAP, 'DESCENDING', True)
     elif myarg == 'allfields':
       sortHeaders = True
       fieldsList = []
     elif myarg == 'sortheaders':
       sortHeaders = True
-    elif _getMain().getFieldsList(myarg, BROWSER_TOKEN_FIELDS_CHOICE_MAP, fieldsList, initialField='token'):
+    elif getFieldsList(myarg, BROWSER_TOKEN_FIELDS_CHOICE_MAP, fieldsList, initialField='token'):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  fields = _getMain().getItemFieldsFromFieldsList('chromeEnrollmentTokens', fieldsList)
+  fields = getItemFieldsFromFieldsList('chromeEnrollmentTokens', fieldsList)
   if FJQC.formatJSON:
     sortHeaders = False
   _getMain().substituteQueryTimes(queries, queryTimes)
   for query in queries:
-    _getMain().printGettingAllAccountEntities(Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, query)
-    pageMessage = _getMain().getPageMessage()
+    printGettingAllAccountEntities(Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, query)
+    pageMessage = getPageMessage()
     try:
-      browsers = _getMain().callGAPIpages(cbcm.enrollmentTokens(), 'list', 'chromeEnrollmentTokens',
+      browsers = callGAPIpages(cbcm.enrollmentTokens(), 'list', 'chromeEnrollmentTokens',
                                pageMessage=pageMessage,
                                throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
                                customer=customerId, orgUnitPath=orgUnitPath, query=query,
                                fields=fields)
       if not csvPF:
         jcount = len(browsers)
-        _getMain().performActionNumItems(jcount, Ent.CHROME_BROWSER_ENROLLMENT_TOKEN)
+        performActionNumItems(jcount, Ent.CHROME_BROWSER_ENROLLMENT_TOKEN)
         Ind.Increment()
         j = 0
         for browser in browsers:
@@ -962,11 +1009,11 @@ def doPrintShowBrowserTokens():
           _printBrowserToken(browser)
     except GAPI.invalidInput as e:
       if query:
-        _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], _getMain().invalidQuery(query))
+        entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], invalidQuery(query))
       else:
-        _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
+        entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
     except GAPI.invalidOrgunit as e:
-      _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
+      entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
       accessErrorExit(None)
   if csvPF:

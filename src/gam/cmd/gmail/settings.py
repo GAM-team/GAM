@@ -18,6 +18,36 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems
+from gam.util.args import (
+    LANGUAGE_CODES_MAP,
+    SORF_SIG_FILE_ARGUMENTS,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    escapeCRsNLs,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getLanguageCode,
+    getString,
+    getStringOrFile,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.csv_pf import CSVPrintFile, flattenJSON, getTodriveOnly
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    printEntity,
+    printEntityKVList,
+    printGettingEntityItemForWhom,
+    printKeyValueList,
+    userGmailServiceNotEnabledWarning,
+)
+from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUserObjectEntity
+from gam.util.errors import missingArgumentExit, missingChoiceExit, unknownArgumentExit
+from gam.util.html import dehtml
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -49,7 +79,7 @@ def _showForward(user, i, count, result):
     if enabled:
       kvList += [Ent.Singular(Ent.FORWARDING_ADDRESS), result['forwardTo']]
       kvList += [Ent.Singular(Ent.ACTION), EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP[result['action']]]
-  _getMain().printEntityKVList([Ent.USER, user], kvList, i, count)
+  printEntityKVList([Ent.USER, user], kvList, i, count)
 
 EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP = {
   'archive': 'archive',
@@ -63,49 +93,49 @@ EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP = {
 # gam <UserTypeEntity> forward <FalseValues>
 # gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash|markread <EmailAddress>
 def setForward(users):
-  if _getMain().checkArgumentPresent([Cmd.ARG_MESSAGE, Cmd.ARG_MESSAGES]):
+  if checkArgumentPresent([Cmd.ARG_MESSAGE, Cmd.ARG_MESSAGES]):
     Act.Set(Act.FORWARD)
     forwardMessagesThreads(users, Ent.MESSAGE)
     return
-  if _getMain().checkArgumentPresent([Cmd.ARG_THREAD, Cmd.ARG_THREADS]):
+  if checkArgumentPresent([Cmd.ARG_THREAD, Cmd.ARG_THREADS]):
     Act.Set(Act.FORWARD)
     forwardMessagesThreads(users, Ent.THREAD)
     return
-  enable = _getMain().getBoolean(None)
+  enable = getBoolean(None)
   body = {'enabled': enable}
   if enable:
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg in EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP:
         body['disposition'] = EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP[myarg]
       elif myarg == 'confirm':
         pass
       elif myarg.find('@') != -1 or (not Cmd.ArgumentsRemaining() and 'emailAddress' not in body):
-        body['emailAddress'] = _getMain().normalizeEmailAddressOrUID(Cmd.Previous())
+        body['emailAddress'] = normalizeEmailAddressOrUID(Cmd.Previous())
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     if not body.get('disposition'):
-      _getMain().missingChoiceExit(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP)
+      missingChoiceExit(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP)
     if not body.get('emailAddress'):
-      _getMain().missingArgumentExit(Cmd.OB_EMAIL_ADDRESS)
-  i, count, users = _getMain().getEntityArgument(users)
+      missingArgumentExit(Cmd.OB_EMAIL_ADDRESS)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'updateAutoForwarding',
+      result = callGAPI(gmail.users().settings(), 'updateAutoForwarding',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                         userId='me', body=body)
       _showForward(user, i, count, result)
     except (GAPI.invalid, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
       if enable:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, body['emailAddress']], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, body['emailAddress']], str(e), i, count)
       else:
-        _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> print forward [enabledonly] [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show forward
@@ -129,26 +159,26 @@ def printShowForward(users):
         row['disposition'] = EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP[result['action']]
     csvPF.WriteRow(row)
 
-  csvPF = _getMain().CSVPrintFile(['User', 'forwardEnabled', 'forwardTo', 'disposition']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'forwardEnabled', 'forwardTo', 'disposition']) if Act.csvFormat() else None
   showDisabled = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'enabledonly':
       showDisabled = False
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.FORWARD_ENABLED, user, i, count)
+      printGettingEntityItemForWhom(Ent.FORWARD_ENABLED, user, i, count)
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'getAutoForwarding',
+      result = callGAPI(gmail.users().settings(), 'getAutoForwarding',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
                         userId='me')
       if not csvPF:
@@ -156,68 +186,68 @@ def printShowForward(users):
       else:
         _printForward(user, result, showDisabled)
     except GAPI.failedPrecondition as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Forward')
 
 # Process ForwardingAddresses functions
 def _showForwardingAddress(j, jcount, result):
-  _getMain().printEntityKVList([Ent.FORWARDING_ADDRESS, result['forwardingEmail']], ['Verification Status', result['verificationStatus']], j, jcount)
+  printEntityKVList([Ent.FORWARDING_ADDRESS, result['forwardingEmail']], ['Verification Status', result['verificationStatus']], j, jcount)
 
 def _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, function, **kwargs):
   userDefined = True
   try:
-    result = _getMain().callGAPI(gmail.users().settings().forwardingAddresses(), function,
+    result = callGAPI(gmail.users().settings().forwardingAddresses(), function,
                       throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE,
                                                              GAPI.INVALID_ARGUMENT, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                       userId='me', **kwargs)
     if function == 'get':
       _showForwardingAddress(j, count, result)
     else:
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], j, jcount)
+      entityActionPerformed([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], j, jcount)
   except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], str(e), j, jcount)
+    entityActionFailedWarning([Ent.USER, user, Ent.FORWARDING_ADDRESS, emailAddress], str(e), j, jcount)
   except GAPI.serviceNotAvailable:
-    _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+    userGmailServiceNotEnabledWarning(user, i, count)
     userDefined = False
   return userDefined
 
 # gam <UserTypeEntity> create forwardingaddresses <EmailAddressEntity>
 def createForwardingAddresses(users):
-  emailAddressEntity = _getMain().getUserObjectEntity(Cmd.OB_EMAIL_ADDRESS_ENTITY, Ent.FORWARDING_ADDRESS)
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  emailAddressEntity = getUserObjectEntity(Cmd.OB_EMAIL_ADDRESS_ENTITY, Ent.FORWARDING_ADDRESS)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, emailAddresses, jcount = _getMain()._validateUserGetObjectList(user, i, count, emailAddressEntity)
+    user, gmail, emailAddresses, jcount = _validateUserGetObjectList(user, i, count, emailAddressEntity)
     if jcount == 0:
       continue
     Ind.Increment()
     j = 0
     for emailAddress in emailAddresses:
       j += 1
-      emailAddress = _getMain().normalizeEmailAddressOrUID(emailAddress, noUid=True)
+      emailAddress = normalizeEmailAddressOrUID(emailAddress, noUid=True)
       body = {'forwardingEmail': emailAddress}
       if not _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, 'create', body=body, fields=''):
         break
     Ind.Decrement()
 
 def _deleteInfoForwardingAddreses(users, function):
-  emailAddressEntity = _getMain().getUserObjectEntity(Cmd.OB_EMAIL_ADDRESS_ENTITY, Ent.FORWARDING_ADDRESS)
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  emailAddressEntity = getUserObjectEntity(Cmd.OB_EMAIL_ADDRESS_ENTITY, Ent.FORWARDING_ADDRESS)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, emailAddresses, jcount = _getMain()._validateUserGetObjectList(user, i, count, emailAddressEntity)
+    user, gmail, emailAddresses, jcount = _validateUserGetObjectList(user, i, count, emailAddressEntity)
     if jcount == 0:
       continue
     Ind.Increment()
     j = 0
     for emailAddress in emailAddresses:
       j += 1
-      emailAddress = _getMain().normalizeEmailAddressOrUID(emailAddress, noUid=True)
+      emailAddress = normalizeEmailAddressOrUID(emailAddress, noUid=True)
       if not _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, function, forwardingEmail=emailAddress):
         break
     Ind.Decrement()
@@ -233,23 +263,23 @@ def infoForwardingAddresses(users):
 # gam <UserTypeEntity> print forwardingaddresses [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show forwardingaddresses
 def printShowForwardingAddresses(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'forwardingEmail', 'verificationStatus']) if Act.csvFormat() else None
-  _getMain().getTodriveOnly(csvPF)
-  i, count, users = _getMain().getEntityArgument(users)
+  csvPF = CSVPrintFile(['User', 'forwardingEmail', 'verificationStatus']) if Act.csvFormat() else None
+  getTodriveOnly(csvPF)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.FORWARDING_ADDRESS, user, i, count)
+      printGettingEntityItemForWhom(Ent.FORWARDING_ADDRESS, user, i, count)
     try:
-      results = _getMain().callGAPIitems(gmail.users().settings().forwardingAddresses(), 'list', 'forwardingAddresses',
+      results = callGAPIitems(gmail.users().settings().forwardingAddresses(), 'list', 'forwardingAddresses',
                               throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
                               userId='me')
       if not csvPF:
         jcount = len(results)
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.FORWARDING_ADDRESS, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.FORWARDING_ADDRESS, i, count)
         Ind.Increment()
         j = 0
         for forward in results:
@@ -262,9 +292,9 @@ def printShowForwardingAddresses(users):
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})
     except GAPI.failedPrecondition as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Forwarding Addresses')
 
@@ -274,7 +304,7 @@ def _showImap(user, i, count, result):
   for item in result:
     if item != 'enabled':
       kvList += [item, result[item]]
-  _getMain().printEntityKVList([Ent.USER, user], kvList, i, count)
+  printEntityKVList([Ent.USER, user], kvList, i, count)
 #
 EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICE_MAP = {
   'archive': 'archive',
@@ -288,32 +318,32 @@ def _imapDefaults(enable):
   return {'enabled': enable, 'autoExpunge': True, 'expungeBehavior': 'archive', 'maxFolderSize': 0}
 
 def _setImap(user, body, i, count):
-  user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+  user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
   if gmail:
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'updateImap',
+      result = callGAPI(gmail.users().settings(), 'updateImap',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                         userId='me', body=body)
       _showImap(user, i, count, result)
     except GAPI.permissionDenied as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> imap|imap4 <Boolean> [noautoexpunge] [expungebehavior archive|deleteforever|trash] [maxfoldersize 0|1000|2000|5000|10000]
 def setImap(users):
-  body = _imapDefaults(_getMain().getBoolean(None))
+  body = _imapDefaults(getBoolean(None))
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'noautoexpunge':
       body['autoExpunge'] = False
     elif myarg == 'expungebehavior':
-      body['expungeBehavior'] = _getMain().getChoice(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICE_MAP, mapChoice=True)
+      body['expungeBehavior'] = getChoice(EMAILSETTINGS_IMAP_EXPUNGE_BEHAVIOR_CHOICE_MAP, mapChoice=True)
     elif myarg == 'maxfoldersize':
-      body['maxFolderSize'] = int(_getMain().getChoice(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES))
+      body['maxFolderSize'] = int(getChoice(EMAILSETTINGS_IMAP_MAX_FOLDER_SIZE_CHOICES))
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     _setImap(user, body, i, count)
@@ -321,24 +351,24 @@ def setImap(users):
 # gam <UserTypeEntity> print imap|imap4 [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show imap|imap4
 def printShowImap(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'enabled']) if Act.csvFormat() else None
-  _getMain().getTodriveOnly(csvPF)
-  i, count, users = _getMain().getEntityArgument(users)
+  csvPF = CSVPrintFile(['User', 'enabled']) if Act.csvFormat() else None
+  getTodriveOnly(csvPF)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'getImap',
+      result = callGAPI(gmail.users().settings(), 'getImap',
                         throwReasons=GAPI.GMAIL_THROW_REASONS,
                         userId='me')
       if not csvPF:
         _showImap(user, i, count, result)
       else:
-        csvPF.WriteRowTitles(_getMain().flattenJSON(result, flattened={'User': user}))
+        csvPF.WriteRowTitles(flattenJSON(result, flattened={'User': user}))
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('IMAP')
 
@@ -347,7 +377,7 @@ def _showPop(user, i, count, result):
   kvList = [Ent.Singular(Ent.POP_ENABLED), enabled]
   if enabled:
     kvList += ['For', result['accessWindow'], Ent.Singular(Ent.ACTION), result['disposition']]
-  _getMain().printEntityKVList([Ent.USER, user], kvList, i, count)
+  printEntityKVList([Ent.USER, user], kvList, i, count)
 #
 EMAILSETTINGS_POP_ENABLE_FOR_CHOICE_MAP = {
   'allmail': 'allMail',
@@ -360,32 +390,32 @@ def _popDefaults(enable):
   return {'accessWindow': ['disabled', 'allMail'][enable], 'disposition': 'leaveInInbox'}
 
 def _setPop(user, body, i, count):
-  user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+  user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
   if gmail:
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'updatePop',
+      result = callGAPI(gmail.users().settings(), 'updatePop',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                         userId='me', body=body)
       _showPop(user, i, count, result)
     except GAPI.permissionDenied as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> pop|pop3 <Boolean> [for allmail|newmail|mailfromnowon|fromnowown] [action keep|leaveininbox|archive|delete|trash|markread]
 def setPop(users):
-  body = _popDefaults(_getMain().getBoolean(None))
+  body = _popDefaults(getBoolean(None))
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'for':
-      body['accessWindow'] = _getMain().getChoice(EMAILSETTINGS_POP_ENABLE_FOR_CHOICE_MAP, mapChoice=True)
+      body['accessWindow'] = getChoice(EMAILSETTINGS_POP_ENABLE_FOR_CHOICE_MAP, mapChoice=True)
     elif myarg == 'action':
-      body['disposition'] = _getMain().getChoice(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP, mapChoice=True)
+      body['disposition'] = getChoice(EMAILSETTINGS_FORWARD_POP_ACTION_CHOICE_MAP, mapChoice=True)
     elif myarg == 'confirm':
       pass
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     _setPop(user, body, i, count)
@@ -393,68 +423,68 @@ def setPop(users):
 # gam <UserTypeEntity> print pop|pop3 [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show pop|pop3
 def printShowPop(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'enabled']) if Act.csvFormat() else None
-  _getMain().getTodriveOnly(csvPF)
-  i, count, users = _getMain().getEntityArgument(users)
+  csvPF = CSVPrintFile(['User', 'enabled']) if Act.csvFormat() else None
+  getTodriveOnly(csvPF)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'getPop',
+      result = callGAPI(gmail.users().settings(), 'getPop',
                         throwReasons=GAPI.GMAIL_THROW_REASONS,
                         userId='me')
       if not csvPF:
         _showPop(user, i, count, result)
       else:
-        csvPF.WriteRowTitles(_getMain().flattenJSON(result, flattened={'User': user, 'enabled': result['accessWindow'] != 'disabled'}))
+        csvPF.WriteRowTitles(flattenJSON(result, flattened={'User': user, 'enabled': result['accessWindow'] != 'disabled'}))
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('POP')
 
 # gam <UserTypeEntity> language <Language>
 def setLanguage(users):
-  language = _getMain().getLanguageCode(_getMain().LANGUAGE_CODES_MAP)
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  language = getLanguageCode(LANGUAGE_CODES_MAP)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'updateLanguage',
+      result = callGAPI(gmail.users().settings(), 'updateLanguage',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                         userId='me', body={'displayLanguage': language})
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
+      entityActionPerformed([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
     except GAPI.permissionDenied as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> print language [todrive <ToDriveAttribute>*]
 # gam <UserTypeEntity> show language
 def printShowLanguage(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'displayLanguage']) if Act.csvFormat() else None
-  _getMain().getTodriveOnly(csvPF)
-  i, count, users = _getMain().getEntityArgument(users)
+  csvPF = CSVPrintFile(['User', 'displayLanguage']) if Act.csvFormat() else None
+  getTodriveOnly(csvPF)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
-      result = _getMain().callGAPI(gmail.users().settings(), 'getLanguage',
+      result = callGAPI(gmail.users().settings(), 'getLanguage',
                         throwReasons=GAPI.GMAIL_THROW_REASONS,
                         userId='me')
       if not csvPF:
-        _getMain().printEntity([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
+        printEntity([Ent.USER, user, Ent.LANGUAGE, result['displayLanguage']], i, count)
       else:
-        csvPF.WriteRowTitles(_getMain().flattenJSON(result, flattened={'User': user}))
+        csvPF.WriteRowTitles(flattenJSON(result, flattened={'User': user}))
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Language')
 
@@ -467,43 +497,43 @@ SMTPMSA_DISPLAY_FIELDS = ['host', 'port', 'securityMode']
 
 def _showSendAs(result, j, jcount, sigReplyFormat, verifyOnly=False):
   if sigReplyFormat == SIG_REPLY_TEMPLATE:
-    _getMain().writeStdout(f"{_getMain().escapeCRsNLs(result.get('signature', 'None'))}\n")
+    writeStdout(f"{escapeCRsNLs(result.get('signature', 'None'))}\n")
     return
   if result['displayName']:
-    _getMain().printEntity([Ent.SENDAS_ADDRESS, f'{result["displayName"]} <{result["sendAsEmail"]}>'], j, jcount)
+    printEntity([Ent.SENDAS_ADDRESS, f'{result["displayName"]} <{result["sendAsEmail"]}>'], j, jcount)
   else:
-    _getMain().printEntity([Ent.SENDAS_ADDRESS, f'<{result["sendAsEmail"]}>'], j, jcount)
+    printEntity([Ent.SENDAS_ADDRESS, f'<{result["sendAsEmail"]}>'], j, jcount)
   Ind.Increment()
   if result.get('replyToAddress'):
-    _getMain().printKeyValueList(['ReplyTo', result['replyToAddress']])
-  _getMain().printKeyValueList(['IsPrimary', result.get('isPrimary', False)])
-  _getMain().printKeyValueList(['Default', result.get('isDefault', False)])
+    printKeyValueList(['ReplyTo', result['replyToAddress']])
+  printKeyValueList(['IsPrimary', result.get('isPrimary', False)])
+  printKeyValueList(['Default', result.get('isDefault', False)])
   if not result.get('isPrimary', False):
-    _getMain().printKeyValueList(['TreatAsAlias', result.get('treatAsAlias', False)])
+    printKeyValueList(['TreatAsAlias', result.get('treatAsAlias', False)])
   if 'smtpMsa' in result:
     for field in SMTPMSA_DISPLAY_FIELDS:
       if field in result['smtpMsa']:
-        _getMain().printKeyValueList([f'smtpMsa.{field}', result['smtpMsa'][field]])
+        printKeyValueList([f'smtpMsa.{field}', result['smtpMsa'][field]])
   if 'verificationStatus' in result:
-    _getMain().printKeyValueList(['Verification Status', result['verificationStatus']])
+    printKeyValueList(['Verification Status', result['verificationStatus']])
   signature = result.get('signature')
   if verifyOnly:
-    _getMain().printKeyValueList(['Signature', bool(signature)])
+    printKeyValueList(['Signature', bool(signature)])
   else:
     if not signature:
       signature = 'None'
     if sigReplyFormat == SIG_REPLY_HTML:
-      _getMain().printKeyValueList(['Signature', None])
+      printKeyValueList(['Signature', None])
       Ind.Increment()
-      _getMain().printKeyValueList([Ind.MultiLineText(signature)])
+      printKeyValueList([Ind.MultiLineText(signature)])
       Ind.Decrement()
     elif sigReplyFormat == SIG_REPLY_FORMAT:
-      _getMain().printKeyValueList(['Signature', None])
+      printKeyValueList(['Signature', None])
       Ind.Increment()
-      _getMain().printKeyValueList([Ind.MultiLineText(_getMain().dehtml(signature))])
+      printKeyValueList([Ind.MultiLineText(dehtml(signature))])
       Ind.Decrement()
     else: # SIG_REPLY_COMPACT
-      _getMain().printKeyValueList(['Signature', _getMain().escapeCRsNLs(signature)])
+      printKeyValueList(['Signature', escapeCRsNLs(signature)])
   Ind.Decrement()
 
 def _processSignature(tagReplacements, signature, html):
@@ -520,7 +550,7 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
                    sigReplyFormat, verifyOnly=False, **kwargs):
   userDefined = True
   try:
-    result = _getMain().callGAPI(gmail.users().settings().sendAs(), function,
+    result = callGAPI(gmail.users().settings().sendAs(), function,
                       throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.ALREADY_EXISTS, GAPI.DUPLICATE,
                                                              GAPI.CANNOT_DELETE_PRIMARY_SENDAS, GAPI.INVALID_ARGUMENT,
                                                              GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED,
@@ -529,13 +559,13 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
     if function == 'get':
       _showSendAs(result, j, jcount, sigReplyFormat, verifyOnly)
     else:
-      _getMain().entityActionPerformed([Ent.USER, user, entityType, emailAddress], j, jcount)
+      entityActionPerformed([Ent.USER, user, entityType, emailAddress], j, jcount)
   except (GAPI.notFound, GAPI.alreadyExists, GAPI.duplicate,
           GAPI.cannotDeletePrimarySendAs, GAPI.invalidArgument,
           GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.insufficientPermissions) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, entityType, emailAddress], str(e), j, jcount)
+    entityActionFailedWarning([Ent.USER, user, entityType, emailAddress], str(e), j, jcount)
   except GAPI.serviceNotAvailable:
-    _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+    userGmailServiceNotEnabledWarning(user, i, count)
     userDefined = False
   return userDefined
 
@@ -543,17 +573,17 @@ def getSendAsAttributes(myarg, body, tagReplacements):
   if _getMain()._getTagReplacement(myarg, tagReplacements, True):
     pass
   elif myarg == 'name':
-    body['displayName'] = _getMain().getString(Cmd.OB_NAME, minLen=0)
+    body['displayName'] = getString(Cmd.OB_NAME, minLen=0)
   elif myarg == 'replyto':
-    body['replyToAddress'] = _getMain().getString(Cmd.OB_EMAIL_ADDRESS, minLen=0)
+    body['replyToAddress'] = getString(Cmd.OB_EMAIL_ADDRESS, minLen=0)
     if len(body['replyToAddress']) > 0:
-      body['replyToAddress'] = _getMain().normalizeEmailAddressOrUID(body['replyToAddress'], noUid=True, noLower=True)
+      body['replyToAddress'] = normalizeEmailAddressOrUID(body['replyToAddress'], noUid=True, noLower=True)
   elif myarg == 'default':
     body['isDefault'] = True
   elif myarg == 'treatasalias':
-    body['treatAsAlias'] = _getMain().getBoolean()
+    body['treatAsAlias'] = getBoolean()
   else:
-    _getMain().unknownArgumentExit()
+    unknownArgumentExit()
 
 SMTPMSA_PORTS = ['25', '465', '587']
 SMTPMSA_SECURITY_MODES = ['none', 'ssl', 'starttls']
@@ -574,11 +604,11 @@ SMTPMSA_REQUIRED_FIELDS = ['host', 'port', 'username', 'password']
 #	[html [<Boolean>]] [replyto <EmailAddress>] [default] [treatasalias <Boolean>]
 def createUpdateSendAs(users):
   updateCmd = Act.Get() == Act.UPDATE
-  emailAddress = _getMain().normalizeEmailAddressOrUID(_getMain().getString(Cmd.OB_EMAIL_ADDRESS), noUid=True, noLower=True)
+  emailAddress = normalizeEmailAddressOrUID(getString(Cmd.OB_EMAIL_ADDRESS), noUid=True, noLower=True)
   if not updateCmd:
     body = {'sendAsEmail': emailAddress}
-    _getMain().checkArgumentPresent(['name'])
-    body['displayName'] = _getMain().getString(Cmd.OB_NAME)
+    checkArgumentPresent(['name'])
+    body['displayName'] = getString(Cmd.OB_NAME)
   else:
     body = {}
   signature = None
@@ -586,24 +616,24 @@ def createUpdateSendAs(users):
   tagReplacements = _getMain()._initTagReplacements()
   html = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
-    if myarg in _getMain().SORF_SIG_FILE_ARGUMENTS:
-      signature, _, html = _getMain().getStringOrFile(myarg)
+    myarg = getArgument()
+    if myarg in SORF_SIG_FILE_ARGUMENTS:
+      signature, _, html = getStringOrFile(myarg)
     elif myarg == 'html':
-      html = _getMain().getBoolean()
+      html = getBoolean()
     elif not updateCmd and myarg.startswith('smtpmsa.'):
       if myarg == 'smtpmsa.host':
-        smtpMsa['host'] = _getMain().getString(Cmd.OB_SMTP_HOST_NAME)
+        smtpMsa['host'] = getString(Cmd.OB_SMTP_HOST_NAME)
       elif myarg == 'smtpmsa.port':
-        smtpMsa['port'] = int(_getMain().getChoice(SMTPMSA_PORTS))
+        smtpMsa['port'] = int(getChoice(SMTPMSA_PORTS))
       elif myarg == 'smtpmsa.username':
-        smtpMsa['username'] = _getMain().getString(Cmd.OB_USER_NAME)
+        smtpMsa['username'] = getString(Cmd.OB_USER_NAME)
       elif myarg == 'smtpmsa.password':
-        smtpMsa['password'] = _getMain().getString(Cmd.OB_PASSWORD)
+        smtpMsa['password'] = getString(Cmd.OB_PASSWORD)
       elif myarg == 'smtpmsa.securitymode':
-        smtpMsa['securityMode'] = _getMain().getChoice(SMTPMSA_SECURITY_MODES)
+        smtpMsa['securityMode'] = getChoice(SMTPMSA_SECURITY_MODES)
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     else:
       getSendAsAttributes(myarg, body, tagReplacements)
   if signature is not None and not tagReplacements['subs']:
@@ -611,15 +641,15 @@ def createUpdateSendAs(users):
   if smtpMsa:
     for field in SMTPMSA_REQUIRED_FIELDS:
       if field not in smtpMsa:
-        _getMain().missingArgumentExit(f'smtpmsa.{field}')
+        missingArgumentExit(f'smtpmsa.{field}')
     body['smtpMsa'] = smtpMsa
   kwargs = {'body': body, 'fields': ''}
   if updateCmd:
     kwargs['sendAsEmail'] = emailAddress
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if signature is not None and tagReplacements['subs']:
@@ -631,28 +661,28 @@ def createUpdateSendAs(users):
 # gam <UserTypeEntity> info sendas <EmailAddressEntity> [compact|format|html]
 def deleteInfoSendAs(users):
   function = 'delete' if Act.Get() == Act.DELETE else 'get'
-  emailAddressEntity = _getMain().getUserObjectEntity(Cmd.OB_EMAIL_ADDRESS_ENTITY, Ent.SENDAS_ADDRESS)
+  emailAddressEntity = getUserObjectEntity(Cmd.OB_EMAIL_ADDRESS_ENTITY, Ent.SENDAS_ADDRESS)
   sigReplyFormat = SIG_REPLY_HTML
   if function == 'get':
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg in SIG_REPLY_OPTIONS_MAP:
         sigReplyFormat = SIG_REPLY_OPTIONS_MAP[myarg]
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   else:
-    _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+    checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, emailAddresses, jcount = _getMain()._validateUserGetObjectList(user, i, count, emailAddressEntity)
+    user, gmail, emailAddresses, jcount = _validateUserGetObjectList(user, i, count, emailAddressEntity)
     if jcount == 0:
       continue
     Ind.Increment()
     j = 0
     for emailAddress in emailAddresses:
       j += 1
-      emailAddress = _getMain().normalizeEmailAddressOrUID(emailAddress, noUid=True)
+      emailAddress = normalizeEmailAddressOrUID(emailAddress, noUid=True)
       if not _processSendAs(user, i, count, Ent.SENDAS_ADDRESS, emailAddress, j, jcount, gmail, function, sigReplyFormat, sendAsEmail=emailAddress):
         break
     Ind.Decrement()
@@ -662,14 +692,14 @@ def deleteInfoSendAs(users):
 # gam <UserTypeEntity> show sendas [compact|format|html]
 #	[primary|default] [verifyonly]
 def printShowSendAs(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'displayName', 'sendAsEmail', 'replyToAddress',
+  csvPF = CSVPrintFile(['User', 'displayName', 'sendAsEmail', 'replyToAddress',
                         'isPrimary', 'isDefault', 'treatAsAlias', 'verificationStatus'],
                        'sortall') if Act.csvFormat() else None
   sigReplyFormat = SIG_REPLY_HTML
   selection=None
   verifyOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'primary':
@@ -681,22 +711,22 @@ def printShowSendAs(users):
     elif (not csvPF and myarg in SIG_REPLY_OPTIONS_MAP) or (csvPF and myarg == 'compact'):
       sigReplyFormat = SIG_REPLY_OPTIONS_MAP[myarg]
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.SENDAS_ADDRESS, user, i, count)
+      printGettingEntityItemForWhom(Ent.SENDAS_ADDRESS, user, i, count)
     try:
-      results = _getMain().callGAPIitems(gmail.users().settings().sendAs(), 'list', 'sendAs',
+      results = callGAPIitems(gmail.users().settings().sendAs(), 'list', 'sendAs',
                               throwReasons=GAPI.GMAIL_THROW_REASONS,
                               userId='me')
       if not csvPF:
         jcount = len(results)
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount if selection is None else 1, Ent.SENDAS_ADDRESS, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount if selection is None else 1, Ent.SENDAS_ADDRESS, i, count)
         Ind.Increment()
         j = 0
         for sendas in results:
@@ -727,7 +757,7 @@ def printShowSendAs(users):
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('SendAs')
 
@@ -736,14 +766,14 @@ def printShowSendAs(users):
 # gam <UserTypeEntity> show signature|sig [compact|format|html|template]
 #	[primary] [verifyonly]
 def printShowSignature(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'displayName', 'sendAsEmail', 'replyToAddress',
+  csvPF = CSVPrintFile(['User', 'displayName', 'sendAsEmail', 'replyToAddress',
                         'isPrimary', 'isDefault', 'treatAsAlias', 'verificationStatus'],
                        'sortall') if Act.csvFormat() else None
   sigReplyFormat = SIG_REPLY_HTML
   selection = None
   verifyOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'primary':
@@ -757,22 +787,22 @@ def printShowSignature(users):
     elif not csvPF and myarg == 'template':
       sigReplyFormat = SIG_REPLY_TEMPLATE
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.SIGNATURE, user, i, count)
+      printGettingEntityItemForWhom(Ent.SIGNATURE, user, i, count)
     try:
       if selection is None:
-        sendas = _getMain().callGAPI(gmail.users().settings().sendAs(), 'get',
+        sendas = callGAPI(gmail.users().settings().sendAs(), 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
                           userId='me', sendAsEmail=user)
       else:
-        results = _getMain().callGAPIitems(gmail.users().settings().sendAs(), 'list', 'sendAs',
+        results = callGAPIitems(gmail.users().settings().sendAs(), 'list', 'sendAs',
                                 throwReasons=GAPI.GMAIL_THROW_REASONS,
                                 userId='me')
         for sendas in results:
@@ -799,9 +829,9 @@ def printShowSignature(users):
                 row[f'smtpMsa{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{field}'] = sendas[item][field]
         csvPF.WriteRowTitles(row)
     except GAPI.notFound as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Signature')
 

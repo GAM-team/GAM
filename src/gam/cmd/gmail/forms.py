@@ -17,6 +17,34 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getJSON,
+    getString,
+    getTimeOrDeltaFromNow,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    printEntity,
+    printEntityKVList,
+    printLine,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.errors import missingArgumentExit, unknownArgumentExit
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -70,12 +98,12 @@ def _initPublishSettings():
 
 def _getPublishSettings(myarg, pbody):
   if myarg == 'ispublished':
-    bval = _getMain().getBoolean()
+    bval = getBoolean()
     pbody['publishSettings']['publishState']['isPublished'] = bval
     if not bval:
       pbody['publishSettings']['publishState']['isAcceptingResponses'] = bval
   elif myarg == 'isacceptingresponses':
-    bval = _getMain().getBoolean()
+    bval = getBoolean()
     pbody['publishSettings']['publishState']['isAcceptingResponses'] = bval
     if bval:
       pbody['publishSettings']['publishState']['isPublished'] = bval
@@ -98,49 +126,49 @@ def createForm(users):
   pbody = _initPublishSettings()
   parentParms = _getMain().initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'title':
-      title = _getMain().getString(Cmd.OB_STRING)
+      title = getString(Cmd.OB_STRING)
       updateFormInfoRequest(myarg, title, ubody)
     elif myarg == 'description':
-      updateFormInfoRequest(myarg, _getMain().getString(Cmd.OB_STRING, minLen=0), ubody)
+      updateFormInfoRequest(myarg, getString(Cmd.OB_STRING, minLen=0), ubody)
     elif myarg == 'isquiz':
-      updateFormSettingsRequest('isQuiz', _getMain().getBoolean(), ubody)
+      updateFormSettingsRequest('isQuiz', getBoolean(), ubody)
     elif myarg == 'json':
-      jsonData = _getMain().getJSON([])
+      jsonData = getJSON([])
       ubody['requests'].extend(jsonData.get('requests', []))
     elif _getPublishSettings(myarg, pbody):
       pass
     elif myarg == 'drivefilename':
-      body['name'] = _getMain().getString(Cmd.OB_DRIVE_FILE_NAME)
+      body['name'] = getString(Cmd.OB_DRIVE_FILE_NAME)
     elif _getMain().getDriveFileParentAttribute(myarg, parentParms):
       pass
     elif myarg == 'returnidonly':
       returnIdOnly = True
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['User', 'formId', 'name', 'title', 'responderUri'])
+      csvPF = CSVPrintFile(['User', 'formId', 'name', 'title', 'responderUri'])
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not title:
-    _getMain().missingArgumentExit('title')
+    missingArgumentExit('title')
   updateFormRequestUpdateMasks(ubody)
   if 'name' not in body:
     body['name']  = title
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
     if not _getMain()._getDriveFileParentInfo(drive, user, i, count, body, parentParms):
       continue
-    _, gform = _getMain().buildGAPIServiceObject(API.FORMS, user, i, count)
+    _, gform = buildGAPIServiceObject(API.FORMS, user, i, count)
     if not gform:
       continue
     try:
-      result = _getMain().callGAPI(drive.files(), 'create',
+      result = callGAPI(drive.files(), 'create',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                     GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT,
                                                                     GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR, GAPI.STORAGE_QUOTA_EXCEEDED,
@@ -148,17 +176,17 @@ def createForm(users):
                                                                     GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP],
                         body=body, fields='id,name', supportsAllDrives=True)
       formId = result['id']
-      form = _getMain().callGAPI(gform.forms(), 'batchUpdate',
+      form = callGAPI(gform.forms(), 'batchUpdate',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                       formId=formId, body=ubody)
       if pbody['updateMask']:
-        _getMain().callGAPI(gform.forms(), 'setPublishSettings',
+        callGAPI(gform.forms(), 'setPublishSettings',
                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                  formId=formId, body=pbody)
       if returnIdOnly:
-        _getMain().writeStdout(f'{formId}\n')
+        writeStdout(f'{formId}\n')
       elif not csvPF:
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.FORM, title,
+        entityActionPerformed([Ent.USER, user, Ent.FORM, title,
                                Ent.DRIVE_FILE, f"{result['name']}({formId})"])
       else:
         csvPF.WriteRow({'User': user, 'formId': formId,
@@ -169,11 +197,11 @@ def createForm(users):
             GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
             GAPI.fileNotFound, GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
             GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FORM, title, Ent.DRIVE_FILE, body['name']], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.FORM, title, Ent.DRIVE_FILE, body['name']], str(e), i, count)
     except GAPI.permissionDenied:
       SvcAcctAPIDisabledExit()
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Forms')
 
@@ -185,30 +213,30 @@ def updateForm(users):
   pbody = _initPublishSettings()
   fileIdEntity = _getMain().getDriveFileEntity()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'title':
-      updateFormInfoRequest(myarg, _getMain().getString(Cmd.OB_STRING), ubody)
+      updateFormInfoRequest(myarg, getString(Cmd.OB_STRING), ubody)
     elif myarg == 'description':
-      updateFormInfoRequest(myarg, _getMain().getString(Cmd.OB_STRING, minLen=0), ubody)
+      updateFormInfoRequest(myarg, getString(Cmd.OB_STRING, minLen=0), ubody)
     elif myarg == 'isquiz':
-      updateFormSettingsRequest('isQuiz', _getMain().getBoolean(), ubody)
+      updateFormSettingsRequest('isQuiz', getBoolean(), ubody)
     elif myarg == 'json':
-      jsonData = _getMain().getJSON([])
+      jsonData = getJSON([])
       ubody['requests'].extend(jsonData.get('requests', []))
     elif _getPublishSettings(myarg, pbody):
       pass
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   updateFormRequestUpdateMasks(ubody)
   if not ubody['requests'] and not pbody['updateMask']:
     return
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, _, jcount = _getMain()._validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.FORM)
     if jcount == 0:
       continue
-    _, gform = _getMain().buildGAPIServiceObject(API.FORMS, user, i, count)
+    _, gform = buildGAPIServiceObject(API.FORMS, user, i, count)
     if not gform:
       continue
     Ind.Increment()
@@ -217,16 +245,16 @@ def updateForm(users):
       j += 1
       try:
         if ubody['requests']:
-          _getMain().callGAPI(gform.forms(), 'batchUpdate',
+          callGAPI(gform.forms(), 'batchUpdate',
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                    formId=formId, body=ubody)
         if pbody['updateMask']:
-          _getMain().callGAPI(gform.forms(), 'setPublishSettings',
+          callGAPI(gform.forms(), 'setPublishSettings',
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                    formId=formId, body=pbody)
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.FORM, formId], j, jcount)
+        entityActionPerformed([Ent.USER, user, Ent.FORM, formId], j, jcount)
       except (GAPI.notFound, GAPI.invalidArgument) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)
     Ind.Decrement()
 
 # gam <UserTypeEntity> print forms <DriveFileEntity> [todrive <ToDriveAttribute>*]
@@ -235,16 +263,16 @@ def updateForm(users):
 # gam <UserTypeEntity> show forms <DriveFileEntity>
 #	[formatjson]
 def printShowForms(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'formId', 'name', 'title', 'description'], 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'formId', 'name', 'title', 'description'], 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fileIdEntity = _getMain().getDriveFileEntity()
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF and addCSVData:
@@ -253,14 +281,14 @@ def printShowForms(users):
       csvPF.AddJSONTitles(sorted(addCSVData.keys()))
       csvPF.MoveJSONTitlesToEnd(['JSON'])
     csvPF.SetSortAllTitles()
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, _, jcount = _getMain()._validateUserGetFileIDs(user, i, count, fileIdEntity,
                                               entityType=[Ent.FORM, None][csvPF is not None or FJQC.formatJSON])
     if jcount == 0:
       continue
-    _, gform = _getMain().buildGAPIServiceObject(API.FORMS, user, i, count)
+    _, gform = buildGAPIServiceObject(API.FORMS, user, i, count)
     if not gform:
       continue
     Ind.Increment()
@@ -268,7 +296,7 @@ def printShowForms(users):
     for formId in fileIdEntity['list']:
       j += 1
       try:
-        result = _getMain().callGAPI(gform.forms(), 'get',
+        result = callGAPI(gform.forms(), 'get',
                           throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                           formId=formId)
         if 'publishSettings' in result and 'publishState' in result['publishSettings']:
@@ -276,27 +304,27 @@ def printShowForms(users):
           result['publishSettings']['publishState'].setdefault('isAcceptingResponses', False)
         if not csvPF:
           if not FJQC.formatJSON:
-            _getMain().printEntity([Ent.FORM, result['formId']], j, jcount)
+            printEntity([Ent.FORM, result['formId']], j, jcount)
             Ind.Increment()
-            _getMain().showJSON(None, result)
+            showJSON(None, result)
             Ind.Decrement()
           else:
-            _getMain().printLine(json.dumps(_getMain().cleanJSON(result), ensure_ascii=False, sort_keys=True))
+            printLine(json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True))
         else:
           info = result.pop('info')
           baserow = {'User': user, 'formId': formId, 'name': info['documentTitle'],
                      'title': info.get('title', ''), 'description': info.get('description', '')}
           if addCSVData:
             baserow.update(addCSVData)
-          row = _getMain().flattenJSON(result, flattened=baserow.copy())
+          row = flattenJSON(result, flattened=baserow.copy())
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
             result['info'] = info
-            baserow['JSON'] = json.dumps(_getMain().cleanJSON(result), ensure_ascii=False, sort_keys=True)
+            baserow['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(baserow)
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('Forms')
@@ -311,26 +339,26 @@ FORM_RESPONSE_TIME_OBJECTS = {'createTime', 'lastSubmittedTime'}
 #	[filter <String> (filtertime<String> <Time>)*]
 #	[countsonly|formatjson]
 def printShowFormResponses(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'formId', 'responseId', 'createTime', 'lastSubmittedTime', 'respondentEmail', 'totalScore'],
+  csvPF = CSVPrintFile(['User', 'formId', 'responseId', 'createTime', 'lastSubmittedTime', 'respondentEmail', 'totalScore'],
                        'sortall', indexedTitles=['answers']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   frfilter = None
   filterTimes = {}
   fileIdEntity = _getMain().getDriveFileEntity()
   countsOnly = False
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg.startswith('filtertime'):
-      filterTimes[myarg] = _getMain().getTimeOrDeltaFromNow()
+      filterTimes[myarg] = getTimeOrDeltaFromNow()
     elif myarg in {'filter', 'filters'}:
-      frfilter = _getMain().getString(Cmd.OB_STRING)
+      frfilter = getString(Cmd.OB_STRING)
     elif myarg == 'countsonly':
       countsOnly = True
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if filterTimes and frfilter is not None:
@@ -345,14 +373,14 @@ def printShowFormResponses(users):
         csvPF.AddJSONTitles(sorted(addCSVData.keys()))
         csvPF.MoveJSONTitlesToEnd(['JSON'])
     csvPF.SetSortAllTitles()
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, _, jcount = _getMain()._validateUserGetFileIDs(user, i, count, fileIdEntity,
                                               entityType=[Ent.FORM, None][csvPF is not None or FJQC.formatJSON])
     if jcount == 0:
       continue
-    _, gform = _getMain().buildGAPIServiceObject(API.FORMS, user, i, count)
+    _, gform = buildGAPIServiceObject(API.FORMS, user, i, count)
     if not gform:
       continue
     Ind.Increment()
@@ -360,13 +388,13 @@ def printShowFormResponses(users):
     for formId in fileIdEntity['list']:
       j += 1
       try:
-        results = _getMain().callGAPIpages(gform.forms().responses(), 'list', 'responses',
+        results = callGAPIpages(gform.forms().responses(), 'list', 'responses',
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                                 filter=frfilter, formId=formId)
         kcount = len(results)
         if countsOnly:
           if not csvPF:
-            _getMain().printEntityKVList([Ent.FORM, formId], [Ent.Plural(Ent.FORM_RESPONSE), kcount], j, jcount)
+            printEntityKVList([Ent.FORM, formId], [Ent.Plural(Ent.FORM_RESPONSE), kcount], j, jcount)
           else:
             row = {'User': user, 'formId': formId, 'responses': kcount}
             if addCSVData:
@@ -375,18 +403,18 @@ def printShowFormResponses(users):
           continue
         if not csvPF:
           if not FJQC.formatJSON:
-            _getMain().entityPerformActionNumItems([Ent.FORM, formId], kcount, Ent.FORM_RESPONSE, j, jcount)
+            entityPerformActionNumItems([Ent.FORM, formId], kcount, Ent.FORM_RESPONSE, j, jcount)
           Ind.Increment()
           k = 0
           for response in results:
             k += 1
             if not FJQC.formatJSON:
-              _getMain().printEntity([Ent.FORM_RESPONSE, response['responseId']], k, kcount)
+              printEntity([Ent.FORM_RESPONSE, response['responseId']], k, kcount)
               Ind.Increment()
-              _getMain().showJSON(None, response, timeObjects=FORM_RESPONSE_TIME_OBJECTS)
+              showJSON(None, response, timeObjects=FORM_RESPONSE_TIME_OBJECTS)
               Ind.Decrement()
             else:
-              _getMain().printLine(json.dumps(_getMain().cleanJSON(response, timeObjects=FORM_RESPONSE_TIME_OBJECTS),
+              printLine(json.dumps(cleanJSON(response, timeObjects=FORM_RESPONSE_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True))
           Ind.Decrement()
         else:
@@ -394,7 +422,7 @@ def printShowFormResponses(users):
           if addCSVData:
             baserow.update(addCSVData)
           for response in results:
-            row = _getMain().flattenJSON(response, flattened=baserow.copy())
+            row = flattenJSON(response, flattened=baserow.copy())
             if not FJQC.formatJSON:
               csvPF.WriteRowTitles(row)
             elif csvPF.CheckRowTitles(row):
@@ -404,11 +432,11 @@ def printShowFormResponses(users):
                           'lastSubmittedTime': response['lastSubmittedTime'],
                           'respondentEmail': response.get('respondentEmail', ''),
                           'totalScore': response.get('totalScore', ''),
-                          'JSON': json.dumps(_getMain().cleanJSON(response, timeObjects=FORM_RESPONSE_TIME_OBJECTS),
+                          'JSON': json.dumps(cleanJSON(response, timeObjects=FORM_RESPONSE_TIME_OBJECTS),
                                              ensure_ascii=False, sort_keys=True)})
               csvPF.WriteRowNoFilter(row)
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.FORM, formId], str(e), j, jcount)
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('Form Responses')

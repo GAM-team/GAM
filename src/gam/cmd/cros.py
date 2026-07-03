@@ -18,6 +18,99 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import checkEntityAFDNEorAccessErrorExit
+from gam.util.api import (
+    _finalizeGAPIpagesResult,
+    _processGAPIpagesResult,
+    buildGAPIObject,
+    callGAPI,
+    callGAPIitems,
+    callGAPIpages,
+    checkGAPIError,
+)
+from gam.util.args import (
+    ISOformatTimeStamp,
+    SORTORDER_CHOICE_MAP,
+    StartEndTime,
+    YYYYMMDDTHHMMSS_FORMAT_REQUIRED,
+    YYYYMMDD_FORMAT,
+    checkArgumentPresent,
+    escapeCRsNLs,
+    formatLocalDatestamp,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getHTTPError,
+    getInteger,
+    getOrderBySortOrder,
+    getString,
+    getStringWithCRsNLs,
+    getTimeOrDeltaFromNow,
+    getYYYYMMDD,
+    makeOrgUnitPathAbsolute,
+    makeOrgUnitPathRelative,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    addFieldToFieldsList,
+    batchRequestID,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+    writeEntityNoHeaderCSVFile,
+)
+from gam.util.display import (
+    ACTION_NOT_PERFORMED_RC,
+    actionNotPerformedNumItemsWarning,
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    getPageMessage,
+    getPageMessageForWhom,
+    invalidQuery,
+    performActionNumItems,
+    printEntity,
+    printGettingAllAccountEntities,
+    printGettingAllEntityItemsForWhom,
+    printGotAccountEntities,
+    printKeyValueList,
+    printKeyValueWithCRsNLs,
+    printLine,
+)
+from gam.util.entity import (
+    convertEntityToList,
+    getDeviceQueries,
+    getEntityArgument,
+    getEntityList,
+    getEntitySelection,
+    getEntitySelector,
+    getEntityToModify,
+    getItemsToModify,
+)
+from gam.util.errors import (
+    entityActionFailedExit,
+    invalidArgumentExit,
+    invalidChoiceExit,
+    missingArgumentExit,
+    unknownArgumentExit,
+    usageErrorExit,
+)
+from gam.util.fileio import setFilePath, writeFile
+from gam.util.orgunits import getOrgUnitId, getOrgUnitItem
+from gam.util.output import (
+    executeBatch,
+    stderrWarningMsg,
+    systemErrorExit,
+    writeStderr,
+    writeStdout,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -40,18 +133,18 @@ UNKNOWN = 'Unknown'
 WARNING_PREFIX = 'WARNING: '
 
 def getCrOSDeviceEntity():
-  if _getMain().checkArgumentPresent('crossn'):
-    return _getMain().getItemsToModify(Cmd.ENTITY_CROS_SN, _getMain().getString(Cmd.OB_SERIAL_NUMBER_LIST))
-  if _getMain().checkArgumentPresent('query'):
-    return _getMain().getItemsToModify(Cmd.ENTITY_CROS_QUERY, _getMain().getString(Cmd.OB_QUERY))
-  deviceId = _getMain().getString(Cmd.OB_CROS_DEVICE_ENTITY)
+  if checkArgumentPresent('crossn'):
+    return getItemsToModify(Cmd.ENTITY_CROS_SN, getString(Cmd.OB_SERIAL_NUMBER_LIST))
+  if checkArgumentPresent('query'):
+    return getItemsToModify(Cmd.ENTITY_CROS_QUERY, getString(Cmd.OB_QUERY))
+  deviceId = getString(Cmd.OB_CROS_DEVICE_ENTITY)
   if deviceId[:6].lower() == 'query:':
     query = deviceId[6:]
     if query[:12].lower() == 'orgunitpath:':
-      return _getMain().getItemsToModify(Cmd.ENTITY_CROS_OU, query[12:])
-    return _getMain().getItemsToModify(Cmd.ENTITY_CROS_QUERY, query)
+      return getItemsToModify(Cmd.ENTITY_CROS_OU, query[12:])
+    return getItemsToModify(Cmd.ENTITY_CROS_QUERY, query)
   Cmd.Backup()
-  return _getMain().getEntityList(Cmd.OB_CROS_ENTITY)
+  return getEntityList(Cmd.OB_CROS_ENTITY)
 
 UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP = {
   'annotatedassetid': 'annotatedAssetId',
@@ -94,7 +187,7 @@ CROS_ACTION_NAME_MAP = {
 # gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
 #	[actionbatchsize <Integer>] [maxtodeprov <Integer>]
 def updateCrOSDevices(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   noBatchUpdate = False
   update_body = {}
   action_body = {}
@@ -104,59 +197,59 @@ def updateCrOSDevices(entityList):
   actionBatchSize = 10
   maxToDeprovision = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP:
       up = UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP[myarg]
       if up == 'orgUnitPath':
-        orgUnitPath = _getMain().getOrgUnitItem()
+        orgUnitPath = getOrgUnitItem()
       elif up == 'notes':
-        update_body[up] = _getMain().getStringWithCRsNLs()
+        update_body[up] = getStringWithCRsNLs()
         updateNotes = update_body[up] if myarg == 'updatenotes' and update_body[up].find('#notes#') != -1 else None
       else:
-        update_body[up] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        update_body[up] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'action':
       actionLocation = Cmd.Location()
-      action_body['changeChromeOsDeviceStatusAction'], deprovisionReason = _getMain().getChoice(CROS_ACTION_CHOICE_MAP, mapChoice=True)
+      action_body['changeChromeOsDeviceStatusAction'], deprovisionReason = getChoice(CROS_ACTION_CHOICE_MAP, mapChoice=True)
       if deprovisionReason:
         action_body['deprovisionReason'] = deprovisionReason
       Act.Set(CROS_ACTION_NAME_MAP[action_body['changeChromeOsDeviceStatusAction']])
     elif myarg == 'acknowledgedevicetouchrequirement':
       ackWipe = True
     elif myarg == 'quickcrosmove':
-      quickCrOSMove = _getMain().getBoolean()
+      quickCrOSMove = getBoolean()
     elif myarg == 'nobatchupdate':
-      noBatchUpdate = _getMain().getBoolean()
+      noBatchUpdate = getBoolean()
     elif myarg == 'actionbatchsize':
-      actionBatchSize = _getMain().getInteger(minVal=10, maxVal=250)
+      actionBatchSize = getInteger(minVal=10, maxVal=250)
     elif myarg == 'maxtodeprov':
-      maxToDeprovision = _getMain().getInteger(minVal=0)
+      maxToDeprovision = getInteger(minVal=0)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if action_body and update_body:
     Cmd.SetLocation(actionLocation-1)
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('action', '<CrOSAttribute>'))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('action', '<CrOSAttribute>'))
   if orgUnitPath:
     status, orgUnitPath, orgUnitId = _getMain().checkOrgUnitPathExists(cd, orgUnitPath)
     if not status:
-      _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, ''], f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnitPath}, {Msg.DOES_NOT_EXIST}')
+      entityActionFailedWarning([Ent.CROS_DEVICE, ''], f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnitPath}, {Msg.DOES_NOT_EXIST}')
       return
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  i, count, entityList = getEntityArgument(entityList)
 # Action
   if action_body:
     if action_body['changeChromeOsDeviceStatusAction'] == 'CHANGE_CHROME_OS_DEVICE_STATUS_ACTION_DEPROVISION':
       if not ackWipe:
-        _getMain().stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_DEVICES.format(count))
-        _getMain().systemErrorExit(_getMain().ACTION_NOT_PERFORMED_RC, None)
+        stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_DEVICES.format(count))
+        systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
       if maxToDeprovision is None:
         maxToDeprovision = 1
       if count > maxToDeprovision > 0:
-        _getMain().stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_N_DEVICES.format(count, maxToDeprovision))
-        _getMain().systemErrorExit(_getMain().ACTION_NOT_PERFORMED_RC, None)
+        stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_N_DEVICES.format(count, maxToDeprovision))
+        systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
     while i < count:
       bcount = min(count-i, actionBatchSize)
       action_body['deviceIds'] = entityList[i:i+bcount]
       try:
-        result = _getMain().callGAPI(cd.customer().devices().chromeos(), 'batchChangeStatus',
+        result = callGAPI(cd.customer().devices().chromeos(), 'batchChangeStatus',
                           throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.CONDITION_NOT_MET, GAPI.INVALID_INPUT,
                                         GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                           customerId=GC.Values[GC.CUSTOMER_ID], body=action_body)
@@ -164,11 +257,11 @@ def updateCrOSDevices(entityList):
           i += 1
           deviceId = status['deviceId']
           if 'error' not in status:
-            _getMain().entityActionPerformed([Ent.CROS_DEVICE, deviceId], i, count)
+            entityActionPerformed([Ent.CROS_DEVICE, deviceId], i, count)
           else:
-            _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], status['error']['message'], i, count)
+            entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], status['error']['message'], i, count)
       except (GAPI.invalid, GAPI.invalidArgument, GAPI.conditionNotMet, GAPI.invalidInput, GAPI.badRequest, GAPI.forbidden) as e:
-        _getMain().entityActionFailedExit([Ent.CROS_DEVICE, None], str(e))
+        entityActionFailedExit([Ent.CROS_DEVICE, None], str(e))
     return
 # Update
   function = None
@@ -192,21 +285,21 @@ def updateCrOSDevices(entityList):
     kwargs[parmId] = deviceId
     try:
       if updateNotes:
-        oldNotes = _getMain().callGAPI(cd.chromeosdevices(), 'get',
+        oldNotes = callGAPI(cd.chromeosdevices(), 'get',
                             throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                             customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, fields='notes').get('notes', '')
         update_body['notes'] = updateNotes.replace('#notes#', oldNotes)
-      _getMain().callGAPI(cd.chromeosdevices(), function,
+      callGAPI(cd.chromeosdevices(), function,
                throwReasons=[GAPI.INVALID, GAPI.CONDITION_NOT_MET, GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT,
                              GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                customerId=GC.Values[GC.CUSTOMER_ID], **kwargs)
-      _getMain().entityActionPerformed([Ent.CROS_DEVICE, deviceId], i, count)
+      entityActionPerformed([Ent.CROS_DEVICE, deviceId], i, count)
     except (GAPI.invalid, GAPI.conditionNotMet, GAPI.invalidInput) as e:
-      _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], str(e), i, count)
+      entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], str(e), i, count)
     except GAPI.invalidOrgunit:
-      _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], Msg.INVALID_ORGUNIT, i, count)
+      entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], Msg.INVALID_ORGUNIT, i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
 
 # gam update cros|croses <CrOSEntity> <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 # gam update cros|croses <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
@@ -231,21 +324,21 @@ def displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, cou
   try:
     for _ in range(0, checkResultRetries):
       time.sleep(2)
-      result = _getMain().callGAPI(cd.customer().devices().chromeos().commands(), 'get',
+      result = callGAPI(cd.customer().devices().chromeos().commands(), 'get',
                         throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                         customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, commandId=commandId)
       if csvPF:
         result['deviceId'] = deviceId
         if addCSVData:
           result.update(addCSVData)
-        csvPF.WriteRowTitles(_getMain().flattenJSON(result, timeObjects=CROS_COMMAND_TIME_OBJECTS))
+        csvPF.WriteRowTitles(flattenJSON(result, timeObjects=CROS_COMMAND_TIME_OBJECTS))
         break
-      _getMain().showJSON(None, result, timeObjects=CROS_COMMAND_TIME_OBJECTS)
+      showJSON(None, result, timeObjects=CROS_COMMAND_TIME_OBJECTS)
       state = result.get('state')
       if state in CROS_COMMAND_FINAL_STATES:
         break
   except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.forbidden) as e:
-    _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId, Ent.COMMAND_ID, commandId], str(e), i, count)
+    entityActionFailedWarning([Ent.CROS_DEVICE, deviceId, Ent.COMMAND_ID, commandId], str(e), i, count)
   Ind.Decrement()
 
 def writeCrOSCommandResults(csvPF, addCSVData):
@@ -260,50 +353,50 @@ def writeCrOSCommandResults(csvPF, addCSVData):
 #	[times_to_check_status <Integer>] [doit]
 #	[csv (addcsvdata <FieldName> <String>)*]
 def issueCommandCrOSDevices(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   csvPF = None
   addCSVData = {}
   body = {}
   checkResultRetries = 1
   doit = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'command':
-      body['commandType'] = _getMain().getChoice(CROS_COMMAND_CHOICE_MAP, mapChoice=True)
+      body['commandType'] = getChoice(CROS_COMMAND_CHOICE_MAP, mapChoice=True)
       if body['commandType'] == 'SET_VOLUME':
-        body['payload'] = json.dumps({'volume': _getMain().getInteger(minVal=0, maxVal=100)})
+        body['payload'] = json.dumps({'volume': getInteger(minVal=0, maxVal=100)})
     elif myarg == 'timestocheckstatus':
-      checkResultRetries = _getMain().getInteger(minVal=0)
+      checkResultRetries = getInteger(minVal=0)
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['deviceId'])
+      csvPF = CSVPrintFile(['deviceId'])
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'doit':
       doit = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not body:
-    _getMain().missingArgumentExit('command <CrOSCommand>')
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+    missingArgumentExit('command <CrOSCommand>')
+  i, count, entityList = getEntityArgument(entityList)
   if body['commandType'] in CROS_DOIT_REQUIRED_COMMANDS and not doit:
-    _getMain().actionNotPerformedNumItemsWarning(count, Ent.CROS_DEVICE, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION)
+    actionNotPerformedNumItemsWarning(count, Ent.CROS_DEVICE, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION)
     return
   for deviceId in entityList:
     i += 1
     try:
-      result = _getMain().callGAPI(cd.customer().devices().chromeos(), 'issueCommand',
+      result = callGAPI(cd.customer().devices().chromeos(), 'issueCommand',
                         throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND],
                         customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, body=body)
       commandId = result.get('commandId')
-      _getMain().entityActionPerformed([Ent.CROS_DEVICE, deviceId, Ent.ACTION, body['commandType'], Ent.COMMAND_ID, commandId], i, count)
+      entityActionPerformed([Ent.CROS_DEVICE, deviceId, Ent.ACTION, body['commandType'], Ent.COMMAND_ID, commandId], i, count)
       displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF, addCSVData)
     except GAPI.invalidArgument as e:
       errMsg = str(e)
       if body['commandType'] in CROS_KIOSK_COMMANDS:
         errMsg += Msg.KIOSK_MODE_REQUIRED.format(body['commandType'])
-      _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], errMsg, i, count)
+      entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], errMsg, i, count)
     except GAPI.notFound as e:
-      _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], str(e), i, count)
+      entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], str(e), i, count)
   if csvPF:
     writeCrOSCommandResults(csvPF, addCSVData)
 
@@ -317,29 +410,29 @@ def doIssueCommandCrOSDevices():
 #	[times_to_check_status <Integer>] [csv]
 #	[csv (addcsvdata <FieldName> <String>)*]
 def getCommandResultCrOSDevices(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   csvPF = None
   addCSVData = {}
   commandId = ''
   checkResultRetries = 1
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'commandid':
-      commandId = _getMain().getString(Cmd.OB_COMMAND_ID)
+      commandId = getString(Cmd.OB_COMMAND_ID)
     elif myarg == 'timestocheckstatus':
-      checkResultRetries = _getMain().getInteger(minVal=0)
+      checkResultRetries = getInteger(minVal=0)
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['deviceId'])
+      csvPF = CSVPrintFile(['deviceId'])
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not commandId:
-    _getMain().missingArgumentExit('commandid <CommandID>')
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+    missingArgumentExit('commandid <CommandID>')
+  i, count, entityList = getEntityArgument(entityList)
   for deviceId in entityList:
     i += 1
-    _getMain().printEntity([Ent.CROS_DEVICE, deviceId, Ent.COMMAND_ID, commandId], i, count)
+    printEntity([Ent.CROS_DEVICE, deviceId, Ent.COMMAND_ID, commandId], i, count)
     displayCrOSCommandResult(cd, deviceId, commandId, checkResultRetries, i, count, csvPF, addCSVData)
   if csvPF:
     writeCrOSCommandResults(csvPF, addCSVData)
@@ -373,7 +466,7 @@ def _filterActiveTimeRanges(cros, selected, listLimit, startDate, endDate, activ
     activeTimeRanges.reverse()
   i = 0
   for item in activeTimeRanges:
-    activityDate = arrow.Arrow.strptime(item['date'], _getMain().YYYYMMDD_FORMAT)
+    activityDate = arrow.Arrow.strptime(item['date'], YYYYMMDD_FORMAT)
     if ((startDate is None) or (activityDate >= startDate)) and ((endDate is None) or (activityDate <= endDate)):
       item['duration'] = formatMilliSeconds(item['activeTime'])
       item['minutes'] = item['activeTime']//60000
@@ -499,7 +592,7 @@ def _computeDVRstorageFreePercentage(cros):
         volume['storageFreePercentage'] = '0'
 
 def _getFilterDateTime():
-  filterDate = _getMain().getYYYYMMDD(returnDateTime=True)
+  filterDate = getYYYYMMDD(returnDateTime=True)
   return (filterDate, filterDate.replace(tzinfo='UTC'))
 
 CROS_FIELDS_CHOICE_MAP = {
@@ -646,29 +739,29 @@ CROS_END_ARGUMENTS = ['end', 'enddate']
 #	[downloadfile latest|<Time>] [targetfolder <FilePath>]
 #	[formatjson]
 def infoCrOSDevices(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   downloadfile = None
   targetFolder = GC.Values[GC.DRIVE_DIR]
   projection = None
   fieldsList = []
   reverseLists = []
   noLists = showDVRstorageFreePercentage = False
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   listLimit = 0
   startDate = endDate = startTime = endTime = None
   activeTimeRangesOrder = 'ASCENDING'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'nolists':
       noLists = True
     elif myarg == 'listlimit':
-      listLimit = _getMain().getInteger(minVal=0)
+      listLimit = getInteger(minVal=0)
     elif myarg in CROS_START_ARGUMENTS:
       startDate, startTime = _getFilterDateTime()
     elif myarg in CROS_END_ARGUMENTS:
       endDate, endTime = _getFilterDateTime()
     elif myarg == 'timerangeorder':
-      activeTimeRangesOrder = _getMain().getChoice(_getMain().SORTORDER_CHOICE_MAP, mapChoice=True)
+      activeTimeRangesOrder = getChoice(SORTORDER_CHOICE_MAP, mapChoice=True)
     elif myarg == 'allfields':
       projection = 'FULL'
       fieldsList = []
@@ -679,29 +772,29 @@ def infoCrOSDevices(entityList):
       else:
         fieldsList = CROS_BASIC_FIELDS_LIST[:]
     elif myarg in CROS_FIELDS_CHOICE_MAP:
-      _getMain().addFieldToFieldsList(myarg, CROS_FIELDS_CHOICE_MAP, fieldsList)
+      addFieldToFieldsList(myarg, CROS_FIELDS_CHOICE_MAP, fieldsList)
     elif myarg == 'fields':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_FIELDS_CHOICE_MAP:
-          _getMain().addFieldToFieldsList(field, CROS_FIELDS_CHOICE_MAP, fieldsList)
+          addFieldToFieldsList(field, CROS_FIELDS_CHOICE_MAP, fieldsList)
           if field in CROS_LIST_FIELDS_CHOICE_MAP:
             projection = 'FULL'
             noLists = False
         else:
-          _getMain().invalidChoiceExit(field, CROS_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_FIELDS_CHOICE_MAP, True)
     elif myarg == 'reverselists':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_LIST_FIELDS_CHOICE_MAP:
           reverseLists.append(CROS_LIST_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, CROS_LIST_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_LIST_FIELDS_CHOICE_MAP, True)
     elif myarg == 'downloadfile':
-      downloadfile = _getMain().getString(Cmd.OB_STRING).lower()
+      downloadfile = getString(Cmd.OB_STRING).lower()
       if downloadfile != 'latest':
         Cmd.Backup()
-        downloadfile = _getMain().formatLocalTime(_getMain().getTimeOrDeltaFromNow())
+        downloadfile = formatLocalTime(getTimeOrDeltaFromNow())
     elif myarg == 'targetfolder':
-      targetFolder = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'showdvrsfp':
@@ -712,20 +805,20 @@ def infoCrOSDevices(entityList):
     fieldsList.append('deviceId')
     if downloadfile:
       fieldsList.append('deviceFiles.downloadUrl')
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  fields = getFieldsFromFieldsList(fieldsList)
+  i, count, entityList = getEntityArgument(entityList)
   for deviceId in entityList:
     i += 1
     try:
-      cros = _getMain().callGAPI(cd.chromeosdevices(), 'get',
+      cros = callGAPI(cd.chromeosdevices(), 'get',
                       throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, projection=projection, fields=fields)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
       continue
     checkTPMVulnerability(cros)
     if 'autoUpdateExpiration' in cros:
-      cros['autoUpdateExpiration'] = _getMain().formatLocalDatestamp(cros['autoUpdateExpiration'])
+      cros['autoUpdateExpiration'] = formatLocalDatestamp(cros['autoUpdateExpiration'])
     if showDVRstorageFreePercentage:
       _computeDVRstorageFreePercentage(cros)
     for field in reverseLists:
@@ -734,57 +827,57 @@ def infoCrOSDevices(entityList):
     if 'orgUnitId' in cros:
       cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
     if FJQC.formatJSON:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON(cros, timeObjects=CROS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+      printLine(json.dumps(cleanJSON(cros, timeObjects=CROS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
       continue
-    _getMain().printEntity([Ent.CROS_DEVICE, deviceId], i, count)
+    printEntity([Ent.CROS_DEVICE, deviceId], i, count)
     Ind.Increment()
     for up in CROS_SCALAR_PROPERTY_PRINT_ORDER:
       if up in cros:
         if up not in CROS_TIME_OBJECTS:
           if up not in CROS_FIELDS_WITH_CRS_NLS:
-            _getMain().printKeyValueList([up, cros[up]])
+            printKeyValueList([up, cros[up]])
           else:
-            _getMain().printKeyValueWithCRsNLs(up, cros[up])
+            printKeyValueWithCRsNLs(up, cros[up])
         else:
-          _getMain().printKeyValueList([up, _getMain().formatLocalTime(cros[up])])
+          printKeyValueList([up, formatLocalTime(cros[up])])
     for up in ['diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo']:
       if up in cros:
-        _getMain().printKeyValueList([up, ''])
+        printKeyValueList([up, ''])
         Ind.Increment()
         for key, value in sorted(cros[up].items()):
           if key not in CROS_TIME_OBJECTS:
-            _getMain().printKeyValueList([key, value])
+            printKeyValueList([key, value])
           else:
-            _getMain().printKeyValueList([key, _getMain().formatLocalTime(value)])
+            printKeyValueList([key, formatLocalTime(value)])
         Ind.Decrement()
     if not noLists:
       activeTimeRanges = _filterActiveTimeRanges(cros, True, listLimit, startDate, endDate, activeTimeRangesOrder)
       if activeTimeRanges:
-        _getMain().printKeyValueList(['activeTimeRanges'])
+        printKeyValueList(['activeTimeRanges'])
         Ind.Increment()
         for activeTimeRange in activeTimeRanges:
-          _getMain().printKeyValueList(['date', activeTimeRange['date']])
+          printKeyValueList(['date', activeTimeRange['date']])
           Ind.Increment()
           for key in ['activeTime', 'duration', 'minutes']:
-            _getMain().printKeyValueList([key, activeTimeRange[key]])
+            printKeyValueList([key, activeTimeRange[key]])
           Ind.Decrement()
         Ind.Decrement()
       recentUsers = _filterRecentUsers(cros, True, listLimit)
       if recentUsers:
-        _getMain().printKeyValueList(['recentUsers'])
+        printKeyValueList(['recentUsers'])
         Ind.Increment()
         for recentUser in recentUsers:
-          _getMain().printKeyValueList(['type', recentUser['type']])
+          printKeyValueList(['type', recentUser['type']])
           Ind.Increment()
-          _getMain().printKeyValueList(['email', recentUser['email']])
+          printKeyValueList(['email', recentUser['email']])
           Ind.Decrement()
         Ind.Decrement()
       deviceFiles = _filterDeviceFiles(cros, True, listLimit, startTime, endTime)
       if deviceFiles:
-        _getMain().printKeyValueList(['deviceFiles'])
+        printKeyValueList(['deviceFiles'])
         Ind.Increment()
         for deviceFile in deviceFiles:
-          _getMain().printKeyValueList([deviceFile['type'], deviceFile['createTime']])
+          printKeyValueList([deviceFile['type'], deviceFile['createTime']])
         Ind.Decrement()
         if downloadfile:
           if downloadfile == 'latest':
@@ -798,95 +891,95 @@ def infoCrOSDevices(entityList):
           if deviceFile:
             downloadfilename = os.path.join(targetFolder, f'cros-logs-{deviceId}-{deviceFile["createTime"]}.zip')
             _, content = cd._http.request(deviceFile['downloadUrl'])
-            _getMain().writeFile(downloadfilename, content, mode='wb', continueOnError=True)
-            _getMain().printKeyValueList(['Downloaded', downloadfilename])
+            writeFile(downloadfilename, content, mode='wb', continueOnError=True)
+            printKeyValueList(['Downloaded', downloadfilename])
           else:
             Act.Set(Act.DOWNLOAD)
-            _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId, Ent.DEVICE_FILE, downloadfile],
+            entityActionFailedWarning([Ent.CROS_DEVICE, deviceId, Ent.DEVICE_FILE, downloadfile],
                                       Msg.DOES_NOT_EXIST, i, count)
             Act.Set(Act.INFO)
       elif downloadfile:
         Act.Set(Act.DOWNLOAD)
-        _getMain().entityActionNotPerformedWarning([Ent.CROS_DEVICE, deviceId, Ent.DEVICE_FILE, downloadfile],
+        entityActionNotPerformedWarning([Ent.CROS_DEVICE, deviceId, Ent.DEVICE_FILE, downloadfile],
                                         Msg.NO_ENTITIES_FOUND.format(Ent.Plural(Ent.DEVICE_FILE)), i, count)
         Act.Set(Act.INFO)
       cpuInfo = _filterBasicList(cros, 'cpuInfo', True, listLimit)
       if cpuInfo:
-        _getMain().showJSON('cpuInfo', cpuInfo, dictObjectsKey={'cpuInfo': 'model'})
+        showJSON('cpuInfo', cpuInfo, dictObjectsKey={'cpuInfo': 'model'})
       cpuStatusReports = _filterCPUStatusReports(cros, True, listLimit, startTime, endTime)
       if cpuStatusReports:
-        _getMain().printKeyValueList(['cpuStatusReports'])
+        printKeyValueList(['cpuStatusReports'])
         Ind.Increment()
         for cpuStatusReport in cpuStatusReports:
-          _getMain().printKeyValueList(['reportTime', formatLocalTime(cpuStatusReport['reportTime'])])
+          printKeyValueList(['reportTime', formatLocalTime(cpuStatusReport['reportTime'])])
           Ind.Increment()
           if 'cpuTemperatureInfo' in cpuStatusReport:
-            _getMain().printKeyValueList(['cpuTemperatureInfo'])
+            printKeyValueList(['cpuTemperatureInfo'])
             Ind.Increment()
             for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
-              _getMain().printKeyValueList([tempInfo['label'], tempInfo['temperature']])
+              printKeyValueList([tempInfo['label'], tempInfo['temperature']])
             Ind.Decrement()
           if 'cpuUtilizationPercentageInfo' in cpuStatusReport:
-            _getMain().printKeyValueList(['cpuUtilizationPercentageInfo', cpuStatusReport['cpuUtilizationPercentageInfo']])
+            printKeyValueList(['cpuUtilizationPercentageInfo', cpuStatusReport['cpuUtilizationPercentageInfo']])
           Ind.Decrement()
         Ind.Decrement()
       backlightInfo = _filterBasicList(cros, 'backLightInfo', True, listLimit)
       if backlightInfo:
-        _getMain().showJSON('backlightInfo', backlightInfo, dictObjectsKey={'backlightInfo': 'path'})
+        showJSON('backlightInfo', backlightInfo, dictObjectsKey={'backlightInfo': 'path'})
       bluetoothAdapterInfo = _filterBasicList(cros, 'bluetoothAdapterInfo', True, listLimit)
       if bluetoothAdapterInfo:
-        _getMain().showJSON('bluetoothAdapterInfo', bluetoothAdapterInfo, dictObjectsKey={'bluetoothAdapterInfo': 'address'})
+        showJSON('bluetoothAdapterInfo', bluetoothAdapterInfo, dictObjectsKey={'bluetoothAdapterInfo': 'address'})
       fanInfo = _filterBasicList(cros, 'fanInfo', True, listLimit)
       if fanInfo:
-        _getMain().showJSON('fanInfo', fanInfo)
+        showJSON('fanInfo', fanInfo)
       diskVolumeReports = _filterBasicList(cros, 'diskVolumeReports', True, listLimit)
       if diskVolumeReports:
-        _getMain().printKeyValueList(['diskVolumeReports'])
+        printKeyValueList(['diskVolumeReports'])
         Ind.Increment()
-        _getMain().printKeyValueList(['volumeInfo'])
+        printKeyValueList(['volumeInfo'])
         for diskVolumeReport in diskVolumeReports:
           volumeInfo = diskVolumeReport['volumeInfo']
           Ind.Increment()
           for volume in volumeInfo:
-            _getMain().printKeyValueList(['volumeId', volume['volumeId']])
+            printKeyValueList(['volumeId', volume['volumeId']])
             Ind.Increment()
-            _getMain().printKeyValueList(['storageFree', volume['storageFree']])
-            _getMain().printKeyValueList(['storageTotal', volume['storageTotal']])
+            printKeyValueList(['storageFree', volume['storageFree']])
+            printKeyValueList(['storageTotal', volume['storageTotal']])
             if showDVRstorageFreePercentage:
-              _getMain().printKeyValueList(['storageFreePercentage', volume['storageFreePercentage']])
+              printKeyValueList(['storageFreePercentage', volume['storageFreePercentage']])
             Ind.Decrement()
           Ind.Decrement()
         Ind.Decrement()
       lastKnownNetworks = _filterBasicList(cros, 'lastKnownNetwork', True, listLimit)
       if lastKnownNetworks:
-        _getMain().printKeyValueList(['lastKnownNetwork'])
+        printKeyValueList(['lastKnownNetwork'])
         Ind.Increment()
         for lastKnownNetwork in lastKnownNetworks:
-          _getMain().printKeyValueList(['ipAddress', lastKnownNetwork['ipAddress']])
+          printKeyValueList(['ipAddress', lastKnownNetwork['ipAddress']])
           Ind.Increment()
-          _getMain().printKeyValueList(['wanIpAddress', lastKnownNetwork['wanIpAddress']])
+          printKeyValueList(['wanIpAddress', lastKnownNetwork['wanIpAddress']])
           Ind.Decrement()
         Ind.Decrement()
       screenshotFiles = _filterScreenshotFiles(cros, True, listLimit, startTime, endTime)
       if screenshotFiles:
-        _getMain().printKeyValueList(['screenshotFiles'])
+        printKeyValueList(['screenshotFiles'])
         Ind.Increment()
         for screenshotFile in screenshotFiles:
-          _getMain().printKeyValueList(['name', screenshotFile['name']])
+          printKeyValueList(['name', screenshotFile['name']])
           Ind.Increment()
-          _getMain().printKeyValueList(['type', screenshotFile['type']])
-          _getMain().printKeyValueList(['downloadUrl', screenshotFile['downloadUrl']])
-          _getMain().printKeyValueList(['createTime', screenshotFile['createTime']])
+          printKeyValueList(['type', screenshotFile['type']])
+          printKeyValueList(['downloadUrl', screenshotFile['downloadUrl']])
+          printKeyValueList(['createTime', screenshotFile['createTime']])
           Ind.Decrement()
         Ind.Decrement()
       systemRamFreeReports = _filterSystemRamFreeReports(cros, True, listLimit, startTime, endTime)
       if systemRamFreeReports:
-        _getMain().printKeyValueList(['systemRamFreeReports'])
+        printKeyValueList(['systemRamFreeReports'])
         Ind.Increment()
         for systemRamFreeReport in systemRamFreeReports:
-          _getMain().printKeyValueList(['reportTime', systemRamFreeReport['reportTime']])
+          printKeyValueList(['reportTime', systemRamFreeReport['reportTime']])
           Ind.Increment()
-          _getMain().printKeyValueList(['systemRamFreeInfo', systemRamFreeReport['systemRamFreeInfo']])
+          printKeyValueList(['systemRamFreeInfo', systemRamFreeReport['systemRamFreeInfo']])
           Ind.Decrement()
         Ind.Decrement()
     Ind.Decrement()
@@ -896,21 +989,21 @@ def doInfoCrOSDevices():
 
 def getDeviceFilesEntity():
   deviceFilesEntity = {'list': [], 'dict': None, 'count': None, 'time': None, 'range': None}
-  startEndTime = _getMain().StartEndTime()
-  entitySelector = _getMain().getEntitySelector()
+  startEndTime = StartEndTime()
+  entitySelector = getEntitySelector()
   if entitySelector:
-    entityList = _getMain().getEntitySelection(entitySelector, False)
+    entityList = getEntitySelection(entitySelector, False)
     if isinstance(entityList, dict):
       deviceFilesEntity['dict'] = entityList
     else:
       deviceFilesEntity['list'] = entityList
   else:
-    myarg = _getMain().getString(Cmd.OB_DEVICE_FILE_ENTITY, checkBlank=True)
+    myarg = getString(Cmd.OB_DEVICE_FILE_ENTITY, checkBlank=True)
     mycmd = myarg.lower()
     if mycmd in {'first', 'last', 'allexceptfirst', 'allexceptlast'}:
-      deviceFilesEntity['count'] = (mycmd, _getMain().getInteger(minVal=1))
+      deviceFilesEntity['count'] = (mycmd, getInteger(minVal=1))
     elif mycmd in {'before', 'after'}:
-      dateTime, _, _ = _getMain().getTimeOrDeltaFromNow(True)
+      dateTime, _, _ = getTimeOrDeltaFromNow(True)
       deviceFilesEntity['time'] = (mycmd, dateTime)
     elif mycmd == 'range':
       startEndTime.Get(mycmd)
@@ -919,10 +1012,10 @@ def getDeviceFilesEntity():
       for timeItem in myarg.split(','):
         try:
           timestamp = arrow.get(timeItem)
-          deviceFilesEntity['list'].append(_getMain().ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE])))
+          deviceFilesEntity['list'].append(ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE])))
         except (arrow.parser.ParserError, OverflowError):
           Cmd.Backup()
-          _getMain().invalidArgumentExit(_getMain().YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
+          invalidArgumentExit(YYYYMMDDTHHMMSS_FORMAT_REQUIRED)
   return deviceFilesEntity
 
 def _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity):
@@ -984,42 +1077,42 @@ def _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity):
 
 # gam <CrOSTypeEntity> get devicefile [select <DeviceFileEntity>] [targetfolder <FilePath>]
 def getCrOSDeviceFiles(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   targetFolder = GC.Values[GC.DRIVE_DIR]
   deviceFilesEntity = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'select':
       deviceFilesEntity = getDeviceFilesEntity()
     elif myarg == 'targetfolder':
-      targetFolder = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   fields = 'deviceFiles(type,createTime,downloadUrl)'
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  i, count, entityList = getEntityArgument(entityList)
   for deviceId in entityList:
     i += 1
     try:
-      deviceFiles = _getMain().callGAPIitems(cd.chromeosdevices(), 'get', 'deviceFiles',
+      deviceFiles = callGAPIitems(cd.chromeosdevices(), 'get', 'deviceFiles',
                                   throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                                   customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, fields=fields)
       if deviceFilesEntity:
         deviceFiles = _selectDeviceFiles(deviceId, deviceFiles, deviceFilesEntity)
       jcount = len(deviceFiles)
-      _getMain().entityPerformActionNumItems([Ent.CROS_DEVICE, deviceId], jcount, Ent.DEVICE_FILE, i, count)
+      entityPerformActionNumItems([Ent.CROS_DEVICE, deviceId], jcount, Ent.DEVICE_FILE, i, count)
       Ind.Increment()
       j = 0
       for deviceFile in deviceFiles:
         j += 1
         downloadfilename = os.path.join(targetFolder, f'cros-logs-{deviceId}-{deviceFile["createTime"]}.zip')
         _, content = cd._http.request(deviceFile['downloadUrl'])
-        _getMain().writeFile(downloadfilename, content, mode='wb', continueOnError=True)
-        _getMain().entityActionPerformed([Ent.DEVICE_FILE, downloadfilename], j, jcount)
+        writeFile(downloadfilename, content, mode='wb', continueOnError=True)
+        entityActionPerformed([Ent.DEVICE_FILE, downloadfilename], j, jcount)
       Ind.Decrement()
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
 
 # gam get devicefile <CrOSEntity> [select <DeviceFileEntity>] [targetfolder <FilePath>]
 def doGetCrOSDeviceFiles():
@@ -1036,11 +1129,11 @@ def substituteQueryTimes(queries, queryTimes):
 # Get CrOS devices from gam.cfg print_cros_ous and print_cros_ous_and_children
 def getCfgCrOSEntities():
   if GC.Values[GC.PRINT_CROS_OUS]:
-    entityList = _getMain().getItemsToModify(Cmd.ENTITY_CROS_OUS, GC.Values[GC.PRINT_CROS_OUS])
+    entityList = getItemsToModify(Cmd.ENTITY_CROS_OUS, GC.Values[GC.PRINT_CROS_OUS])
   else:
     entityList = []
   if GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]:
-    entityList.extend(_getMain().getItemsToModify(Cmd.ENTITY_CROS_OUS_AND_CHILDREN, GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]))
+    entityList.extend(getItemsToModify(Cmd.ENTITY_CROS_OUS_AND_CHILDREN, GC.Values[GC.PRINT_CROS_OUS_AND_CHILDREN]))
   return entityList
 
 CROS_ORDERBY_CHOICE_MAP = {
@@ -1089,7 +1182,7 @@ def doPrintCrOSDevices(entityList=None):
   def _printCrOS(cros):
     checkTPMVulnerability(cros)
     if 'autoUpdateExpiration' in cros:
-      cros['autoUpdateExpiration'] = _getMain().formatLocalDatestamp(cros['autoUpdateExpiration'])
+      cros['autoUpdateExpiration'] = formatLocalDatestamp(cros['autoUpdateExpiration'])
     if showDVRstorageFreePercentage:
       _computeDVRstorageFreePercentage(cros)
     for field in reverseLists:
@@ -1098,25 +1191,25 @@ def doPrintCrOSDevices(entityList=None):
     if 'orgUnitId' in cros:
       cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
     if FJQC.formatJSON:
-      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(_getMain().flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS)):
+      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS)):
         row = {'deviceId': cros['deviceId']}
         if addCSVData:
           row.update(addCSVData)
           if includeCSVDataInJSON:
             cros.update(addCSVData)
-        row['JSON'] = json.dumps(_getMain().cleanJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS),
+        row['JSON'] = json.dumps(cleanJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS),
                                  ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
       return
     if 'notes' in cros:
-      cros['notes'] = _getMain().escapeCRsNLs(cros['notes'])
+      cros['notes'] = escapeCRsNLs(cros['notes'])
     if addCSVData:
       cros.update(addCSVData)
     for cpuStatusReport in cros.get('cpuStatusReports', []):
       for tempInfo in cpuStatusReport.get('cpuTemperatureInfo', []):
         tempInfo['label'] = tempInfo['label'].strip()
     if not noLists and not selectedLists:
-      csvPF.WriteRowTitles(_getMain().flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS))
+      csvPF.WriteRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS))
       return
     for attrib in ['diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo']:
       if attrib in cros:
@@ -1125,7 +1218,7 @@ def doPrintCrOSDevices(entityList=None):
           if key not in CROS_TIME_OBJECTS:
             cros[attribKey] = value
           else:
-            cros[attribKey] = _getMain().formatLocalTime(value)
+            cros[attribKey] = formatLocalTime(value)
         cros.pop(attrib)
     activeTimeRanges = _filterActiveTimeRanges(cros, selectedLists.get('activeTimeRanges', False), listLimit, startDate, endDate, activeTimeRangesOrder)
     recentUsers = _filterRecentUsers(cros, selectedLists.get('recentUsers', False), listLimit)
@@ -1136,18 +1229,18 @@ def doPrintCrOSDevices(entityList=None):
     screenshotFiles = _filterScreenshotFiles(cros, selectedLists.get('screenshotFiles', False), listLimit, startTime, endTime)
     systemRamFreeReports = _filterSystemRamFreeReports(cros, selectedLists.get('systemRamFreeReports', False), listLimit, startTime, endTime)
     if oneRow:
-      csvPF.WriteRowTitles(_getMain().flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS))
+      csvPF.WriteRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_TIME_OBJECTS))
       return
     row = {}
     for attrib in cros:
       if attrib in {'cpuInfo', 'backlightInfo', 'bluetoothAdapterInfo', 'fanInfo'}:
-        _getMain().flattenJSON({attrib: cros[attrib]}, flattened=row)
+        flattenJSON({attrib: cros[attrib]}, flattened=row)
       elif attrib not in {'kind', 'etag', 'diskSpaceUsage', 'osUpdateStatus', 'tpmVersionInfo', 'activeTimeRanges', 'recentUsers',
                           'deviceFiles', 'cpuStatusReports', 'diskVolumeReports', 'lastKnownNetwork', 'screenshotFiles', 'systemRamFreeReports'}:
         if attrib not in CROS_TIME_OBJECTS:
           row[attrib] = cros[attrib]
         else:
-          row[attrib] = _getMain().formatLocalTime(cros[attrib])
+          row[attrib] = formatLocalTime(cros[attrib])
     if addCSVData:
       row.update(addCSVData)
     if noLists or (not activeTimeRanges and not recentUsers and not deviceFiles and
@@ -1207,18 +1300,18 @@ def doPrintCrOSDevices(entityList=None):
     if exception is None:
       _printCrOS(response)
     else:
-      http_status, reason, message = _getMain().checkGAPIError(exception)
+      http_status, reason, message = checkGAPIError(exception)
       if reason in [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN]:
-        _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       else:
-        errMsg = _getMain().getHTTPError({}, http_status, reason, message)
-        _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        errMsg = getHTTPError({}, http_status, reason, message)
+        entityActionFailedWarning([Ent.CROS_DEVICE, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   fieldsList = ['deviceId']
   reverseLists = []
-  csvPF = _getMain().CSVPrintFile(fieldsList, indexedTitles=CROS_INDEXED_TITLES)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(fieldsList, indexedTitles=CROS_INDEXED_TITLES)
+  FJQC = FormatJSONQuoteChar(csvPF)
   projection = orderBy = sortOrder = None
   ous = ['/']
   includeChildOrgunits = True
@@ -1237,40 +1330,40 @@ def doPrintCrOSDevices(entityList=None):
   addCSVData = {}
   includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif selectionAllowed and myarg == 'limittoou':
-      ous = [_getMain().getOrgUnitItem()]
+      ous = [getOrgUnitItem()]
       selectionAllowed = False
       includeChildOrgunits = False
     elif selectionAllowed and myarg in CROS_ENTITIES_MAP:
       myarg = CROS_ENTITIES_MAP[myarg]
-      ous = _getMain().convertEntityToList(_getMain().getString(Cmd.OB_CROS_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OU_AND_CHILDREN])
+      ous = convertEntityToList(getString(Cmd.OB_CROS_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OU_AND_CHILDREN])
       selectionAllowed = False
       includeChildOrgunits = myarg in {Cmd.ENTITY_CROS_OU_AND_CHILDREN, Cmd.ENTITY_CROS_OUS_AND_CHILDREN}
     elif (selectionAllowed or queries == [None]) and myarg in {'query', 'queries'}:
-      queries = _getMain().getDeviceQueries(myarg, Ent.CROS_DEVICE)
+      queries = getDeviceQueries(myarg, Ent.CROS_DEVICE)
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()[0:19]
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif selectionAllowed and myarg == 'select':
-      _, entityList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_CROS, crosAllowed=True, userAllowed=False)
+      _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_CROS, crosAllowed=True, userAllowed=False)
       selectionAllowed = False
     elif myarg == 'orderby':
-      orderBy, sortOrder = _getMain().getOrderBySortOrder(CROS_ORDERBY_CHOICE_MAP, 'DESCENDING', True)
+      orderBy, sortOrder = getOrderBySortOrder(CROS_ORDERBY_CHOICE_MAP, 'DESCENDING', True)
     elif myarg == 'onerow':
       oneRow = True
     elif myarg == 'nolists':
       noLists = True
       selectedLists = {}
     elif myarg == 'listlimit':
-      listLimit = _getMain().getInteger(minVal=0)
+      listLimit = getInteger(minVal=0)
     elif myarg in CROS_START_ARGUMENTS:
       startDate, startTime = _getFilterDateTime()
     elif myarg in CROS_END_ARGUMENTS:
       endDate, endTime = _getFilterDateTime()
     elif myarg == 'timerangeorder':
-      activeTimeRangesOrder = _getMain().getChoice(_getMain().SORTORDER_CHOICE_MAP, mapChoice=True)
+      activeTimeRangesOrder = getChoice(SORTORDER_CHOICE_MAP, mapChoice=True)
     elif myarg in _getMain().PROJECTION_CHOICE_MAP:
       projection = _getMain().PROJECTION_CHOICE_MAP[myarg]
       sortHeaders = True
@@ -1283,44 +1376,44 @@ def doPrintCrOSDevices(entityList=None):
       allFields = sortHeaders = True
       fieldsList = []
     elif myarg == 'sortheaders':
-      sortHeaders = _getMain().getBoolean()
+      sortHeaders = getBoolean()
     elif myarg in CROS_LIST_FIELDS_CHOICE_MAP:
       selectedLists[CROS_LIST_FIELDS_CHOICE_MAP[myarg]] = True
     elif myarg in CROS_FIELDS_CHOICE_MAP:
       csvPF.AddField(myarg, CROS_FIELDS_CHOICE_MAP, fieldsList)
     elif myarg == 'fields':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_FIELDS_CHOICE_MAP:
           if field in CROS_LIST_FIELDS_CHOICE_MAP:
             selectedLists[CROS_LIST_FIELDS_CHOICE_MAP[field]] = True
           else:
             csvPF.AddField(field, CROS_FIELDS_CHOICE_MAP, fieldsList)
         else:
-          _getMain().invalidChoiceExit(field, CROS_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_FIELDS_CHOICE_MAP, True)
     elif myarg == 'reverselists':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_LIST_FIELDS_CHOICE_MAP:
           reverseLists.append(CROS_LIST_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, CROS_LIST_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_LIST_FIELDS_CHOICE_MAP, True)
     elif myarg == 'showdvrsfp':
       showDVRstorageFreePercentage = True
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'includecsvdatainjson':
-      includeCSVDataInJSON = _getMain().getBoolean()
+      includeCSVDataInJSON = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if selectedLists:
     noLists = False
     projection = 'FULL'
     for selectList in selectedLists:
-      _getMain().addFieldToFieldsList(selectList, CROS_FIELDS_CHOICE_MAP, fieldsList)
+      addFieldToFieldsList(selectList, CROS_FIELDS_CHOICE_MAP, fieldsList)
   if fieldsList:
     fieldsList.append('deviceId')
-  _, _, entityList = _getMain().getEntityArgument(entityList)
+  _, _, entityList = getEntityArgument(entityList)
   if FJQC.formatJSON:
     sortHeaders = False
     csvPF.SetJSONTitles(['deviceId', 'JSON'])
@@ -1330,20 +1423,20 @@ def doPrintCrOSDevices(entityList=None):
   substituteQueryTimes(queries, queryTimes)
   if entityList is None:
     sortRows = False
-    fields = _getMain().getItemFieldsFromFieldsList('chromeosdevices', fieldsList)
+    fields = getItemFieldsFromFieldsList('chromeosdevices', fieldsList)
     for ou in ous:
-      ou = _getMain().makeOrgUnitPathAbsolute(ou)
+      ou = makeOrgUnitPathAbsolute(ou)
       oneQualifier = Msg.DIRECTLY_IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT)) if not includeChildOrgunits else Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
       for query in queries:
-        _getMain().printGettingAllEntityItemsForWhom(Ent.CROS_DEVICE, ou,
+        printGettingAllEntityItemsForWhom(Ent.CROS_DEVICE, ou,
                                           query=query, qualifier=oneQualifier, entityType=Ent.ORGANIZATIONAL_UNIT)
-        pageMessage = _getMain().getPageMessageForWhom()
+        pageMessage = getPageMessageForWhom()
         pageToken = None
         totalItems = 0
         tokenRetries = 0
         while True:
           try:
-            feed = _getMain().callGAPI(cd.chromeosdevices(), 'list',
+            feed = callGAPI(cd.chromeosdevices(), 'list',
                             throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT,
                                           GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1352,15 +1445,15 @@ def doPrintCrOSDevices(entityList=None):
                             orgUnitPath=ou, includeChildOrgunits=includeChildOrgunits,
                             orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
             tokenRetries = 0
-            pageToken, totalItems = _getMain()._processGAPIpagesResult(feed, 'chromeosdevices', None, totalItems, pageMessage, None, Ent.CROS_DEVICE)
+            pageToken, totalItems = _processGAPIpagesResult(feed, 'chromeosdevices', None, totalItems, pageMessage, None, Ent.CROS_DEVICE)
             if feed:
               if not showItemCountOnly:
                 for cros in feed.get('chromeosdevices', []):
                   _printCrOS(cros)
               del feed
             if not pageToken:
-              _getMain()._finalizeGAPIpagesResult(pageMessage)
-              _getMain().printGotAccountEntities(totalItems)
+              _finalizeGAPIpagesResult(pageMessage)
+              printGotAccountEntities(totalItems)
               break
           except GAPI.invalidInput as e:
             message = str(e)
@@ -1369,29 +1462,29 @@ def doPrintCrOSDevices(entityList=None):
             if message[15:] == pageToken:
               tokenRetries += 1
               if tokenRetries <= 2:
-                _getMain().writeStderr(f'{WARNING_PREFIX}{Msg.LIST_CHROMEOS_INVALID_INPUT_PAGE_TOKEN_RETRY}')
+                writeStderr(f'{WARNING_PREFIX}{Msg.LIST_CHROMEOS_INVALID_INPUT_PAGE_TOKEN_RETRY}')
                 time.sleep(tokenRetries*5)
                 continue
-              _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
+              entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
               return
-            _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], _getMain().invalidQuery(query) if query is not None else message)
+            entityActionFailedWarning([Ent.CROS_DEVICE, None], invalidQuery(query) if query is not None else message)
             return
           except GAPI.invalidOrgunit as e:
-            _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], str(e))
+            entityActionFailedWarning([Ent.CROS_DEVICE, None], str(e))
             return
           except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
             accessErrorExit(cd)
     if showItemCountOnly:
-      _getMain().writeStdout(f'{totalItems}\n')
+      writeStdout(f'{totalItems}\n')
       return
   else:
     if showItemCountOnly:
-      _getMain().writeStdout(f'{len(entityList)}\n')
+      writeStdout(f'{len(entityList)}\n')
       return
     sortRows = True
     if allFields or len(set(fieldsList)) > 1:
       jcount = len(entityList)
-      fields = _getMain().getFieldsFromFieldsList(fieldsList)
+      fields = getFieldsFromFieldsList(fieldsList)
       svcargs = dict([('customerId', GC.Values[GC.CUSTOMER_ID]), ('deviceId', None), ('projection', projection), ('fields', fields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
       method = getattr(cd.chromeosdevices(), 'get')
       dbatch = cd.new_batch_http_request(callback=_callbackPrintCrOS)
@@ -1401,10 +1494,10 @@ def doPrintCrOSDevices(entityList=None):
         j += 1
         svcparms = svcargs.copy()
         svcparms['deviceId'] = deviceId
-        dbatch.add(method(**svcparms), request_id=_getMain().batchRequestID('', 0, 0, j, jcount, deviceId))
+        dbatch.add(method(**svcparms), request_id=batchRequestID('', 0, 0, j, jcount, deviceId))
         bcount += 1
         if bcount >= GC.Values[GC.BATCH_SIZE]:
-          _getMain().executeBatch(dbatch)
+          executeBatch(dbatch)
           dbatch = cd.new_batch_http_request(callback=_callbackPrintCrOS)
           bcount = 0
       if bcount > 0:
@@ -1452,9 +1545,9 @@ def doPrintCrOSActivity(entityList=None):
     if 'orgUnitId' in cros:
       cros['orgUnitId'] = f"id:{cros['orgUnitId']}"
     if FJQC.formatJSON:
-      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(_getMain().flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_ACTIVITY_TIME_OBJECTS)):
+      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(cros, listLimit=listLimit, timeObjects=CROS_ACTIVITY_TIME_OBJECTS)):
         csvPF.WriteRowNoFilter({'deviceId': cros['deviceId'],
-                                'JSON': json.dumps(_getMain().cleanJSON(cros, timeObjects=CROS_ACTIVITY_TIME_OBJECTS),
+                                'JSON': json.dumps(cleanJSON(cros, timeObjects=CROS_ACTIVITY_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
       return
     for attrib in cros:
@@ -1487,19 +1580,19 @@ def doPrintCrOSActivity(entityList=None):
     if exception is None:
       _printCrOS(response)
     else:
-      http_status, reason, message = _getMain().checkGAPIError(exception)
+      http_status, reason, message = checkGAPIError(exception)
       if reason in [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN]:
-        _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       else:
-        errMsg = _getMain().getHTTPError({}, http_status, reason, message)
-        _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        errMsg = getHTTPError({}, http_status, reason, message)
+        entityActionFailedWarning([Ent.CROS_DEVICE, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   fieldsList = ['deviceId', 'annotatedAssetId', 'annotatedLocation', 'serialNumber', 'orgUnitId', 'orgUnitPath']
   reverseLists = []
-  csvPF = _getMain().CSVPrintFile(fieldsList)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(fieldsList)
+  FJQC = FormatJSONQuoteChar(csvPF)
   projection = 'FULL'
   orderBy = sortOrder = None
   ous = [None]
@@ -1516,35 +1609,35 @@ def doPrintCrOSActivity(entityList=None):
   directlyInOU = True
   activeTimeRangesOrder = 'ASCENDING'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif selectionAllowed and myarg == 'limittoou':
-      ous = [_getMain().getOrgUnitItem()]
+      ous = [getOrgUnitItem()]
       selectionAllowed = False
       directlyInOU = True
     elif selectionAllowed and myarg in CROS_ENTITIES_MAP:
       myarg = CROS_ENTITIES_MAP[myarg]
-      ous = _getMain().convertEntityToList(_getMain().getString(Cmd.OB_CROS_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OU_AND_CHILDREN])
+      ous = convertEntityToList(getString(Cmd.OB_CROS_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OU_AND_CHILDREN])
       selectionAllowed = False
       directlyInOU = myarg in {Cmd.ENTITY_CROS_OU, Cmd.ENTITY_CROS_OUS}
     elif (selectionAllowed or queries == [None]) and myarg in {'query', 'queries'}:
-      queries = _getMain().getDeviceQueries(myarg, Ent.CROS_DEVICE)
+      queries = getDeviceQueries(myarg, Ent.CROS_DEVICE)
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()[0:19]
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
     elif selectionAllowed and myarg == 'select':
-      _, entityList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_CROS, crosAllowed=True, userAllowed=False)
+      _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_CROS, crosAllowed=True, userAllowed=False)
       selectionAllowed = False
     elif myarg == 'oneuserperrow':
       oneUserPerRow = True
     elif myarg == 'listlimit':
-      listLimit = _getMain().getInteger(minVal=0)
+      listLimit = getInteger(minVal=0)
     elif myarg in CROS_START_ARGUMENTS:
       startDate, startTime = _getFilterDateTime()
     elif myarg in CROS_END_ARGUMENTS:
       endDate, endTime = _getFilterDateTime()
     elif myarg == 'timerangeorder':
-      activeTimeRangesOrder = _getMain().getChoice(_getMain().SORTORDER_CHOICE_MAP, mapChoice=True)
+      activeTimeRangesOrder = getChoice(SORTORDER_CHOICE_MAP, mapChoice=True)
     elif myarg in CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP:
       selectedLists[CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP[myarg]] = True
     elif myarg == 'both':
@@ -1552,15 +1645,15 @@ def doPrintCrOSActivity(entityList=None):
     elif myarg == 'all':
       selectedLists['activeTimeRanges'] = selectedLists['recentUsers'] = selectedLists['deviceFiles'] = True
     elif myarg == 'reverselists':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP:
           reverseLists.append(CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_ACTIVITY_LIST_FIELDS_CHOICE_MAP, True)
     elif myarg == 'orderby':
-      orderBy, sortOrder = _getMain().getOrderBySortOrder(CROS_ORDERBY_CHOICE_MAP, 'DESCENDING', True)
+      orderBy, sortOrder = getOrderBySortOrder(CROS_ORDERBY_CHOICE_MAP, 'DESCENDING', True)
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not selectedLists:
@@ -1577,22 +1670,22 @@ def doPrintCrOSActivity(entityList=None):
     fieldsList.append('deviceFiles')
     csvPF.AddTitles([f'deviceFiles{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}type',
                      f'deviceFiles{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}createTime'])
-  _, _, entityList = _getMain().getEntityArgument(entityList)
+  _, _, entityList = getEntityArgument(entityList)
   if FJQC.formatJSON:
     csvPF.SetJSONTitles(['deviceId', 'JSON'])
   substituteQueryTimes(queries, queryTimes)
   if entityList is None:
     sortRows = False
-    fields = _getMain().getItemFieldsFromFieldsList('chromeosdevices', fieldsList)
+    fields = getItemFieldsFromFieldsList('chromeosdevices', fieldsList)
     for ou in ous:
       if ou is not None:
-        ou = _getMain().makeOrgUnitPathAbsolute(ou)
+        ou = makeOrgUnitPathAbsolute(ou)
       ouList = [ou]
       if not directlyInOU:
         try:
-          orgs = _getMain().callGAPI(cd.orgunits(), 'list',
+          orgs = callGAPI(cd.orgunits(), 'list',
                           throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
-                          customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=_getMain().makeOrgUnitPathRelative(ou),
+                          customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=makeOrgUnitPathRelative(ou),
                           type='all', fields='organizationUnits(orgUnitPath)')
         except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
           checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, ou)
@@ -1600,23 +1693,23 @@ def doPrintCrOSActivity(entityList=None):
         ouList.extend([subou['orgUnitPath'] for subou in sorted(orgs.get('organizationUnits', []), key=lambda k: k['orgUnitPath'])])
       for subou in ouList:
         if subou is not None:
-          orgUnitPath = _getMain().makeOrgUnitPathAbsolute(subou)
+          orgUnitPath = makeOrgUnitPathAbsolute(subou)
         else:
           orgUnitPath = subou
         for query in queries:
           if orgUnitPath is not None:
             oneQualifier = Msg.DIRECTLY_IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
-            _getMain().printGettingAllEntityItemsForWhom(Ent.CROS_DEVICE, orgUnitPath, qualifier=oneQualifier, entityType=Ent.ORGANIZATIONAL_UNIT)
-            pageMessage = _getMain().getPageMessageForWhom()
+            printGettingAllEntityItemsForWhom(Ent.CROS_DEVICE, orgUnitPath, qualifier=oneQualifier, entityType=Ent.ORGANIZATIONAL_UNIT)
+            pageMessage = getPageMessageForWhom()
           else:
-            _getMain().printGettingAllAccountEntities(Ent.CROS_DEVICE, query)
-            pageMessage = _getMain().getPageMessage()
+            printGettingAllAccountEntities(Ent.CROS_DEVICE, query)
+            pageMessage = getPageMessage()
           pageToken = None
           totalItems = 0
           tokenRetries = 0
           while True:
             try:
-              feed = _getMain().callGAPI(cd.chromeosdevices(), 'list',
+              feed = callGAPI(cd.chromeosdevices(), 'list',
                               throwReasons=[GAPI.INVALID_INPUT, GAPI.INVALID_ORGUNIT,
                                             GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1624,14 +1717,14 @@ def doPrintCrOSActivity(entityList=None):
                               customerId=GC.Values[GC.CUSTOMER_ID], query=query, projection=projection, orgUnitPath=orgUnitPath,
                               orderBy=orderBy, sortOrder=sortOrder, fields=fields, maxResults=GC.Values[GC.DEVICE_MAX_RESULTS])
               tokenRetries = 0
-              pageToken, totalItems = _getMain()._processGAPIpagesResult(feed, 'chromeosdevices', None, totalItems, pageMessage, None, Ent.CROS_DEVICE)
+              pageToken, totalItems = _processGAPIpagesResult(feed, 'chromeosdevices', None, totalItems, pageMessage, None, Ent.CROS_DEVICE)
               if feed:
                 for cros in feed.get('chromeosdevices', []):
                   _printCrOS(cros)
                 del feed
               if not pageToken:
-                _getMain()._finalizeGAPIpagesResult(pageMessage)
-                _getMain().printGotAccountEntities(totalItems)
+                _finalizeGAPIpagesResult(pageMessage)
+                printGotAccountEntities(totalItems)
                 break
             except GAPI.invalidInput as e:
               message = str(e)
@@ -1640,22 +1733,22 @@ def doPrintCrOSActivity(entityList=None):
               if message[15:] == pageToken:
                 tokenRetries += 1
                 if tokenRetries <= 2:
-                  _getMain().writeStderr(f'{WARNING_PREFIX}{Msg.LIST_CHROMEOS_INVALID_INPUT_PAGE_TOKEN_RETRY}')
+                  writeStderr(f'{WARNING_PREFIX}{Msg.LIST_CHROMEOS_INVALID_INPUT_PAGE_TOKEN_RETRY}')
                   time.sleep(tokenRetries*5)
                   continue
-                _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
+                entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
                 return
-              _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], _getMain().invalidQuery(query) if query is not None else message)
+              entityActionFailedWarning([Ent.CROS_DEVICE, None], invalidQuery(query) if query is not None else message)
               return
             except GAPI.invalidOrgunit as e:
-              _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], str(e))
+              entityActionFailedWarning([Ent.CROS_DEVICE, None], str(e))
               return
             except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
               accessErrorExit(cd)
   else:
     sortRows = True
     jcount = len(entityList)
-    fields = _getMain().getFieldsFromFieldsList(fieldsList)
+    fields = getFieldsFromFieldsList(fieldsList)
     svcargs = dict([('customerId', GC.Values[GC.CUSTOMER_ID]), ('deviceId', None), ('projection', projection), ('fields', fields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
     method = getattr(cd.chromeosdevices(), 'get')
     dbatch = cd.new_batch_http_request(callback=_callbackPrintCrOS)
@@ -1665,10 +1758,10 @@ def doPrintCrOSActivity(entityList=None):
       j += 1
       svcparms = svcargs.copy()
       svcparms['deviceId'] = deviceId
-      dbatch.add(method(**svcparms), request_id=_getMain().batchRequestID('', 0, 0, j, jcount, deviceId))
+      dbatch.add(method(**svcparms), request_id=batchRequestID('', 0, 0, j, jcount, deviceId))
       bcount += 1
       if bcount >= GC.Values[GC.BATCH_SIZE]:
-        _getMain().executeBatch(dbatch)
+        executeBatch(dbatch)
         dbatch = cd.new_batch_http_request(callback=_callbackPrintCrOS)
         bcount = 0
     if bcount > 0:
@@ -1679,9 +1772,9 @@ def doPrintCrOSActivity(entityList=None):
 
 # gam <CrOSTypeEntity> print [cros|croses|crosactivity]
 def doPrintCrOSEntity(entityList):
-  if _getMain().getChoice([Cmd.ARG_CROS, Cmd.ARG_CROSES, Cmd.ARG_CROSACTIVITY], defaultChoice=None) != Cmd.ARG_CROSACTIVITY:
+  if getChoice([Cmd.ARG_CROS, Cmd.ARG_CROSES, Cmd.ARG_CROSACTIVITY], defaultChoice=None) != Cmd.ARG_CROSACTIVITY:
     if not Cmd.ArgumentsRemaining():
-      _getMain().writeEntityNoHeaderCSVFile(Ent.CROS_DEVICE, entityList)
+      writeEntityNoHeaderCSVFile(Ent.CROS_DEVICE, entityList)
     else:
       doPrintCrOSDevices(entityList)
   else:
@@ -1797,13 +1890,13 @@ def doInfoPrintShowCrOSTelemetry():
   def _printDevice(device):
     _cleanDevice(device)
     if FJQC.formatJSON:
-      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(_getMain().flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)):
+      if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)):
         csvPF.WriteRowNoFilter({'deviceId': device['deviceId'],
-                                'JSON': json.dumps(_getMain().cleanJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS),
+                                'JSON': json.dumps(cleanJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS),
                                                    ensure_ascii=False, sort_keys=True)})
       return
     if not oneItemPerRow:
-      csvPF.WriteRowTitles(_getMain().flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS))
+      csvPF.WriteRowTitles(flattenJSON(device, timeObjects=CROS_TELEMETRY_TIME_OBJECTS))
       return
     listLens = {}
     maxLen = 0
@@ -1820,62 +1913,62 @@ def doInfoPrintShowCrOSTelemetry():
       row = baserow.copy()
       for field, fieldLen in listLens.items():
         if i < fieldLen:
-          _getMain().flattenJSON({field: device[field][i]}, flattened=row, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)
+          flattenJSON({field: device[field][i]}, flattened=row, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)
       csvPF.WriteRowTitles(row)
 
   def _showDevice(device, i=0, count=0):
     _cleanDevice(device)
     if FJQC.formatJSON:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON(device), ensure_ascii=False, sort_keys=True))
+      printLine(json.dumps(cleanJSON(device), ensure_ascii=False, sort_keys=True))
       return
-    _getMain().printEntity([Ent.CROS_DEVICE, device['deviceId']], i, count)
+    printEntity([Ent.CROS_DEVICE, device['deviceId']], i, count)
     Ind.Increment()
     for up in CROS_TELEMETRY_SCALAR_FIELDS:
       if up in device:
-        _getMain().printKeyValueList([up, device[up]])
-    _getMain().showJSON(None, device, skipObjects=CROS_TELEMETRY_SCALAR_FIELDS_SET, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)
+        printKeyValueList([up, device[up]])
+    showJSON(None, device, skipObjects=CROS_TELEMETRY_SCALAR_FIELDS_SET, timeObjects=CROS_TELEMETRY_TIME_OBJECTS)
     Ind.Decrement()
 
-  cm = _getMain().buildGAPIObject(API.CHROMEMANAGEMENT)
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   cd = None
   parent = _getMain()._getCustomersCustomerIdWithC()
   fieldsList = []
   reverseLists = []
   action = Act.Get()
   if action == Act.INFO:
-    sn = _getMain().getString(Cmd.OB_SERIAL_NUMBER)
+    sn = getString(Cmd.OB_SERIAL_NUMBER)
     pfilters = [(f'serialNumber={sn}', f'serialNumber={sn}')]
     Act.Set(Act.SHOW)
   else:
     pfilters = []
-  csvPF = _getMain().CSVPrintFile(['deviceId'], CROS_TELEMETRY_SCALAR_FIELDS) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['deviceId'], CROS_TELEMETRY_SCALAR_FIELDS) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   diskPercentOnly = showOrgUnitPath = False
   listLimit = 0
   startTime = endTime = None
   oneItemPerRow = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'ou', 'org', 'orgunit', 'limittoou', 'ouandchildren', 'crossn', 'filter'}:
       if pfilters:
         Cmd.Backup()
-        _getMain().usageErrorExit(Msg.ONLY_ONE_DEVICE_SELECTION_ALLOWED.format(pfilters[0][1]))
+        usageErrorExit(Msg.ONLY_ONE_DEVICE_SELECTION_ALLOWED.format(pfilters[0][1]))
       if myarg == 'crossn':
-        sn = _getMain().getString(Cmd.OB_SERIAL_NUMBER)
+        sn = getString(Cmd.OB_SERIAL_NUMBER)
         pfilters = [(f'serialNumber={sn}', f'serialNumber={sn}')]
       elif myarg == 'filter':
-        pf = _getMain().getString(Cmd.OB_STRING)
+        pf = getString(Cmd.OB_STRING)
         pfilters = [(pf, pf)]
       else:
         if cd is None:
-          cd = _getMain().buildGAPIObject(API.DIRECTORY)
-        orgUnitPath, orgUnitId = _getMain().getOrgUnitId(cd)
+          cd = buildGAPIObject(API.DIRECTORY)
+        orgUnitPath, orgUnitId = getOrgUnitId(cd)
         pfilters = [(f'orgUnitId={orgUnitId[3:]}', f'orgUnitPath={orgUnitPath}')]
         if myarg == 'ouandchildren':
           try:
-            subous = _getMain().callGAPI(cd.orgunits(), 'list',
+            subous = callGAPI(cd.orgunits(), 'list',
                               throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
                               customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=orgUnitId,
                               type='all', fields='organizationUnits(orgUnitPath,orgUnitId)')
@@ -1884,7 +1977,7 @@ def doInfoPrintShowCrOSTelemetry():
             return
           pfilters.extend([(f'orgUnitId={subou["orgUnitId"][3:]}', f'orgUnitPath={subou["orgUnitPath"]}') for subou in subous.get('organizationUnits', [])])
     elif myarg == 'listlimit':
-      listLimit = _getMain().getInteger()
+      listLimit = getInteger()
     elif myarg in CROS_START_ARGUMENTS:
       _, startTime = _getFilterDateTime()
     elif myarg in CROS_END_ARGUMENTS:
@@ -1892,21 +1985,21 @@ def doInfoPrintShowCrOSTelemetry():
     elif myarg in CROS_TELEMETRY_FIELDS_CHOICE_MAP:
       fieldsList.append(CROS_TELEMETRY_FIELDS_CHOICE_MAP[myarg])
     elif myarg == 'fields':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_TELEMETRY_FIELDS_CHOICE_MAP:
           fieldsList.append(CROS_TELEMETRY_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, CROS_TELEMETRY_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_TELEMETRY_FIELDS_CHOICE_MAP, True)
     elif myarg == 'reverselists':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in CROS_TELEMETRY_LIST_FIELDS_CHOICE_MAP:
           reverseLists.append(CROS_TELEMETRY_LIST_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, CROS_TELEMETRY_LIST_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CROS_TELEMETRY_LIST_FIELDS_CHOICE_MAP, True)
     elif myarg == 'showorgunitpath':
       showOrgUnitPath = True
       if cd is None:
-        cd = _getMain().buildGAPIObject(API.DIRECTORY)
+        cd = buildGAPIObject(API.DIRECTORY)
     elif myarg == 'storagepercentonly':
       diskPercentOnly = True
     elif csvPF and myarg == 'oneitemperrow':
@@ -1927,17 +2020,17 @@ def doInfoPrintShowCrOSTelemetry():
   if not pfilters:
     pfilters = [(None, 'All')]
   for pfilter in pfilters:
-    _getMain().printGettingAllAccountEntities(Ent.CROS_DEVICE, pfilter[1])
-    pageMessage = _getMain().getPageMessage()
+    printGettingAllAccountEntities(Ent.CROS_DEVICE, pfilter[1])
+    pageMessage = getPageMessage()
     try:
-      devices = _getMain().callGAPIpages(cm.customers().telemetry().devices(), 'list', 'devices',
+      devices = callGAPIpages(cm.customers().telemetry().devices(), 'list', 'devices',
                               pageMessage=pageMessage,
                               throwReasons=[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT, GAPI.INVALID_INPUT],
                               parent=parent, filter=pfilter[0],
                               readMask=readMask, pageSize=GC.Values[GC.DEVICE_MAX_RESULTS])
     except (GAPI.invalidArgument, GAPI.invalidInput) as e:
       message = str(e).replace('\n', ',')
-      _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
+      entityActionFailedWarning([Ent.CROS_DEVICE, None], message)
       return
     except GAPI.permissionDenied as e:
       accessErrorExitNonDirectory(API.CHROMEMANAGEMENT, str(e))
@@ -1946,7 +2039,7 @@ def doInfoPrintShowCrOSTelemetry():
         _printDevice(device)
     else:
       jcount = len(devices)
-      _getMain().performActionNumItems(jcount, Ent.CROS_DEVICE)
+      performActionNumItems(jcount, Ent.CROS_DEVICE)
       j = 0
       for device in devices:
         j += 1

@@ -12,6 +12,43 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    escapeCRsNLs,
+    getArgument,
+    getBoolean,
+    getCharSet,
+    getChoice,
+    getString,
+    getStringWithCRsNLs,
+    getTimeOrDeltaFromNow,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
+    printEntity,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printGettingEntityItemForWhom,
+    printKeyValueList,
+    printLine,
+    userTasksServiceNotEnabledWarning,
+)
+from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getEntityList, getUserObjectEntity
+from gam.util.errors import usageErrorExit
+from gam.util.fileio import readFile, setFilePath
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -19,44 +56,33 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def verifyTasksServiceEnabled(svc, user, i, count):
   try:
-    _getMain().callGAPIpages(svc.tasklists(), 'list', 'items',
+    callGAPIpages(svc.tasklists(), 'list', 'items',
                   throwReasons=GAPI.TASKLIST_THROW_REASONS,
                   maxItems=1)
     return True
   except (GAPI.notFound, GAPI.badRequest, GAPI.invalid):
-    _getMain().userTasksServiceNotEnabledWarning(user, i, count)
+    userTasksServiceNotEnabledWarning(user, i, count)
     return False
 
 def getTaskLists(svc, user, i, count):
   try:
-    results = _getMain().callGAPIpages(svc.tasklists(), 'list', 'items',
-                            pageMessage=_getMain().getPageMessageForWhom(),
+    results = callGAPIpages(svc.tasklists(), 'list', 'items',
+                            pageMessage=getPageMessageForWhom(),
                             throwReasons=GAPI.TASKLIST_THROW_REASONS,
                             maxResults=100)
   except (GAPI.badRequest, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, None], str(e), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, None], str(e), i, count)
     results = None
   except GAPI.notFound:
-    _getMain().userTasksServiceNotEnabledWarning(user, i, count)
+    userTasksServiceNotEnabledWarning(user, i, count)
     results = None
   return results
 
 def getTaskListIDfromTitle(svc, userTasklists, title, user, i, count):
   if userTasklists is None:
-    _getMain().printGettingEntityItemForWhom(Ent.TASKLIST, user, i, count)
+    printGettingEntityItemForWhom(Ent.TASKLIST, user, i, count)
     userTasklists = getTaskLists(svc, user, i, count)
     if userTasklists is None:
       return None, None
@@ -72,21 +98,21 @@ def _showTask(tasklist, task, j=0, jcount=0, FJQC=None, compact=False):
   task['tasklistId'] = tasklist
   task['taskId'] = f"{tasklist}/{task['id']}"
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(task, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS),
+    printLine(json.dumps(cleanJSON(task, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS),
                          ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.TASK, task['taskId']], j, jcount)
+  printEntity([Ent.TASK, task['taskId']], j, jcount)
   Ind.Increment()
-  _getMain().showJSON(None, task, skipObjects=TASK_SKIP_OBJECTS+['notes'], timeObjects=TASK_TIME_OBJECTS)
+  showJSON(None, task, skipObjects=TASK_SKIP_OBJECTS+['notes'], timeObjects=TASK_TIME_OBJECTS)
   field = 'notes'
   if field in task:
     if not compact:
-      _getMain().printKeyValueList([field, None])
+      printKeyValueList([field, None])
       Ind.Increment()
-      _getMain().printKeyValueList([Ind.MultiLineText(task[field])])
+      printKeyValueList([Ind.MultiLineText(task[field])])
       Ind.Decrement()
     else:
-      _getMain().printKeyValueList(['notes', _getMain().escapeCRsNLs(task[field])])
+      printKeyValueList(['notes', escapeCRsNLs(task[field])])
   Ind.Decrement()
 
 TASK_STATUS_MAP = {
@@ -96,22 +122,22 @@ TASK_STATUS_MAP = {
 
 def getTaskAttribute(myarg, body):
   if myarg == 'title':
-    body[myarg] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+    body[myarg] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'notes':
-    body[myarg] = _getMain().getStringWithCRsNLs()
+    body[myarg] = getStringWithCRsNLs()
   elif myarg == 'status':
-    body[myarg] = _getMain().getChoice(TASK_STATUS_MAP, mapChoice=True)
+    body[myarg] = getChoice(TASK_STATUS_MAP, mapChoice=True)
   elif myarg == 'due':
-    body[myarg] = _getMain().getTimeOrDeltaFromNow()
+    body[myarg] = getTimeOrDeltaFromNow()
   else:
     return False
   return True
 
 def getTaskMoveAttribute(myarg, kwargs):
   if myarg == 'parent':
-    kwargs[myarg] = _getMain().getString(Cmd.OB_TASK_ID)
+    kwargs[myarg] = getString(Cmd.OB_TASK_ID)
   elif myarg == 'previous':
-    kwargs[myarg] = _getMain().getString(Cmd.OB_TASK_ID)
+    kwargs[myarg] = getString(Cmd.OB_TASK_ID)
   else:
     return False
   return True
@@ -131,19 +157,19 @@ def getTaskMoveAttribute(myarg, kwargs):
 def processTasks(users):
   action = Act.Get()
   if action != Act.CREATE:
-    tasklistTaskEntity = _getMain().getUserObjectEntity(Cmd.OB_TASKLIST_ID_TASK_ID_ENTITY, Ent.TASK, shlexSplit=True)
+    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_TASK_ID_ENTITY, Ent.TASK, shlexSplit=True)
   else:
-    tasklistTaskEntity = _getMain().getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASK, shlexSplit=True)
+    tasklistTaskEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASK, shlexSplit=True)
   if action in {Act.DELETE, Act.CLEAR}:
     FJQC = None
-    _getMain().checkForExtraneousArguments()
+    checkForExtraneousArguments()
   else:
-    FJQC = _getMain().FormatJSONQuoteChar()
+    FJQC = FormatJSONQuoteChar()
     body = {}
     kwargs = {}
     compact = returnIdOnly = False
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if action in {Act.CREATE, Act.UPDATE} and getTaskAttribute(myarg, body):
         pass
       elif action in {Act.CREATE, Act.MOVE} and getTaskMoveAttribute(myarg, kwargs):
@@ -154,10 +180,10 @@ def processTasks(users):
         compact = True
       else:
         FJQC.GetFormatJSON(myarg)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, svc, tasklistTasks, jcount = _getMain()._validateUserGetObjectList(user, i, count, tasklistTaskEntity,
+    user, svc, tasklistTasks, jcount = _validateUserGetObjectList(user, i, count, tasklistTaskEntity,
                                                                   api=API.TASKS, showAction=FJQC is None or not FJQC.formatJSON)
     if jcount == 0 or not verifyTasksServiceEnabled(svc, user, i, count):
       continue
@@ -177,45 +203,45 @@ def processTasks(users):
           tasklistTitle = tasklist[8:]
           userTasklists, tasklist = getTaskListIDfromTitle(svc, userTasklists, tasklistTitle, user, i, count)
           if tasklist is None:
-            _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle, Ent.TASK, task], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
+            entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle, Ent.TASK, task], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
             continue
       try:
         if action == Act.DELETE:
-          _getMain().callGAPI(svc.tasks(), 'delete',
+          callGAPI(svc.tasks(), 'delete',
                    throwReasons=GAPI.TASK_THROW_REASONS,
                    tasklist=tasklist, task=task)
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, task], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, task], j, jcount)
         elif action == Act.INFO:
-          result = _getMain().callGAPI(svc.tasks(), 'get',
+          result = callGAPI(svc.tasks(), 'get',
                             throwReasons=GAPI.TASK_THROW_REASONS,
                             tasklist=tasklist, task=task)
           _showTask(tasklist, result, j, jcount, FJQC, compact)
         else:
           if action == Act.CREATE:
-            result = _getMain().callGAPI(svc.tasks(), 'insert',
+            result = callGAPI(svc.tasks(), 'insert',
                               throwReasons=GAPI.TASK_THROW_REASONS,
                               tasklist=tasklist, body=body, **kwargs)
             if returnIdOnly:
-              _getMain().writeStdout(f"{result['id']}\n")
+              writeStdout(f"{result['id']}\n")
               continue
           elif action == Act.UPDATE:
-            result = _getMain().callGAPI(svc.tasks(), 'patch',
+            result = callGAPI(svc.tasks(), 'patch',
                               throwReasons=GAPI.TASK_THROW_REASONS,
                               tasklist=tasklist, task=task, body=body)
           else: #elif action == Act.MOVE
-            result = _getMain().callGAPI(svc.tasks(), 'move',
+            result = callGAPI(svc.tasks(), 'move',
                               throwReasons=GAPI.TASK_THROW_REASONS,
                               tasklist=tasklist, task=task, **kwargs)
           if not FJQC.formatJSON:
-            _getMain().entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, result['id']], j, jcount)
+            entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, result['id']], j, jcount)
           Ind.Increment()
           _showTask(tasklist, result, j, jcount, FJQC, compact)
           Ind.Decrement()
       except (GAPI.badRequest, GAPI.permissionDenied, GAPI.invalid, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, task], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, task], str(e), j, jcount)
       except GAPI.serviceNotAvailable:
         Ind.Decrement()
-        _getMain().userTasksServiceNotEnabledWarning(user, i, count)
+        userTasksServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -275,43 +301,43 @@ def printShowTasks(users):
       task = taskData[taskId]
       task['tasklistId'] = tasklist
       task['taskId'] = f"{tasklist}/{task['id']}"
-      row = _getMain().flattenJSON(task, flattened={'User': user}, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS)
+      row = flattenJSON(task, flattened={'User': user}, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         row = {'User': user, 'id': task['id'], 'tasklistId': tasklist, 'taskId': task['taskId'], 'title': task.get('title', '')}
-        row['JSON'] = json.dumps(_getMain().cleanJSON(task, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS),
+        row['JSON'] = json.dumps(cleanJSON(task, skipObjects=TASK_SKIP_OBJECTS, timeObjects=TASK_TIME_OBJECTS),
                                  ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
       for task in taskParents.get(taskId, []):
         _printTaskAndChildren(tasklist, task['taskId'])
 
-  csvPF = _getMain().CSVPrintFile(['User', 'tasklistId', 'id', 'taskId', 'title', 'status', 'due', 'updated', 'completed'], 'sortall') if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'tasklistId', 'id', 'taskId', 'title', 'status', 'due', 'updated', 'completed'], 'sortall') if Act.csvFormat() else None
   if csvPF:
     csvPF.SetNoEscapeChar(True)
   CSVTitle = 'Tasks'
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   tasklistEntity = None
   kwargs = {'maxResults': 100}
   compact = countsOnly = False
   orderBy = orderByNoDataValue = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'tasklist', 'tasklists'}:
-      tasklistEntity = _getMain().getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST, shlexSplit=True)
+      tasklistEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST, shlexSplit=True)
     elif myarg in TASK_QUERY_TIME_MAP:
-      kwargs[TASK_QUERY_TIME_MAP[myarg]] = _getMain().getTimeOrDeltaFromNow()
+      kwargs[TASK_QUERY_TIME_MAP[myarg]] = getTimeOrDeltaFromNow()
     elif myarg in TASK_QUERY_STATE_MAP:
-      kwargs[TASK_QUERY_STATE_MAP[myarg]] = _getMain().getBoolean()
+      kwargs[TASK_QUERY_STATE_MAP[myarg]] = getBoolean()
     elif myarg == 'showall':
       for field in TASK_QUERY_STATE_MAP.values():
         kwargs[field] = True
     elif not csvPF and myarg == 'compact':
       compact = True
     elif myarg == 'orderby':
-      orderBy, orderByNoDataValue = _getMain().getChoice(TASK_ORDERBY_CHOICE_MAP, mapChoice=True)
+      orderBy, orderByNoDataValue = getChoice(TASK_ORDERBY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'countsonly':
       countsOnly = True
       if csvPF:
@@ -323,14 +349,14 @@ def printShowTasks(users):
       csvPF.SetFormatJSON(False)
     elif FJQC.formatJSON:
       csvPF.SetJSONTitles(['User', 'tasklistId', 'id', 'taskId', 'title', 'JSON'])
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     if tasklistEntity is None:
-      user, svc = _getMain().buildGAPIServiceObject(API.TASKS, user, i, count)
+      user, svc = buildGAPIServiceObject(API.TASKS, user, i, count)
       if not svc:
         continue
-      _getMain().printGettingEntityItemForWhom(Ent.TASKLIST, user, i, count)
+      printGettingEntityItemForWhom(Ent.TASKLIST, user, i, count)
       results = getTaskLists(svc, user, i, count)
       if results is None:
         continue
@@ -338,7 +364,7 @@ def printShowTasks(users):
       jcount = len(tasklists)
     else:
       userTasklists = None
-      user, svc, tasklists, jcount = _getMain()._validateUserGetObjectList(user, i, count, tasklistEntity, api=API.TASKS,
+      user, svc, tasklists, jcount = _validateUserGetObjectList(user, i, count, tasklistEntity, api=API.TASKS,
                                                                 showAction=FJQC is None or not FJQC.formatJSON)
       if jcount == 0:
         continue
@@ -353,12 +379,12 @@ def printShowTasks(users):
         tasklistTitle = tasklist[8:]
         userTasklists, tasklist = getTaskListIDfromTitle(svc, userTasklists, tasklistTitle, user, i, count)
         if tasklist is None:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
           continue
-      _getMain().printGettingEntityItemForWhom(Ent.TASK, tasklist, j, jcount)
+      printGettingEntityItemForWhom(Ent.TASK, tasklist, j, jcount)
       try:
-        tasks = _getMain().callGAPIpages(svc.tasks(), 'list', 'items',
-                              pageMessage=_getMain().getPageMessageForWhom(),
+        tasks = callGAPIpages(svc.tasks(), 'list', 'items',
+                              pageMessage=getPageMessageForWhom(),
                               throwReasons=GAPI.TASK_THROW_REASONS,
                               tasklist=tasklist, **kwargs)
         kcount = len(tasks)
@@ -388,7 +414,7 @@ def printShowTasks(users):
           taskParents[None].sort(key=lambda k: (k[orderBy], k['parent'], k['position']))
         if not csvPF:
           if not FJQC.formatJSON:
-            _getMain().entityPerformActionNumItems([Ent.TASKLIST, tasklist], kcount, Ent.TASK, j, jcount)
+            entityPerformActionNumItems([Ent.TASKLIST, tasklist], kcount, Ent.TASK, j, jcount)
           Ind.Increment()
           k = 0
           for parent in taskParents.values():
@@ -400,15 +426,15 @@ def printShowTasks(users):
             for task in parent:
               _printTaskAndChildren(tasklist, task['taskId'])
       except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, None], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist, Ent.TASK, None], str(e), i, count)
       except GAPI.serviceNotAvailable:
-        _getMain().userTasksServiceNotEnabledWarning(user, i, count)
+        userTasksServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
     if countsOnly:
       if csvPF:
         csvPF.WriteRowTitles({'User': user, CSVTitle: taskCount})
       else:
-        _getMain().printEntityKVList([Ent.USER, user], [CSVTitle, taskCount], i, count)
+        printEntityKVList([Ent.USER, user], [CSVTitle, taskCount], i, count)
   if csvPF:
     csvPF.writeCSVfile(CSVTitle)
 
@@ -417,12 +443,12 @@ TASKLIST_TIME_OBJECTS = ['updated']
 
 def _showTasklist(tasklist, j=0, jcount=0, FJQC=None):
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS),
+    printLine(json.dumps(cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS),
                          ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.TASKLIST, tasklist['id']], j, jcount)
+  printEntity([Ent.TASKLIST, tasklist['id']], j, jcount)
   Ind.Increment()
-  _getMain().showJSON(None, tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS)
+  showJSON(None, tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS)
   Ind.Decrement()
 
 # gam <UserTypeEntity> create tasklist
@@ -438,29 +464,29 @@ def _showTasklist(tasklist, j=0, jcount=0, FJQC=None):
 def processTasklists(users):
   action = Act.Get()
   if action != Act.CREATE:
-    tasklistEntity = _getMain().getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST, shlexSplit=True)
+    tasklistEntity = getUserObjectEntity(Cmd.OB_TASKLIST_ID_ENTITY, Ent.TASKLIST, shlexSplit=True)
   else:
     tasklistEntity = {'item': Ent.TASKLIST, 'list': [None], 'dict': None}
   if action in {Act.DELETE, Act.CLEAR}:
     FJQC = None
-    _getMain().checkForExtraneousArguments()
+    checkForExtraneousArguments()
   else:
-    FJQC = _getMain().FormatJSONQuoteChar()
+    FJQC = FormatJSONQuoteChar()
     body = {}
     returnIdOnly = False
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if action in {Act.CREATE, Act.UPDATE} and myarg == 'title':
-        body['title'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        body['title'] = getString(Cmd.OB_STRING, minLen=0)
       elif action == Act.CREATE and myarg == 'returnidonly':
         returnIdOnly = True
       else:
         FJQC.GetFormatJSON(myarg)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     userTasklists = None
-    user, svc, tasklists, jcount = _getMain()._validateUserGetObjectList(user, i, count, tasklistEntity,
+    user, svc, tasklists, jcount = _validateUserGetObjectList(user, i, count, tasklistEntity,
                                                               api=API.TASKS,
                                                               showAction=action != Act.CREATE and (FJQC is None or not FJQC.formatJSON))
     if jcount == 0 or not verifyTasksServiceEnabled(svc, user, i, count):
@@ -476,46 +502,46 @@ def processTasklists(users):
           if userTasklists is None:
             continue
           if tasklist is None:
-            _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
+            entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklistTitle], Msg.TASKLIST_TITLE_NOT_FOUND, j, jcount)
             continue
       try:
         if action == Act.DELETE:
-          _getMain().callGAPI(svc.tasklists(), 'delete',
+          callGAPI(svc.tasklists(), 'delete',
                    throwReasons=GAPI.TASK_THROW_REASONS,
                    tasklist=tasklist)
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist], j, jcount)
         elif action == Act.CLEAR:
-          _getMain().callGAPI(svc.tasks(), 'clear',
+          callGAPI(svc.tasks(), 'clear',
                    throwReasons=GAPI.TASK_THROW_REASONS,
                    tasklist=tasklist)
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.TASKLIST, tasklist], j, jcount)
         elif action == Act.INFO:
-          result = _getMain().callGAPI(svc.tasklists(), 'get',
+          result = callGAPI(svc.tasklists(), 'get',
                             throwReasons=GAPI.TASK_THROW_REASONS,
                             tasklist=tasklist)
           _showTasklist(result, j, jcount, FJQC)
         else:
           if action == Act.CREATE:
-            result = _getMain().callGAPI(svc.tasklists(), 'insert',
+            result = callGAPI(svc.tasklists(), 'insert',
                               throwReasons=GAPI.TASK_THROW_REASONS,
                               body=body)
             if returnIdOnly:
-              _getMain().writeStdout(f"{result['id']}\n")
+              writeStdout(f"{result['id']}\n")
               continue
           else: # Act.UPDATE
-            result = _getMain().callGAPI(svc.tasklists(), 'patch',
+            result = callGAPI(svc.tasklists(), 'patch',
                               throwReasons=GAPI.TASK_THROW_REASONS,
                               tasklist=tasklist, body=body)
           if not FJQC.formatJSON:
-            _getMain().entityActionPerformed([Ent.USER, user, Ent.TASKLIST, result['id']], i, count)
+            entityActionPerformed([Ent.USER, user, Ent.TASKLIST, result['id']], i, count)
           Ind.Increment()
           _showTasklist(result, j, jcount, FJQC)
           Ind.Decrement()
       except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.TASKLIST, tasklist], str(e), j, jcount)
       except GAPI.serviceNotAvailable:
         Ind.Decrement()
-        _getMain().userTasksServiceNotEnabledWarning(user, i, count)
+        userTasksServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -524,14 +550,14 @@ def processTasklists(users):
 # gam <UserTypeEntity> print tasklists [todrive <ToDriveAttribute>*]
 #	[countsonly|(formatjson [quotechar <Character>])]
 def printShowTasklists(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'id', 'title']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'id', 'title']) if Act.csvFormat() else None
   if csvPF:
     csvPF.SetNoEscapeChar(True)
   CSVTitle = 'TaskLists'
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   countsOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'countsonly':
@@ -542,13 +568,13 @@ def printShowTasklists(users):
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if countsOnly and csvPF:
     csvPF.SetFormatJSON(False)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, svc = _getMain().buildGAPIServiceObject(API.TASKS, user, i, count)
+    user, svc = buildGAPIServiceObject(API.TASKS, user, i, count)
     if not svc:
       continue
-    _getMain().printGettingAllEntityItemsForWhom(Ent.TASKLIST, user, i, count)
+    printGettingAllEntityItemsForWhom(Ent.TASKLIST, user, i, count)
     tasklists = getTaskLists(svc, user, i, count)
     if tasklists is None:
       continue
@@ -557,10 +583,10 @@ def printShowTasklists(users):
       if csvPF:
         csvPF.WriteRowTitles({'User': user, CSVTitle: jcount})
       else:
-        _getMain().printEntityKVList([Ent.USER, user], [CSVTitle, jcount], i, count)
+        printEntityKVList([Ent.USER, user], [CSVTitle, jcount], i, count)
     elif not csvPF:
       if not  FJQC.formatJSON:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.TASKLIST, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.TASKLIST, i, count)
       Ind.Increment()
       j = 0
       for tasklist in tasklists:
@@ -569,12 +595,12 @@ def printShowTasklists(users):
       Ind.Decrement()
     elif tasklists:
       for tasklist in tasklists:
-        row = _getMain().flattenJSON(tasklist, flattened={'User': user}, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS)
+        row = flattenJSON(tasklist, flattened={'User': user}, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS)
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
           row = {'User': user, 'id': tasklist['id'], 'title': tasklist.get('title', '')}
-          row['JSON'] = json.dumps(_getMain().cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS),
+          row['JSON'] = json.dumps(cleanJSON(tasklist, skipObjects=TASKLIST_SKIP_OBJECTS, timeObjects=TASKLIST_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowNoFilter(row)
     elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
@@ -584,16 +610,16 @@ def printShowTasklists(users):
 
 # gam <UserTypeEntity> import tasklist <Filename> [charset <Charset>]))
 def importTasklist(users):
-  filename = _getMain().getString(Cmd.OB_FILE_NAME)
-  encoding = _getMain().getCharSet()
+  filename = getString(Cmd.OB_FILE_NAME)
+  encoding = getCharSet()
   try:
-    jsonData = json.loads(_getMain().readFile(_getMain().setFilePath(filename, GC.INPUT_DIR), encoding=encoding))
+    jsonData = json.loads(readFile(setFilePath(filename, GC.INPUT_DIR), encoding=encoding))
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
     Cmd.Backup()
-    _getMain().usageErrorExit(Msg.JSON_ERROR.format(str(e), filename))
+    usageErrorExit(Msg.JSON_ERROR.format(str(e), filename))
   if jsonData.get('kind', '') != 'tasks#taskLists':
     Cmd.Backup()
-    _getMain().usageErrorExit(f'{"Not a Tasks takeout JSON file"}: {filename}')
+    usageErrorExit(f'{"Not a Tasks takeout JSON file"}: {filename}')
   parentIdMap = {}
   cleanData = {'items': []}
   for tasklist in jsonData.get('items', []):
@@ -607,19 +633,19 @@ def importTasklist(users):
       cleanTasklist['items'].append(cleanTask.copy())
     cleanData['items'].append(cleanTasklist.copy())
   if not cleanData['items']:
-    _getMain().writeStdout('No tasks to import\n')
+    writeStdout('No tasks to import\n')
     return
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, svc = _getMain().buildGAPIServiceObject(API.TASKS, user, i, count)
+    user, svc = buildGAPIServiceObject(API.TASKS, user, i, count)
     if not svc:
       continue
     if not verifyTasksServiceEnabled(svc, user, i, count):
       continue
     for tasklist in cleanData['items']:
       body = {'title': tasklist['title']}
-      result = _getMain().callGAPI(svc.tasklists(), 'insert',
+      result = callGAPI(svc.tasklists(), 'insert',
                         throwReasons=GAPI.TASK_THROW_REASONS,
                         body=body)
       tasklistId = result['id']
@@ -629,7 +655,7 @@ def importTasklist(users):
           parent = parentIdMap[task.pop('parent')]
         else:
           parent = None
-        result = _getMain().callGAPI(svc.tasks(), 'insert',
+        result = callGAPI(svc.tasks(), 'insert',
                           throwReasons=GAPI.TASK_THROW_REASONS,
                           tasklist=tasklistId, parent=parent, body=task)
         parentIdMap[taskId] = result['id']
@@ -648,32 +674,32 @@ TAGMANAGER_PARAMETERS = {
   }
 
 def printShowTagManagerObjects(users, entityType):
-  csvPF = _getMain().CSVPrintFile(['User']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   if entityType == Ent.TAGMANAGER_ACCOUNT:
     kwargs = {'includeGoogleTags': False}
     parentList = [None]
   else:
     kwargs = {'parent': None}
-    if not _getMain().checkArgumentPresent('select'):
-      parentList = _getMain().getString(Cmd.OB_TAGMANAGER_PATH_LIST).replace(',', ' ').split()
+    if not checkArgumentPresent('select'):
+      parentList = getString(Cmd.OB_TAGMANAGER_PATH_LIST).replace(',', ' ').split()
     else:
-      parentList = _getMain().getEntityList(Cmd.OB_TAGMANAGER_PATH_LIST)
+      parentList = getEntityList(Cmd.OB_TAGMANAGER_PATH_LIST)
   parameters = TAGMANAGER_PARAMETERS[entityType]
   if csvPF:
     csvPF.AddTitles([parameters['name'], 'path'])
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif entityType == Ent.TAGMANAGER_ACCOUNT and myarg == 'includegoogletags':
-      kwargs['includeGoogleTags'] = _getMain().getBoolean()
+      kwargs['includeGoogleTags'] = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, svc = _getMain().buildGAPIServiceObject(parameters['api'], user, i, count)
+    user, svc = buildGAPIServiceObject(parameters['api'], user, i, count)
     if not svc:
       continue
     if entityType == Ent.TAGMANAGER_ACCOUNT:
@@ -691,49 +717,49 @@ def printShowTagManagerObjects(users, entityType):
     for parent in parentList:
       j += 1
       if entityType == Ent.TAGMANAGER_ACCOUNT:
-        _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count)
+        printGettingAllEntityItemsForWhom(entityType, user, i, count)
       else:
         kwargs['parent'] = parent
         qualifier = f' for {Ent.Singular(parameters["parentEntityType"])}: {parent}'
-        _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count, qualifier=qualifier)
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, qualifier=qualifier)
       try:
-        results = _getMain().callGAPIpages(svc, 'list', parameters['respType'],
-                                 pageMessage=_getMain().getPageMessageForWhom(),
+        results = callGAPIpages(svc, 'list', parameters['respType'],
+                                 pageMessage=getPageMessageForWhom(),
                                  throwReasons=GAPI.TAGMANAGER_THROW_REASONS,
                                  **kwargs)
       except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, entityType, kwargs['parent']], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, entityType, kwargs['parent']], str(e), j, jcount)
         continue
       if not csvPF:
         kcount = len(results)
         if not  FJQC.formatJSON:
-          _getMain().entityPerformActionNumItems([Ent.USER, user], kcount, entityType, j, jcount)
+          entityPerformActionNumItems([Ent.USER, user], kcount, entityType, j, jcount)
         Ind.Increment()
         k = 0
         for result in results:
           k += 1
           if not  FJQC.formatJSON:
-            _getMain().printEntity([entityType, result['path']], k, kcount)
+            printEntity([entityType, result['path']], k, kcount)
             Ind.Increment()
-            _getMain().printKeyValueList([parameters['name'], result.pop(parameters['name'])])
+            printKeyValueList([parameters['name'], result.pop(parameters['name'])])
             for tmid in parameters['idList']:
-              _getMain().printKeyValueList([tmid, result.pop(tmid)])
-            _getMain().showJSON(None, result)
+              printKeyValueList([tmid, result.pop(tmid)])
+            showJSON(None, result)
             Ind.Decrement()
           else:
-            _getMain().printLine(json.dumps(_getMain().cleanJSON(result), ensure_ascii=False, sort_keys=True))
+            printLine(json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True))
         Ind.Decrement()
       elif results:
         for result in results:
           baseRow = {'User': user}
           for tmid in parameters['idList']:
             baseRow[tmid] = result.pop(tmid)
-          row = _getMain().flattenJSON(result, flattened=baseRow)
+          row = flattenJSON(result, flattened=baseRow)
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
             row = {'User': user, parameters['name']: result[parameters['name']], 'path': result['path']}
-            row['JSON'] = json.dumps(_getMain().cleanJSON(result), ensure_ascii=False, sort_keys=True)
+            row['JSON'] = json.dumps(cleanJSON(result), ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})

@@ -18,6 +18,39 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages, checkGAPIError
+from gam.util.args import (
+    LABEL_BACKGROUND_COLORS,
+    LABEL_TEXT_COLORS,
+    checkForExtraneousArguments,
+    formatHTTPError,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getLabelColor,
+    getString,
+    getStringReturnInList,
+    validateREPattern,
+    validateREPatternSubstitution,
+)
+from gam.util.csv_pf import CSVPrintFile, batchRequestID, flattenJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityListDoesNotExistWarning,
+    entityModifierNewValueActionPerformed,
+    entityPerformActionModifierNewValue,
+    entityPerformActionNumItems,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printGettingEntityItemForWhom,
+    printKeyValueList,
+    userGmailServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import executeBatch, setSysExitRC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -38,14 +71,14 @@ def __getattr__(name):
 
 def _getUserGmailLabels(gmail, user, i, count, fields):
   try:
-    labels = _getMain().callGAPI(gmail.users().labels(), 'list',
+    labels = callGAPI(gmail.users().labels(), 'list',
                       throwReasons=GAPI.GMAIL_THROW_REASONS,
                       userId='me', fields=fields)
     if not labels:
       labels = {'labels': []}
     return labels
   except GAPI.serviceNotAvailable:
-    _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+    userGmailServiceNotEnabledWarning(user, i, count)
     return None
 
 def _getLabelId(labels, labelName):
@@ -78,17 +111,17 @@ LABEL_TYPE_USER = 'user'
 
 def getLabelAttributes(myarg, body):
   if myarg == 'labellistvisibility':
-    body['labelListVisibility'] = _getMain().getChoice(LABEL_LABEL_LIST_VISIBILITY_CHOICE_MAP, mapChoice=True)
+    body['labelListVisibility'] = getChoice(LABEL_LABEL_LIST_VISIBILITY_CHOICE_MAP, mapChoice=True)
   elif myarg == 'messagelistvisibility':
-    body['messageListVisibility'] = _getMain().getChoice(LABEL_MESSAGE_LIST_VISIBILITY_CHOICES)
+    body['messageListVisibility'] = getChoice(LABEL_MESSAGE_LIST_VISIBILITY_CHOICES)
   elif myarg in {'backgroundcolor', 'backgroundcolour'}:
     body.setdefault('color', {})
-    body['color']['backgroundColor'] = _getMain().getLabelColor(_getMain().LABEL_BACKGROUND_COLORS)
+    body['color']['backgroundColor'] = getLabelColor(LABEL_BACKGROUND_COLORS)
   elif myarg in {'textcolor', 'textcolour'}:
     body.setdefault('color', {})
-    body['color']['textColor'] = _getMain().getLabelColor(_getMain().LABEL_TEXT_COLORS)
+    body['color']['textColor'] = getLabelColor(LABEL_TEXT_COLORS)
   else:
-    _getMain().unknownArgumentExit()
+    unknownArgumentExit()
 
 def checkLabelColor(body):
   if 'color' not in body:
@@ -96,20 +129,20 @@ def checkLabelColor(body):
   if 'backgroundColor' in body['color']:
     if 'textColor' in body['color']:
       return
-    _getMain().missingArgumentExit('textcolor <LabelColorHex>')
-  _getMain().missingArgumentExit('backgroundcolor <LabelColorHex>')
+    missingArgumentExit('textcolor <LabelColorHex>')
+  missingArgumentExit('backgroundcolor <LabelColorHex>')
 
 def buildLabelPath(gmail, user, i, count, body, label, labelSet, l=0, lcount=0):
   label = label.strip('/')
   if label in labelSet:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
+    entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
     return
   labelParts = label.split('/')
   invalid = False
   for j, labelPart in enumerate(labelParts):
     labelParts[j] = labelPart.strip()
     if not labelParts[j]:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.INVALID, l, lcount)
+      entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.INVALID, l, lcount)
       invalid = True
       break
   if invalid:
@@ -125,26 +158,26 @@ def buildLabelPath(gmail, user, i, count, body, label, labelSet, l=0, lcount=0):
     if labelPath not in labelSet:
       if duplicate:
         jcount = len(labelParts)-k
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
         Ind.Increment()
         decrement = True
         duplicate = False
       j += 1
       body['name'] = labelPath
       try:
-        newLabel = _getMain().callGAPI(gmail.users().labels(), 'create',
+        newLabel = callGAPI(gmail.users().labels(), 'create',
                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE],
                             userId='me', body=body, fields='id,name')
         labelSet[newLabel['name']] = newLabel['id']
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL, labelPath], j, jcount)
+        entityActionPerformed([Ent.USER, user, Ent.LABEL, labelPath], j, jcount)
       except GAPI.duplicate:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, j, jcount)
         break
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
   if duplicate:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, l, lcount)
+    entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, l, lcount)
   if decrement:
     Ind.Decrement()
 
@@ -152,9 +185,9 @@ def createLabels(users, labelEntity):
   body = {}
   buildPath = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'buildpath':
-      buildPath = _getMain().getBoolean()
+      buildPath = getBoolean()
     else:
       getLabelAttributes(myarg, body)
   checkLabelColor(body)
@@ -163,11 +196,11 @@ def createLabels(users, labelEntity):
     labelList = labelEntity
   else:
     userLabelList = labelEntity
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if userLabelList:
@@ -178,7 +211,7 @@ def createLabels(users, labelEntity):
       if not labels:
         continue
       labelSet = _getLabelSet(labels)
-    _getMain().entityPerformActionNumItems([Ent.USER, user], lcount, Ent.LABEL, i, count)
+    entityPerformActionNumItems([Ent.USER, user], lcount, Ent.LABEL, i, count)
     Ind.Increment()
     l = 0
     for label in labelList:
@@ -186,16 +219,16 @@ def createLabels(users, labelEntity):
       body['name'] = label
       if not buildPath:
         try:
-          _getMain().callGAPI(gmail.users().labels(), 'create',
+          callGAPI(gmail.users().labels(), 'create',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.INVALID, GAPI.PERMISSION_DENIED],
                    userId='me', body=body, fields='')
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL, label], l, lcount)
+          entityActionPerformed([Ent.USER, user, Ent.LABEL, label], l, lcount)
         except GAPI.duplicate:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
         except (GAPI.invalid, GAPI.permissionDenied) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), l, lcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), l, lcount)
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
       else:
         buildLabelPath(gmail, user, i, count, body, label, labelSet, l, lcount)
     Ind.Decrement()
@@ -205,33 +238,33 @@ def createLabels(users, labelEntity):
 #	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 #	[buildpath [<Boolean>]]
 def createLabel(users):
-  createLabels(users, _getMain().getStringReturnInList(Cmd.OB_LABEL_NAME))
+  createLabels(users, getStringReturnInList(Cmd.OB_LABEL_NAME))
 
 # gam <UserTypeEntity> create labellist <LabelNameEntity>
 #	[messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 #	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 #	[buildpath [<Boolean>]]
 def createLabelList(users):
-  createLabels(users, _getMain().getEntityList(Cmd.OB_LABEL_NAME_LIST, shlexSplit=True))
+  createLabels(users, getEntityList(Cmd.OB_LABEL_NAME_LIST, shlexSplit=True))
 
 # gam <UserTypeEntity> update labelsettings <LabelName> [name <String>]
 #	[messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 #	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 def updateLabelSettings(users):
-  label_name = _getMain().getString(Cmd.OB_LABEL_NAME)
+  label_name = getString(Cmd.OB_LABEL_NAME)
   label_name_lower = label_name.lower()
   body = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      body['name'] = _getMain().getString(Cmd.OB_STRING)
+      body['name'] = getString(Cmd.OB_STRING)
     else:
       getLabelAttributes(myarg, body)
   checkLabelColor(body)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     labels = _getUserGmailLabels(gmail, user, i, count, 'labels(id,name)')
@@ -240,46 +273,46 @@ def updateLabelSettings(users):
     try:
       for label in labels['labels']:
         if label['name'].lower() == label_name_lower:
-          result = _getMain().callGAPI(gmail.users().labels(), 'patch',
+          result = callGAPI(gmail.users().labels(), 'patch',
                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
                             userId='me', id=label['id'], body=body, fields='name')
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL, result['name']], i, count)
+          entityActionPerformed([Ent.USER, user, Ent.LABEL, result['name']], i, count)
           break
       else:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], Msg.DOES_NOT_EXIST, i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.notFound, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label_name], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> update labelid <LabelID> [name <String>]
 #	[messagelistvisibility hide|show] [labellistvisibility hide|show|showifunread]
 #	[backgroundcolor <LabelColorHex>] [textcolor <LabelColorHex>]
 def updateLabelSettingsById(users):
-  labelId = _getMain().getString(Cmd.OB_LABEL_ID)
+  labelId = getString(Cmd.OB_LABEL_ID)
   body = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      body['name'] = _getMain().getString(Cmd.OB_STRING)
+      body['name'] = getString(Cmd.OB_STRING)
     else:
       getLabelAttributes(myarg, body)
   checkLabelColor(body)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
-      result = _getMain().callGAPI(gmail.users().labels(), 'patch',
+      result = callGAPI(gmail.users().labels(), 'patch',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
                         userId='me', id=labelId, body=body, fields='name')
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId, Ent.LABEL, result['name']], i, count)
+      entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId, Ent.LABEL, result['name']], i, count)
     except (GAPI.notFound, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 #
 def cleanLabelQuery(labelQuery):
   for ch in '/ (){}':
@@ -296,32 +329,32 @@ def updateLabels(users):
   replace = '%s'
   keepOldLabel = merge = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'search':
-      search = _getMain().getString(Cmd.OB_RE_PATTERN)
-      pattern = _getMain().validateREPattern(search, re.IGNORECASE)
+      search = getString(Cmd.OB_RE_PATTERN)
+      pattern = validateREPattern(search, re.IGNORECASE)
     elif myarg == 'replace':
       replaceLocation = Cmd.Location()
-      replace = _getMain().getString(Cmd.OB_RE_SUBSTITUTION)
+      replace = getString(Cmd.OB_RE_SUBSTITUTION)
     elif myarg == 'merge':
       merge = True
     elif myarg == 'keepoldlabel':
       keepOldLabel = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
 # Validate that number of substitions in replace matches the number of groups in pattern
   useRegexSub = replace.find('%s') == -1
   if useRegexSub:
     Cmd.SetLocation(replaceLocation)
-    _getMain().validateREPatternSubstitution(pattern, replace)
+    validateREPatternSubstitution(pattern, replace)
   else:
     if pattern.groups != replace.count('%s'):
       Cmd.SetLocation(replaceLocation)
-      _getMain().usageErrorExit(Msg.MISMATCH_SEARCH_REPLACE_SUBFIELDS.format(pattern.groups, search, replace.count('%s'), replace))
-  i, count, users = _getMain().getEntityArgument(users)
+      usageErrorExit(Msg.MISMATCH_SEARCH_REPLACE_SUBFIELDS.format(pattern.groups, search, replace.count('%s'), replace))
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     labels = _getUserGmailLabels(gmail, user, i, count, 'labels(id,name,type)')
@@ -342,15 +375,15 @@ def updateLabels(users):
           newLabelNameLower = newLabelName.lower()
           try:
             Act.Set(Act.RENAME)
-            _getMain().callGAPI(gmail.users().labels(), 'patch',
+            callGAPI(gmail.users().labels(), 'patch',
                      throwReasons=[GAPI.ABORTED, GAPI.DUPLICATE],
                      userId='me', id=label['id'], body={'name': newLabelName}, fields='')
-            _getMain().entityModifierNewValueActionPerformed([Ent.USER, user, Ent.LABEL, label['name']], Act.MODIFIER_TO, newLabelName, i, count)
+            entityModifierNewValueActionPerformed([Ent.USER, user, Ent.LABEL, label['name']], Act.MODIFIER_TO, newLabelName, i, count)
           except (GAPI.aborted, GAPI.duplicate):
             if merge:
               Act.Set(Act.MERGE)
-              _getMain().entityPerformActionModifierNewValue([Ent.USER, user, Ent.LABEL, label['name']], Act.MODIFIER_WITH, newLabelName, i, count)
-              messagesToRelabel = _getMain().callGAPIpages(gmail.users().messages(), 'list', 'messages',
+              entityPerformActionModifierNewValue([Ent.USER, user, Ent.LABEL, label['name']], Act.MODIFIER_WITH, newLabelName, i, count)
+              messagesToRelabel = callGAPIpages(gmail.users().messages(), 'list', 'messages',
                                                 userId='me', q=f'label:{cleanLabelQuery(label["name"])}')
               Act.Set(Act.RELABEL)
               jcount = len(messagesToRelabel)
@@ -363,34 +396,34 @@ def updateLabels(users):
                 j = 0
                 for message in messagesToRelabel:
                   j += 1
-                  _getMain().callGAPI(gmail.users().messages(), 'modify',
+                  callGAPI(gmail.users().messages(), 'modify',
                            userId='me', id=message['id'], body=body, fields='')
-                  _getMain().entityActionPerformed([Ent.USER, user, Ent.MESSAGE, message['id']], j, jcount)
+                  entityActionPerformed([Ent.USER, user, Ent.MESSAGE, message['id']], j, jcount)
               else:
-                _getMain().printEntityKVList([Ent.USER, user],
+                printEntityKVList([Ent.USER, user],
                                   [Msg.NO_MESSAGES_WITH_LABEL, label['name']],
                                   i, count)
               Ind.Decrement()
               if not keepOldLabel:
-                _getMain().callGAPI(gmail.users().labels(), 'delete',
+                callGAPI(gmail.users().labels(), 'delete',
                          userId='me', id=label['id'])
                 Act.Set(Act.DELETE)
-                _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL, label['name']], i, count)
+                entityActionPerformed([Ent.USER, user, Ent.LABEL, label['name']], i, count)
             else:
-              _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.LABEL, newLabelName], Msg.ALREADY_EXISTS_USE_MERGE_ARGUMENT, i, count)
+              entityActionNotPerformedWarning([Ent.USER, user, Ent.LABEL, newLabelName], Msg.ALREADY_EXISTS_USE_MERGE_ARGUMENT, i, count)
       if labels and (labelMatches == 0):
-        _getMain().printEntityKVList([Ent.USER, user],
+        printEntityKVList([Ent.USER, user],
                           [Msg.NO_LABELS_MATCH, search],
                           i, count)
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 def _validateLabelList(user, i, count, labels, labelList, userOnly):
   validLabels = []
   for label in labelList:
     label_name_lower = label.lower()
     if label_name_lower[:6] == 'regex:':
-      labelPattern = _getMain().validateREPattern(label[6:])
+      labelPattern = validateREPattern(label[6:])
     else:
       labelPattern = None
     if label.upper() == '--ALL_LABELS--':
@@ -408,18 +441,18 @@ def _validateLabelList(user, i, count, labels, labelList, userOnly):
           validLabels.append(delLabel)
           break
       else:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DOES_NOT_EXIST, i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DOES_NOT_EXIST, i, count)
   return (validLabels, len(validLabels))
 
 def deleteLabels(users, labelEntity):
   def _handleProcessGmailError(exception, ri):
-    http_status, reason, message = _getMain().checkGAPIError(exception)
-    _getMain().entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], Ent.LABEL, labelIdToNameMap[ri[RI_ITEM]]], _getMain().formatHTTPError(http_status, reason, message), int(ri[RI_J]), int(ri[RI_JCOUNT]))
+    http_status, reason, message = checkGAPIError(exception)
+    entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], Ent.LABEL, labelIdToNameMap[ri[RI_ITEM]]], formatHTTPError(http_status, reason, message), int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _callbackDeleteLabel(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
-      _getMain().entityActionPerformed([Ent.USER, ri[RI_ENTITY], Ent.LABEL, labelIdToNameMap[ri[RI_ITEM]]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      entityActionPerformed([Ent.USER, ri[RI_ENTITY], Ent.LABEL, labelIdToNameMap[ri[RI_ITEM]]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
     else:
       _handleProcessGmailError(exception, ri)
 
@@ -428,24 +461,24 @@ def deleteLabels(users, labelEntity):
     labelList = labelEntity
   else:
     userLabelList = labelEntity
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if userLabelList:
       labelList = userLabelList[origUser]
     try:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.LABEL, user, i, count)
+      printGettingAllEntityItemsForWhom(Ent.LABEL, user, i, count)
       labels = _getUserGmailLabels(gmail, user, i, count, 'labels(id,name,type)')
       if not labels:
         continue
       delLabels, jcount = _validateLabelList(user, i, count, labels, labelList, True)
       labelIdToNameMap = {}
-      _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
+      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
       if jcount == 0:
         continue
       Ind.Increment()
@@ -459,25 +492,25 @@ def deleteLabels(users, labelEntity):
         svcparms = svcargs.copy()
         svcparms['id'] = del_me['id']
         labelIdToNameMap[del_me['id']] = del_me['name']
-        dbatch.add(method(**svcparms), request_id=_getMain().batchRequestID(user, i, count, j, jcount, del_me['id']))
+        dbatch.add(method(**svcparms), request_id=batchRequestID(user, i, count, j, jcount, del_me['id']))
         bcount += 1
         if bcount == 10:
-          _getMain().executeBatch(dbatch)
+          executeBatch(dbatch)
           dbatch = gmail.new_batch_http_request(callback=_callbackDeleteLabel)
           bcount = 0
       if bcount > 0:
         dbatch.execute()
       Ind.Decrement()
     except (GAPI.serviceNotAvailable, GAPI.badRequest):
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete label|labels <LabelName>|regex:<REMatchPattern>
 def deleteLabel(users):
-  deleteLabels(users, _getMain().getStringReturnInList(Cmd.OB_LABEL_NAME))
+  deleteLabels(users, getStringReturnInList(Cmd.OB_LABEL_NAME))
 
 # gam <UserTypeEntity> delete labellist <LabelNameEntity>
 def deleteLabelList(users):
-  deleteLabels(users, _getMain().getEntityList(Cmd.OB_LABEL_NAME_LIST, shlexSplit=True))
+  deleteLabels(users, getEntityList(Cmd.OB_LABEL_NAME_LIST, shlexSplit=True))
 
 def deleteLabelIds(users, labelEntity):
   if not isinstance(labelEntity, dict):
@@ -485,42 +518,42 @@ def deleteLabelIds(users, labelEntity):
     labelList = labelEntity
   else:
     userLabelList = labelEntity
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if userLabelList:
       labelList = userLabelList[origUser]
     lcount = len(labelList)
-    _getMain().entityPerformActionNumItems([Ent.USER, user], lcount, Ent.LABEL, i, count)
+    entityPerformActionNumItems([Ent.USER, user], lcount, Ent.LABEL, i, count)
     Ind.Increment()
     l = 0
     for labelId in labelList:
       l += 1
       try:
-        _getMain().callGAPI(gmail.users().labels(), 'delete',
+        callGAPI(gmail.users().labels(), 'delete',
                  throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID,
                                                         GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                  userId='me', id=labelId)
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId], l, lcount)
+        entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId], l, lcount)
       except (GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), l, lcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), l, lcount)
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
 # gam <UserTypeEntity> delete labelid <LabelID>
 def deleteLabelId(users):
-  deleteLabelIds(users, _getMain().getStringReturnInList(Cmd.OB_LABEL_ID))
+  deleteLabelIds(users, getStringReturnInList(Cmd.OB_LABEL_ID))
 
 # gam <UserTypeEntity> delete labelidlist <LabelIDEntity>
 def deleteLabelIdList(users):
-  deleteLabelIds(users, _getMain().getEntityList(Cmd.OB_LABEL_ID_LIST))
+  deleteLabelIds(users, getEntityList(Cmd.OB_LABEL_ID_LIST))
 
 PRINT_LABELS_TITLES = ['User', 'type', 'name', 'id']
 SHOW_LABELS_DISPLAY_CHOICES = ['allfields', 'basename', 'fullname']
@@ -564,33 +597,33 @@ def printShowLabels(users):
   def _printLabel(label):
     if not displayAllFields:
       if not showCounts:
-        _getMain().printKeyValueList([label[nameField]])
+        printKeyValueList([label[nameField]])
       else:
-        counts = _getMain().callGAPI(gmail.users().labels(), 'get',
+        counts = callGAPI(gmail.users().labels(), 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS,
                           userId='me', id=label['id'],
                           fields=LABEL_COUNTS_FIELDS)
         kvlist = [label[nameField], 'Counts']
         for a_key in LABEL_COUNTS_FIELDS_LIST:
           kvlist.extend([a_key, counts[a_key]])
-        _getMain().printKeyValueList(kvlist)
+        printKeyValueList(kvlist)
     else:
-      _getMain().printKeyValueList([label[nameField]])
+      printKeyValueList([label[nameField]])
       Ind.Increment()
       for a_key in LABEL_DISPLAY_FIELDS_LIST:
         if a_key in label:
           if a_key != 'color':
-            _getMain().printKeyValueList([a_key, label[a_key]])
+            printKeyValueList([a_key, label[a_key]])
           else:
-            _getMain().printKeyValueList(['backgroundColor', label[a_key]['backgroundColor']])
-            _getMain().printKeyValueList(['textColor', label[a_key]['textColor']])
+            printKeyValueList(['backgroundColor', label[a_key]['backgroundColor']])
+            printKeyValueList(['textColor', label[a_key]['textColor']])
       if showCounts:
-        counts = _getMain().callGAPI(gmail.users().labels(), 'get',
+        counts = callGAPI(gmail.users().labels(), 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS,
                           userId='me', id=label['id'],
                           fields=LABEL_COUNTS_FIELDS)
         for a_key in LABEL_COUNTS_FIELDS_LIST:
-          _getMain().printKeyValueList([a_key, counts[a_key]])
+          printKeyValueList([a_key, counts[a_key]])
       Ind.Decrement()
 
   def _printFlatLabel(label):
@@ -604,7 +637,7 @@ def printShowLabels(users):
     if label['children']:
       Ind.Increment()
       if displayAllFields:
-        _getMain().printKeyValueList(['nested', len(label['children'])])
+        printKeyValueList(['nested', len(label['children'])])
         Ind.Increment()
         for child in sorted(label['children'], key=lambda k: k['info']['name']):
           _printNestedLabel(child)
@@ -614,45 +647,45 @@ def printShowLabels(users):
           _printNestedLabel(child)
       Ind.Decrement()
 
-  csvPF = _getMain().CSVPrintFile(PRINT_LABELS_TITLES, 'sortall') if Act.csvFormat() else None
+  csvPF = CSVPrintFile(PRINT_LABELS_TITLES, 'sortall') if Act.csvFormat() else None
   onlyUser = showCounts = showNested = False
   displayAllFields = True
   nameField = 'name'
   labelEntity = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'onlyuser', 'useronly'}:
-      onlyUser = _getMain().getBoolean()
+      onlyUser = getBoolean()
     elif myarg == 'showcounts':
-      showCounts = _getMain().getBoolean()
+      showCounts = getBoolean()
     elif not csvPF and myarg == 'nested':
-      showNested = _getMain().getBoolean()
+      showNested = getBoolean()
     elif not csvPF and myarg == 'display':
-      fields = _getMain().getChoice(SHOW_LABELS_DISPLAY_CHOICES)
+      fields = getChoice(SHOW_LABELS_DISPLAY_CHOICES)
       nameField = 'name' if fields != 'basename' else 'base'
       displayAllFields = fields == 'allfields'
     elif myarg == 'labellist':
-      labelEntity = _getMain().getEntityList(Cmd.OB_LABEL_NAME_LIST, shlexSplit=True)
+      labelEntity = getEntityList(Cmd.OB_LABEL_NAME_LIST, shlexSplit=True)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not isinstance(labelEntity, dict):
     userLabelList = None
     labelList = labelEntity
   else:
     userLabelList = labelEntity
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if userLabelList:
       labelList = userLabelList[origUser]
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.LABEL, user, i, count)
+      printGettingEntityItemForWhom(Ent.LABEL, user, i, count)
     labels = _getUserGmailLabels(gmail, user, i, count, 'labels')
     if not labels:
       continue
@@ -666,9 +699,9 @@ def printShowLabels(users):
       labels['labels'], jcount = _validateLabelList(user, i, count, labels, labelList, onlyUser)
     try:
       if not csvPF:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
       if jcount == 0:
-        _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
         continue
       if not csvPF:
         labelTree = _buildLabelTree(labels)
@@ -684,15 +717,15 @@ def printShowLabels(users):
         for label in sorted(labels['labels'], key=lambda k: (k['type'], k['name'])):
           if not onlyUser or label['type'] != LABEL_TYPE_SYSTEM:
             if showCounts:
-              counts = _getMain().callGAPI(gmail.users().labels(), 'get',
+              counts = callGAPI(gmail.users().labels(), 'get',
                                 throwReasons=GAPI.GMAIL_THROW_REASONS,
                                 userId='me', id=label['id'],
                                 fields=LABEL_COUNTS_FIELDS)
               for a_key in LABEL_COUNTS_FIELDS_LIST:
                 label[a_key] = counts[a_key]
-            csvPF.WriteRowTitles(_getMain().flattenJSON(label, flattened={'User': user}))
+            csvPF.WriteRowTitles(flattenJSON(label, flattened={'User': user}))
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Labels')
 
@@ -736,16 +769,16 @@ def _convertLabelNamesToIds(gmail, user, i, count, bodyLabels, labelNameMap, add
       labelIds.append(labelNameMap[label.upper()])
       continue
     if not addLabel:
-      _getMain().entityListDoesNotExistWarning([Ent.USER, user, Ent.LABEL, label], i, count)
+      entityListDoesNotExistWarning([Ent.USER, user, Ent.LABEL, label], i, count)
       continue
     try:
-      results = _getMain().callGAPI(gmail.users().labels(), 'create',
+      results = callGAPI(gmail.users().labels(), 'create',
                          throwReasons=[GAPI.INVALID],
                          userId='me', body={'labelListVisibility': 'labelShow', 'messageListVisibility': 'show', 'name': label}, fields='id')
     except GAPI.invalid as e:
       action = Act.Get()
       Act.Set(Act.CREATE)
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], str(e), i, count)
       Act.Set(action)
       continue
     labelNameMap[label] = labelNameMap[label.upper()] = results['id']
@@ -755,7 +788,7 @@ def _convertLabelNamesToIds(gmail, user, i, count, bodyLabels, labelNameMap, add
       parent_label = label[:label.rfind('/')]
       while True:
         if (not parent_label in labelNameMap) and (not parent_label.upper() in labelNameMap):
-          result = _getMain().callGAPI(gmail.users().labels(), 'create',
+          result = callGAPI(gmail.users().labels(), 'create',
                             userId='me', body={'name': parent_label}, fields='id')
           labelNameMap[parent_label] = labelNameMap[parent_label.upper()] = result['id']
         if parent_label.find('/') == -1:

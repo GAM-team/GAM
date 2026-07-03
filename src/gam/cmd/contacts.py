@@ -26,6 +26,44 @@ def _getMain():
   return sys.modules['gam']
 
 from gamlib import glgdata as GDATA
+from gam.util.access import entityUnknownWarning
+from gam.util.api import callGData, callGDataPages, getContactsObject, getContactsQuery
+from gam.util.args import (
+    LANGUAGE_CODES_MAP,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    escapeCRsNLs,
+    formatLocalTime,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getEmailAddress,
+    getJSON,
+    getLanguageCode,
+    getREPattern,
+    getString,
+    getStringWithCRsNLsOrFile,
+    getYYYYMMDD,
+)
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, _getFieldsList, cleanJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    entityServiceNotApplicableWarning,
+    getPageMessageForWhom,
+    printEntity,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    printKeyValueWithCRsNLs,
+    printLine,
+)
+from gam.util.entity import getEntityList
+from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import setSysExitRC, writeStdout
 
 def __getattr__(name):
   """Fall back to gam module for any undefined names."""
@@ -36,7 +74,7 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getCreateContactReturnOptions(parameters):
-  myarg = _getMain().getArgument()
+  myarg = getArgument()
   if myarg == 'returnidonly':
     parameters['returnIdOnly'] = True
   elif myarg == 'csv':
@@ -44,7 +82,7 @@ def _getCreateContactReturnOptions(parameters):
   elif parameters['csvPF'] and myarg == 'todrive':
     parameters['csvPF'].GetTodriveParameters()
   elif parameters['csvPF'] and myarg == 'addcsvdata':
-    _getMain().getAddCSVData(parameters['addCSVData'])
+    getAddCSVData(parameters['addCSVData'])
   else:
     return False
   return True
@@ -522,7 +560,7 @@ class ContactsManager():
     fields = {}
 
     def CheckClearFieldsList(fieldName):
-      if _getMain().checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
+      if checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
         fields.pop(fieldName, None)
         fields[fieldName] = []
         return True
@@ -530,13 +568,13 @@ class ContactsManager():
 
     def InitArrayItem(choices):
       item = {}
-      rel = _getMain().getChoice(choices, mapChoice=True, defaultChoice=None)
+      rel = getChoice(choices, mapChoice=True, defaultChoice=None)
       if rel:
         item['rel'] = rel
         item['label'] = None
       else:
         item['rel'] = None
-        item['label'] = _getMain().getString(Cmd.OB_STRING)
+        item['label'] = getString(Cmd.OB_STRING)
       return item
 
     def PrimaryNotPrimary(pnp, entry):
@@ -550,7 +588,7 @@ class ContactsManager():
       return False
 
     def GetPrimaryNotPrimaryChoice(entry):
-      if not _getMain().getChoice({'primary': True, 'notprimary': False}, mapChoice=True):
+      if not getChoice({'primary': True, 'notprimary': False}, mapChoice=True):
         entry['primary'] = 'false'
       else:
         entry['primary'] = 'true'
@@ -563,7 +601,7 @@ class ContactsManager():
           for citem in fields[fieldName]:
             if citem.get('primary', 'false') == 'true':
               Cmd.SetLocation(primary['location']-1)
-              _getMain().usageErrorExit(Msg.MULTIPLE_ITEMS_MARKED_PRIMARY.format(fieldName))
+              usageErrorExit(Msg.MULTIPLE_ITEMS_MARKED_PRIMARY.format(fieldName))
         fields[fieldName].append(fieldValue)
 
     primary = {}
@@ -572,114 +610,114 @@ class ContactsManager():
         if _getCreateContactReturnOptions(parameters):
           continue
         Cmd.Backup()
-      fieldName = _getMain().getChoice(ContactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
+      fieldName = getChoice(ContactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
       if fieldName == CONTACT_BIRTHDAY:
-        fields[fieldName] = _getMain().getYYYYMMDD(minLen=0)
+        fields[fieldName] = getYYYYMMDD(minLen=0)
       elif fieldName == CONTACT_GENDER:
-        fields[fieldName] = _getMain().getChoice(ContactsManager.GENDER_CHOICE_MAP, mapChoice=True)
+        fields[fieldName] = getChoice(ContactsManager.GENDER_CHOICE_MAP, mapChoice=True)
       elif fieldName == CONTACT_PRIORITY:
-        fields[fieldName] = _getMain().getChoice(ContactsManager.PRIORITY_CHOICE_MAP, mapChoice=True)
+        fields[fieldName] = getChoice(ContactsManager.PRIORITY_CHOICE_MAP, mapChoice=True)
       elif fieldName == CONTACT_SENSITIVITY:
-        fields[fieldName] = _getMain().getChoice(ContactsManager.SENSITIVITY_CHOICE_MAP, mapChoice=True)
+        fields[fieldName] = getChoice(ContactsManager.SENSITIVITY_CHOICE_MAP, mapChoice=True)
       elif fieldName == CONTACT_LANGUAGE:
-        fields[fieldName] = _getMain().getLanguageCode(_getMain().LANGUAGE_CODES_MAP)
+        fields[fieldName] = getLanguageCode(LANGUAGE_CODES_MAP)
       elif fieldName == CONTACT_NOTES:
-        fields[fieldName] = _getMain().getStringWithCRsNLsOrFile()[0]
+        fields[fieldName] = getStringWithCRsNLsOrFile()[0]
       elif fieldName == CONTACT_ADDRESSES:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.ADDRESS_TYPE_ARGUMENT_TO_REL)
         entry['primary'] = 'false'
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument in ContactsManager.ADDRESS_ARGUMENT_TO_FIELD_MAP:
-            value = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            value = getString(Cmd.OB_STRING, minLen=0)
             if value:
               entry[ContactsManager.ADDRESS_ARGUMENT_TO_FIELD_MAP[argument]] = value.replace('\\n', '\n')
           elif PrimaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         AppendItemToFieldsList(fieldName, entry)
       elif fieldName == CONTACT_CALENDARS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.CALENDAR_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         GetPrimaryNotPrimaryChoice(entry)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_EMAILS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.EMAIL_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getEmailAddress(noUid=True, minLen=0)
+        entry['value'] = getEmailAddress(noUid=True, minLen=0)
         GetPrimaryNotPrimaryChoice(entry)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_EVENTS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.EVENT_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getYYYYMMDD(minLen=0)
+        entry['value'] = getYYYYMMDD(minLen=0)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_EXTERNALIDS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.EXTERNALID_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_HOBBIES:
         if CheckClearFieldsList(fieldName):
           continue
-        entry = {'value': _getMain().getString(Cmd.OB_STRING, minLen=0)}
+        entry = {'value': getString(Cmd.OB_STRING, minLen=0)}
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_IMS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.IM_TYPE_ARGUMENT_TO_REL)
-        entry['protocol'] = _getMain().getChoice(ContactsManager.IM_PROTOCOL_TO_REL_MAP, mapChoice=True)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['protocol'] = getChoice(ContactsManager.IM_PROTOCOL_TO_REL_MAP, mapChoice=True)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         GetPrimaryNotPrimaryChoice(entry)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_JOTS:
         if CheckClearFieldsList(fieldName):
           continue
-        entry = {'rel': _getMain().getChoice(ContactsManager.JOT_TYPE_ARGUMENT_TO_REL, mapChoice=True)}
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry = {'rel': getChoice(ContactsManager.JOT_TYPE_ARGUMENT_TO_REL, mapChoice=True)}
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_ORGANIZATIONS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.ORGANIZATION_TYPE_ARGUMENT_TO_REL)
         entry['primary'] = 'false'
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument in ContactsManager.ORGANIZATION_ARGUMENT_TO_FIELD_MAP:
-            value = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            value = getString(Cmd.OB_STRING, minLen=0)
             if value:
               entry[ContactsManager.ORGANIZATION_ARGUMENT_TO_FIELD_MAP[argument]] = value
           elif PrimaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_PHONES:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.PHONE_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         GetPrimaryNotPrimaryChoice(entry)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_RELATIONS:
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.RELATION_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         AppendItemToFieldsList(fieldName, entry, 'value')
       elif fieldName == CONTACT_USER_DEFINED_FIELDS:
         if CheckClearFieldsList(fieldName):
           continue
-        entry = {'rel': _getMain().getString(Cmd.OB_STRING, minLen=0), 'value': _getMain().getString(Cmd.OB_STRING, minLen=0)}
+        entry = {'rel': getString(Cmd.OB_STRING, minLen=0), 'value': getString(Cmd.OB_STRING, minLen=0)}
         if not entry['rel'] or entry['rel'].lower() == 'none':
           entry['rel'] = None
         AppendItemToFieldsList(fieldName, entry, 'value')
@@ -687,11 +725,11 @@ class ContactsManager():
         if CheckClearFieldsList(fieldName):
           continue
         entry = InitArrayItem(ContactsManager.WEBSITE_TYPE_ARGUMENT_TO_REL)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         GetPrimaryNotPrimaryChoice(entry)
         AppendItemToFieldsList(fieldName, entry, 'value')
       else:
-        fields[fieldName] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        fields[fieldName] = getString(Cmd.OB_STRING, minLen=0)
     return fields
 
   @staticmethod
@@ -972,18 +1010,18 @@ def _initContactQueryAttributes():
 
 def _getContactQueryAttributes(contactQuery, myarg, unknownAction, printShowCmd):
   if myarg == 'query':
-    contactQuery['query'] = _getMain().getString(Cmd.OB_QUERY)
+    contactQuery['query'] = getString(Cmd.OB_QUERY)
   elif myarg == 'emailmatchpattern':
-    contactQuery['emailMatchPattern'] = _getMain().getREPattern(re.IGNORECASE)
+    contactQuery['emailMatchPattern'] = getREPattern(re.IGNORECASE)
   elif myarg == 'emailmatchtype':
-    contactQuery['emailMatchType'] = _getMain().getString(Cmd.OB_CONTACT_EMAIL_TYPE)
+    contactQuery['emailMatchType'] = getString(Cmd.OB_CONTACT_EMAIL_TYPE)
   elif myarg == 'updatedmin':
-    contactQuery['url_params']['updated-min'] = _getMain().getYYYYMMDD()
+    contactQuery['url_params']['updated-min'] = getYYYYMMDD()
   elif myarg == 'endquery':
     return False
   elif not printShowCmd:
     if unknownAction < 0:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
     if unknownAction > 0:
       Cmd.Backup()
     return False
@@ -995,7 +1033,7 @@ def _getContactQueryAttributes(contactQuery, myarg, unknownAction, printShowCmd)
     contactQuery['url_params']['showdeleted'] = 'true'
   else:
     if unknownAction < 0:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
     if unknownAction > 0:
       Cmd.Backup()
     return False
@@ -1009,36 +1047,36 @@ def _getContactEntityList(unknownAction, printShowCmd):
     entityList = None
     queriedContacts = True
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if not _getContactQueryAttributes(contactQuery, myarg, unknownAction, printShowCmd):
         break
   else:
-    entityList = _getMain().getEntityList(Cmd.OB_CONTACT_ENTITY)
+    entityList = getEntityList(Cmd.OB_CONTACT_ENTITY)
     queriedContacts = False
     if unknownAction < 0:
-      _getMain().checkForExtraneousArguments()
+      checkForExtraneousArguments()
   return (entityList, contactQuery, queriedContacts)
 
 def queryContacts(contactsObject, contactQuery):
   entityType = Ent.DOMAIN
   user = GC.Values[GC.DOMAIN]
   if contactQuery['query']:
-    uri = _getMain().getContactsQuery(feed=contactsObject.GetContactFeedUri(contact_list=user, projection=contactQuery['projection']),
+    uri = getContactsQuery(feed=contactsObject.GetContactFeedUri(contact_list=user, projection=contactQuery['projection']),
                            text_query=contactQuery['query']).ToUri()
   else:
     uri = contactsObject.GetContactFeedUri(contact_list=user, projection=contactQuery['projection'])
-  _getMain().printGettingAllEntityItemsForWhom(Ent.CONTACT, user, query=contactQuery['query'])
+  printGettingAllEntityItemsForWhom(Ent.CONTACT, user, query=contactQuery['query'])
   try:
-    entityList = _getMain().callGDataPages(contactsObject, 'GetContactsFeed',
-                                pageMessage=_getMain().getPageMessageForWhom(),
+    entityList = callGDataPages(contactsObject, 'GetContactsFeed',
+                                pageMessage=getPageMessageForWhom(),
                                 throwErrors=[GDATA.BAD_REQUEST, GDATA.FORBIDDEN],
                                 retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
                                 uri=uri, url_params=contactQuery['url_params'])
     return entityList
   except GDATA.badRequest as e:
-    _getMain().entityActionFailedWarning([entityType, user, Ent.CONTACT, ''], str(e))
+    entityActionFailedWarning([entityType, user, Ent.CONTACT, ''], str(e))
   except GDATA.forbidden:
-    _getMain().entityServiceNotApplicableWarning(entityType, user)
+    entityServiceNotApplicableWarning(entityType, user)
   return None
 
 def localContactSelects(contactsManager, contactQuery, fields):
@@ -1117,28 +1155,28 @@ def doCreateDomainContact():
     csvPF.AddTitles(sorted(addCSVData.keys()))
   returnIdOnly = parameters['returnIdOnly']
   contactEntry = contactsManager.FieldsToContact(fields)
-  user, contactsObject = _getMain().getContactsObject()
+  user, contactsObject = getContactsObject()
   try:
-    contact = _getMain().callGData(contactsObject, 'CreateContact',
+    contact = callGData(contactsObject, 'CreateContact',
                         throwErrors=[GDATA.BAD_REQUEST, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
                         retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
                         new_contact=contactEntry, insert_uri=contactsObject.GetContactFeedUri(contact_list=user))
     contactId = contactsManager.GetContactShortId(contact)
     if returnIdOnly:
-      _getMain().writeStdout(f'{contactId}\n')
+      writeStdout(f'{contactId}\n')
     elif not csvPF:
-      _getMain().entityActionPerformed([entityType, user, Ent.CONTACT, contactId])
+      entityActionPerformed([entityType, user, Ent.CONTACT, contactId])
     else:
       row = {'Domain': user, CONTACT_ID: contactId}
       if addCSVData:
         row.update(addCSVData)
       csvPF.WriteRow(row)
   except GDATA.badRequest as e:
-    _getMain().entityActionFailedWarning([entityType, user, Ent.CONTACT, ''], str(e))
+    entityActionFailedWarning([entityType, user, Ent.CONTACT, ''], str(e))
   except GDATA.forbidden:
-    _getMain().entityServiceNotApplicableWarning(entityType, user)
+    entityServiceNotApplicableWarning(entityType, user)
   except GDATA.serviceNotApplicable:
-    _getMain().entityUnknownWarning(entityType, user)
+    entityUnknownWarning(entityType, user)
   if csvPF:
     csvPF.writeCSVfile('Contacts')
 
@@ -1152,27 +1190,27 @@ def _clearUpdateContacts(updateContacts):
     contactClear = {'emailClearPattern': contactQuery['emailMatchPattern'], 'emailClearType': contactQuery['emailMatchType']}
     deleteClearedContactsWithNoEmails = False
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'emailclearpattern':
-        contactClear['emailClearPattern'] = _getMain().getREPattern(re.IGNORECASE)
+        contactClear['emailClearPattern'] = getREPattern(re.IGNORECASE)
       elif myarg == 'emailcleartype':
-        contactClear['emailClearType'] = _getMain().getString(Cmd.OB_CONTACT_EMAIL_TYPE)
+        contactClear['emailClearType'] = getString(Cmd.OB_CONTACT_EMAIL_TYPE)
       elif myarg == 'deleteclearedcontactswithnoemails':
         deleteClearedContactsWithNoEmails = True
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     if not contactClear['emailClearPattern']:
-      _getMain().missingArgumentExit('emailclearpattern')
-  user, contactsObject = _getMain().getContactsObject()
+      missingArgumentExit('emailclearpattern')
+  user, contactsObject = getContactsObject()
   if queriedContacts:
     entityList = queryContacts(contactsObject, contactQuery)
     if entityList is None:
       return
   j = 0
   jcount = len(entityList)
-  _getMain().entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
+  entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
   if jcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in entityList:
@@ -1180,7 +1218,7 @@ def _clearUpdateContacts(updateContacts):
     try:
       if not queriedContacts:
         contactId = normalizeContactId(contact)
-        contact = _getMain().callGData(contactsObject, 'GetContact',
+        contact = callGData(contactsObject, 'GetContact',
                             throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN, GDATA.NOT_IMPLEMENTED],
                             retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
                             uri=contactsObject.GetContactFeedUri(contact_list=user, contactId=contactId))
@@ -1200,10 +1238,10 @@ def _clearUpdateContacts(updateContacts):
           continue
         if deleteClearedContactsWithNoEmails and not fields[CONTACT_EMAILS]:
           Act.Set(Act.DELETE)
-          _getMain().callGData(contactsObject, 'DeleteContact',
+          callGData(contactsObject, 'DeleteContact',
                     throwErrors=[GDATA.NOT_FOUND, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
                     edit_uri=contactsObject.GetContactFeedUri(contact_list=user, contactId=contactId), extra_headers={'If-Match': contact.etag})
-          _getMain().entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
+          entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
           continue
         contactEntry = contactsManager.FieldsToContact(fields)
       contactEntry.category = contact.category
@@ -1211,17 +1249,17 @@ def _clearUpdateContacts(updateContacts):
       contactEntry.etag = contact.etag
       contactEntry.id = contact.id
       Act.Set(Act.UPDATE)
-      _getMain().callGData(contactsObject, 'UpdateContact',
+      callGData(contactsObject, 'UpdateContact',
                 throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.PRECONDITION_FAILED, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
                 edit_uri=contactsObject.GetContactFeedUri(contact_list=user, contactId=contactId), updated_contact=contactEntry, extra_headers={'If-Match': contact.etag})
-      _getMain().entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
+      entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
     except (GDATA.notFound, GDATA.badRequest, GDATA.preconditionFailed) as e:
-      _getMain().entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
+      entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
     except (GDATA.forbidden, GDATA.notImplemented):
-      _getMain().entityServiceNotApplicableWarning(entityType, user)
+      entityServiceNotApplicableWarning(entityType, user)
       break
     except GDATA.serviceNotApplicable:
-      _getMain().entityUnknownWarning(entityType, user)
+      entityUnknownWarning(entityType, user)
       break
   Ind.Decrement()
 
@@ -1242,20 +1280,20 @@ def doDedupDomainContacts():
   contactQuery = _initContactQueryAttributes()
   emailMatchType = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'matchtype':
-      emailMatchType = _getMain().getBoolean()
+      emailMatchType = getBoolean()
     else:
       _getContactQueryAttributes(contactQuery, myarg, -1, False)
-  user, contactsObject = _getMain().getContactsObject()
+  user, contactsObject = getContactsObject()
   contacts = queryContacts(contactsObject, contactQuery)
   if contacts is None:
     return
   j = 0
   jcount = len(contacts)
-  _getMain().entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
+  entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
   if jcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in contacts:
@@ -1273,17 +1311,17 @@ def doDedupDomainContacts():
       contactEntry.etag = contact.etag
       contactEntry.id = contact.id
       Act.Set(Act.UPDATE)
-      _getMain().callGData(contactsObject, 'UpdateContact',
+      callGData(contactsObject, 'UpdateContact',
                 throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.PRECONDITION_FAILED, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
                 edit_uri=contactsObject.GetContactFeedUri(contact_list=user, contactId=contactId), updated_contact=contactEntry, extra_headers={'If-Match': contact.etag})
-      _getMain().entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
+      entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
     except (GDATA.notFound, GDATA.badRequest, GDATA.preconditionFailed) as e:
-      _getMain().entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
+      entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
     except (GDATA.forbidden, GDATA.notImplemented):
-      _getMain().entityServiceNotApplicableWarning(entityType, user)
+      entityServiceNotApplicableWarning(entityType, user)
       break
     except GDATA.serviceNotApplicable:
-      _getMain().entityUnknownWarning(entityType, user)
+      entityUnknownWarning(entityType, user)
       break
   Ind.Decrement()
 
@@ -1292,16 +1330,16 @@ def doDeleteDomainContacts():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
   entityList, contactQuery, queriedContacts = _getContactEntityList(-1, False)
-  user, contactsObject = _getMain().getContactsObject()
+  user, contactsObject = getContactsObject()
   if queriedContacts:
     entityList = queryContacts(contactsObject, contactQuery)
     if entityList is None:
       return
   j = 0
   jcount = len(entityList)
-  _getMain().entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
+  entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
   if jcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in entityList:
@@ -1309,7 +1347,7 @@ def doDeleteDomainContacts():
     try:
       if not queriedContacts:
         contactId = normalizeContactId(contact)
-        contact = _getMain().callGData(contactsObject, 'GetContact',
+        contact = callGData(contactsObject, 'GetContact',
                             throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN, GDATA.NOT_IMPLEMENTED],
                             retryErrors=[GDATA.INTERNAL_SERVER_ERROR],
                             uri=contactsObject.GetContactFeedUri(contact_list=user, contactId=contactId))
@@ -1318,17 +1356,17 @@ def doDeleteDomainContacts():
         fields = contactsManager.ContactToFields(contact)
         if not localContactSelects(contactsManager, contactQuery, fields):
           continue
-      _getMain().callGData(contactsObject, 'DeleteContact',
+      callGData(contactsObject, 'DeleteContact',
                 throwErrors=[GDATA.NOT_FOUND, GDATA.SERVICE_NOT_APPLICABLE, GDATA.FORBIDDEN],
                 edit_uri=contactsObject.GetContactFeedUri(contact_list=user, contactId=contactId), extra_headers={'If-Match': contact.etag})
-      _getMain().entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
+      entityActionPerformed([entityType, user, Ent.CONTACT, contactId], j, jcount)
     except (GDATA.notFound, GDATA.badRequest) as e:
-      _getMain().entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
+      entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
     except (GDATA.forbidden, GDATA.notImplemented):
-      _getMain().entityServiceNotApplicableWarning(entityType, user)
+      entityServiceNotApplicableWarning(entityType, user)
       break
     except GDATA.serviceNotApplicable:
-      _getMain().entityUnknownWarning(entityType, user)
+      entityUnknownWarning(entityType, user)
       break
   Ind.Decrement()
 
@@ -1337,67 +1375,67 @@ CONTACT_FIELDS_WITH_CRS_NLS = {CONTACT_NOTES, CONTACT_BILLING_INFORMATION}
 
 def _showContact(contactsManager, fields, displayFieldsList, j, jcount, FJQC):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(fields, timeObjects=CONTACT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(fields, timeObjects=CONTACT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CONTACT, fields[CONTACT_ID]], j, jcount)
+  printEntity([Ent.CONTACT, fields[CONTACT_ID]], j, jcount)
   Ind.Increment()
   for key in contactsManager.CONTACT_NAME_PROPERTY_PRINT_ORDER:
     if displayFieldsList and key not in displayFieldsList:
       continue
     if key in fields:
       if key in CONTACT_TIME_OBJECTS:
-        _getMain().printKeyValueList([key, _getMain().formatLocalTime(fields[key])])
+        printKeyValueList([key, formatLocalTime(fields[key])])
       elif key not in CONTACT_FIELDS_WITH_CRS_NLS:
-        _getMain().printKeyValueList([key, fields[key]])
+        printKeyValueList([key, fields[key]])
       else:
-        _getMain().printKeyValueWithCRsNLs(key, fields[key])
+        printKeyValueWithCRsNLs(key, fields[key])
   for key in contactsManager.CONTACT_ARRAY_PROPERTY_PRINT_ORDER:
     if displayFieldsList and key not in displayFieldsList:
       continue
     if key in fields:
       keymap = contactsManager.CONTACT_ARRAY_PROPERTIES[key]
-      _getMain().printKeyValueList([key, None])
+      printKeyValueList([key, None])
       Ind.Increment()
       for item in fields[key]:
         fn = item.get('label')
         if keymap['relMap']:
           if not fn:
             fn = keymap['relMap'].get(item['rel'], 'custom')
-          _getMain().printKeyValueList(['type', fn])
+          printKeyValueList(['type', fn])
           Ind.Increment()
         if keymap['primary']:
-          _getMain().printKeyValueList(['rank', ['notprimary', 'primary'][item['primary'] == 'true']])
+          printKeyValueList(['rank', ['notprimary', 'primary'][item['primary'] == 'true']])
         value = item['value']
         if value is None:
           value = ''
         if key == CONTACT_IMS:
-          _getMain().printKeyValueList(['protocol', contactsManager.IM_REL_TO_PROTOCOL_MAP.get(item['protocol'], item['protocol'])])
-          _getMain().printKeyValueList([keymap['infoTitle'], value])
+          printKeyValueList(['protocol', contactsManager.IM_REL_TO_PROTOCOL_MAP.get(item['protocol'], item['protocol'])])
+          printKeyValueList([keymap['infoTitle'], value])
         elif key == CONTACT_ADDRESSES:
-          _getMain().printKeyValueWithCRsNLs(keymap['infoTitle'], value)
+          printKeyValueWithCRsNLs(keymap['infoTitle'], value)
           for org_key in contactsManager.ADDRESS_FIELD_PRINT_ORDER:
             if item[org_key]:
-              _getMain().printKeyValueList([contactsManager.ADDRESS_FIELD_TO_ARGUMENT_MAP[org_key], item[org_key]])
+              printKeyValueList([contactsManager.ADDRESS_FIELD_TO_ARGUMENT_MAP[org_key], item[org_key]])
         elif key == CONTACT_ORGANIZATIONS:
-          _getMain().printKeyValueList([keymap['infoTitle'], value])
+          printKeyValueList([keymap['infoTitle'], value])
           for org_key in contactsManager.ORGANIZATION_FIELD_PRINT_ORDER:
             if item[org_key]:
-              _getMain().printKeyValueList([contactsManager.ORGANIZATION_FIELD_TO_ARGUMENT_MAP[org_key], item[org_key]])
+              printKeyValueList([contactsManager.ORGANIZATION_FIELD_TO_ARGUMENT_MAP[org_key], item[org_key]])
         elif key == CONTACT_USER_DEFINED_FIELDS:
-          _getMain().printKeyValueList([item.get('rel') or 'None', value])
+          printKeyValueList([item.get('rel') or 'None', value])
         else:
-          _getMain().printKeyValueList([keymap['infoTitle'], value])
+          printKeyValueList([keymap['infoTitle'], value])
         if keymap['relMap']:
           Ind.Decrement()
       Ind.Decrement()
   Ind.Decrement()
 
 def _getContactFieldsList(contactsManager, displayFieldsList):
-  for field in _getMain()._getFieldsList():
+  for field in _getFieldsList():
     if field in contactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP:
       displayFieldsList.append(contactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP[field])
     else:
-      _getMain().invalidChoiceExit(field, contactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP, True)
+      invalidChoiceExit(field, contactsManager.CONTACT_ARGUMENT_TO_PROPERTY_MAP, True)
 
 # gam info contacts <ContactEntity>
 #	[basic|full]
@@ -1405,32 +1443,32 @@ def _getContactFieldsList(contactsManager, displayFieldsList):
 def doInfoDomainContacts():
   entityType = Ent.DOMAIN
   contactsManager = ContactsManager()
-  entityList = _getMain().getEntityList(Cmd.OB_CONTACT_ENTITY)
+  entityList = getEntityList(Cmd.OB_CONTACT_ENTITY)
   contactQuery = _initContactQueryAttributes()
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   displayFieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in CONTACTS_PROJECTION_CHOICE_MAP:
       contactQuery['projection'] = CONTACTS_PROJECTION_CHOICE_MAP[myarg]
     elif myarg == 'fields':
       _getContactFieldsList(contactsManager, displayFieldsList)
     else:
       FJQC.GetFormatJSON(myarg)
-  user, contactsObject = _getMain().getContactsObject()
+  user, contactsObject = getContactsObject()
   j = 0
   jcount = len(entityList)
   if not FJQC.formatJSON:
-    _getMain().entityPerformActionNumItems([entityType, user], jcount, Ent.CONTACT)
+    entityPerformActionNumItems([entityType, user], jcount, Ent.CONTACT)
   if jcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in entityList:
     j += 1
     try:
       contactId = normalizeContactId(contact)
-      contact = _getMain().callGData(contactsObject, 'GetContact',
+      contact = callGData(contactsObject, 'GetContact',
                           bailOnInternalServerError=True,
                           throwErrors=[GDATA.NOT_FOUND, GDATA.BAD_REQUEST, GDATA.SERVICE_NOT_APPLICABLE,
                                        GDATA.FORBIDDEN, GDATA.NOT_IMPLEMENTED, GDATA.INTERNAL_SERVER_ERROR],
@@ -1439,9 +1477,9 @@ def doInfoDomainContacts():
       fields = contactsManager.ContactToFields(contact)
       _showContact(contactsManager, fields, displayFieldsList, j, jcount, FJQC)
     except (GDATA.notFound, GDATA.badRequest, GDATA.forbidden, GDATA.notImplemented, GDATA.internalServerError) as e:
-      _getMain().entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
+      entityActionFailedWarning([entityType, user, Ent.CONTACT, contactId], str(e), j, jcount)
     except GDATA.serviceNotApplicable:
-      _getMain().entityUnknownWarning(entityType, user)
+      entityUnknownWarning(entityType, user)
       break
   Ind.Decrement()
 
@@ -1455,15 +1493,15 @@ def doPrintShowDomainContacts():
   entityType = Ent.DOMAIN
   entityTypeName = Ent.Singular(entityType)
   contactsManager = ContactsManager()
-  csvPF = _getMain().CSVPrintFile([entityTypeName, CONTACT_ID, CONTACT_NAME], 'sortall',
+  csvPF = CSVPrintFile([entityTypeName, CONTACT_ID, CONTACT_NAME], 'sortall',
                        contactsManager.CONTACT_ARRAY_PROPERTY_PRINT_ORDER) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   CSVTitle = 'Contacts'
   contactQuery = _initContactQueryAttributes()
   countsOnly = False
   displayFieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'fields':
@@ -1477,19 +1515,19 @@ def doPrintShowDomainContacts():
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  user, contactsObject = _getMain().getContactsObject()
+  user, contactsObject = getContactsObject()
   contacts = queryContacts(contactsObject, contactQuery)
   if countsOnly:
     jcount = countLocalContactSelects(contactsManager, contacts, contactQuery)
     if csvPF:
       csvPF.WriteRowTitles({entityTypeName: user, CSVTitle: jcount})
     else:
-      _getMain().printEntityKVList([entityType, user], [CSVTitle, jcount])
+      printEntityKVList([entityType, user], [CSVTitle, jcount])
   elif contacts is not None:
     jcount = len(contacts)
     if not csvPF:
       if not FJQC.formatJSON:
-        _getMain().entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
+        entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
       Ind.Increment()
       j = 0
       for contact in contacts:
@@ -1510,11 +1548,11 @@ def doPrintShowDomainContacts():
             continue
           if key in fields:
             if key == CONTACT_UPDATED:
-              contactRow[key] = _getMain().formatLocalTime(fields[key])
+              contactRow[key] = formatLocalTime(fields[key])
             elif key not in (CONTACT_NOTES, CONTACT_BILLING_INFORMATION):
               contactRow[key] = fields[key]
             else:
-              contactRow[key] = _getMain().escapeCRsNLs(fields[key])
+              contactRow[key] = escapeCRsNLs(fields[key])
         for key in contactsManager.CONTACT_ARRAY_PROPERTY_PRINT_ORDER:
           if displayFieldsList and key not in displayFieldsList:
             continue
@@ -1539,10 +1577,10 @@ def doPrintShowDomainContacts():
                 contactRow[fn+'protocol'] = contactsManager.IM_REL_TO_PROTOCOL_MAP.get(item['protocol'], item['protocol'])
                 contactRow[fn+keymap['infoTitle']] = value
               elif key == CONTACT_ADDRESSES:
-                contactRow[fn+keymap['infoTitle']] = _getMain().escapeCRsNLs(value)
+                contactRow[fn+keymap['infoTitle']] = escapeCRsNLs(value)
                 for org_key in contactsManager.ADDRESS_FIELD_PRINT_ORDER:
                   if item[org_key]:
-                    contactRow[fn+contactsManager.ADDRESS_FIELD_TO_ARGUMENT_MAP[org_key]] = _getMain().escapeCRsNLs(item[org_key])
+                    contactRow[fn+contactsManager.ADDRESS_FIELD_TO_ARGUMENT_MAP[org_key]] = escapeCRsNLs(item[org_key])
               elif key == CONTACT_ORGANIZATIONS:
                 contactRow[fn+keymap['infoTitle']] = value
                 for org_key in contactsManager.ORGANIZATION_FIELD_PRINT_ORDER:
@@ -1558,7 +1596,7 @@ def doPrintShowDomainContacts():
         elif csvPF.CheckRowTitles(contactRow):
           csvPF.WriteRowNoFilter({entityTypeName: user, CONTACT_ID: fields[CONTACT_ID],
                                   CONTACT_NAME: fields.get(CONTACT_NAME, ''),
-                                  'JSON': json.dumps(_getMain().cleanJSON(fields, timeObjects=CONTACT_TIME_OBJECTS),
+                                  'JSON': json.dumps(cleanJSON(fields, timeObjects=CONTACT_TIME_OBJECTS),
                                                      ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile(CSVTitle)
@@ -1936,7 +1974,7 @@ class PeopleManager():
     locations = {'primary': None}
 
     def CheckClearPersonField(fieldName):
-      if _getMain().checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
+      if checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
         person.pop(fieldName, None)
         person[fieldName] = []
         return True
@@ -1951,11 +1989,11 @@ class PeopleManager():
     def InitArrayFieldEntry(choices, typeMinLen=1):
       entry = {'metadata': {'primary': False}}
       if choices is not None:
-        ftype = _getMain().getChoice(choices, mapChoice=True, defaultChoice=None)
+        ftype = getChoice(choices, mapChoice=True, defaultChoice=None)
         if ftype:
           entry['type'] = ftype
         else:
-          entry['type'] = _getMain().getString(Cmd.OB_STRING, minLen=typeMinLen)
+          entry['type'] = getString(Cmd.OB_STRING, minLen=typeMinLen)
       return entry
 
     def GetMultiFieldEntry(fieldName):
@@ -1964,7 +2002,7 @@ class PeopleManager():
       return person[fieldName][-1]
 
     def getDate(entry, fieldName):
-      event = _getMain().getYYYYMMDD(minLen=0, returnDateTime=True)
+      event = getYYYYMMDD(minLen=0, returnDateTime=True)
       if event:
         entry[fieldName] = {'year': event.year, 'month': event.month, 'day': event.day}
 
@@ -1979,7 +2017,7 @@ class PeopleManager():
       return False
 
     def GetPrimaryNotPrimaryChoice(entry):
-      pnp = _getMain().getChoice({'primary': True, 'notprimary': False}, mapChoice=True)
+      pnp = getChoice({'primary': True, 'notprimary': False}, mapChoice=True)
       entry['metadata']['primary'] = pnp
       if pnp:
         locations['primary'] = Cmd.Location()
@@ -1991,7 +2029,7 @@ class PeopleManager():
           for centry in person[fieldName][1:]:
             if centry.get('metadata', {}).get('primary', False):
               Cmd.SetLocation(locations['primary']-1)
-              _getMain().usageErrorExit(Msg.MULTIPLE_ITEMS_MARKED_PRIMARY.format(fieldName))
+              usageErrorExit(Msg.MULTIPLE_ITEMS_MARKED_PRIMARY.format(fieldName))
         person[fieldName].append(entry)
 
     while Cmd.ArgumentsRemaining():
@@ -2000,7 +2038,7 @@ class PeopleManager():
           continue
         Cmd.Backup()
       locations['fieldName'] = Cmd.Location()
-      fieldName = _getMain().getChoice(PeopleManager.PEOPLE_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
+      fieldName = getChoice(PeopleManager.PEOPLE_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
       if '.' in fieldName:
         fieldName, subFieldName = fieldName.split('.')
       if fieldName == PEOPLE_ADDRESSES:
@@ -2008,67 +2046,67 @@ class PeopleManager():
           continue
         entry = InitArrayFieldEntry(PeopleManager.TYPE_VALUE_PNP_FIELDS[fieldName], typeMinLen=0)
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument in PeopleManager.ADDRESS_ARGUMENT_TO_FIELD_MAP:
             subFieldName = PeopleManager.ADDRESS_ARGUMENT_TO_FIELD_MAP[argument]
-            value = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            value = getString(Cmd.OB_STRING, minLen=0)
             if value: ### Delete?
               entry[subFieldName] = value.replace('\\n', '\n')
           elif PrimaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         AppendArrayEntryToFields(fieldName, entry, None)
       elif fieldName == PEOPLE_BIRTHDAYS:
         entry = GetSingleFieldEntry(fieldName)
         getDate(entry, 'date')
       elif fieldName == PEOPLE_BIOGRAPHIES:
         entry = GetSingleFieldEntry(fieldName)
-        text, _, html = _getMain().getStringWithCRsNLsOrFile()
+        text, _, html = getStringWithCRsNLsOrFile()
         entry['value' ] = text
         entry['contentType'] = ['TEXT_PLAIN', 'TEXT_HTML'][html]
       elif fieldName == PEOPLE_GENDERS:
         entry = GetSingleFieldEntry(fieldName)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
       elif fieldName == PEOPLE_MISC_KEYWORDS:
         entry = GetMultiFieldEntry(fieldName)
         if subFieldName == 'jot':
-          subFieldName = _getMain().getChoice(PeopleManager.JOT_TYPE_MAP, mapChoice=True)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          subFieldName = getChoice(PeopleManager.JOT_TYPE_MAP, mapChoice=True)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         entry['type'] = subFieldName
       elif fieldName == PEOPLE_NAMES:
         entry = GetSingleFieldEntry(fieldName)
-        entry[subFieldName] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry[subFieldName] = getString(Cmd.OB_STRING, minLen=0)
       elif fieldName == PEOPLE_NICKNAMES:
         entry = GetMultiFieldEntry(fieldName)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         entry['type'] = subFieldName
       elif fieldName == PEOPLE_ORGANIZATIONS:
         entry = InitArrayFieldEntry(PeopleManager.TYPE_VALUE_PNP_FIELDS[fieldName])
-        entry['name'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['name'] = getString(Cmd.OB_STRING, minLen=0)
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument in PeopleManager.ORGANIZATION_ARGUMENT_TO_FIELD_MAP:
             subFieldName = PeopleManager.ORGANIZATION_ARGUMENT_TO_FIELD_MAP[argument]
             if subFieldName == 'current':
-              entry[subFieldName] = _getMain().getBoolean()
+              entry[subFieldName] = getBoolean()
             elif subFieldName in {'startDate', 'endDate'}:
               getDate(entry, subFieldName)
             else:
-              value = _getMain().getString(Cmd.OB_STRING, minLen=0)
+              value = getString(Cmd.OB_STRING, minLen=0)
               if value: ### Delete?
                 entry[subFieldName] = value
           elif PrimaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         AppendArrayEntryToFields(fieldName, entry, None)
       elif fieldName in PeopleManager.KEY_VALUE_FIELDS:
         if CheckClearPersonField(fieldName):
           continue
         entry = InitArrayFieldEntry(None)
-        entry['key'] = _getMain().getString(Cmd.OB_STRING, minLen=1)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['key'] = getString(Cmd.OB_STRING, minLen=1)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         AppendArrayEntryToFields(fieldName, entry, 'value')
       elif fieldName in PeopleManager.TYPE_VALUE_FIELDS:
         if CheckClearPersonField(fieldName):
@@ -2079,10 +2117,10 @@ class PeopleManager():
           getDate(entry, checkBlankField)
         elif fieldName == PEOPLE_RELATIONS:
           checkBlankField = 'type'
-          entry['person'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          entry['person'] = getString(Cmd.OB_STRING, minLen=0)
         else:
           checkBlankField = 'value'
-          entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         AppendArrayEntryToFields(fieldName, entry, checkBlankField)
       elif fieldName in PeopleManager.TYPE_VALUE_PNP_FIELDS:
         if CheckClearPersonField(fieldName):
@@ -2091,58 +2129,58 @@ class PeopleManager():
                                     typeMinLen=0 if fieldName in PeopleManager.EMPTY_TYPE_ALLOWED_FIELDS else 1)
         if fieldName == PEOPLE_IM_CLIENTS:
           checkBlankField = None
-          entry['protocol'] = _getMain().getChoice(PeopleManager.IM_PROTOCOLS, mapChoice=True)
-          entry['username'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          entry['protocol'] = getChoice(PeopleManager.IM_PROTOCOLS, mapChoice=True)
+          entry['username'] = getString(Cmd.OB_STRING, minLen=0)
         elif fieldName == PEOPLE_EMAIL_ADDRESSES:
           checkBlankField = 'value'
-          entry[checkBlankField] = _getMain().getString(Cmd.OB_STRING, minLen=0)
-          if _getMain().checkArgumentPresent(['displayname']):
-            entry['displayName'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          entry[checkBlankField] = getString(Cmd.OB_STRING, minLen=0)
+          if checkArgumentPresent(['displayname']):
+            entry['displayName'] = getString(Cmd.OB_STRING, minLen=0)
         elif fieldName == PEOPLE_CALENDAR_URLS:
           checkBlankField = 'url'
-          entry[checkBlankField] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          entry[checkBlankField] = getString(Cmd.OB_STRING, minLen=0)
         else:
           checkBlankField = 'value'
-          entry[checkBlankField] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+          entry[checkBlankField] = getString(Cmd.OB_STRING, minLen=0)
         GetPrimaryNotPrimaryChoice(entry)
         AppendArrayEntryToFields(fieldName, entry, checkBlankField)
       elif fieldName in PeopleManager.SINGLE_VALUE_FIELDS:
         entry = GetSingleFieldEntry(fieldName)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
       elif fieldName in PeopleManager.MULTI_VALUE_FIELDS:
         if CheckClearPersonField(fieldName):
           continue
         entry = InitArrayFieldEntry(None)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         AppendArrayEntryToFields(fieldName, entry, 'value')
 #      elif fieldName in PeopleManager.URL_FIELDS:
 #        if CheckClearPersonField(fieldName):
 #          continue
 #        entry = InitArrayFieldEntry(None)
-#        entry['url'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+#        entry['url'] = getString(Cmd.OB_STRING, minLen=0)
 #        entry['default'] = False
 #        AppendArrayEntryToFields(fieldName, entry, 'url')
       elif fieldName == PEOPLE_GROUPS:
         if entityType != Ent.USER:
           Cmd.Backup()
-          _getMain().unknownArgumentExit()
-        contactGroupsLists[PEOPLE_GROUPS_LIST].append(_getMain().getString(Cmd.OB_STRING))
+          unknownArgumentExit()
+        contactGroupsLists[PEOPLE_GROUPS_LIST].append(getString(Cmd.OB_STRING))
       elif fieldName == PEOPLE_ADD_GROUPS:
         if not allowAddRemove:
-          _getMain().unknownArgumentExit()
+          unknownArgumentExit()
         if entityType != Ent.USER:
           Cmd.Backup()
-          _getMain().unknownArgumentExit()
-        contactGroupsLists[PEOPLE_ADD_GROUPS_LIST].append(_getMain().getString(Cmd.OB_STRING))
+          unknownArgumentExit()
+        contactGroupsLists[PEOPLE_ADD_GROUPS_LIST].append(getString(Cmd.OB_STRING))
       elif fieldName == PEOPLE_REMOVE_GROUPS:
         if not allowAddRemove:
-          _getMain().unknownArgumentExit()
+          unknownArgumentExit()
         if entityType != Ent.USER:
           Cmd.Backup()
-          _getMain().unknownArgumentExit()
-        contactGroupsLists[PEOPLE_REMOVE_GROUPS_LIST].append(_getMain().getString(Cmd.OB_STRING))
+          unknownArgumentExit()
+        contactGroupsLists[PEOPLE_REMOVE_GROUPS_LIST].append(getString(Cmd.OB_STRING))
       elif fieldName == PEOPLE_JSON:
-        jsonData = _getMain().getJSON(['resourceName', 'etag', 'metadata', PEOPLE_COVER_PHOTOS, PEOPLE_PHOTOS, PEOPLE_UPDATE_TIME])
+        jsonData = getJSON(['resourceName', 'etag', 'metadata', PEOPLE_COVER_PHOTOS, PEOPLE_PHOTOS, PEOPLE_UPDATE_TIME])
         for membership in jsonData.pop('memberships', []):
           contactGroupName = membership.get('contactGroupMembership', {}).get('contactGroupName', '')
           if contactGroupName:
@@ -2192,18 +2230,18 @@ class PeopleManager():
         if _getCreateContactReturnOptions(parameters):
           continue
         Cmd.Backup()
-      fieldName = _getMain().getChoice(PeopleManager.PEOPLE_GROUP_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
+      fieldName = getChoice(PeopleManager.PEOPLE_GROUP_ARGUMENT_TO_PROPERTY_MAP, mapChoice=True)
       if fieldName == PEOPLE_GROUP_NAME:
-        contactGroup[PEOPLE_GROUP_NAME] = _getMain().getString(Cmd.OB_STRING)
+        contactGroup[PEOPLE_GROUP_NAME] = getString(Cmd.OB_STRING)
       elif fieldName == PEOPLE_GROUP_CLIENT_DATA:
         entry = {}
-        entry['key'] = _getMain().getString(Cmd.OB_STRING, minLen=1)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['key'] = getString(Cmd.OB_STRING, minLen=1)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         if entry['value']:
           contactGroup.setdefault(fieldName, [])
           contactGroup[fieldName].append(entry)
       elif fieldName == PEOPLE_JSON:
-        jsonData = _getMain().getJSON(['resourceName', 'etag', 'metadata', 'formattedName', 'memberResourceNames',  'memberCount'])
+        jsonData = getJSON(['resourceName', 'etag', 'metadata', 'formattedName', 'memberResourceNames',  'memberCount'])
         if jsonData.get('groupType', '') != 'SYSTEM_CONTACT_GROUP':
           contactGroup[PEOPLE_GROUP_NAME] = jsonData['name']
     return (contactGroup, ','.join(contactGroup.keys()))

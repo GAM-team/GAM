@@ -19,6 +19,39 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIObject, callGAPIpages, checkGAPIError
+from gam.util.args import getArgument, getBoolean, getString
+from gam.util.display import (
+    ACTION_NOT_PERFORMED_RC,
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityActionPerformedMessage,
+    entityModifierNewValueActionFailedWarning,
+    entityModifierNewValueActionPerformed,
+    entityPerformAction,
+    getPageMessage,
+    printEntityMessage,
+    printGettingAllAccountEntities,
+    printGettingEntityItem,
+)
+from gam.util.errors import entityActionFailedExit, entityDoesNotExistExit, missingArgumentExit, unknownArgumentExit
+from gam.util.fileio import (
+    FILE_ERROR_RC,
+    cleanFilepath,
+    closeFile,
+    fileErrorMessage,
+    openFile,
+    setFilePath,
+    uniqueFilename,
+)
+from gam.util.gdoc import getBucketObjectName
+from gam.util.output import (
+    flushStderr,
+    formatKeyValueList,
+    systemErrorExit,
+    writeStderr,
+    writeStdout,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -58,11 +91,11 @@ def _copyStorageObjects(objects, target_bucket, target_prefix):
   def process_rewrite(request_id, response, exception):
     fileIndex = int(request_id)
     if exception:
-      http_status, reason, message = _getMain().checkGAPIError(exception)
+      http_status, reason, message = checkGAPIError(exception)
       # Poor man's backoff/retry
       if http_status == 429 or http_status > 499:
-        _getMain().writeStderr(f'Temporary error: {http_status} - {message}, Backing off: 10 seconds\n')
-        _getMain().flushStderr()
+        writeStderr(f'Temporary error: {http_status} - {message}, Backing off: 10 seconds\n')
+        flushStderr()
         time.sleep(10)
         next_batch.add(s.objects().rewrite(**files_to_copy[fileIndex]['method']), request_id=request_id)
         return
@@ -75,26 +108,26 @@ def _copyStorageObjects(objects, target_bucket, target_prefix):
       source_md5 = files_to_copy[fileIndex]['md5Hash']
       target_md5 = response['resource']['md5Hash']
       if source_md5 != target_md5:
-        _getMain().systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, f'Target file {target_displayname} checksum {target_md5} does not match source {source_md5}. This should not happen')
-      _getMain().entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, None], f'{1:>7.2%} Complete', fileIndex+1, totalFiles)
+        systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, f'Target file {target_displayname} checksum {target_md5} does not match source {source_md5}. This should not happen')
+      entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, None], f'{1:>7.2%} Complete', fileIndex+1, totalFiles)
       Ind.Increment()
-      _getMain().writeStdout(_getMain().formatKeyValueList(Ind.Spaces(), ['Source', source_displayname], '\n'))
-      _getMain().writeStdout(_getMain().formatKeyValueList(Ind.Spaces(), ['Target', target_displayname], '\n'))
+      writeStdout(formatKeyValueList(Ind.Spaces(), ['Source', source_displayname], '\n'))
+      writeStdout(formatKeyValueList(Ind.Spaces(), ['Target', target_displayname], '\n'))
       Ind.Decrement()
     else:
       total_bytes = float(response.get('objectSize'))
       done_bytes = float(response.get('totalBytesRewritten'))
-      _getMain().entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, None], f'{(done_bytes / total_bytes):>7.2%} Complete', fileIndex+1, totalFiles)
+      entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, None], f'{(done_bytes / total_bytes):>7.2%} Complete', fileIndex+1, totalFiles)
       Ind.Increment()
-      _getMain().writeStdout(_getMain().formatKeyValueList(Ind.Spaces(), ['Source', source_displayname], '\n'))
-      _getMain().writeStdout(_getMain().formatKeyValueList(Ind.Spaces(), ['Target', target_displayname], '\n'))
+      writeStdout(formatKeyValueList(Ind.Spaces(), ['Source', source_displayname], '\n'))
+      writeStdout(formatKeyValueList(Ind.Spaces(), ['Target', target_displayname], '\n'))
       Ind.Decrement()
       files_to_copy[fileIndex]['method']['rewriteToken'] = response.get('rewriteToken')
       next_batch.add(s.objects().rewrite(**files_to_copy[fileIndex]['method']), request_id=request_id)
 
   action = Act.Get()
   Act.Set(Act.COPY)
-  s = _getMain().buildGAPIObject(API.STORAGEWRITE)
+  s = buildGAPIObject(API.STORAGEWRITE)
   sbatch = s.new_batch_http_request(callback=process_rewrite)
   files_to_copy = []
   for object_ in objects:
@@ -127,7 +160,7 @@ def _copyStorageObjects(objects, target_bucket, target_prefix):
       sbatch = next_batch
   except GAPI.notFound:
     Act.Set(action)
-    _getMain().entityDoesNotExistExit(Ent.CLOUD_STORAGE_BUCKET, target_bucket)
+    entityDoesNotExistExit(Ent.CLOUD_STORAGE_BUCKET, target_bucket)
   except Exception:
     ClientAPIAccessDeniedExit()
   Act.Set(action)
@@ -136,40 +169,40 @@ def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
   action = Act.Get()
   Act.Set(Act.VERIFY)
   try:
-    f = _getMain().openFile(filename, 'rb')
+    f = openFile(filename, 'rb')
     hash_md5 = hashlib.md5()
     for chunk in iter(lambda: f.read(4096), b""):
       hash_md5.update(chunk)
-    _getMain().closeFile(f)
+    closeFile(f)
     actual_hash = hash_md5.hexdigest()
     if actual_hash == expected_md5:
-      _getMain().entityActionPerformed([Ent.FILE, filename, Ent.MD5HASH, expected_md5], j, jcount)
+      entityActionPerformed([Ent.FILE, filename, Ent.MD5HASH, expected_md5], j, jcount)
       Act.Set(action)
       return True
-    _getMain().entityActionFailedWarning([Ent.FILE, filename, Ent.MD5HASH, expected_md5], Msg.DOES_NOT_MATCH.format(actual_hash), j, jcount)
+    entityActionFailedWarning([Ent.FILE, filename, Ent.MD5HASH, expected_md5], Msg.DOES_NOT_MATCH.format(actual_hash), j, jcount)
     Act.Set(action)
     return False
   except IOError as e:
-    _getMain().systemErrorExit(_getMain().FILE_ERROR_RC, _getMain().fileErrorMessage(filename, e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None, zipToStdout=False, j=0, jcount=0):
   if not zipToStdout:
-    localFilename = _getMain().cleanFilepath(localFilename)
+    localFilename = cleanFilepath(localFilename)
     entityValueList = [Ent.DRIVE_FILE, localFilename]
     if os.path.exists(localFilename):
-      _getMain().printEntityMessage(entityValueList, Msg.EXISTS)
+      printEntityMessage(entityValueList, Msg.EXISTS)
       if not expectedMd5:
         return # nothing to verify, just assume we're good.
       if md5MatchesFile(localFilename, expectedMd5):
         return
-      _getMain().printEntityMessage(entityValueList, Msg.DOWNLOADING_AGAIN_AND_OVER_WRITING)
-    _getMain().entityPerformAction(entityValueList)
+      printEntityMessage(entityValueList, Msg.DOWNLOADING_AGAIN_AND_OVER_WRITING)
+    entityPerformAction(entityValueList)
     file_path = os.path.dirname(localFilename)
     if not os.path.exists(file_path):
       os.makedirs(file_path)
-    f = _getMain().openFile(localFilename, 'wb')
+    f = openFile(localFilename, 'wb')
   else:
-    f = _getMain().openFile('-', 'wb')
+    f = openFile('-', 'wb')
   try:
     request = s.objects().get_media(bucket=bucket, object=s_object)
     downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
@@ -177,90 +210,90 @@ def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None,
     while not done:
       status, done = downloader.next_chunk()
       if not zipToStdout and status.progress() < 1.0:
-        _getMain().entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, s_object], f'{status.progress():>7.2%}', j, jcount)
+        entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, s_object], f'{status.progress():>7.2%}', j, jcount)
     if not zipToStdout:
-      _getMain().entityModifierNewValueActionPerformed([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, j, jcount)
-      _getMain().closeFile(f, True)
+      entityModifierNewValueActionPerformed([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, j, jcount)
+      closeFile(f, True)
     if expectedMd5 and not md5MatchesFile(localFilename, expectedMd5):
-      _getMain().systemErrorExit(_getMain().FILE_ERROR_RC, _getMain().fileErrorMessage(localFilename, Msg.CORRUPT_FILE))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(localFilename, Msg.CORRUPT_FILE))
   except googleapiclient.http.HttpError as e:
     mg = _getMain().HTTP_ERROR_PATTERN.match(str(e))
-    _getMain().entityModifierNewValueActionFailedWarning([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, mg.group(1) if mg else str(e), j, jcount)
+    entityModifierNewValueActionFailedWarning([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, mg.group(1) if mg else str(e), j, jcount)
 
 TAKEOUT_EXPORT_PATTERN = re.compile(r'(takeout-export-[a-f,0-9,-]*)')
 
 # gam copy storagebucket sourcebucket <StorageBucketName> targetbucket <StorageBucketName>
 #	[sourceprefix <String>] [targetprefix <String>]
 def doCopyCloudStorageBucket():
-  s = _getMain().buildGAPIObject(API.STORAGEREAD)
+  s = buildGAPIObject(API.STORAGEREAD)
   source_bucket = None
   target_bucket = None
   source_prefix = None
   target_prefix = ''
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'sourcebucket':
-      source_bucket = _getMain().getString(Cmd.OB_URL)
+      source_bucket = getString(Cmd.OB_URL)
     elif myarg == 'targetbucket':
-      target_bucket = _getMain().getString(Cmd.OB_URL)
+      target_bucket = getString(Cmd.OB_URL)
     elif myarg == 'sourceprefix':
-      source_prefix = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      source_prefix = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'targetprefix':
-      target_prefix = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      target_prefix = getString(Cmd.OB_STRING, minLen=0)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not target_bucket:
-    _getMain().missingArgumentExit('targetbucket')
+    missingArgumentExit('targetbucket')
   if not source_bucket:
-    _getMain().missingArgumentExit('sourcebucket')
-  _getMain().printGettingAllAccountEntities(Ent.FILE)
-  pageMessage = _getMain().getPageMessage()
+    missingArgumentExit('sourcebucket')
+  printGettingAllAccountEntities(Ent.FILE)
+  pageMessage = getPageMessage()
   try:
-    objects = _getMain().callGAPIpages(s.objects(), 'list', 'items',
+    objects = callGAPIpages(s.objects(), 'list', 'items',
                             pageMessage=pageMessage,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                             bucket=source_bucket, prefix=source_prefix,
                             fields='nextPageToken,items(name,bucket,md5Hash)')
   except GAPI.notFound:
-    _getMain().entityDoesNotExistExit(Ent.CLOUD_STORAGE_BUCKET, source_bucket)
+    entityDoesNotExistExit(Ent.CLOUD_STORAGE_BUCKET, source_bucket)
   except GAPI.forbidden as e:
-    _getMain().entityActionFailedExit([Ent.CLOUD_STORAGE_BUCKET, source_bucket], str(e))
+    entityActionFailedExit([Ent.CLOUD_STORAGE_BUCKET, source_bucket], str(e))
   _copyStorageObjects(objects, target_bucket, target_prefix)
 
 # gam download storagebucket <TakeoutBucketName>
 #	[targetfolder <FilePath>]
 def doDownloadCloudStorageBucket():
-  bucket_url = _getMain().getString(Cmd.OB_STRING)
+  bucket_url = getString(Cmd.OB_STRING)
   targetFolder = GC.Values[GC.DRIVE_DIR]
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'targetfolder':
-      targetFolder = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   bucket_match = re.search(TAKEOUT_EXPORT_PATTERN, bucket_url)
   if not bucket_match:
-    _getMain().systemErrorExit(_getMain().ACTION_NOT_PERFORMED_RC, f'Could not find a takeout-export-* bucket in {bucket_url}')
+    systemErrorExit(ACTION_NOT_PERFORMED_RC, f'Could not find a takeout-export-* bucket in {bucket_url}')
   bucket = bucket_match.group(1)
-  s = _getMain().buildGAPIObject(API.STORAGEREAD)
-  _getMain().printGettingAllAccountEntities(Ent.FILE)
-  pageMessage = _getMain().getPageMessage()
+  s = buildGAPIObject(API.STORAGEREAD)
+  printGettingAllAccountEntities(Ent.FILE)
+  pageMessage = getPageMessage()
   try:
-    objects = _getMain().callGAPIpages(s.objects(), 'list', 'items',
+    objects = callGAPIpages(s.objects(), 'list', 'items',
                             pageMessage=pageMessage,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                             bucket=bucket, projection='noAcl', fields='nextPageToken,items(name,md5Hash)')
   except GAPI.notFound:
-    _getMain().entityDoesNotExistExit(Ent.CLOUD_STORAGE_BUCKET, bucket)
+    entityDoesNotExistExit(Ent.CLOUD_STORAGE_BUCKET, bucket)
   except GAPI.forbidden as e:
-    _getMain().entityActionFailedExit([Ent.CLOUD_STORAGE_BUCKET, bucket], str(e))
+    entityActionFailedExit([Ent.CLOUD_STORAGE_BUCKET, bucket], str(e))
   count = len(objects)
   i = 0
   for s_object in objects:
     i += 1
-    _getMain().printGettingEntityItem(Ent.FILE, s_object['name'], i, count)
+    printGettingEntityItem(Ent.FILE, s_object['name'], i, count)
     expectedMd5 = base64.b64decode(s_object['md5Hash']).hex()
     _getCloudStorageObject(s, bucket, s_object['name'], os.path.join(targetFolder, s_object['name']),
                            expectedMd5=expectedMd5)
@@ -268,41 +301,41 @@ def doDownloadCloudStorageBucket():
 # gam download storagefile <StorageBucketObjectName>
 #	[targetfolder <FilePath>] [overwrite [<Boolean>]] [nogcspath [Boolean>]]
 def doDownloadCloudStorageFile():
-  bucket, s_object, bucketObject = _getMain().getBucketObjectName()
+  bucket, s_object, bucketObject = getBucketObjectName()
   targetFolder = GC.Values[GC.DRIVE_DIR]
   overwrite = nogcspath = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'targetfolder':
-      targetFolder = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'overwrite':
-      overwrite = _getMain().getBoolean()
+      overwrite = getBoolean()
     elif myarg == 'nogcspath':
-      nogcspath = _getMain().getBoolean()
+      nogcspath = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   s_obpaths = s_object.rsplit('/', 1)
   s_obfile = s_obpaths[-1]
   if len(s_obpaths) > 1 and not nogcspath:
     targetFolder = os.path.join(targetFolder, s_obpaths[0])
-  filename, _ = _getMain().uniqueFilename(targetFolder, s_obfile, overwrite)
+  filename, _ = uniqueFilename(targetFolder, s_obfile, overwrite)
   filepath = os.path.dirname(filename)
   if not os.path.exists(filepath):
     os.makedirs(filepath)
-  s = _getMain().buildGAPIObject(API.STORAGEREAD)
-  _getMain().printGettingEntityItem(Ent.FILE, s_object)
-  f = _getMain().openFile(filename, 'wb')
+  s = buildGAPIObject(API.STORAGEREAD)
+  printGettingEntityItem(Ent.FILE, s_object)
+  f = openFile(filename, 'wb')
   try:
     request = s.objects().get_media(bucket=bucket, object=s_object)
     downloader = googleapiclient.http.MediaIoBaseDownload(f, request)
     done = False
     while not done:
       _, done = downloader.next_chunk()
-    _getMain().entityModifierNewValueActionPerformed([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, filename)
-    _getMain().closeFile(f, True)
+    entityModifierNewValueActionPerformed([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, filename)
+    closeFile(f, True)
   except googleapiclient.http.HttpError as e:
     mg = _getMain().HTTP_ERROR_PATTERN.match(str(e))
-    _getMain().entityActionFailedWarning([Ent.CLOUD_STORAGE_FILE, bucketObject], mg.group(1) if mg else str(e))
+    entityActionFailedWarning([Ent.CLOUD_STORAGE_FILE, bucketObject], mg.group(1) if mg else str(e))
 

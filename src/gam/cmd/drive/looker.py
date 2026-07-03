@@ -17,6 +17,32 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    OrderBy,
+    getArgument,
+    getChoice,
+    getEmailAddress,
+    getString,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityPerformActionNumItems,
+    getPageMessage,
+    printEntity,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    printLine,
+    userLookerStudioServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument, getUserObjectEntity
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -51,16 +77,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP = {
   'report': ['REPORT'],
@@ -73,11 +89,11 @@ def initLookerStudioAssetSelectionParameters():
 
 def getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
   if myarg in {'assettype', 'assettypes'}:
-    assetTypes['assetTypes'] = _getMain().getChoice(LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP, mapChoice=True)
+    assetTypes['assetTypes'] = getChoice(LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP, mapChoice=True)
   elif myarg == 'title':
-    parameters['title'] = _getMain().getString(Cmd.OB_STRING)
+    parameters['title'] = getString(Cmd.OB_STRING)
   elif myarg == 'owner':
-    parameters['owner'] = _getMain().getEmailAddress(noUid=True)
+    parameters['owner'] = getEmailAddress(noUid=True)
   elif myarg == 'includetrashed':
     parameters['includeTrashed'] = True
   else:
@@ -92,39 +108,39 @@ def _validateUserGetLookerStudioAssetIds(user, i, count, entity):
       entityList = [{'name': item, 'title': item} for item in entity['list']]
   else:
     entityList = []
-  user, ds = _getMain().buildGAPIServiceObject(API.LOOKERSTUDIO, user, i, count)
+  user, ds = buildGAPIServiceObject(API.LOOKERSTUDIO, user, i, count)
   if not ds:
     return (user, None, None, 0)
   return (user, ds, entityList, len(entityList))
 
 def _getLookerStudioAssetByID(ds, user, i, count, assetId):
-  _getMain().printGettingAllEntityItemsForWhom(Ent.LOOKERSTUDIO_ASSET, user, i, count)
+  printGettingAllEntityItemsForWhom(Ent.LOOKERSTUDIO_ASSET, user, i, count)
   try:
-    return _getMain().callGAPI(ds.assets(), 'get',
+    return callGAPI(ds.assets(), 'get',
                     throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                     name=f'assets/{assetId}')
   except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+    entityActionFailedWarning([Ent.USER, user], str(e), i, count)
   except GAPI.serviceNotAvailable:
-    _getMain().userLookerStudioServiceNotEnabledWarning(user, i, count)
+    userLookerStudioServiceNotEnabledWarning(user, i, count)
   return None
 
 def _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, fields, orderBy=None):
   assets = []
   for assetType in assetTypes['assetTypes']:
     entityType = Ent.LOOKERSTUDIO_ASSET_REPORT if assetType == 'REPORT' else Ent.LOOKERSTUDIO_ASSET_DATASOURCE
-    _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count)
+    printGettingAllEntityItemsForWhom(entityType, user, i, count)
     parameters['assetTypes'] = assetType
     try:
-      assets.extend(_getMain().callGAPIpages(ds.assets(), 'search', 'assets',
-                                  pageMessage=_getMain().getPageMessage(),
+      assets.extend(callGAPIpages(ds.assets(), 'search', 'assets',
+                                  pageMessage=getPageMessage(),
                                   throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
                                   **parameters, orderBy=orderBy, fields=fields))
     except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       return (None, 0)
     except GAPI.serviceNotAvailable:
-      _getMain().userLookerStudioServiceNotEnabledWarning(user, i, count)
+      userLookerStudioServiceNotEnabledWarning(user, i, count)
       return (None, 0)
   return (assets, len(assets))
 
@@ -151,45 +167,45 @@ def printShowLookerStudioAssets(users):
   def _printAsset(asset, user):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
-    row = _getMain().flattenJSON(asset, flattened={'User': user})
+    row = flattenJSON(asset, flattened={'User': user})
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'User': user, 'title': asset['title'],
-                              'JSON': json.dumps(_getMain().cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+                              'JSON': json.dumps(cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
 
   def _showAsset(asset):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
     if FJQC.formatJSON:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
+      printLine(json.dumps(cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
       return
-    _getMain().printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title']], j, jcount)
+    printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title']], j, jcount)
     Ind.Increment()
-    _getMain().showJSON(None, asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS)
+    showJSON(None, asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS)
     Ind.Decrement()
 
-  csvPF = _getMain().CSVPrintFile(['User', 'title']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
-  OBY = _getMain().OrderBy(LOOKERSTUDIO_ASSETS_ORDERBY_CHOICE_MAP, ascendingKeyword='ascending', descendingKeyword='')
+  csvPF = CSVPrintFile(['User', 'title']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(LOOKERSTUDIO_ASSETS_ORDERBY_CHOICE_MAP, ascendingKeyword='ascending', descendingKeyword='')
   parameters, assetTypes = initLookerStudioAssetSelectionParameters()
   assetIdEntity = None
   stripCRsFromTitle = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = _getMain().getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
     elif myarg == 'stripcrsfromtitle':
       stripCRsFromTitle = True
     elif myarg == 'orderby':
       OBY.GetChoice()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
@@ -201,7 +217,7 @@ def printShowLookerStudioAssets(users):
         continue
     if not csvPF:
       if not FJQC.formatJSON:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
       Ind.Increment()
       j = 0
       for asset in assets:
@@ -226,18 +242,18 @@ def _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC):
   if FJQC is not None and FJQC.formatJSON:
     permissions['User'] = user
     permissions['assetId'] = asset['name']
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(permissions), ensure_ascii=False, sort_keys=False))
+    printLine(json.dumps(cleanJSON(permissions), ensure_ascii=False, sort_keys=False))
     return
   permissions = permissions['permissions']
   if permissions:
-    _getMain().printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
+    printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
   for role in ['OWNER', 'EDITOR', 'VIEWER']:
     members = permissions.get(role, {}).get('members', [])
     if members:
       lrole = role.lower()
       Ind.Increment()
       for member in members:
-        _getMain().printKeyValueList([lrole, member])
+        printKeyValueList([lrole, member])
       Ind.Decrement()
 
 LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP = {

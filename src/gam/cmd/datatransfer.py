@@ -14,6 +14,31 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.orgunits import _getMain
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    checkForExtraneousArguments,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getEmailAddress,
+    getInteger,
+    getString,
+)
+from gam.util.csv_pf import CSVPrintFile
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    performActionNumItems,
+    printEntity,
+    printKeyValueList,
+    printKeyValueListWithCount,
+)
+from gam.util.entity import convertEmailAddressToUID
+from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import writeStderr
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -21,20 +46,9 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def getTransferApplications(dt):
   try:
-    return _getMain()._getMain().callGAPIpages(dt.applications(), 'list', 'applications',
+    return callGAPIpages(dt.applications(), 'list', 'applications',
                          throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN],
                          customerId=GC.Values[GC.CUSTOMER_ID], fields='applications(id,name,transferParams)')
   except (GAPI.unknownError, GAPI.forbidden):
@@ -65,7 +79,7 @@ def _validateTransferAppName(apps, appName):
     if appName == app['name'].lower():
       return (app['name'], app['id'])
     appNameList.append(app['name'].lower())
-  _getMain()._getMain().invalidChoiceExit(appName, appNameList, True)
+  invalidChoiceExit(appName, appNameList, True)
 
 PRIVACY_LEVEL_CHOICE_MAP = {
   'private': ['PRIVATE'],
@@ -92,52 +106,52 @@ def doCreateDataTransfer():
       Cmd.Backup()
       if doubleBackup:
         Cmd.Backup()
-      _getMain()._getMain().usageErrorExit(Msg.NO_DATA_TRANSFER_APP_FOR_PARAMETER.format(key))
+      usageErrorExit(Msg.NO_DATA_TRANSFER_APP_FOR_PARAMETER.format(key))
 
-  dt = _getMain()._getMain().buildGAPIObject(API.DATATRANSFER)
+  dt = buildGAPIObject(API.DATATRANSFER)
   apps = getTransferApplications(dt)
-  old_owner = _getMain()._getMain().getEmailAddress(returnUIDprefix='uid:')
-  body = {'oldOwnerUserId': _getMain()._getMain().convertEmailAddressToUID(old_owner)}
+  old_owner = getEmailAddress(returnUIDprefix='uid:')
+  body = {'oldOwnerUserId': convertEmailAddressToUID(old_owner)}
   appIndicies = {}
   appNameList = []
   waitInterval = waitRetries = 0
   i = 0
   body['applicationDataTransfers'] = []
-  for appName in _getMain()._getMain().getString(Cmd.OB_SERVICE_NAME_LIST).split(','):
+  for appName in getString(Cmd.OB_SERVICE_NAME_LIST).split(','):
     appName, appId = _validateTransferAppName(apps, appName)
     body['applicationDataTransfers'].append({'applicationId': appId})
     appIndicies[appId] = i
     i += 1
     appNameList.append(appName)
-  new_owner = _getMain()._getMain().getEmailAddress(returnUIDprefix='uid:')
-  body['newOwnerUserId'] = _getMain()._getMain().convertEmailAddressToUID(new_owner)
+  new_owner = getEmailAddress(returnUIDprefix='uid:')
+  body['newOwnerUserId'] = convertEmailAddressToUID(new_owner)
   if body['oldOwnerUserId'] == body['newOwnerUserId']:
     Cmd.Backup()
-    _getMain()._getMain().usageErrorExit(Msg.NEW_OWNER_MUST_DIFFER_FROM_OLD_OWNER)
+    usageErrorExit(Msg.NEW_OWNER_MUST_DIFFER_FROM_OLD_OWNER)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain()._getMain().getArgument()
+    myarg = getArgument()
     if myarg in PRIVACY_LEVEL_CHOICE_MAP:
       _assignAppParameter('PRIVACY_LEVEL', PRIVACY_LEVEL_CHOICE_MAP[myarg])
     elif myarg == 'releaseresources':
-      if _getMain()._getMain().getBoolean():
+      if getBoolean():
         _assignAppParameter('RELEASE_RESOURCES', ['TRUE'])
     elif myarg == 'wait':
-      waitInterval = _getMain()._getMain().getInteger(minVal=5, maxVal=60)
-      waitRetries = _getMain()._getMain().getInteger(minVal=0)
+      waitInterval = getInteger(minVal=5, maxVal=60)
+      waitRetries = getInteger(minVal=0)
     else:
-      _assignAppParameter(Cmd.Previous().upper(), _getMain()._getMain().getString(Cmd.OB_PARAMETER_VALUE).upper().split(','), True)
+      _assignAppParameter(Cmd.Previous().upper(), getString(Cmd.OB_PARAMETER_VALUE).upper().split(','), True)
   try:
-    result = _getMain()._getMain().callGAPI(dt.transfers(), 'insert',
+    result = callGAPI(dt.transfers(), 'insert',
                       throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN],
                       body=body, fields='id')
   except (GAPI.unknownError, GAPI.forbidden) as e:
-    _getMain()._getMain().entityActionFailedExit([Ent.USER, old_owner], str(e))
-  _getMain()._getMain().entityActionPerformed([Ent.TRANSFER_REQUEST, None])
+    entityActionFailedExit([Ent.USER, old_owner], str(e))
+  entityActionPerformed([Ent.TRANSFER_REQUEST, None])
   Ind.Increment()
-  _getMain()._getMain().printEntity([Ent.TRANSFER_ID, result['id']])
-  _getMain()._getMain().printEntity([Ent.SERVICE, ','.join(appNameList)])
-  _getMain()._getMain().printKeyValueList([Msg.FROM, old_owner])
-  _getMain()._getMain().printKeyValueList([Msg.TO, new_owner])
+  printEntity([Ent.TRANSFER_ID, result['id']])
+  printEntity([Ent.SERVICE, ','.join(appNameList)])
+  printKeyValueList([Msg.FROM, old_owner])
+  printKeyValueList([Msg.TO, new_owner])
   Ind.Decrement()
   if waitRetries == 0:
     return
@@ -145,10 +159,10 @@ def doCreateDataTransfer():
   status = 'inProgress'
   dtId = result['id']
   while True:
-    _getMain()._getMain().writeStderr(Ind.Spaces()+Msg.WAITING_FOR_DATA_TRANSFER_TO_COMPLETE_SLEEPING.format(waitInterval))
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_DATA_TRANSFER_TO_COMPLETE_SLEEPING.format(waitInterval))
     time.sleep(waitInterval)
     try:
-      result = _getMain()._getMain().callGAPI(dt.transfers(), 'get',
+      result = callGAPI(dt.transfers(), 'get',
                         throwReasons=[GAPI.NOT_FOUND],
                         dataTransferId=dtId, fields='overallTransferStatusCode')
       if result['overallTransferStatusCode'] == 'completed':
@@ -158,50 +172,50 @@ def doCreateDataTransfer():
       if retry >= waitRetries:
         break
     except GAPI.notFound:
-      _getMain()._getMain().entityActionFailedWarning([Ent.TRANSFER_ID, dtId], Msg.DOES_NOT_EXIST)
+      entityActionFailedWarning([Ent.TRANSFER_ID, dtId], Msg.DOES_NOT_EXIST)
       break
-  _getMain()._getMain().printEntity([Ent.TRANSFER_ID, dtId, Ent.STATUS, status])
+  printEntity([Ent.TRANSFER_ID, dtId, Ent.STATUS, status])
 
 def _showTransfer(apps, transfer, i, count):
-  _getMain()._getMain().printEntity([Ent.TRANSFER_ID, transfer['id']], i, count)
+  printEntity([Ent.TRANSFER_ID, transfer['id']], i, count)
   Ind.Increment()
-  _getMain()._getMain().printKeyValueList(['Request Time', formatLocalTime(transfer['requestTime'])])
-  _getMain()._getMain().printKeyValueList(['Old Owner', convertUserIDtoEmail(transfer['oldOwnerUserId'])])
-  _getMain()._getMain().printKeyValueList(['New Owner', convertUserIDtoEmail(transfer['newOwnerUserId'])])
-  _getMain()._getMain().printKeyValueList(['Overall Transfer Status', transfer['overallTransferStatusCode']])
+  printKeyValueList(['Request Time', formatLocalTime(transfer['requestTime'])])
+  printKeyValueList(['Old Owner', convertUserIDtoEmail(transfer['oldOwnerUserId'])])
+  printKeyValueList(['New Owner', convertUserIDtoEmail(transfer['newOwnerUserId'])])
+  printKeyValueList(['Overall Transfer Status', transfer['overallTransferStatusCode']])
   for app in transfer['applicationDataTransfers']:
-    _getMain()._getMain().printKeyValueList(['Application', _convertTransferAppIDtoName(apps, app['applicationId'])])
+    printKeyValueList(['Application', _convertTransferAppIDtoName(apps, app['applicationId'])])
     Ind.Increment()
-    _getMain()._getMain().printKeyValueList(['Status', app['applicationTransferStatus']])
-    _getMain()._getMain().printKeyValueList(['Parameters'])
+    printKeyValueList(['Status', app['applicationTransferStatus']])
+    printKeyValueList(['Parameters'])
     Ind.Increment()
     if 'applicationTransferParams' in app:
       for param in app['applicationTransferParams']:
         key = param['key']
         value = param.get('value', [])
         if value:
-          _getMain()._getMain().printKeyValueList([key, ','.join(value)])
+          printKeyValueList([key, ','.join(value)])
         else:
-          _getMain()._getMain().printKeyValueList([key])
+          printKeyValueList([key])
     else:
-      _getMain()._getMain().printKeyValueList(['None'])
+      printKeyValueList(['None'])
     Ind.Decrement()
     Ind.Decrement()
   Ind.Decrement()
 
 # gam info datatransfer|transfer <TransferID>
 def doInfoDataTransfer():
-  dt = _getMain()._getMain().buildGAPIObject(API.DATATRANSFER)
+  dt = buildGAPIObject(API.DATATRANSFER)
   apps = getTransferApplications(dt)
-  dtId = _getMain()._getMain().getString(Cmd.OB_TRANSFER_ID)
-  _getMain()._getMain().checkForExtraneousArguments()
+  dtId = getString(Cmd.OB_TRANSFER_ID)
+  checkForExtraneousArguments()
   try:
-    transfer = _getMain()._getMain().callGAPI(dt.transfers(), 'get',
+    transfer = callGAPI(dt.transfers(), 'get',
                         throwReasons=[GAPI.NOT_FOUND],
                         dataTransferId=dtId)
     _showTransfer(apps, transfer, 0, 0)
   except GAPI.notFound:
-    _getMain()._getMain().entityActionFailedWarning([Ent.TRANSFER_ID, dtId], Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning([Ent.TRANSFER_ID, dtId], Msg.DOES_NOT_EXIST)
 
 DATA_TRANSFER_STATUS_MAP = {
   'completed': 'completed',
@@ -220,40 +234,40 @@ DATA_TRANSFER_SORT_TITLES = ['id', 'requestTime', 'oldOwnerUserEmail', 'newOwner
 #	[olduser|oldowner <UserItem>] [newuser|newowner <UserItem>]
 #	[status <String>] [delimiter <Character>]
 def doPrintShowDataTransfers():
-  dt = _getMain()._getMain().buildGAPIObject(API.DATATRANSFER)
+  dt = buildGAPIObject(API.DATATRANSFER)
   apps = getTransferApplications(dt)
   newOwnerUserId = None
   oldOwnerUserId = None
   status = None
-  csvPF = _getMain()._getMain().CSVPrintFile(['id'], DATA_TRANSFER_SORT_TITLES) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['id'], DATA_TRANSFER_SORT_TITLES) if Act.csvFormat() else None
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain()._getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'olduser', 'oldowner'}:
-      oldOwnerUserId = _getMain()._getMain().convertEmailAddressToUID(_getMain()._getMain().getEmailAddress(returnUIDprefix='uid:'))
+      oldOwnerUserId = convertEmailAddressToUID(getEmailAddress(returnUIDprefix='uid:'))
     elif myarg in {'newuser', 'newowner'}:
-      newOwnerUserId = _getMain()._getMain().convertEmailAddressToUID(_getMain()._getMain().getEmailAddress(returnUIDprefix='uid:'))
+      newOwnerUserId = convertEmailAddressToUID(getEmailAddress(returnUIDprefix='uid:'))
     elif myarg == 'status':
-      status = _getMain()._getMain().getChoice(DATA_TRANSFER_STATUS_MAP, mapChoice=True)
+      status = getChoice(DATA_TRANSFER_STATUS_MAP, mapChoice=True)
     elif myarg == 'delimiter':
-      delimiter = _getMain()._getMain().getCharacter()
+      delimiter = getCharacter()
     elif csvPF and myarg == 'addcsvdata':
-      _getMain()._getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
-      _getMain()._getMain().unknownArgumentExit()
+      unknownArgumentExit()
   try:
-    transfers = _getMain()._getMain().callGAPIpages(dt.transfers(), 'list', 'dataTransfers',
+    transfers = callGAPIpages(dt.transfers(), 'list', 'dataTransfers',
                               throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN, GAPI.INVALID_INPUT],
                               customerId=GC.Values[GC.CUSTOMER_ID], status=status,
                               newOwnerUserId=newOwnerUserId, oldOwnerUserId=oldOwnerUserId)
   except (GAPI.unknownError, GAPI.forbidden, GAPI.invalidInput) as e:
-    _getMain()._getMain().entityActionFailedExit([Ent.TRANSFER_REQUEST, None], str(e))
+    entityActionFailedExit([Ent.TRANSFER_REQUEST, None], str(e))
   if not csvPF:
     count = len(transfers)
-    _getMain()._getMain().performActionNumItems(count, Ent.TRANSFER_REQUEST)
+    performActionNumItems(count, Ent.TRANSFER_REQUEST)
     Ind.Increment()
     i = 0
     for transfer in sorted(transfers, key=lambda k: k['requestTime']):
@@ -284,32 +298,32 @@ def doPrintShowDataTransfers():
 
 # gam show transferapps
 def doShowTransferApps():
-  dt = _getMain()._getMain().buildGAPIObject(API.DATATRANSFER)
-  _getMain()._getMain().checkForExtraneousArguments()
+  dt = buildGAPIObject(API.DATATRANSFER)
+  checkForExtraneousArguments()
   Act.Set(Act.SHOW)
   try:
-    apps = _getMain()._getMain().callGAPIpages(dt.applications(), 'list', 'applications',
+    apps = callGAPIpages(dt.applications(), 'list', 'applications',
                          throwReasons=[GAPI.UNKNOWN_ERROR, GAPI.FORBIDDEN],
                          customerId=GC.Values[GC.CUSTOMER_ID], fields='applications(id,name,transferParams)')
   except (GAPI.unknownError, GAPI.forbidden):
     accessErrorExit(None)
   count = len(apps)
-  _getMain()._getMain().performActionNumItems(count, Ent.TRANSFER_APPLICATION)
+  performActionNumItems(count, Ent.TRANSFER_APPLICATION)
   Ind.Increment()
   i = 0
   for app in apps:
     i += 1
-    _getMain()._getMain().printKeyValueListWithCount([app['name']], i, count)
+    printKeyValueListWithCount([app['name']], i, count)
     Ind.Increment()
-    _getMain()._getMain().printKeyValueList(['id', app['id']])
+    printKeyValueList(['id', app['id']])
     transferParams = app.get('transferParams', [])
     if transferParams:
-      _getMain()._getMain().printKeyValueList(['Parameters'])
+      printKeyValueList(['Parameters'])
       Ind.Increment()
       for param in transferParams:
-        _getMain()._getMain().printKeyValueList(['key', param['key']])
+        printKeyValueList(['key', param['key']])
         Ind.Increment()
-        _getMain()._getMain().printKeyValueList(['value', ','.join(param['value'])])
+        printKeyValueList(['value', ','.join(param['value'])])
         Ind.Decrement()
       Ind.Decrement()
     Ind.Decrement()

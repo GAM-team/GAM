@@ -15,6 +15,35 @@ from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    LANGUAGE_CODES_MAP,
+    checkForExtraneousArguments,
+    getArgument,
+    getChoice,
+    getEmailAddress,
+    getInteger,
+    getLanguageCode,
+    getString,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    cleanJSON,
+    flattenJSON,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    performActionNumItems,
+    printEntity,
+    printKeyValueList,
+    printLine,
+)
+from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -35,14 +64,14 @@ def __getattr__(name):
 
 def _showCustomerAddressPhoneNumber(customerInfo):
   if 'postalAddress' in customerInfo:
-    _getMain().printKeyValueList(['Address', None])
+    printKeyValueList(['Address', None])
     Ind.Increment()
     for field in _getMain().ADDRESS_FIELDS_PRINT_ORDER:
       if field in customerInfo['postalAddress']:
-        _getMain().printKeyValueList([field, customerInfo['postalAddress'][field]])
+        printKeyValueList([field, customerInfo['postalAddress'][field]])
     Ind.Decrement()
   if 'phoneNumber' in customerInfo:
-    _getMain().printKeyValueList(['Phone', customerInfo['phoneNumber']])
+    printKeyValueList(['Phone', customerInfo['phoneNumber']])
 
 ADDRESS_FIELDS_ARGUMENT_MAP = {
   'contact': 'contactName', 'contactname': 'contactName',
@@ -60,94 +89,94 @@ def _getResoldCustomerAttr():
   body = {}
   customerAuthToken = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
       body.setdefault('postalAddress', {})
-      body['postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=255)
+      body['postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = getString(Cmd.OB_STRING, minLen=0, maxLen=255)
     elif myarg in {'email', 'alternateemail'}:
-      body['alternateEmail'] = _getMain().getEmailAddress(noUid=True)
+      body['alternateEmail'] = getEmailAddress(noUid=True)
     elif myarg in {'phone', 'phonenumber'}:
-      body['phoneNumber'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      body['phoneNumber'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg in {'customerauthtoken', 'transfertoken'}:
-      customerAuthToken = _getMain().getString(Cmd.OB_STRING)
+      customerAuthToken = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return customerAuthToken, body
 
 # gam create resoldcustomer <CustomerDomain> (customer_auth_token <String>) <ResoldCustomerAttribute>+
 def doCreateResoldCustomer():
-  res = _getMain().buildGAPIObject(API.RESELLER)
-  customerDomain = _getMain().getString('customerDomain')
+  res = buildGAPIObject(API.RESELLER)
+  customerDomain = getString('customerDomain')
   customerAuthToken, body = _getResoldCustomerAttr()
   body['customerDomain'] = customerDomain
   try:
-    result = _getMain().callGAPI(res.customers(), 'insert',
+    result = callGAPI(res.customers(), 'insert',
                       throwReasons=GAPI.RESELLER_THROW_REASONS,
                       body=body, customerAuthToken=customerAuthToken, fields='customerId')
-    _getMain().entityActionPerformed([Ent.CUSTOMER_DOMAIN, body['customerDomain'], Ent.CUSTOMER_ID, result['customerId']])
+    entityActionPerformed([Ent.CUSTOMER_DOMAIN, body['customerDomain'], Ent.CUSTOMER_ID, result['customerId']])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_DOMAIN, body['customerDomain']], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_DOMAIN, body['customerDomain']], str(e))
 
 # gam update resoldcustomer <CustomerID> <ResoldCustomerAttribute>+
 def doUpdateResoldCustomer():
-  res = _getMain().buildGAPIObject(API.RESELLER)
-  customerId = _getMain().getString(Cmd.OB_CUSTOMER_ID)
+  res = buildGAPIObject(API.RESELLER)
+  customerId = getString(Cmd.OB_CUSTOMER_ID)
   _, body = _getResoldCustomerAttr()
   try:
-    _getMain().callGAPI(res.customers(), 'patch',
+    callGAPI(res.customers(), 'patch',
              throwReasons=GAPI.RESELLER_THROW_REASONS,
              customerId=customerId, body=body, fields='')
-    _getMain().entityActionPerformed([Ent.CUSTOMER_ID, customerId])
+    entityActionPerformed([Ent.CUSTOMER_ID, customerId])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 # gam info resoldcustomer <CustomerID> [formatjson]
 def doInfoResoldCustomer():
-  res = _getMain().buildGAPIObject(API.RESELLER)
-  customerId = _getMain().getString(Cmd.OB_CUSTOMER_ID)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  res = buildGAPIObject(API.RESELLER)
+  customerId = getString(Cmd.OB_CUSTOMER_ID)
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     FJQC.GetFormatJSON(myarg)
   try:
-    customerInfo = _getMain().callGAPI(res.customers(), 'get',
+    customerInfo = callGAPI(res.customers(), 'get',
                             throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId)
     if not FJQC.formatJSON:
-      _getMain().printKeyValueList(['Customer ID', customerInfo['customerId']])
-      _getMain().printKeyValueList(['Customer Type', customerInfo['customerType']])
-      _getMain().printKeyValueList(['Customer Domain', customerInfo['customerDomain']])
+      printKeyValueList(['Customer ID', customerInfo['customerId']])
+      printKeyValueList(['Customer Type', customerInfo['customerType']])
+      printKeyValueList(['Customer Domain', customerInfo['customerDomain']])
       if 'customerDomainVerified' in customerInfo:
-        _getMain().printKeyValueList(['Customer Domain Verified', customerInfo['customerDomainVerified']])
+        printKeyValueList(['Customer Domain Verified', customerInfo['customerDomainVerified']])
       _showCustomerAddressPhoneNumber(customerInfo)
       primaryEmail = customerInfo.get('primaryAdmin', {}).get('primaryEmail')
       if primaryEmail:
-        _getMain().printKeyValueList(['Customer Primary Email', primaryEmail])
+        printKeyValueList(['Customer Primary Email', primaryEmail])
       if 'alternateEmail' in customerInfo:
-        _getMain().printKeyValueList(['Customer Alternate Email', customerInfo['alternateEmail']])
-      _getMain().printKeyValueList(['Customer Admin Console URL', customerInfo['resourceUiUrl']])
+        printKeyValueList(['Customer Alternate Email', customerInfo['alternateEmail']])
+      printKeyValueList(['Customer Admin Console URL', customerInfo['resourceUiUrl']])
     else:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON(customerInfo), ensure_ascii=False, sort_keys=False))
+      printLine(json.dumps(cleanJSON(customerInfo), ensure_ascii=False, sort_keys=False))
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 def getCustomerSubscription(res):
-  customerId = _getMain().getString(Cmd.OB_CUSTOMER_ID)
-  productId, skuId = _getMain().SKU.getProductAndSKU(_getMain().getString(Cmd.OB_SKU_ID))
+  customerId = getString(Cmd.OB_CUSTOMER_ID)
+  productId, skuId = _getMain().SKU.getProductAndSKU(getString(Cmd.OB_SKU_ID))
   if not productId:
-    _getMain().invalidChoiceExit(skuId, _getMain().SKU.getSortedSKUList(), True)
+    invalidChoiceExit(skuId, _getMain().SKU.getSortedSKUList(), True)
   try:
-    subscriptions = _getMain().callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
+    subscriptions = callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
                                   throwReasons=GAPI.RESELLER_THROW_REASONS,
                                   customerId=customerId, fields='nextPageToken,subscriptions(skuId,subscriptionId,plan(planName))')
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.SUBSCRIPTION, None], str(e))
+    entityActionFailedWarning([Ent.SUBSCRIPTION, None], str(e))
     sys.exit(GM.Globals[GM.SYSEXITRC])
   for subscription in subscriptions:
     if skuId == subscription['skuId']:
       return (customerId, skuId, subscription['subscriptionId'], subscription['plan']['planName'])
   Cmd.Backup()
-  _getMain().usageErrorExit(f'{Ent.FormatEntityValueList([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])}, {Msg.SUBSCRIPTION_NOT_FOUND}')
+  usageErrorExit(f'{Ent.FormatEntityValueList([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])}, {Msg.SUBSCRIPTION_NOT_FOUND}')
 
 PLAN_NAME_MAP = {
   'annualmonthlypay': 'ANNUAL_MONTHLY_PAY',
@@ -166,30 +195,30 @@ def _getResoldSubscriptionAttr(customerId):
   customerAuthToken = None
   seats1 = seats2 = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'deal', 'dealcode'}:
-      body['dealCode'] = _getMain().getString('dealCode')
+      body['dealCode'] = getString('dealCode')
     elif myarg in {'plan', 'planname'}:
-      body['plan']['planName'] = _getMain().getChoice(PLAN_NAME_MAP, mapChoice=True)
+      body['plan']['planName'] = getChoice(PLAN_NAME_MAP, mapChoice=True)
     elif myarg in {'purchaseorderid', 'po'}:
-      body['purchaseOrderId'] = _getMain().getString('purchaseOrderId')
+      body['purchaseOrderId'] = getString('purchaseOrderId')
     elif myarg == 'seats':
-      seats1 = _getMain().getInteger(minVal=0)
+      seats1 = getInteger(minVal=0)
       if Cmd.ArgumentsRemaining() and Cmd.Current().isdigit():
-        seats2 = _getMain().getInteger(minVal=0)
+        seats2 = getInteger(minVal=0)
     elif myarg in {'sku', 'skuid'}:
-      productId, body['skuId'] = _getMain().SKU.getProductAndSKU(_getMain().getString(Cmd.OB_SKU_ID))
+      productId, body['skuId'] = _getMain().SKU.getProductAndSKU(getString(Cmd.OB_SKU_ID))
       if not productId:
-        _getMain().invalidChoiceExit(body['skuId'], _getMain().SKU.getSortedSKUList(), True)
+        invalidChoiceExit(body['skuId'], _getMain().SKU.getSortedSKUList(), True)
     elif myarg in {'customerauthtoken', 'transfertoken'}:
-      customerAuthToken = _getMain().getString('customer_auth_token')
+      customerAuthToken = getString('customer_auth_token')
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   for field in ['plan', 'skuId']:
     if not body[field]:
-      _getMain().missingArgumentExit(field.lower())
+      missingArgumentExit(field.lower())
   if seats1 is None:
-    _getMain().missingArgumentExit('seats')
+    missingArgumentExit('seats')
   if body['plan']['planName'].startswith('ANNUAL'):
     body['seats']['numberOfSeats'] = seats1
   else:
@@ -201,28 +230,28 @@ SUBSCRIPTION_TIME_OBJECTS = {'creationTime', 'startTime', 'endTime', 'trialEndTi
 
 def _showSubscription(subscription, FJQC=None):
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(subscription, timeObjects=SUBSCRIPTION_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
+    printLine(json.dumps(cleanJSON(subscription, timeObjects=SUBSCRIPTION_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
     return
   Ind.Increment()
-  _getMain().printEntity([Ent.SUBSCRIPTION, subscription['subscriptionId']])
-  _getMain().showJSON(None, subscription, SUBSCRIPTION_SKIP_OBJECTS, SUBSCRIPTION_TIME_OBJECTS)
+  printEntity([Ent.SUBSCRIPTION, subscription['subscriptionId']])
+  showJSON(None, subscription, SUBSCRIPTION_SKIP_OBJECTS, SUBSCRIPTION_TIME_OBJECTS)
   Ind.Decrement()
 
 # gam create resoldsubscription <CustomerID> (sku <SKUID>)
 #	 (plan annual_monthly_pay|annual_yearly_pay|flexible|trial) (seats <Number>)
 #	 [customer_auth_token <String>] [deal <String>] [purchaseorderid <String>]
 def doCreateResoldSubscription():
-  res = _getMain().buildGAPIObject(API.RESELLER)
-  customerId = _getMain().getString(Cmd.OB_CUSTOMER_ID)
+  res = buildGAPIObject(API.RESELLER)
+  customerId = getString(Cmd.OB_CUSTOMER_ID)
   customerAuthToken, body = _getResoldSubscriptionAttr(customerId)
   try:
-    subscription = _getMain().callGAPI(res.subscriptions(), 'insert',
+    subscription = callGAPI(res.subscriptions(), 'insert',
                             throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId, customerAuthToken=customerAuthToken, body=body)
-    _getMain().entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, subscription['skuId']])
+    entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, subscription['skuId']])
     _showSubscription(subscription)
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 RENEWAL_TYPE_MAP = {
   'autorenewmonthlypay': 'AUTO_RENEW_MONTHLY_PAY',
@@ -240,21 +269,21 @@ RENEWAL_TYPE_MAP = {
 #	(plan annual_monthly_pay|annual_yearly_pay|flexible|trial|free [deal <String>] [purchaseorderid <String>] [seats <Number>])
 def doUpdateResoldSubscription():
   def _getSeats():
-    seats1 = _getMain().getInteger(minVal=0)
+    seats1 = getInteger(minVal=0)
     if Cmd.ArgumentsRemaining() and Cmd.Current().isdigit():
-      seats2 = _getMain().getInteger(minVal=0)
+      seats2 = getInteger(minVal=0)
     else:
       seats2 = None
     if planName.startswith('ANNUAL'):
       return {'numberOfSeats': seats1}
     return {'maximumNumberOfSeats': seats1 if seats2 is None else seats2}
 
-  res = _getMain().buildGAPIObject(API.RESELLER)
+  res = buildGAPIObject(API.RESELLER)
   function = None
   customerId, skuId, subscriptionId, planName = getCustomerSubscription(res)
   kwargs = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'activate':
       function = 'activate'
     elif myarg == 'suspend':
@@ -263,35 +292,35 @@ def doUpdateResoldSubscription():
       function = 'startPaidService'
     elif myarg in {'renewal', 'renewaltype'}:
       function = 'changeRenewalSettings'
-      kwargs['body'] = {'renewalType': _getMain().getChoice(RENEWAL_TYPE_MAP, mapChoice=True)}
+      kwargs['body'] = {'renewalType': getChoice(RENEWAL_TYPE_MAP, mapChoice=True)}
     elif myarg == 'seats':
       function = 'changeSeats'
       kwargs['body'] =  _getSeats()
     elif myarg == 'plan':
       function = 'changePlan'
-      planName = _getMain().getChoice(PLAN_NAME_MAP, mapChoice=True)
+      planName = getChoice(PLAN_NAME_MAP, mapChoice=True)
       kwargs['body'] = {'planName': planName}
       while Cmd.ArgumentsRemaining():
-        planarg = _getMain().getArgument()
+        planarg = getArgument()
         if planarg == 'seats':
           kwargs['body']['seats'] = _getSeats()
         elif planarg in {'purchaseorderid', 'po'}:
-          kwargs['body']['purchaseOrderId'] = _getMain().getString('purchaseOrderId')
+          kwargs['body']['purchaseOrderId'] = getString('purchaseOrderId')
         elif planarg in {'dealcode', 'deal'}:
-          kwargs['body']['dealCode'] = _getMain().getString('dealCode')
+          kwargs['body']['dealCode'] = getString('dealCode')
         else:
-          _getMain().unknownArgumentExit()
+          unknownArgumentExit()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   try:
-    subscription = _getMain().callGAPI(res.subscriptions(), function,
+    subscription = callGAPI(res.subscriptions(), function,
                             throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId, subscriptionId=subscriptionId, **kwargs)
-    _getMain().entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
+    entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
     if subscription:
       _showSubscription(subscription)
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_ID, customerId], str(e))
 
 DELETION_TYPE_MAP = {
   'cancel': 'cancel',
@@ -301,35 +330,35 @@ DELETION_TYPE_MAP = {
 
 # gam delete resoldsubscription <CustomerID> <SKUID> cancel|downgrade|transfer_to_direct
 def doDeleteResoldSubscription():
-  res = _getMain().buildGAPIObject(API.RESELLER)
+  res = buildGAPIObject(API.RESELLER)
   customerId, skuId, subscriptionId, _ = getCustomerSubscription(res)
-  deletionType = _getMain().getChoice(DELETION_TYPE_MAP, mapChoice=True)
-  _getMain().checkForExtraneousArguments()
+  deletionType = getChoice(DELETION_TYPE_MAP, mapChoice=True)
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(res.subscriptions(), 'delete',
+    callGAPI(res.subscriptions(), 'delete',
              throwReasons=GAPI.RESELLER_THROW_REASONS,
              customerId=customerId, subscriptionId=subscriptionId, deletionType=deletionType)
-    _getMain().entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
+    entityActionPerformed([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId], str(e))
 
 # gam info resoldsubscription <CustomerID> <SKUID>
 def doInfoResoldSubscription():
-  res = _getMain().buildGAPIObject(API.RESELLER)
+  res = buildGAPIObject(API.RESELLER)
   customerId, skuId, subscriptionId, _ = getCustomerSubscription(res)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     FJQC.GetFormatJSON(myarg)
   try:
-    subscription = _getMain().callGAPI(res.subscriptions(), 'get',
+    subscription = callGAPI(res.subscriptions(), 'get',
                             throwReasons=GAPI.RESELLER_THROW_REASONS,
                             customerId=customerId, subscriptionId=subscriptionId)
     if not FJQC.formatJSON:
-      _getMain().printEntity([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
+      printEntity([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId])
     _showSubscription(subscription, FJQC)
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId], str(e))
+    entityActionFailedWarning([Ent.CUSTOMER_ID, customerId, Ent.SKU, skuId], str(e))
 
 PRINT_RESOLD_SUBSCRIPTIONS_TITLES = ['customerId', 'skuId', 'subscriptionId']
 
@@ -342,53 +371,53 @@ PRINT_RESOLD_SUBSCRIPTIONS_TITLES = ['customerId', 'skuId', 'subscriptionId']
 #	[maxresults <Number>]
 #	[formatjson]
 def doPrintShowResoldSubscriptions():
-  res = _getMain().buildGAPIObject(API.RESELLER)
+  res = buildGAPIObject(API.RESELLER)
   kwargs = {'maxResults': 100}
-  csvPF = _getMain().CSVPrintFile(PRINT_RESOLD_SUBSCRIPTIONS_TITLES, 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(PRINT_RESOLD_SUBSCRIPTIONS_TITLES, 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'customerid':
-      kwargs['customerId'] = _getMain().getString(Cmd.OB_CUSTOMER_ID)
+      kwargs['customerId'] = getString(Cmd.OB_CUSTOMER_ID)
     elif myarg in {'customerauthtoken', 'transfertoken'}:
-      kwargs['customerAuthToken'] = _getMain().getString(Cmd.OB_CUSTOMER_AUTH_TOKEN)
+      kwargs['customerAuthToken'] = getString(Cmd.OB_CUSTOMER_AUTH_TOKEN)
     elif myarg == 'customerprefix':
-      kwargs['customerNamePrefix'] = _getMain().getString(Cmd.OB_STRING)
+      kwargs['customerNamePrefix'] = getString(Cmd.OB_STRING)
     elif myarg == 'maxresults':
-      kwargs['maxResults'] = _getMain().getInteger(minVal=1, maxVal=100)
+      kwargs['maxResults'] = getInteger(minVal=1, maxVal=100)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
-    subscriptions = _getMain().callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
+    subscriptions = callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
                                   throwReasons=GAPI.RESELLER_THROW_REASONS,
                                   fields='nextPageToken,subscriptions', **kwargs)
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.SUBSCRIPTION, None], str(e))
+    entityActionFailedWarning([Ent.SUBSCRIPTION, None], str(e))
     return
   jcount = len(subscriptions)
   if not csvPF:
     if not FJQC.formatJSON:
-      _getMain().performActionNumItems(jcount, Ent.SUBSCRIPTION)
+      performActionNumItems(jcount, Ent.SUBSCRIPTION)
     Ind.Increment()
     j = 0
     for subscription in subscriptions:
       j += 1
       if not FJQC.formatJSON:
-        _getMain().printEntity([Ent.CUSTOMER_ID, subscription['customerId'], Ent.SKU, subscription['skuId']], j, jcount)
+        printEntity([Ent.CUSTOMER_ID, subscription['customerId'], Ent.SKU, subscription['skuId']], j, jcount)
       _showSubscription(subscription, FJQC)
     Ind.Decrement()
   else:
     for subscription in subscriptions:
-      row = _getMain().flattenJSON(subscription, timeObjects=SUBSCRIPTION_TIME_OBJECTS)
+      row = flattenJSON(subscription, timeObjects=SUBSCRIPTION_TIME_OBJECTS)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         csvPF.WriteRowNoFilter({'customerId': subscription['customerId'],
                                 'skuId': subscription['skuId'],
                                 'subscriptionId': subscription['subscriptionId'],
-                                'JSON': json.dumps(_getMain().cleanJSON(subscription, timeObjects=SUBSCRIPTION_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+                                'JSON': json.dumps(cleanJSON(subscription, timeObjects=SUBSCRIPTION_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
     csvPF.writeCSVfile('Resold Subscriptions')
 
 def normalizeChannelResellerID(resellerId):
@@ -493,7 +522,7 @@ CHANNEL_ENTITY_MAP = {
   }
 
 def doPrintShowChannelItems(entityType):
-  cchan = _getMain().buildGAPIObject(API.CLOUDCHANNEL)
+  cchan = buildGAPIObject(API.CLOUDCHANNEL)
   if entityType == Ent.CHANNEL_CUSTOMER:
     service = cchan.accounts().customers()
   elif entityType == Ent.CHANNEL_CUSTOMER_ENTITLEMENT:
@@ -505,9 +534,9 @@ def doPrintShowChannelItems(entityType):
   else: #Ent.CHANNEL_SKU
     service = cchan.products().skus()
   channelEntityMap = CHANNEL_ENTITY_MAP[entityType]
-#  csvPF = _getMain().CSVPrintFile(channelEntityMap['titles'], 'sortall') if Act.csvFormat() else None
-  csvPF = _getMain().CSVPrintFile(['name'], 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+#  csvPF = CSVPrintFile(channelEntityMap['titles'], 'sortall') if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['name'], 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   resellerId = normalizeChannelResellerID(GC.Values[GC.RESELLER_ID] if GC.Values[GC.RESELLER_ID] else GC.Values[GC.CUSTOMER_ID])
   customerId = normalizeChannelCustomerID(GC.Values[GC.CHANNEL_CUSTOMER_ID])
@@ -515,35 +544,35 @@ def doPrintShowChannelItems(entityType):
   productId = 'products/-'
   kwargs = {'pageSize': channelEntityMap['pageSize']}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'resellerid':
-      resellerId = normalizeChannelResellerID(_getMain().getString(Cmd.OB_RESELLER_ID))
+      resellerId = normalizeChannelResellerID(getString(Cmd.OB_RESELLER_ID))
     elif (entityType == Ent.CHANNEL_CUSTOMER_ENTITLEMENT) and myarg in {'customerid', 'channelcustomerid'}:
-      customerId = normalizeChannelCustomerID(_getMain().getString(Cmd.OB_CHANNEL_CUSTOMER_ID))
+      customerId = normalizeChannelCustomerID(getString(Cmd.OB_CHANNEL_CUSTOMER_ID))
     elif (entityType == Ent.CHANNEL_CUSTOMER_ENTITLEMENT) and myarg == 'name':
-      name = _getMain().getString(Cmd.OB_STRING)
+      name = getString(Cmd.OB_STRING)
       parent = name.split('/')
       if (len(parent) != 4) or (parent[0] != 'accounts') or (not parent[1]) or (parent[2] != 'customers') or (not parent[3]):
         Cmd.Backup()
-        _getMain().usageErrorExit(Msg.INVALID_RESELLER_CUSTOMER_NAME)
+        usageErrorExit(Msg.INVALID_RESELLER_CUSTOMER_NAME)
     elif (entityType in {Ent.CHANNEL_OFFER, Ent.CHANNEL_PRODUCT, Ent.CHANNEL_SKU}) and myarg == 'language':
-      kwargs['languageCode'] = _getMain().getLanguageCode(_getMain().LANGUAGE_CODES_MAP)
+      kwargs['languageCode'] = getLanguageCode(LANGUAGE_CODES_MAP)
     elif (entityType in {Ent.CHANNEL_CUSTOMER, Ent.CHANNEL_OFFER}) and myarg == 'filter':
-      kwargs['filter'] = _getMain().getString(Cmd.OB_STRING)
+      kwargs['filter'] = getString(Cmd.OB_STRING)
     elif (entityType == Ent.CHANNEL_SKU) and myarg == 'productid':
-      productId = normalizeChannelProductID(_getMain().getString(Cmd.OB_PRODUCT_ID))
+      productId = normalizeChannelProductID(getString(Cmd.OB_PRODUCT_ID))
     elif myarg == 'fields':
       if not fieldsList:
         fieldsList.append('name')
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in channelEntityMap['fields']:
           fieldsList.append(channelEntityMap['fields'][field])
         else:
-          _getMain().invalidChoiceExit(field, list(channelEntityMap['fields']), True)
+          invalidChoiceExit(field, list(channelEntityMap['fields']), True)
     elif myarg == 'maxresults':
-      kwargs['pageSize'] = _getMain().getInteger(minVal=1, maxVal=channelEntityMap['maxPageSize'])
+      kwargs['pageSize'] = getInteger(minVal=1, maxVal=channelEntityMap['maxPageSize'])
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if entityType != Ent.CHANNEL_CUSTOMER_ENTITLEMENT:
@@ -556,44 +585,44 @@ def doPrintShowChannelItems(entityType):
         kwargs['parent'] = productId
   else:
     if not name and customerId == 'customers/':
-      _getMain().missingArgumentExit('channelcustomerid')
+      missingArgumentExit('channelcustomerid')
     entityName = kwargs['parent'] = name if name else f'{resellerId}/{customerId}'
-  fields = _getMain().getItemFieldsFromFieldsList(channelEntityMap['items'], fieldsList)
+  fields = getItemFieldsFromFieldsList(channelEntityMap['items'], fieldsList)
 #  if csvPF and FJQC.formatJSON and not fieldsList:
 #    csvPF.SetJSONTitles(channelEntityMap['JSONtitles'])
   try:
-    results = _getMain().callGAPIpages(service, 'list', channelEntityMap['items'],
+    results = callGAPIpages(service, 'list', channelEntityMap['items'],
                             bailOnInternalError=True,
                             throwReasons=[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR, GAPI.NOT_FOUND],
                             fields=fields, **kwargs)
   except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.badRequest, GAPI.internalError, GAPI.notFound) as e:
-    _getMain().entityActionFailedWarning([entityType, entityName], str(e))
+    entityActionFailedWarning([entityType, entityName], str(e))
     return
   jcount = len(results)
   if not csvPF:
     if not FJQC.formatJSON:
-      _getMain().performActionNumItems(jcount, entityType)
+      performActionNumItems(jcount, entityType)
     Ind.Increment()
     j = 0
     for item in results:
       j += 1
       if not FJQC.formatJSON:
-        _getMain().printEntity([entityType, item['name']], j, jcount)
+        printEntity([entityType, item['name']], j, jcount)
         Ind.Increment()
-        _getMain().showJSON(None, item, timeObjects=channelEntityMap['timeObjects'])
+        showJSON(None, item, timeObjects=channelEntityMap['timeObjects'])
         Ind.Decrement()
       else:
-        _getMain().printLine(json.dumps(_getMain().cleanJSON(item, timeObjects=channelEntityMap['timeObjects']),
+        printLine(json.dumps(cleanJSON(item, timeObjects=channelEntityMap['timeObjects']),
                              ensure_ascii=False, sort_keys=False))
     Ind.Decrement()
   else:
     for item in results:
-      row = _getMain().flattenJSON(item, timeObjects=channelEntityMap['timeObjects'])
+      row = flattenJSON(item, timeObjects=channelEntityMap['timeObjects'])
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         row = {'name': item['name'],
-               'JSON': json.dumps(_getMain().cleanJSON(item, timeObjects=channelEntityMap['timeObjects']),
+               'JSON': json.dumps(cleanJSON(item, timeObjects=channelEntityMap['timeObjects']),
                                   ensure_ascii=False, sort_keys=True)}
 #        if not fieldsList:
 #          if entityType == Ent.CHANNEL_CUSTOMER:

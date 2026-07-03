@@ -23,6 +23,29 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, getHttpObj
+from gam.util.args import (
+    UTF8,
+    checkForExtraneousArguments,
+    getArgument,
+    getChoice,
+    getEmailAddress,
+    getInteger,
+    getString,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityItemValueListActionNotPerformedWarning,
+    entityPerformActionNumItems,
+    printEntity,
+)
+from gam.util.entity import getEntityArgument, splitEmailAddressOrUID
+from gam.util.errors import entityDoesNotExistExit, unknownArgumentExit
+from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -44,35 +67,35 @@ def __getattr__(name):
 from tempfile import TemporaryFile
 
 def updatePhoto(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   baseFileIdEntity = drive = owner = None
   sourceFolder = os.getcwd()
   if Cmd.NumArgumentsRemaining() == 1:
-    filenamePattern = _getMain().getString(Cmd.OB_FILE_NAME_PATTERN)
+    filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
   else:
     filenamePattern = '#email#.jpg'
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'drivedir':
         sourceFolder = GC.Values[GC.DRIVE_DIR]
       elif myarg == 'sourcefolder':
-        sourceFolder = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.INPUT_DIR)
+        sourceFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.INPUT_DIR)
         if not os.path.isdir(sourceFolder):
-          _getMain().entityDoesNotExistExit(Ent.DIRECTORY, sourceFolder)
+          entityDoesNotExistExit(Ent.DIRECTORY, sourceFolder)
       elif myarg == 'filename':
-        filenamePattern = _getMain().getString(Cmd.OB_FILE_NAME_PATTERN)
+        filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
       elif myarg == 'gphoto':
-        owner, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, _getMain().getEmailAddress())
+        owner, drive = buildGAPIServiceObject(API.DRIVE3, getEmailAddress())
         if not drive:
           return
         baseFileIdEntity = _getMain().getDriveFileEntity(queryShortcutsOK=False)
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   p = re.compile('^(ht|f)tps?://.*$')
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, userName, _ = _getMain().splitEmailAddressOrUID(user)
+    user, userName, _ = splitEmailAddressOrUID(user)
     filename = _getMain()._substituteForUser(filenamePattern, user, userName)
     if baseFileIdEntity is not None:
       fileIdEntity = baseFileIdEntity.copy()
@@ -80,11 +103,11 @@ def updatePhoto(users):
         fileIdEntity['query'] = _substituteForUser(fileIdEntity['query'], user, userName)
       _, _, jcount = _getMain()._validateUserGetFileIDs(owner, 0, 0, fileIdEntity, drive=drive, entityType=None)
       if jcount == 0:
-        _getMain().entityItemValueListActionNotPerformedWarning([Ent.USER, user], [Ent.OWNER, owner],
+        entityItemValueListActionNotPerformedWarning([Ent.USER, user], [Ent.OWNER, owner],
                                                      Msg.NO_ENTITIES_FOUND.format(Ent.Singular(Ent.DRIVE_FILE)), i, count)
         continue
       if jcount > 1:
-        _getMain().entityItemValueListActionNotPerformedWarning([Ent.USER, user], [Ent.OWNER, owner],
+        entityItemValueListActionNotPerformedWarning([Ent.USER, user], [Ent.OWNER, owner],
                                                      Msg.MULTIPLE_ENTITIES_FOUND.format(Ent.Plural(Ent.DRIVE_FILE), jcount, ','.join(fileIdEntity['list'])), i, count)
         continue
       fb = TemporaryFile(mode='wb+')
@@ -99,12 +122,12 @@ def updatePhoto(users):
       fb.close()
     elif p.match(filename):
       try:
-        status, image_data = _getMain().getHttpObj().request(filename, 'GET')
+        status, image_data = getHttpObj().request(filename, 'GET')
         if status['status'] != '200':
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], Msg.NOT_ALLOWED, i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], Msg.NOT_ALLOWED, i, count)
           continue
       except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
         continue
     else:
       filename = os.path.join(sourceFolder, filename)
@@ -112,62 +135,62 @@ def updatePhoto(users):
         with open(filename, 'rb') as f:
           image_data = f.read()
       except (OSError, IOError) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
         continue
-    body = {'photoData': base64.urlsafe_b64encode(image_data).decode(_getMain().UTF8)}
+    body = {'photoData': base64.urlsafe_b64encode(image_data).decode(UTF8)}
     try:
       try:
-        _getMain().callGAPI(cd.users().photos(), 'delete',
+        callGAPI(cd.users().photos(), 'delete',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PHOTO_NOT_FOUND, GAPI.INTERNAL_ERROR],
                  userKey=user)
       except (GAPI.photoNotFound, GAPI.internalError):
         pass
-      _getMain().callGAPI(cd.users().photos(), 'update',
+      callGAPI(cd.users().photos(), 'update',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID_INPUT, GAPI.CONDITION_NOT_MET],
                userKey=user, body=body, fields='')
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.PHOTO, filename], i, count)
+      entityActionPerformed([Ent.USER, user, Ent.PHOTO, filename], i, count)
     except (GAPI.invalidInput, GAPI.conditionNotMet) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
     except (GAPI.userNotFound, GAPI.forbidden):
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
 
 # gam <UserTypeEntity> delete photo
 def deletePhoto(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  cd = buildGAPIObject(API.DIRECTORY)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     try:
-      _getMain().callGAPI(cd.users().photos(), 'delete',
+      callGAPI(cd.users().photos(), 'delete',
                bailOnInternalError=True,
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PHOTO_NOT_FOUND, GAPI.INTERNAL_ERROR],
                userKey=user)
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.PHOTO, ''], i, count)
+      entityActionPerformed([Ent.USER, user, Ent.PHOTO, ''], i, count)
     except (GAPI.photoNotFound, GAPI.internalError) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, ''], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, ''], str(e), i, count)
     except (GAPI.userNotFound, GAPI.forbidden):
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
 
 def getPhoto(users, profileMode):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   targetFolder = os.getcwd()
   filenamePattern = '#email#.#ext#'
   noDefault = returnURLonly = False
   writeFileData = showPhotoData = True
   size = ''
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'drivedir':
       targetFolder = GC.Values[GC.DRIVE_DIR]
     elif myarg == 'targetfolder':
-      targetFolder = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolder = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     elif myarg == 'filename':
-      filenamePattern = _getMain().getString(Cmd.OB_FILE_NAME_PATTERN)
+      filenamePattern = getString(Cmd.OB_FILE_NAME_PATTERN)
     elif myarg == 'nofile':
       writeFileData = False
     elif myarg == 'noshow':
@@ -177,32 +200,32 @@ def getPhoto(users, profileMode):
     elif myarg == 'nodefault':
       noDefault = True
     elif profileMode and myarg == 'size':
-      size = _getMain().getInteger(minVal=50)
+      size = getInteger(minVal=50)
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     if profileMode:
-      user, people = _getMain().buildGAPIServiceObject(API.PEOPLE, user, i, count)
+      user, people = buildGAPIServiceObject(API.PEOPLE, user, i, count)
       if not people:
         continue
     else:
-      user = _getMain().normalizeEmailAddressOrUID(user)
-    _, userName, _ = _getMain().splitEmailAddressOrUID(user)
+      user = normalizeEmailAddressOrUID(user)
+    _, userName, _ = splitEmailAddressOrUID(user)
     filename = os.path.join(targetFolder, _getMain()._substituteForUser(filenamePattern, user, userName))
     try:
       if not showPhotoData:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], 1, Ent.PHOTO, i, count)
+        entityPerformActionNumItems([Ent.USER, user], 1, Ent.PHOTO, i, count)
       if not profileMode:
-        photo = _getMain().callGAPI(cd.users().photos(), 'get',
+        photo = callGAPI(cd.users().photos(), 'get',
                          throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PHOTO_NOT_FOUND],
                          userKey=user)
         if showPhotoData:
-          _getMain().writeStdout(photo['photoData']+'\n')
+          writeStdout(photo['photoData']+'\n')
         photo_data = base64.urlsafe_b64decode(photo['photoData'])
       else:
-        result = _getMain().callGAPI(people.people(), 'get',
+        result = callGAPI(people.people(), 'get',
                           throwReasons=[GAPI.NOT_FOUND],
                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           resourceName='people/me', personFields='photos')
@@ -214,25 +237,25 @@ def getPhoto(users, profileMode):
             url = photo['url']
             break
         if not url:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, None], Msg.PROFILE_PHOTO_NOT_FOUND, i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, None], Msg.PROFILE_PHOTO_NOT_FOUND, i, count)
           continue
         if noDefault and default:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, None], Msg.PROFILE_PHOTO_IS_DEFAULT, i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, None], Msg.PROFILE_PHOTO_IS_DEFAULT, i, count)
           continue
         if returnURLonly:
-          _getMain().writeStdout(f'{url}\n')
+          writeStdout(f'{url}\n')
           continue
         if size:
           url = re.sub(r"=s\d+$", f"=s{size}", url)
         try:
-          status, photo_data = _getMain().getHttpObj().request(url, 'GET')
+          status, photo_data = getHttpObj().request(url, 'GET')
           if status['status'] != '200':
-            _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], Msg.NOT_ALLOWED, i, count)
+            entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], Msg.NOT_ALLOWED, i, count)
             continue
           if showPhotoData:
-            _getMain().writeStdout(base64.encodebytes(photo_data).decode(_getMain().UTF8))
+            writeStdout(base64.encodebytes(photo_data).decode(UTF8))
         except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
           continue
       if writeFileData:
         if photo_data[:3] == b'\xff\xd8\xff':
@@ -248,16 +271,16 @@ def getPhoto(users, profileMode):
         else:
           extension = 'img'
         filenameExt = filename.replace('#ext#', extension)
-        status, e = _getMain().writeFileReturnError(filenameExt, photo_data, mode='wb')
+        status, e = writeFileReturnError(filenameExt, photo_data, mode='wb')
         if status:
           if not showPhotoData:
-            _getMain().entityActionPerformed([Ent.USER, user, Ent.PHOTO, filenameExt], i, count)
+            entityActionPerformed([Ent.USER, user, Ent.PHOTO, filenameExt], i, count)
         else:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filenameExt], str(e), i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filenameExt], str(e), i, count)
     except (GAPI.notFound, GAPI.photoNotFound) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, None], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, None], str(e), i, count)
     except (GAPI.userNotFound, GAPI.forbidden):
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
 
 # gam <UserTypeEntity> get photo [drivedir|(targetfolder <FilePath>)] [filename <FileNamePattern>]]
 #	[noshow] [nofile]
@@ -277,23 +300,23 @@ PROFILE_SHARING_CHOICE_MAP = {
   }
 
 def _setShowProfile(users, function, **kwargs):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  cd = buildGAPIObject(API.DIRECTORY)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     try:
-      result = _getMain().callGAPI(cd.users(), function,
+      result = callGAPI(cd.users(), function,
                         throwReasons=[GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN],
                         userKey=user, fields='includeInGlobalAddressList', **kwargs)
-      _getMain().printEntity([Ent.USER, user, Ent.PROFILE_SHARING_ENABLED, result.get('includeInGlobalAddressList', _getMain().UNKNOWN)], i, count)
+      printEntity([Ent.USER, user, Ent.PROFILE_SHARING_ENABLED, result.get('includeInGlobalAddressList', UNKNOWN)], i, count)
     except (GAPI.userNotFound, GAPI.forbidden):
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
 
 # gam <UserTypeEntity> profile share|shared|unshare|unshared
 def setProfile(users):
-  body = {'includeInGlobalAddressList': _getMain().getChoice(PROFILE_SHARING_CHOICE_MAP, mapChoice=True)}
+  body = {'includeInGlobalAddressList': getChoice(PROFILE_SHARING_CHOICE_MAP, mapChoice=True)}
   _setShowProfile(users, 'update', body=body)
 
 # gam <UserTypeEntity> show profile

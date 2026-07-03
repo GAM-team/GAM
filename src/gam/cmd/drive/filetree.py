@@ -69,6 +69,23 @@ from gam.cmd.drive.core import (
     getEscapedDriveFileName,
     initDriveFileEntity,
 )
+from gam.util.api import callGAPI, callGAPIpages
+from gam.util.args import (
+    StartEndTime,
+    checkArgumentPresent,
+    checkGetArgument,
+    escapeCRsNLs,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getInteger,
+    getREPattern,
+    getString,
+    getTimeOrDeltaFromNow,
+    splitEmailAddress,
+)
+from gam.util.display import entityActionFailedWarning, userDriveServiceNotEnabledWarning
+from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
 
 def __getattr__(name):
   """Fall back to gam module for any undefined names."""
@@ -90,26 +107,26 @@ def initFileTree(drive, shareddrive, DLP, shareddriveFields, showParent, user, i
   try:
     if not shareddrive:
       fileId = ROOT
-      f_file = _getMain().callGAPI(drive.files(), 'get',
+      f_file = callGAPI(drive.files(), 'get',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                         fileId=fileId, fields=FILEPATH_FIELDS)
       f_file['parents'] = []
       fileTree[f_file['id']] = {'info': f_file, 'noParents': True, 'children': []}
     elif 'driveId' in shareddrive:
       fileId = shareddrive['driveId']
-      f_file = _getMain().callGAPI(drive.files(), 'get',
+      f_file = callGAPI(drive.files(), 'get',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FILE_NOT_FOUND],
                         fileId=fileId, supportsAllDrives=True, fields=FILEPATH_FIELDS)
       f_file['parents'] = []
       fileTree[f_file['id']] = {'info': f_file, 'noParents': True, 'children': []}
-      name = _getMain().callGAPI(drive.drives(), 'get',
+      name = callGAPI(drive.drives(), 'get',
                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND, GAPI.NOT_FOUND],
                       driveId=fileId, fields='name')['name']
       fileTree[f_file['id']]['info']['name'] = f'{SHARED_DRIVES}/{name}'
     else:
       fileId = None
     if DLP and (DLP.getSharedDriveNames or DLP.checkLocation in {LOCATION_ALL_DRIVES, LOCATION_ONLY_SHARED_DRIVES}):
-      tdrives = _getMain().callGAPIpages(drive.drives(), 'list', 'drives',
+      tdrives = callGAPIpages(drive.drives(), 'list', 'drives',
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID, GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE],
                               fields='nextPageToken,drives(id,name)', pageSize=100)
       for tdrive in tdrives:
@@ -124,10 +141,10 @@ def initFileTree(drive, shareddrive, DLP, shareddriveFields, showParent, user, i
           fileTree[fileId]['info']['driveId'] = fileId
         fileTree[SHARED_DRIVES]['children'].append(fileId)
   except (GAPI.notFound, GAPI.fileNotFound, GAPI.invalid, GAPI.noListTeamDrivesAdministratorPrivilege) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileId], str(e), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, fileId], str(e), i, count)
     return (None, False)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
     return (None, False)
   return (fileTree, True)
 
@@ -158,7 +175,7 @@ def extendFileTree(fileTree, feed, DLP, stripCRsFromName):
 def extendFileTreeParents(drive, fileTree, fields):
   def _followParent(fileId):
     try:
-      result = _getMain().callGAPI(drive.files(), 'get',
+      result = callGAPI(drive.files(), 'get',
                         throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                         fileId=fileId, fields=fields, supportsAllDrives=True)
       if not result.get('parents', []):
@@ -190,7 +207,7 @@ def buildFileTree(feed, drive):
     ORPHANS: {'info': {'id': ORPHANS, 'name': ORPHANS, 'mimeType': MIMETYPE_GA_FOLDER, 'ownedByMe': True}, 'children': []},
     }
   try:
-    f_file = _getMain().callGAPI(drive.files(), 'get',
+    f_file = callGAPI(drive.files(), 'get',
                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                       fileId=ROOT, fields=FILEPATH_FIELDS)
     fileTree[f_file['id']] = {'info': f_file, 'children': []}
@@ -228,7 +245,7 @@ def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row,
     key = f'path{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'
     csvPF.AddTitles(key)
     if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
-      row[key] = _getMain().escapeCRsNLs(path)
+      row[key] = escapeCRsNLs(path)
     else:
       row[key] = path
     k += 1
@@ -240,33 +257,33 @@ def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsT
   fileEntryInfo['paths'] = []
   for path in sorted(paths):
     if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
-      fileEntryInfo['paths'].append(_getMain().escapeCRsNLs(path))
+      fileEntryInfo['paths'].append(escapeCRsNLs(path))
     else:
       fileEntryInfo['paths'].append(path)
 
 def _validateACLOwnerType(location, body):
   if body.get('role', '') == 'owner' and body['type'] != 'user':
     Cmd.SetLocation(location)
-    _getMain().usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(f'role {body["role"]}', body['type']))
+    usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(f'role {body["role"]}', body['type']))
 
 def _validateACLAttributes(myarg, location, body, field, validTypes):
   if field in body and body['type'] not in validTypes:
     Cmd.SetLocation(location-1)
-    _getMain().usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, body['type']))
+    usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, body['type']))
 
 def _validatePermissionOwnerType(location, body):
   if 'role' in body:
     badTypes = body['type']-{'user'}
     if 'owner' in body['role'] and badTypes:
       Cmd.SetLocation(location)
-      _getMain().usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format('role owner', ','.join(badTypes)))
+      usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format('role owner', ','.join(badTypes)))
 
 def _validatePermissionAttributes(myarg, location, body, field, validTypes):
   if field in body:
     badTypes = body['type']-validTypes
     if badTypes:
       Cmd.SetLocation(location-1)
-      _getMain().usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, ','.join(badTypes)))
+      usageErrorExit(Msg.INVALID_PERMISSION_ATTRIBUTE_TYPE.format(myarg, ','.join(badTypes)))
 
 DRIVEFILE_ACL_ROLES_MAP = {
   'commenter': 'commenter',
@@ -300,67 +317,67 @@ class PermissionMatch():
     self.checkDetails = False
 
   def GetMatch(self):
-    startEndTime = _getMain().StartEndTime('expirationstart', 'expirationend')
+    startEndTime = StartEndTime('expirationstart', 'expirationend')
     roleLocation = withLinkLocation = expirationStartLocation = expirationEndLocation = deletedLocation = None
-    requiredMatch = not _getMain().checkArgumentPresent('not')
+    requiredMatch = not checkArgumentPresent('not')
     body = {}
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg in {'type', 'nottype'}:
         body[myarg] = set()
-        body[myarg].add(_getMain().getChoice(DRIVEFILE_ACL_PERMISSION_TYPES))
+        body[myarg].add(getChoice(DRIVEFILE_ACL_PERMISSION_TYPES))
         self.permissionFields.add('type')
       elif myarg in {'typelist', 'nottypelist'}:
         arg = 'type' if myarg == 'typelist' else 'nottype'
         body[arg] = set()
-        for ptype in _getMain().getString(Cmd.OB_PERMISSION_TYPE_LIST).lower().replace(',', ' ').split():
+        for ptype in getString(Cmd.OB_PERMISSION_TYPE_LIST).lower().replace(',', ' ').split():
           if ptype in DRIVEFILE_ACL_PERMISSION_TYPES:
             body[arg].add(ptype)
           else:
-            _getMain().invalidChoiceExit(ptype, DRIVEFILE_ACL_PERMISSION_TYPES, True)
+            invalidChoiceExit(ptype, DRIVEFILE_ACL_PERMISSION_TYPES, True)
         self.permissionFields.add('type')
       elif myarg in {'role', 'notrole'}:
         roleLocation = Cmd.Location()
         body[myarg] = set()
-        body[myarg].add(_getMain().getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True))
+        body[myarg].add(getChoice(DRIVEFILE_ACL_ROLES_MAP, mapChoice=True))
         self.permissionFields.add('role')
       elif myarg in {'rolelist', 'notrolelist'}:
         arg = 'role' if myarg == 'rolelist' else 'notrole'
         body[arg] = set()
         roleLocation = Cmd.Location()
-        for prole in _getMain().getString(Cmd.OB_PERMISSION_ROLE_LIST).lower().replace(',', ' ').split():
+        for prole in getString(Cmd.OB_PERMISSION_ROLE_LIST).lower().replace(',', ' ').split():
           if prole in DRIVEFILE_ACL_ROLES_MAP:
             body[arg].add(DRIVEFILE_ACL_ROLES_MAP[prole])
           else:
-            _getMain().invalidChoiceExit(prole, DRIVEFILE_ACL_ROLES_MAP, True)
+            invalidChoiceExit(prole, DRIVEFILE_ACL_ROLES_MAP, True)
         self.permissionFields.add('role')
       elif myarg == 'emailaddress':
-        body['emailAddress'] = _getMain().getREPattern(re.IGNORECASE)
+        body['emailAddress'] = getREPattern(re.IGNORECASE)
         self.permissionFields.add('emailAddress')
       elif myarg == 'emailaddresslist':
-        body[myarg] = set(_getMain().getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
+        body[myarg] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
         self.permissionFields.add('emailAddress')
       elif myarg == 'permissionidlist':
-        body[myarg] = set(_getMain().getString(Cmd.OB_PERMISSION_ID_LIST).replace(',', ' ').split())
+        body[myarg] = set(getString(Cmd.OB_PERMISSION_ID_LIST).replace(',', ' ').split())
         self.permissionFields.add('id')
       elif myarg in {'domain', 'notdomain'}:
-        body[myarg] = _getMain().getREPattern(re.IGNORECASE)
+        body[myarg] = getREPattern(re.IGNORECASE)
         self.permissionFields.add('domain')
         self.permissionFields.add('emailAddress')
       elif myarg in {'domainlist', 'notdomainlist'}:
-        body[myarg] = set(_getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower().split())
+        body[myarg] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower().split())
         self.permissionFields.add('domain')
         self.permissionFields.add('emailAddress')
       elif myarg == 'withlink':
         withLinkLocation = Cmd.Location()
-        body['allowFileDiscovery'] = not _getMain().getBoolean()
+        body['allowFileDiscovery'] = not getBoolean()
         self.permissionFields.add('allowFileDiscovery')
       elif myarg in {'allowfilediscovery', 'discoverable'}:
         withLinkLocation = Cmd.Location()
-        body['allowFileDiscovery'] = _getMain().getBoolean()
+        body['allowFileDiscovery'] = getBoolean()
         self.permissionFields.add('allowFileDiscovery')
       elif myarg in {'name', 'displayname'}:
-        body['displayName'] = _getMain().getREPattern(re.IGNORECASE)
+        body['displayName'] = getREPattern(re.IGNORECASE)
         self.permissionFields.add('displayName')
       elif myarg == 'expirationstart':
         expirationStartLocation = Cmd.Location()
@@ -374,20 +391,20 @@ class PermissionMatch():
         self.permissionFields.add('expirationTime')
       elif myarg == 'deleted':
         deletedLocation = Cmd.Location()
-        body[myarg] = _getMain().getBoolean()
+        body[myarg] = getBoolean()
         self.permissionFields.add('deleted')
       elif myarg == 'inherited':
-        body[myarg] = _getMain().getBoolean()
+        body[myarg] = getBoolean()
         self.permissionFields.add('permissionDetails')
         self.checkDetails = True
       elif myarg == 'permtype':
-        body['permissionType'] = _getMain().getChoice(DRIVEFILE_ACL_PERMISSION_DETAILS_TYPES)
+        body['permissionType'] = getChoice(DRIVEFILE_ACL_PERMISSION_DETAILS_TYPES)
         self.permissionFields.add('permissionDetails')
         self.checkDetails = True
       elif myarg in {'em', 'endmatch'}:
         break
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     if self.clearDefaultMatch:
       self.permissionMatches = []
       self.clearDefaultMatch = False
@@ -408,9 +425,9 @@ class PermissionMatch():
     if myarg in {'pm', 'permissionmatch'}:
       self.GetMatch()
     elif myarg in {'pma', 'permissionmatchaction'}:
-      self.permissionMatchKeep = _getMain().getChoice(PermissionMatch._PERMISSION_MATCH_ACTION_MAP, mapChoice=True)
+      self.permissionMatchKeep = getChoice(PermissionMatch._PERMISSION_MATCH_ACTION_MAP, mapChoice=True)
     elif myarg in {'pmm', 'permissionmatchmode'}:
-      self.permissionMatchOr = _getMain().getChoice(PermissionMatch._PERMISSION_MATCH_MODE_MAP, mapChoice=True)
+      self.permissionMatchOr = getChoice(PermissionMatch._PERMISSION_MATCH_MODE_MAP, mapChoice=True)
     else:
       return False
     return True
@@ -484,7 +501,7 @@ class PermissionMatch():
         if 'domain' in permission:
           domain = permission['domain'].lower()
         elif 'emailAddress' in permission and permission['emailAddress']:
-          _, domain = _getMain().splitEmailAddress(permission['emailAddress'].lower())
+          _, domain = splitEmailAddress(permission['emailAddress'].lower())
         else:
           break
         if ((field == 'domain' and not value.match(domain)) or
@@ -560,22 +577,22 @@ class DriveListParameters():
 
   def ProcessArgument(self, myarg, fileIdEntity):
     if myarg == 'maxfiles':
-      self.maxItems = _getMain().getInteger(minVal=0)
+      self.maxItems = getInteger(minVal=0)
     elif myarg == 'maximumfilesize':
-      self.maximumFileSize = _getMain().getInteger(minVal=0)
+      self.maximumFileSize = getInteger(minVal=0)
     elif myarg == 'minimumfilesize':
-      self.minimumFileSize = _getMain().getInteger(minVal=0)
+      self.minimumFileSize = getInteger(minVal=0)
     elif myarg == 'showsharedbyme':
-      self.showSharedByMe = _getMain().getChoice(self.SHOW_SHARED_BY_ME_CHOICE_MAP, mapChoice=True)
+      self.showSharedByMe = getChoice(self.SHOW_SHARED_BY_ME_CHOICE_MAP, mapChoice=True)
     elif myarg == 'filenamematchpattern':
-      self.filenameMatchPattern = _getMain().getREPattern(re.IGNORECASE)
+      self.filenameMatchPattern = getREPattern(re.IGNORECASE)
     elif self.PM.ProcessArgument(myarg):
       pass
     elif myarg == 'anyowner':
       self.showOwnedBy = None
       self.UpdateAnyOwnerQuery()
     elif myarg == 'showownedby':
-      self.showOwnedBy = _getMain().getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
+      self.showOwnedBy = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
       self.UpdateQueryWithShowOwnedBy()
     elif myarg == 'showmimetype':
       self.mimeTypeCheck.Get()
@@ -584,19 +601,19 @@ class DriveListParameters():
     elif myarg == 'excludetrashed':
       self.excludeTrashed = True
     elif myarg.startswith('querytime'):
-      self.queryTimes[myarg] = _getMain().getTimeOrDeltaFromNow()
+      self.queryTimes[myarg] = getTimeOrDeltaFromNow()
     elif noFileSelectFileIdEntity(fileIdEntity):
       if self.myargOptions['allowQuery'] and myarg == 'query':
-        self.AppendToQuery(_getMain().getString(Cmd.OB_QUERY))
+        self.AppendToQuery(getString(Cmd.OB_QUERY))
       elif self.myargOptions['allowQuery'] and myarg.startswith('query:'):
         self.AppendToQuery(Cmd.Previous().strip()[6:])
       elif self.myargOptions['allowQuery'] and myarg == 'fullquery':
-        self.SetQuery(_getMain().getString(Cmd.OB_QUERY, minLen=0))
+        self.SetQuery(getString(Cmd.OB_QUERY, minLen=0))
       elif self.myargOptions['allowQuery'] and myarg in _getMain().QUERY_SHORTCUTS_MAP:
         self.UpdateAnyOwnerQuery()
         self.AppendToQuery(_getMain().QUERY_SHORTCUTS_MAP[myarg])
       elif self.myargOptions['allowChoose'] and myarg == 'choose':
-        myarg = _getMain().checkGetArgument()
+        myarg = checkGetArgument()
         if myarg in DRIVE_BY_NAME_CHOICE_MAP:
           self.SetQuery(DRIVE_BY_NAME_CHOICE_MAP[myarg].format(getEscapedDriveFileName()))
         elif myarg in LOCATION_CHOICE_MAP:
@@ -607,11 +624,11 @@ class DriveListParameters():
           if kw in DRIVE_BY_NAME_CHOICE_MAP:
             self.SetQuery(DRIVE_BY_NAME_CHOICE_MAP[kw].format(escapeDriveFileName(value)))
           else:
-            _getMain().invalidChoiceExit(myarg, list(DRIVE_BY_NAME_CHOICE_MAP), True)
+            invalidChoiceExit(myarg, list(DRIVE_BY_NAME_CHOICE_MAP), True)
         else:
-          _getMain().invalidChoiceExit(myarg, list(DRIVE_BY_NAME_CHOICE_MAP)+list(LOCATION_CHOICE_MAP), True)
+          invalidChoiceExit(myarg, list(DRIVE_BY_NAME_CHOICE_MAP)+list(LOCATION_CHOICE_MAP), True)
       elif self.myargOptions['allowCorpora'] and myarg == 'corpora':
-        corpora = _getMain().getChoice(CORPORA_CHOICE_MAP)
+        corpora = getChoice(CORPORA_CHOICE_MAP)
         self.kwargs['corpora'] = CORPORA_CHOICE_MAP[corpora]
         self.kwargs['includeItemsFromAllDrives'] = self.kwargs['supportsAllDrives'] = True
         self.onlySharedDrives = corpora in {'onlyshareddrives', 'onlyteamdrives'}
@@ -626,7 +643,7 @@ class DriveListParameters():
           myarg == 'fullquery' or
           myarg in _getMain().QUERY_SHORTCUTS_MAP or
           myarg in DRIVE_BY_NAME_CHOICE_MAP):
-        _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('select', myarg))
+        usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('select', myarg))
       return False
     return True
 

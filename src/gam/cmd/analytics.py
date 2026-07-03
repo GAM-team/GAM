@@ -12,6 +12,26 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPIpages
+from gam.util.args import getArgument, getBoolean, getInteger, getString
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
+    printEntity,
+    printGettingAllEntityItemsForWhom,
+    printLine,
+    userAnalyticsServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.errors import missingArgumentExit
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -32,35 +52,35 @@ def __getattr__(name):
 
 def printShowAnalyticItems(users, entityType):
   analyticEntityMap = _getMain().ANALYTIC_ENTITY_MAP[entityType]
-  csvPF = _getMain().CSVPrintFile(analyticEntityMap['titles'], 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(analyticEntityMap['titles'], 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   kwargs = {'pageSize': analyticEntityMap['pageSize']}
   if entityType in {Ent.ANALYTIC_ACCOUNT, Ent.ANALYTIC_PROPERTY}:
     kwargs['showDeleted'] = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'maxresults':
-      kwargs['pageSize'] = _getMain().getInteger(minVal=1, maxVal=analyticEntityMap['maxPageSize'])
+      kwargs['pageSize'] = getInteger(minVal=1, maxVal=analyticEntityMap['maxPageSize'])
     elif entityType in {Ent.ANALYTIC_ACCOUNT, Ent.ANALYTIC_PROPERTY} and myarg == 'showdeleted':
-      kwargs['showDeleted'] = _getMain().getBoolean()
+      kwargs['showDeleted'] = getBoolean()
     elif entityType == Ent.ANALYTIC_PROPERTY and myarg == 'filter':
-      kwargs['filter'] = _getMain().getString(Cmd.OB_STRING)
+      kwargs['filter'] = getString(Cmd.OB_STRING)
     elif entityType == Ent.ANALYTIC_DATASTREAM and myarg == 'parent':
-      kwargs['parent'] = _getMain().getString(Cmd.OB_STRING)
+      kwargs['parent'] = getString(Cmd.OB_STRING)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if entityType == Ent.ANALYTIC_PROPERTY and 'filter' not in kwargs:
-    _getMain().missingArgumentExit('filter')
+    missingArgumentExit('filter')
   if entityType == Ent.ANALYTIC_DATASTREAM and 'parent' not in kwargs:
-    _getMain().missingArgumentExit('parent')
+    missingArgumentExit('parent')
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(analyticEntityMap['JSONtitles'])
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, analytics = _getMain().buildGAPIServiceObject(API.ANALYTICS_ADMIN, user, i, count)
+    user, analytics = buildGAPIServiceObject(API.ANALYTICS_ADMIN, user, i, count)
     if not analytics:
       continue
     if entityType == Ent.ANALYTIC_ACCOUNT:
@@ -72,49 +92,49 @@ def printShowAnalyticItems(users, entityType):
     else: #  entityType == Ent.ANALYTIC_PROPERTY:
       service = analytics.properties()
     if csvPF:
-      _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count)
-      pageMessage = _getMain().getPageMessageForWhom()
+      printGettingAllEntityItemsForWhom(entityType, user, i, count)
+      pageMessage = getPageMessageForWhom()
     else:
       pageMessage = None
     try:
-      results = _getMain().callGAPIpages(service, 'list', analyticEntityMap['items'],
+      results = callGAPIpages(service, 'list', analyticEntityMap['items'],
                               pageMessage=pageMessage,
                               throwReasons=[GAPI.PERMISSION_DENIED, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.INTERNAL_ERROR,
                                             GAPI.SERVICE_NOT_AVAILABLE],
                               **kwargs)
     except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.badRequest, GAPI.internalError) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, entityType, None], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, entityType, None], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      _getMain().userAnalyticsServiceNotEnabledWarning(user, i, count)
+      userAnalyticsServiceNotEnabledWarning(user, i, count)
       continue
     if not csvPF:
       jcount = len(results)
       if not FJQC.formatJSON:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, entityType)
+        entityPerformActionNumItems([Ent.USER, user], jcount, entityType)
       Ind.Increment()
       j = 0
       for item in results:
         j += 1
         if not FJQC.formatJSON:
-          _getMain().printEntity([entityType, item['name']], j, jcount)
+          printEntity([entityType, item['name']], j, jcount)
           Ind.Increment()
-          _getMain().showJSON(None, item, timeObjects=analyticEntityMap['timeObjects'])
+          showJSON(None, item, timeObjects=analyticEntityMap['timeObjects'])
           Ind.Decrement()
         else:
-          _getMain().printLine(json.dumps(_getMain().cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
+          printLine(json.dumps(cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
                                ensure_ascii=False, sort_keys=False))
       Ind.Decrement()
     elif results:
       for item in results:
-        row = _getMain().flattenJSON(item, flattened={'User': user}, timeObjects=analyticEntityMap['timeObjects'])
+        row = flattenJSON(item, flattened={'User': user}, timeObjects=analyticEntityMap['timeObjects'])
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
           row = {'User': user, 'name': item['name'], 'displayName': item['displayName']}
           for field in analyticEntityMap['JSONtitles'][2:-1]:
             row[field] = item[field]
-          row['JSON'] = json.dumps(_getMain().cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
+          row['JSON'] = json.dumps(cleanJSON(item, timeObjects=analyticEntityMap['timeObjects']),
                                    ensure_ascii=False, sort_keys=True)
           csvPF.WriteRowNoFilter(row)
     elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:

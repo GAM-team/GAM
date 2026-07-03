@@ -11,6 +11,29 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import checkEntityAFDNEorAccessErrorExit
+from gam.util.api import buildGAPIObject, callGAPI
+from gam.util.args import (
+    checkForExtraneousArguments,
+    getArgument,
+    getChoice,
+    getInteger,
+    getString,
+    getStringReturnInList,
+)
+from gam.util.csv_pf import CSVPrintFile, flattenJSON, getTodriveOnly
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityDuplicateWarning,
+    performActionNumItems,
+    printEntity,
+    printKeyValueList,
+)
+from gam.util.entity import getEntityList
+from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import setSysExitRC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -30,23 +53,23 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _showSchema(schema, i=0, count=0):
-  _getMain().printEntity([Ent.USER_SCHEMA, schema['schemaName']], i, count)
+  printEntity([Ent.USER_SCHEMA, schema['schemaName']], i, count)
   Ind.Increment()
   for a_key in schema:
     if a_key not in {'kind', 'etag', 'schemaName', 'fields'}:
-      _getMain().printKeyValueList([a_key, schema[a_key]])
+      printKeyValueList([a_key, schema[a_key]])
   for field in schema['fields']:
-    _getMain().printKeyValueList(['Field', field['fieldName']])
+    printKeyValueList(['Field', field['fieldName']])
     Ind.Increment()
     for a_key in field:
       if a_key not in {'kind', 'etag', 'fieldName'}:
         if a_key != 'numericIndexingSpec':
-          _getMain().printKeyValueList([a_key, field[a_key]])
+          printKeyValueList([a_key, field[a_key]])
         else:
-          _getMain().printKeyValueList([a_key, ''])
+          printKeyValueList([a_key, ''])
           Ind.Increment()
           for s_key in field[a_key]:
-            _getMain().printKeyValueList([s_key, field[a_key][s_key]])
+            printKeyValueList([s_key, field[a_key][s_key]])
           Ind.Decrement()
     Ind.Decrement()
   Ind.Decrement()
@@ -65,26 +88,26 @@ SCHEMA_FIELDTYPE_CHOICE_MAP = {
 # gam create schema|schemas <SchemaName> [displayname <String>] <SchemaFieldDefinition>+
 # gam update schema|schemas <SchemaEntity> [displayname <String>] <SchemaFieldDefinition>+
 def doCreateUpdateUserSchemas():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   updateCmd = Act.Get() == Act.UPDATE
   if not updateCmd:
-    entityList = _getMain().getStringReturnInList(Cmd.OB_SCHEMA_NAME)
+    entityList = getStringReturnInList(Cmd.OB_SCHEMA_NAME)
   else:
-    entityList = _getMain().getEntityList(Cmd.OB_SCHEMA_ENTITY)
+    entityList = getEntityList(Cmd.OB_SCHEMA_ENTITY)
   addBody = {'schemaName': '', 'fields': []}
   deleteFields = []
   schemaDisplayName = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'field':
-      fieldName = _getMain().getString(Cmd.OB_FIELD_NAME)
+      fieldName = getString(Cmd.OB_FIELD_NAME)
       a_field = {'fieldName': fieldName.replace(' ', '_'), 'displayName': fieldName, 'fieldType': 'STRING'}
       while Cmd.ArgumentsRemaining():
-        argument = _getMain().getArgument()
+        argument = getArgument()
         if argument == 'displayname':
-          a_field['displayName'] = _getMain().getString(Cmd.OB_FIELD_NAME)
+          a_field['displayName'] = getString(Cmd.OB_FIELD_NAME)
         elif argument == 'type':
-          a_field['fieldType'] = _getMain().getChoice(SCHEMA_FIELDTYPE_CHOICE_MAP, mapChoice=True)
+          a_field['fieldType'] = getChoice(SCHEMA_FIELDTYPE_CHOICE_MAP, mapChoice=True)
         elif argument in {'multivalued', 'multivalue'}:
           a_field['multiValued'] = True
         elif argument == 'indexed':
@@ -92,33 +115,33 @@ def doCreateUpdateUserSchemas():
         elif argument == 'restricted':
           a_field['readAccessType'] = 'ADMINS_AND_SELF'
         elif argument == 'range':
-          a_field['numericIndexingSpec'] = {'minValue': getInteger(), 'maxValue': _getMain().getInteger()}
+          a_field['numericIndexingSpec'] = {'minValue': getInteger(), 'maxValue': getInteger()}
         elif argument == 'endfield':
           break
         elif argument == 'field':
           Cmd.Backup()
           break
         else:
-          _getMain().unknownArgumentExit()
+          unknownArgumentExit()
       addBody['fields'].append(a_field)
     elif updateCmd and myarg == 'deletefield':
-      deleteFields.append(_getMain().getString(Cmd.OB_FIELD_NAME).replace(' ', '_'))
+      deleteFields.append(getString(Cmd.OB_FIELD_NAME).replace(' ', '_'))
     elif myarg == 'displayname':
-      schemaDisplayName = _getMain().getString(Cmd.OB_SCHEMA_NAME)
+      schemaDisplayName = getString(Cmd.OB_SCHEMA_NAME)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   i = 0
   count = len(entityList)
   if not updateCmd:
     if not addBody['fields']:
-      _getMain().missingArgumentExit('SchemaFieldDefinition')
+      missingArgumentExit('SchemaFieldDefinition')
   elif schemaDisplayName and count > 1:
-    _getMain().usageErrorExit(Msg.DISPLAYNAME_NOT_ALLOWED_WHEN_UPDATING_MULTIPLE_SCHEMAS)
+    usageErrorExit(Msg.DISPLAYNAME_NOT_ALLOWED_WHEN_UPDATING_MULTIPLE_SCHEMAS)
   for schemaName in entityList:
     i += 1
     try:
       if updateCmd:
-        oldBody = _getMain().callGAPI(cd.schemas(), 'get',
+        oldBody = callGAPI(cd.schemas(), 'get',
                            throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                            customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaName, fields='schemaName,displayName,fields')
@@ -134,7 +157,7 @@ def doCreateUpdateUserSchemas():
               del oldBody['fields'][n]
               break
           else:
-            _getMain().entityActionNotPerformedWarning([Ent.USER_SCHEMA, schemaName, Ent.FIELD, delField], Msg.DOES_NOT_EXIST)
+            entityActionNotPerformedWarning([Ent.USER_SCHEMA, schemaName, Ent.FIELD, delField], Msg.DOES_NOT_EXIST)
             badDelete = True
         if badDelete:
           continue
@@ -146,71 +169,71 @@ def doCreateUpdateUserSchemas():
               break
         oldBody['fields'].extend(addBody['fields'])
         if not oldBody['fields']:
-          _getMain().entityActionNotPerformedWarning([Ent.USER_SCHEMA, schemaName],
+          entityActionNotPerformedWarning([Ent.USER_SCHEMA, schemaName],
                                           Msg.SCHEMA_WOULD_HAVE_NO_FIELDS.format(Ent.Singular(Ent.USER_SCHEMA), Ent.Plural(Ent.FIELD)))
           continue
         if schemaDisplayName:
           oldBody['displayName'] = schemaDisplayName
-        result = _getMain().callGAPI(cd.schemas(), 'update',
+        result = callGAPI(cd.schemas(), 'update',
                           throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.FIELD_IN_USE],
                           customerId=GC.Values[GC.CUSTOMER_ID], body=oldBody, schemaKey=schemaName)
-        _getMain().entityActionPerformed([Ent.USER_SCHEMA, result['schemaName']], i, count)
+        entityActionPerformed([Ent.USER_SCHEMA, result['schemaName']], i, count)
       else:
         addBody['schemaName'] = schemaName.replace(' ', '_')
         addBody['displayName'] = schemaDisplayName if schemaDisplayName else schemaName
-        result = _getMain().callGAPI(cd.schemas(), 'insert',
+        result = callGAPI(cd.schemas(), 'insert',
                           throwReasons=[GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                           customerId=GC.Values[GC.CUSTOMER_ID], body=addBody, fields='schemaName')
-        _getMain().entityActionPerformed([Ent.USER_SCHEMA, result['schemaName']], i, count)
+        entityActionPerformed([Ent.USER_SCHEMA, result['schemaName']], i, count)
     except GAPI.duplicate:
-      _getMain().entityDuplicateWarning([Ent.USER_SCHEMA, schemaName], i, count)
+      entityDuplicateWarning([Ent.USER_SCHEMA, schemaName], i, count)
     except (GAPI.conditionNotMet, GAPI.fieldInUse) as e:
-      _getMain().entityActionFailedWarning([Ent.USER_SCHEMA, schemaName], str(e), i, count)
+      entityActionFailedWarning([Ent.USER_SCHEMA, schemaName], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaName, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaName, i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
 # gam delete schema|schemas <SchemaEntity>
 def doDeleteUserSchemas():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  entityList = _getMain().getEntityList(Cmd.OB_SCHEMA_ENTITY)
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  entityList = getEntityList(Cmd.OB_SCHEMA_ENTITY)
+  checkForExtraneousArguments()
   i = 0
   count = len(entityList)
   for schemaKey in entityList:
     i += 1
     try:
-      _getMain().callGAPI(cd.schemas(), 'delete',
+      callGAPI(cd.schemas(), 'delete',
                throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FIELD_IN_USE,
                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaKey)
-      _getMain().entityActionPerformed([Ent.USER_SCHEMA, schemaKey], i, count)
+      entityActionPerformed([Ent.USER_SCHEMA, schemaKey], i, count)
     except GAPI.fieldInUse as e:
-      _getMain().entityActionFailedWarning([Ent.USER_SCHEMA, schemaKey], str(e), i, count)
+      entityActionFailedWarning([Ent.USER_SCHEMA, schemaKey], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
 # gam info schema|schemas <SchemaEntity>
 def doInfoUserSchemas():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  entityList = _getMain().getEntityList(Cmd.OB_SCHEMA_ENTITY)
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  entityList = getEntityList(Cmd.OB_SCHEMA_ENTITY)
+  checkForExtraneousArguments()
   i = 0
   count = len(entityList)
   for schemaKey in entityList:
     i += 1
     try:
-      schema = _getMain().callGAPI(cd.schemas(), 'get',
+      schema = callGAPI(cd.schemas(), 'get',
                         throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaKey)
       _showSchema(schema, i, count)
     except (GAPI.invalid, GAPI.badRequest, GAPI.resourceNotFound):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
@@ -220,19 +243,19 @@ SCHEMAS_INDEXED_TITLES = ['fields']
 # gam print schema|schemas [todrive <ToDriveAttribute>*]
 # gam show schema|schemas
 def doPrintShowUserSchemas():
-  csvPF = _getMain().CSVPrintFile(SCHEMAS_SORT_TITLES, 'sortall', SCHEMAS_INDEXED_TITLES) if Act.csvFormat() else None
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  _getMain().getTodriveOnly(csvPF)
+  csvPF = CSVPrintFile(SCHEMAS_SORT_TITLES, 'sortall', SCHEMAS_INDEXED_TITLES) if Act.csvFormat() else None
+  cd = buildGAPIObject(API.DIRECTORY)
+  getTodriveOnly(csvPF)
   try:
-    result = _getMain().callGAPI(cd.schemas(), 'list',
+    result = callGAPI(cd.schemas(), 'list',
                       throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND,
                                     GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customerId=GC.Values[GC.CUSTOMER_ID])
     jcount = len(result.get('schemas', [])) if (result) else 0
     if not csvPF:
-      _getMain().performActionNumItems(jcount, Ent.USER_SCHEMA)
+      performActionNumItems(jcount, Ent.USER_SCHEMA)
     if jcount == 0:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     else:
       if not csvPF:
         Ind.Increment()
@@ -243,7 +266,7 @@ def doPrintShowUserSchemas():
         Ind.Decrement()
       else:
         for schema in result['schemas']:
-          csvPF.WriteRowTitles(_getMain().flattenJSON(schema))
+          csvPF.WriteRowTitles(flattenJSON(schema))
   except (GAPI.badRequest, GAPI.resourceNotFound):
     accessErrorExit(cd)
   except (GAPI.forbidden, GAPI.permissionDenied) as e:

@@ -31,6 +31,79 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import (
+    _getAdminEmail,
+    _getSvcAcctData,
+    buildGAPIObject,
+    buildGAPIObjectNoAuthentication,
+    buildGAPIServiceObject,
+    callGAPI,
+    callGAPIitems,
+    callGAPIpages,
+    getAPIService,
+    getHttpObj,
+    getSvcAcctCredentials,
+    get_adc_request,
+    handleServerError,
+    shortenURL,
+    transportAuthorizedHttp,
+    transportCreateRequest,
+)
+from gam.util.args import (
+    UTF8,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    formatLocalTime,
+    getArgument,
+    getCharacter,
+    getChoice,
+    getEmailAddress,
+    getEmailAddressDomain,
+    getInteger,
+    getString,
+    todaysTime,
+)
+from gam.util.connection import getLocalGoogleTimeOffset
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, cleanJSON, flattenJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    entityPerformActionSubItemModifierNumItems,
+    printBlankLine,
+    printEntity,
+    printEntityKVList,
+    printEntityMessage,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    printKeyValueListWithCount,
+    printLine,
+)
+from gam.util.entity import convertUIDtoEmailAddress, getEntityArgument, getEntityList, getEntityToModify
+from gam.util.errors import (
+    USAGE_ERROR_RC,
+    entityActionFailedExit,
+    invalidArgumentExit,
+    invalidChoiceExit,
+    invalidClientSecretsJsonExit,
+    invalidOauth2serviceJsonExit,
+    missingArgumentExit,
+    missingChoiceExit,
+    unknownArgumentExit,
+)
+from gam.util.fileio import readFile, writeFile
+from gam.util.output import (
+    createGreenText,
+    createRedText,
+    createYellowText,
+    currentCount,
+    readStdin,
+    setSysExitRC,
+    systemErrorExit,
+    writeStderr,
+    writeStdout,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -65,23 +138,23 @@ def getCRMService(login_hint):
     access_type='online',
     login_hint=login_hint,
     open_browser=not GC.Values[GC.NO_BROWSER])
-  httpObj = _getMain().transportAuthorizedHttp(credentials, http=_getMain().getHttpObj())
-  return (httpObj, _getMain().getAPIService(API.CLOUDRESOURCEMANAGER, httpObj))
+  httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
+  return (httpObj, getAPIService(API.CLOUDRESOURCEMANAGER, httpObj))
 
 def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, count=0):
   apis = API.PROJECT_APIS[:]
   projectName = f'projects/{projectId}'
-  serveu = _getMain().getAPIService(API.SERVICEUSAGE, httpObj)
+  serveu = getAPIService(API.SERVICEUSAGE, httpObj)
   status = True
   if checkEnabled:
     try:
-      services = _getMain().callGAPIpages(serveu.services(), 'list', 'services',
+      services = callGAPIpages(serveu.services(), 'list', 'services',
                                throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                                parent=projectName, filter='state:ENABLED',
                                fields='nextPageToken,services(name)')
       Act.Set(Act.CHECK)
       jcount = len(services)
-      _getMain().entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.API, i, count)
+      entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.API, i, count)
       Ind.Increment()
       j = 0
       for service in sorted(services, key=lambda k: k['name']):
@@ -89,18 +162,18 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
         if 'name' in service:
           serviceName = service['name'].split('/')[-1]
           if serviceName in apis:
-            _getMain().printEntityKVList([Ent.API, serviceName], ['Already enabled'], j, jcount)
+            printEntityKVList([Ent.API, serviceName], ['Already enabled'], j, jcount)
             apis.remove(serviceName)
           else:
-            _getMain().printEntityKVList([Ent.API, serviceName], ['Already enabled (non-GAM which is fine)'], j, jcount)
+            printEntityKVList([Ent.API, serviceName], ['Already enabled (non-GAM which is fine)'], j, jcount)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, projectId], str(e), i, count)
+      entityActionFailedWarning([Ent.PROJECT, projectId], str(e), i, count)
       status = False
   jcount = len(apis)
   if status and jcount > 0:
     Act.Set(Act.ENABLE)
-    _getMain().entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.API, i, count)
+    entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.API, i, count)
     failed = 0
     Ind.Increment()
     j = 0
@@ -109,17 +182,17 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
       serviceName = f'projects/{projectId}/services/{api}'
       while True:
         try:
-          _getMain().callGAPI(serveu.services(), 'enable',
+          callGAPI(serveu.services(), 'enable',
                    throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                    retryReasons=[GAPI.INTERNAL_ERROR],
                    name=serviceName)
-          _getMain().entityActionPerformed([Ent.API, api], j, jcount)
+          entityActionPerformed([Ent.API, api], j, jcount)
           break
         except GAPI.failedPrecondition as e:
-          _getMain().entityActionFailedWarning([Ent.API, api], str(e), j, jcount)
-          _getMain().readStdin(Msg.ACCEPT_CLOUD_TOS.format(login_hint))
+          entityActionFailedWarning([Ent.API, api], str(e), j, jcount)
+          readStdin(Msg.ACCEPT_CLOUD_TOS.format(login_hint))
         except (GAPI.forbidden, GAPI.permissionDenied, GAPI.internalError) as e:
-          _getMain().entityActionFailedWarning([Ent.API, api], str(e), j, jcount)
+          entityActionFailedWarning([Ent.API, api], str(e), j, jcount)
           failed += 1
           break
     Ind.Decrement()
@@ -133,27 +206,27 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
 def doEnableAPIs():
   automatic = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'auto':
       automatic = True
     elif myarg == 'manual':
       automatic = False
     else:
-      _getMain().unknownArgumentExit()
-  request = _getMain().get_adc_request()
+      unknownArgumentExit()
+  request = get_adc_request()
   try:
     _, projectId = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError):
-    projectId = _getMain().readStdin(Msg.WHAT_IS_YOUR_PROJECT_ID).strip()
+    projectId = readStdin(Msg.WHAT_IS_YOUR_PROJECT_ID).strip()
   while automatic is None:
-    a_or_m = _getMain().readStdin(Msg.ENABLE_PROJECT_APIS_AUTOMATICALLY_OR_MANUALLY).strip().lower()
+    a_or_m = readStdin(Msg.ENABLE_PROJECT_APIS_AUTOMATICALLY_OR_MANUALLY).strip().lower()
     if a_or_m.startswith('a'):
       automatic = True
       break
     if a_or_m.startswith('m'):
       automatic = False
       break
-    _getMain().writeStdout(Msg.PLEASE_ENTER_A_OR_M)
+    writeStdout(Msg.PLEASE_ENTER_A_OR_M)
   if automatic:
     login_hint = _getMain()._getValidateLoginHint(None)
     httpObj, _ = getCRMService(login_hint)
@@ -161,11 +234,11 @@ def doEnableAPIs():
   else:
     apis = API.PROJECT_APIS[:]
     chunk_size = 20
-    _getMain().writeStdout('Using an account with project access, please use ALL of these URLs to enable 20 APIs at a time:\n\n')
+    writeStdout('Using an account with project access, please use ALL of these URLs to enable 20 APIs at a time:\n\n')
     for chunk in range(0, len(apis), chunk_size):
       apiid = ",".join(apis[chunk:chunk+chunk_size])
       url = f'https://console.cloud.google.com/apis/enableflow?apiid={apiid}&project={projectId}'
-      _getMain().writeStdout(f'    {url}\n\n')
+      writeStdout(f'    {url}\n\n')
 
 def _waitForSvcAcctCompletion(i):
   sleep_time = i*5
@@ -178,40 +251,40 @@ def _grantRotateRights(iam, projectId, service_account, account_type='serviceAcc
                                    'members': [f'{account_type}:{service_account}']}]}}
   maxRetries = 10
   kvList = [Ent.PROJECT, projectId, Ent.SVCACCT, service_account]
-  _getMain().printEntityMessage(kvList, Msg.GRANTING_RIGHTS_TO_ROTATE_ITS_OWN_PRIVATE_KEY.format('Granting'))
+  printEntityMessage(kvList, Msg.GRANTING_RIGHTS_TO_ROTATE_ITS_OWN_PRIVATE_KEY.format('Granting'))
   for retry in range(1, maxRetries+1):
     try:
-      _getMain().callGAPI(iam.projects().serviceAccounts(), 'setIamPolicy',
+      callGAPI(iam.projects().serviceAccounts(), 'setIamPolicy',
                throwReasons=[GAPI.INVALID_ARGUMENT],
                resource=f'projects/{projectId}/serviceAccounts/{service_account}', body=body)
-      _getMain().printEntityMessage(kvList, Msg.GRANTING_RIGHTS_TO_ROTATE_ITS_OWN_PRIVATE_KEY.format('Granted'))
+      printEntityMessage(kvList, Msg.GRANTING_RIGHTS_TO_ROTATE_ITS_OWN_PRIVATE_KEY.format('Granted'))
       return True
     except GAPI.invalidArgument as e:
-      _getMain().entityActionFailedWarning(kvList, str(e))
+      entityActionFailedWarning(kvList, str(e))
       if 'does not exist' not in str(e) or retry == maxRetries:
         return False
       _waitForSvcAcctCompletion(retry)
     except Exception as e:
-      _getMain().entityActionFailedWarning(kvList, str(e))
+      entityActionFailedWarning(kvList, str(e))
       return False
 
 def _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key=True):
-  iam = _getMain().getAPIService(API.IAM, httpObj)
+  iam = getAPIService(API.IAM, httpObj)
   try:
-    service_account = _getMain().callGAPI(iam.projects().serviceAccounts(), 'create',
+    service_account = callGAPI(iam.projects().serviceAccounts(), 'create',
                                throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.NOT_FOUND,
                                              GAPI.PERMISSION_DENIED, GAPI.ALREADY_EXISTS],
                                name=f'projects/{projectInfo["projectId"]}',
                                body={'accountId': svcAcctInfo['name'],
                                      'serviceAccount': {'displayName': svcAcctInfo['displayName'],
                                                         'description': svcAcctInfo['description']}})
-    _getMain().entityActionPerformed([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, service_account['name'].rsplit('/', 1)[-1]])
+    entityActionPerformed([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, service_account['name'].rsplit('/', 1)[-1]])
   except (GAPI.failedPrecondition, GAPI.notFound, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId']], str(e))
+    entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId']], str(e))
     return False
   except GAPI.alreadyExists as e:
-    _getMain().entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, svcAcctInfo['name']], str(e))
-    _getMain().writeStderr(Msg.RERUN_THE_COMMAND_AND_SPECIFY_A_NEW_SANAME)
+    entityActionFailedWarning([Ent.PROJECT, projectInfo['projectId'], Ent.SVCACCT, svcAcctInfo['name']], str(e))
+    writeStderr(Msg.RERUN_THE_COMMAND_AND_SPECIFY_A_NEW_SANAME)
     return False
   GM.Globals[GM.SVCACCT_SCOPES_DEFINED] = False
   if create_key and not doProcessSvcAcctKeys(mode='retainexisting', iam=iam,
@@ -252,15 +325,15 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
     return
   sys.stdout.write(Msg.SETTING_GAM_PROJECT_CONSENT_SCREEN_CREATING_CLIENT)
   console_url = f'https://console.cloud.google.com/auth/clients?project={projectInfo["projectId"]}&authuser={login_hint}'
-  csHttpObj = _getMain().getHttpObj()
+  csHttpObj = getHttpObj()
   while True:
     sys.stdout.write(Msg.CREATE_CLIENT_INSTRUCTIONS.format(console_url, appInfo['applicationTitle'], appInfo['supportEmail']))
-    client_id = _getMain().readStdin(Msg.ENTER_YOUR_CLIENT_ID).strip()
+    client_id = readStdin(Msg.ENTER_YOUR_CLIENT_ID).strip()
     if not client_id:
-      client_id = _getMain().readStdin('').strip()
-    client_secret = _getMain().readStdin(Msg.ENTER_YOUR_CLIENT_SECRET).strip()
+      client_id = readStdin('').strip()
+    client_secret = readStdin(Msg.ENTER_YOUR_CLIENT_SECRET).strip()
     if not client_secret:
-      client_secret = _getMain().readStdin('').strip()
+      client_secret = readStdin('').strip()
     client_valid = _checkClientAndSecret(csHttpObj, client_id, client_secret)
     if client_valid:
       break
@@ -276,16 +349,16 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
         "token_uri": "{API.GOOGLE_OAUTH2_TOKEN_ENDPOINT}"
     }}
 }}'''
-  _getMain().writeFile(GC.Values[GC.CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
+  writeFile(GC.Values[GC.CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(_getMain().GAM, client_id))
-  _getMain().readStdin('')
+  readStdin('')
   if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key):
     return
   sys.stdout.write(Msg.YOUR_GAM_PROJECT_IS_CREATED_AND_READY_TO_USE)
 
 def _getProjects(crm, pfilter, returnNF=False):
   try:
-    projects = _getMain().callGAPIpages(crm.projects(), 'search', 'projects',
+    projects = callGAPIpages(crm.projects(), 'search', 'projects',
                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                              query=pfilter)
     if projects:
@@ -293,14 +366,14 @@ def _getProjects(crm, pfilter, returnNF=False):
     if (not pfilter) or pfilter == GAM_PROJECT_FILTER:
       return []
     if pfilter.startswith('id:'):
-      projects = [_getMain().callGAPI(crm.projects(), 'get',
+      projects = [callGAPI(crm.projects(), 'get',
                            throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                            name=f'projects/{pfilter[3:]}')]
       if projects or not returnNF:
         return projects
     return []
   except (GAPI.badRequest, GAPI.invalidArgument) as e:
-    _getMain().entityActionFailedExit([Ent.PROJECT, pfilter], str(e))
+    entityActionFailedExit([Ent.PROJECT, pfilter], str(e))
   except GAPI.permissionDenied:
     if (not pfilter) or (not pfilter.startswith('id:')) or (not returnNF):
       return []
@@ -309,25 +382,25 @@ def _getProjects(crm, pfilter, returnNF=False):
 def _checkProjectFound(project, i, count):
   if project.get('state', '') != 'NF':
     return True
-  _getMain().entityActionFailedWarning([Ent.PROJECT, project['projectId']], Msg.DOES_NOT_EXIST, i, count)
+  entityActionFailedWarning([Ent.PROJECT, project['projectId']], Msg.DOES_NOT_EXIST, i, count)
   return False
 
 def convertGCPFolderNameToID(parent, crm):
-  folders = _getMain().callGAPIpages(crm.folders(), 'search', 'folders',
+  folders = callGAPIpages(crm.folders(), 'search', 'folders',
                           query=f'displayName="{parent}"')
   if not folders:
-    _getMain().entityActionFailedExit([Ent.PROJECT_FOLDER, parent], Msg.NOT_FOUND)
+    entityActionFailedExit([Ent.PROJECT_FOLDER, parent], Msg.NOT_FOUND)
   jcount = len(folders)
   if jcount > 1:
-    _getMain().entityActionNotPerformedWarning([Ent.PROJECT_FOLDER, parent],
+    entityActionNotPerformedWarning([Ent.PROJECT_FOLDER, parent],
                                     Msg.PLEASE_SELECT_ENTITY_TO_PROCESS.format(jcount, Ent.Plural(Ent.PROJECT_FOLDER), 'use in create', 'parent <String>'))
     Ind.Increment()
     j = 0
     for folder in folders:
       j += 1
-      _getMain().printKeyValueListWithCount(['Name', folder['name'], 'ID', folder['displayName']], j, jcount)
+      printKeyValueListWithCount(['Name', folder['name'], 'ID', folder['displayName']], j, jcount)
     Ind.Decrement()
-    _getMain().systemErrorExit(_getMain().MULTIPLE_PROJECT_FOLDERS_FOUND_RC, None)
+    systemErrorExit(_getMain().MULTIPLE_PROJECT_FOLDERS_FOUND_RC, None)
   return folders[0]['name']
 
 PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
@@ -335,32 +408,32 @@ PROJECTID_FORMAT_REQUIRED = '[a-z][a-z0-9-]{4,28}[a-z0-9]'
 def _checkProjectId(projectId):
   if not PROJECTID_PATTERN.match(projectId):
     Cmd.Backup()
-    _getMain().invalidArgumentExit(PROJECTID_FORMAT_REQUIRED)
+    invalidArgumentExit(PROJECTID_FORMAT_REQUIRED)
 
 PROJECTNAME_PATTERN = re.compile('^[a-zA-Z0-9 '+"'"+'"!-]{4,30}$')
 PROJECTNAME_FORMAT_REQUIRED = '[a-zA-Z0-9 \'"!-]{4,30}'
 def _checkProjectName(projectName):
   if not PROJECTNAME_PATTERN.match(projectName):
     Cmd.Backup()
-    _getMain().invalidArgumentExit(PROJECTNAME_FORMAT_REQUIRED)
+    invalidArgumentExit(PROJECTNAME_FORMAT_REQUIRED)
 
 def _getSvcAcctInfo(myarg, svcAcctInfo):
   if myarg == 'saname':
-    svcAcctInfo['name'] = _getMain().getString(Cmd.OB_STRING, minLen=6, maxLen=30)
+    svcAcctInfo['name'] = getString(Cmd.OB_STRING, minLen=6, maxLen=30)
     _checkProjectId(svcAcctInfo['name'])
   elif myarg == 'sadisplayname':
-    svcAcctInfo['displayName'] = _getMain().getString(Cmd.OB_STRING, maxLen=100)
+    svcAcctInfo['displayName'] = getString(Cmd.OB_STRING, maxLen=100)
   elif myarg == 'sadescription':
-    svcAcctInfo['description'] = _getMain().getString(Cmd.OB_STRING, maxLen=256)
+    svcAcctInfo['description'] = getString(Cmd.OB_STRING, maxLen=256)
   else:
     return False
   return True
 
 def _getAppInfo(myarg, appInfo):
   if myarg == 'appname':
-    appInfo['applicationTitle'] = _getMain().getString(Cmd.OB_STRING)
+    appInfo['applicationTitle'] = getString(Cmd.OB_STRING)
   elif myarg == 'supportemail':
-    appInfo['supportEmail'] = _getMain().getEmailAddress(noUid=True)
+    appInfo['supportEmail'] = getEmailAddress(noUid=True)
   else:
     return False
   return True
@@ -377,28 +450,28 @@ def _getLoginHintProjectInfo(createCmd):
   if not Cmd.PeekArgumentPresent(['admin', 'appname', 'supportemail', 'project', 'parent',
                                   'projectname', 'saname', 'sadisplayname', 'sadescription',
                                   'algorithm', 'localkeysize', 'validityhours', 'yubikey', 'nokey']):
-    login_hint = _getMain().getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
+    login_hint = getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
     if login_hint and login_hint.find('@') == -1:
       Cmd.Backup()
       login_hint = None
-    projectInfo['projectId'] = _getMain().getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=30).strip()
+    projectInfo['projectId'] = getString(Cmd.OB_STRING, optional=True, minLen=6, maxLen=30).strip()
     if projectInfo['projectId']:
       _checkProjectId(projectInfo['projectId'])
-    _getMain().checkForExtraneousArguments()
+    checkForExtraneousArguments()
   else:
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'admin':
-        login_hint = _getMain().getEmailAddress(noUid=True)
+        login_hint = getEmailAddress(noUid=True)
       elif myarg == 'nokey':
         create_key = False
       elif myarg == 'project':
-        projectInfo['projectId'] = _getMain().getString(Cmd.OB_STRING, minLen=6, maxLen=30)
+        projectInfo['projectId'] = getString(Cmd.OB_STRING, minLen=6, maxLen=30)
         _checkProjectId(projectInfo['projectId'])
       elif createCmd and myarg == 'parent':
-        projectInfo['parent'] = _getMain().getString(Cmd.OB_STRING)
+        projectInfo['parent'] = getString(Cmd.OB_STRING)
       elif myarg == 'projectname':
-        projectInfo['name'] = _getMain().getString(Cmd.OB_STRING, minLen=4, maxLen=30)
+        projectInfo['name'] = getString(Cmd.OB_STRING, minLen=4, maxLen=30)
         _checkProjectName(projectInfo['name'])
       elif _getSvcAcctInfo(myarg, svcAcctInfo):
         pass
@@ -408,14 +481,14 @@ def _getLoginHintProjectInfo(createCmd):
         Cmd.Backup()
         break
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   if not projectInfo['projectId']:
     if createCmd:
       projectInfo['projectId'] = _generateProjectSvcAcctId('gam-project')
     else:
-      projectInfo['projectId'] = _getMain().readStdin(Msg.WHAT_IS_YOUR_PROJECT_ID).strip()
+      projectInfo['projectId'] = readStdin(Msg.WHAT_IS_YOUR_PROJECT_ID).strip()
       if not PROJECTID_PATTERN.match(projectInfo['projectId']):
-        _getMain().systemErrorExit(_getMain().USAGE_ERROR_RC, f'{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]} {Cmd.OB_PROJECT_ID}: {Msg.EXPECTED} <{PROJECTID_FORMAT_REQUIRED}>')
+        systemErrorExit(USAGE_ERROR_RC, f'{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]} {Cmd.OB_PROJECT_ID}: {Msg.EXPECTED} <{PROJECTID_FORMAT_REQUIRED}>')
   if not projectInfo['name']:
     projectInfo['name'] = 'GAM Project' if not GC.Values[GC.USE_PROJECTID_AS_NAME] else projectInfo['projectId']
   if not svcAcctInfo['name']:
@@ -435,28 +508,28 @@ def _getLoginHintProjectInfo(createCmd):
   projects = _getProjects(crm, f'id:{projectInfo["projectId"]}')
   if not createCmd:
     if not projects:
-      _getMain().entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.DOES_NOT_EXIST)
+      entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.DOES_NOT_EXIST)
     if projects[0]['state'] != 'ACTIVE':
-      _getMain().entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.NOT_ACTIVE)
+      entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.NOT_ACTIVE)
   else:
     if projects:
-      _getMain().entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.DUPLICATE)
+      entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], Msg.DUPLICATE)
   return (crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key)
 
 def _getCurrentProjectId():
-  jsonData = _getMain().readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
+  jsonData = readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
   if jsonData:
     try:
       return json.loads(jsonData)['project_id']
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError):
       pass
-  jsonData = _getMain().readFile(GC.Values[GC.CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
+  jsonData = readFile(GC.Values[GC.CLIENT_SECRETS_JSON], continueOnError=True, displayError=True)
   if not jsonData:
-    _getMain().invalidClientSecretsJsonExit(Msg.NO_DATA)
+    invalidClientSecretsJsonExit(Msg.NO_DATA)
   try:
     return json.loads(jsonData)['installed']['project_id']
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
-    _getMain().invalidClientSecretsJsonExit(str(e))
+    invalidClientSecretsJsonExit(str(e))
 
 GAM_PROJECT_FILTER = 'id:gam-project-*'
 PROJECTID_FILTER_REQUIRED = '<ProjectIDEntity>'
@@ -465,17 +538,17 @@ PROJECTS_DELETESVCACCT_OPTIONS = {'saemail', 'saname', 'sauniqueid'}
 PROJECTS_PRINTSHOW_OPTIONS = {'showsakeys', 'showiampolicies', 'onememberperrow', 'states', 'todrive', 'delimiter', 'formatjson', 'quotechar'}
 
 def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printShowCmd=False, readOnly=False):
-  if _getMain().checkArgumentPresent(['admin']):
-    login_hint = _getMain().getEmailAddress(noUid=True)
+  if checkArgumentPresent(['admin']):
+    login_hint = getEmailAddress(noUid=True)
   else:
-    login_hint = _getMain().getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
+    login_hint = getString(Cmd.OB_EMAIL_ADDRESS, optional=True)
   if login_hint and login_hint.find('@') == -1:
     Cmd.Backup()
     login_hint = None
-  if readOnly and login_hint and login_hint != _getMain()._getAdminEmail():
+  if readOnly and login_hint and login_hint != _getAdminEmail():
     readOnly = False
   projectIds = None
-  pfilter = _getMain().getString(Cmd.OB_STRING, optional=True)
+  pfilter = getString(Cmd.OB_STRING, optional=True)
   if not pfilter:
     pfilter = 'current' if not printShowCmd else GAM_PROJECT_FILTER
   elif printShowCmd and pfilter in PROJECTS_PRINTSHOW_OPTIONS:
@@ -494,9 +567,9 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
   elif pfilter.lower() == 'gam':
     pfilter = GAM_PROJECT_FILTER
   elif pfilter.lower() == 'filter':
-    pfilter = _getMain().getString(Cmd.OB_STRING)
+    pfilter = getString(Cmd.OB_STRING)
   elif pfilter.lower() == 'select':
-    projectIds = _getMain().getEntityList(Cmd.OB_PROJECT_ID_ENTITY, False)
+    projectIds = getEntityList(Cmd.OB_PROJECT_ID_ENTITY, False)
     projectId = None
   elif PROJECTID_PATTERN.match(pfilter):
     pfilter = f'id:{pfilter}'
@@ -504,9 +577,9 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
     pass
   else:
     Cmd.Backup()
-    _getMain().invalidArgumentExit(['', 'all|'][printShowCmd]+PROJECTID_FILTER_REQUIRED)
+    invalidArgumentExit(['', 'all|'][printShowCmd]+PROJECTID_FILTER_REQUIRED)
   if not printShowCmd and not createSvcAcctCmd and not deleteSvcAcctCmd:
-    _getMain().checkForExtraneousArguments()
+    checkForExtraneousArguments()
   if projectIds is None:
     if pfilter in {'current', 'id:current'}:
       projectId = _getCurrentProjectId()
@@ -515,7 +588,7 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
   login_hint = _getMain()._getValidateLoginHint(login_hint, projectId)
   crm = None
   if readOnly:
-    _, crm = _getMain().buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
+    _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
     if crm:
       httpObj = crm._http
   if not crm:
@@ -537,13 +610,13 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
 def _checkForExistingProjectFiles(projectFiles):
   for a_file in projectFiles:
     if os.path.exists(a_file):
-      _getMain().systemErrorExit(_getMain().JSON_ALREADY_EXISTS_RC, Msg.AUTHORIZATION_FILE_ALREADY_EXISTS.format(a_file, Act.ToPerform()))
+      systemErrorExit(_getMain().JSON_ALREADY_EXISTS_RC, Msg.AUTHORIZATION_FILE_ALREADY_EXISTS.format(a_file, Act.ToPerform()))
 
 def getCRMOrgId(forceSearch=False):
   if not GC.Values[GC.GCP_ORG_ID] or forceSearch:
     _getMain().setTrueCustomerId()
-    _, crm = _getMain().buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
-    results = _getMain().callGAPI(crm.organizations(), 'search',
+    _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
+    results = callGAPI(crm.organizations(), 'search',
                        query=f'directorycustomerid:{GC.Values[GC.CUSTOMER_ID]}',
                        pageSize=1, fields='organizations/name')
     orgs = results.get('organizations')
@@ -556,27 +629,27 @@ def getCRMOrgId(forceSearch=False):
 
 # gam info customerid
 def doInfoCustomerId():
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   _getMain().setTrueCustomerId(cd=None, forceUpdate=True)
-  _getMain().writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')
+  writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')
 
 # gam info gcporgid
 def doInfoGCPOrgId():
-  _getMain().checkForExtraneousArguments()
-  _getMain().writeStdout(f'{getCRMOrgId(forceSearch=True)}\n')
+  checkForExtraneousArguments()
+  writeStdout(f'{getCRMOrgId(forceSearch=True)}\n')
 
 def getGCPOrgId(crm, login_hint, login_domain):
   if not GC.Values[GC.GCP_ORG_ID]:
     try:
-      results = _getMain().callGAPI(crm.organizations(), 'search',
+      results = callGAPI(crm.organizations(), 'search',
                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                          query=f'domain:{login_domain}',
                          pageSize=1, fields='organizations/name')
       return results['organizations'][0]['name']
     except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
+      entityActionFailedExit([Ent.USER, login_hint, Ent.DOMAIN, login_domain], str(e))
     except (KeyError, IndexError):
-      _getMain().systemErrorExit(3, Msg.YOU_HAVE_NO_RIGHTS_TO_CREATE_PROJECTS_AND_YOU_ARE_NOT_A_SUPER_ADMIN)
+      systemErrorExit(3, Msg.YOU_HAVE_NO_RIGHTS_TO_CREATE_PROJECTS_AND_YOU_ARE_NOT_A_SUPER_ADMIN)
   return GC.Values[GC.GCP_ORG_ID]
 
 # gam create gcpfolder <String>
@@ -584,31 +657,31 @@ def getGCPOrgId(crm, login_hint, login_domain):
 def doCreateGCPFolder():
   login_hint = None
   if not Cmd.PeekArgumentPresent(['admin', 'folder']):
-    name = _getMain().getString(Cmd.OB_STRING)
-    _getMain().checkForExtraneousArguments()
+    name = getString(Cmd.OB_STRING)
+    checkForExtraneousArguments()
   else:
     name = ''
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'admin':
-        login_hint = _getMain().getEmailAddress(noUid=True)
+        login_hint = getEmailAddress(noUid=True)
       elif myarg == 'folder':
-        name = _getMain().getString(Cmd.OB_STRING)
+        name = getString(Cmd.OB_STRING)
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     if not name:
-      _getMain().missingChoiceExit('folder')
+      missingChoiceExit('folder')
   login_hint = _getMain()._getValidateLoginHint(login_hint)
-  login_domain = _getMain().getEmailAddressDomain(login_hint)
+  login_domain = getEmailAddressDomain(login_hint)
   _, crm = getCRMService(login_hint)
   organization = getGCPOrgId(crm, login_hint, login_domain)
   try:
-    result = _getMain().callGAPI(crm.folders(), 'create',
+    result = callGAPI(crm.folders(), 'create',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                       body={'parent': organization, 'displayName': name})
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedExit([Ent.USER, login_hint, Ent.GCP_FOLDER, name], str(e))
-  _getMain().entityActionPerformed([Ent.USER, login_hint, Ent.GCP_FOLDER, name, Ent.GCP_FOLDER_NAME, result['name']])
+    entityActionFailedExit([Ent.USER, login_hint, Ent.GCP_FOLDER, name], str(e))
+  entityActionPerformed([Ent.USER, login_hint, Ent.GCP_FOLDER, name, Ent.GCP_FOLDER_NAME, result['name']])
 
 # gam create project [<EmailAddress>] [<ProjectID>]
 # gam create project [admin <EmailAddress>] [project <ProjectID>]
@@ -622,9 +695,9 @@ def doCreateGCPFolder():
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
   sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(_getMain().GAM_PROJECT_CREATION, _getMain().GAM_PROJECT_CREATION_CLIENT_ID))
-  _getMain().readStdin('')
+  readStdin('')
   crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key = _getLoginHintProjectInfo(True)
-  login_domain = _getMain().getEmailAddressDomain(login_hint)
+  login_domain = getEmailAddressDomain(login_hint)
   body = {'projectId': projectInfo['projectId'], 'displayName': projectInfo['name']}
   if projectInfo['parent']:
     body['parent'] = projectInfo['parent']
@@ -632,23 +705,23 @@ def doCreateProject():
     create_again = False
     sys.stdout.write(Msg.CREATING_PROJECT.format(body['displayName']))
     try:
-      create_operation = _getMain().callGAPI(crm.projects(), 'create',
+      create_operation = callGAPI(crm.projects(), 'create',
                                   throwReasons=[GAPI.BAD_REQUEST, GAPI.ALREADY_EXISTS,
                                                 GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                                   body=body)
     except (GAPI.badRequest, GAPI.alreadyExists, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], str(e))
+      entityActionFailedExit([Ent.USER, login_hint, Ent.PROJECT, projectInfo['projectId']], str(e))
     operation_name = create_operation['name']
     time.sleep(5) # Google recommends always waiting at least 5 seconds
     for i in range(1, 10):
       sys.stdout.write(Msg.CHECKING_PROJECT_CREATION_STATUS)
-      status = _getMain().callGAPI(crm.operations(), 'get',
+      status = callGAPI(crm.operations(), 'get',
                         name=operation_name)
       if 'error' in status:
         if status['error'].get('message', '') == 'No permission to create project in organization':
           sys.stdout.write(Msg.NO_RIGHTS_GOOGLE_CLOUD_ORGANIZATION)
           organization = getGCPOrgId(crm, login_hint, login_domain)
-          org_policy = _getMain().callGAPI(crm.organizations(), 'getIamPolicy',
+          org_policy = callGAPI(crm.organizations(), 'getIamPolicy',
                                 resource=organization)
           if 'bindings' not in org_policy:
             org_policy['bindings'] = []
@@ -665,18 +738,18 @@ def doCreateProject():
           my_role = 'roles/resourcemanager.projectCreator'
           sys.stdout.write(Msg.GIVING_LOGIN_HINT_THE_CREATOR_ROLE.format(login_hint, my_role))
           org_policy['bindings'].append({'role': my_role, 'members': [f'user:{login_hint}']})
-          _getMain().callGAPI(crm.organizations(), 'setIamPolicy',
+          callGAPI(crm.organizations(), 'setIamPolicy',
                    resource=organization, body={'policy': org_policy})
           create_again = True
           break
         try:
           if status['error']['details'][0]['violations'][0]['description'] == 'Callers must accept Terms of Service':
-            _getMain().readStdin(Msg.ACCEPT_CLOUD_TOS.format(login_hint))
+            readStdin(Msg.ACCEPT_CLOUD_TOS.format(login_hint))
             create_again = True
             break
         except (IndexError, KeyError):
           pass
-        _getMain().systemErrorExit(1, str(status)+'\n')
+        systemErrorExit(1, str(status)+'\n')
       if status.get('done', False):
         break
       sleep_time = min(2 ** i, 60)
@@ -685,24 +758,24 @@ def doCreateProject():
     if create_again:
       continue
     if not status.get('done', False):
-      _getMain().systemErrorExit(1, Msg.FAILED_TO_CREATE_PROJECT.format(status))
+      systemErrorExit(1, Msg.FAILED_TO_CREATE_PROJECT.format(status))
     elif 'error' in status:
-      _getMain().systemErrorExit(2, status['error']+'\n')
+      systemErrorExit(2, status['error']+'\n')
     break
 # Try to set policy on project to allow Service Account Key Upload
-#  orgp = _getMain().getAPIService(API.ORGPOLICY, httpObj)
+#  orgp = getAPIService(API.ORGPOLICY, httpObj)
 #  projectParent = f"projects/{projectInfo['projectId']}"
 #  policyName = f'{projectParent}/policies/iam.managed.disableServiceAccountKeyUpload'
 #  try:
-#    result = _getMain().callGAPI(orgp.projects().policies(), 'get',
+#    result = callGAPI(orgp.projects().policies(), 'get',
 #                      throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
 #                      name=policyName)
 #    if result['spec']['rules'][0]['enforce']:
-#      _getMain().callGAPI(orgp.projects().policies(), 'patch',
+#      callGAPI(orgp.projects().policies(), 'patch',
 #               throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
 #               name=policyName, body={'spec': {'rules': [{'enforce': False}]}}, updateMask='policy.spec')
 #  except GAPI.notFound:
-#    _getMain().callGAPI(orgp.projects().policies(), 'create',
+#    callGAPI(orgp.projects().policies(), 'create',
 #             throwReasons=[GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
 #             parent=projectParent, body={'name': policyName, 'spec': {'rules': [{'enforce': False}]}})
 #  except (GAPI.badRequest, GAPI.failedPrecondition, GAPI.permissionDenied):
@@ -726,7 +799,7 @@ def doUseProject():
 def doUpdateProject():
   _, httpObj, login_hint, projects = _getLoginHintProjects()
   count = len(projects)
-  _getMain().entityPerformActionNumItems([Ent.USER, login_hint], count, Ent.PROJECT)
+  entityPerformActionNumItems([Ent.USER, login_hint], count, Ent.PROJECT)
   Ind.Increment()
   i = 0
   for project in projects:
@@ -737,8 +810,8 @@ def doUpdateProject():
     Act.Set(Act.UPDATE)
     if not enableGAMProjectAPIs(httpObj, projectId, login_hint, True, i, count):
       continue
-    iam = _getMain().getAPIService(API.IAM, httpObj)
-    _getMain()._getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
+    iam = getAPIService(API.IAM, httpObj)
+    _getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
     _grantRotateRights(iam, projectId, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email'])
   Ind.Decrement()
 
@@ -746,7 +819,7 @@ def doUpdateProject():
 def doDeleteProject():
   crm, _, login_hint, projects = _getLoginHintProjects()
   count = len(projects)
-  _getMain().entityPerformActionNumItems([Ent.USER, login_hint], count, Ent.PROJECT)
+  entityPerformActionNumItems([Ent.USER, login_hint], count, Ent.PROJECT)
   Ind.Increment()
   i = 0
   for project in projects:
@@ -755,12 +828,12 @@ def doDeleteProject():
       continue
     projectId = project['projectId']
     try:
-      _getMain().callGAPI(crm.projects(), 'delete',
+      callGAPI(crm.projects(), 'delete',
                throwReasons=[GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                name=project['name'])
-      _getMain().entityActionPerformed([Ent.PROJECT, projectId])
+      entityActionPerformed([Ent.PROJECT, projectId])
     except (GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, projectId], str(e))
+      entityActionFailedWarning([Ent.PROJECT, projectId], str(e))
   Ind.Decrement()
 
 PROJECT_TIMEOBJECTS = ['createTime']
@@ -778,41 +851,41 @@ PROJECT_STATE_CHOICE_MAP = {
 def doPrintShowProjects():
   def _getProjectPolicies(crm, project, policyBody, i, count):
     try:
-      policy = _getMain().callGAPI(crm.projects(), 'getIamPolicy',
+      policy = callGAPI(crm.projects(), 'getIamPolicy',
                         throwReasons=[GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                         resource=project['name'], body=policyBody)
       return policy
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, project['projectId'], Ent.IAM_POLICY, None], str(e), i, count)
+      entityActionFailedWarning([Ent.PROJECT, project['projectId'], Ent.IAM_POLICY, None], str(e), i, count)
     return {}
 
   readOnly = not Cmd.ArgumentIsAhead('showiampolicies')
   crm, _, login_hint, projects = _getLoginHintProjects(printShowCmd=True, readOnly=readOnly)
-  csvPF = _getMain().CSVPrintFile(['User', 'projectId']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'projectId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   oneMemberPerRow = False
   showIAMPolicies = -1
   lifecycleStates = PROJECT_STATE_CHOICE_MAP['active']
   policy = None
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'onememberperrow':
       oneMemberPerRow = True
     elif myarg == 'states':
-      lifecycleStates = _getMain().getChoice(PROJECT_STATE_CHOICE_MAP, mapChoice=True)
+      lifecycleStates = getChoice(PROJECT_STATE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'showiampolicies':
-      showIAMPolicies = int(_getMain().getChoice(['0', '1', '3']))
+      showIAMPolicies = int(getChoice(['0', '1', '3']))
       policyBody = {'options': {"requestedPolicyVersion": showIAMPolicies}}
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not csvPF:
     count = len(projects)
-    _getMain().entityPerformActionNumItems([Ent.USER, login_hint], count, Ent.PROJECT)
+    entityPerformActionNumItems([Ent.USER, login_hint], count, Ent.PROJECT)
     Ind.Increment()
     i = 0
     for project in projects:
@@ -824,43 +897,43 @@ def doPrintShowProjects():
       projectId = project['projectId']
       if showIAMPolicies >= 0:
         policy = _getProjectPolicies(crm, project, policyBody, i, count)
-      _getMain().printEntity([Ent.PROJECT, projectId], i, count)
+      printEntity([Ent.PROJECT, projectId], i, count)
       Ind.Increment()
-      _getMain().printKeyValueList(['name', project['name']])
-      _getMain().printKeyValueList(['displayName', project['displayName']])
+      printKeyValueList(['name', project['name']])
+      printKeyValueList(['displayName', project['displayName']])
       for field in ['createTime', 'updateTime', 'deleteTime']:
         if field in project:
-          _getMain().printKeyValueList([field, _getMain().formatLocalTime(project[field])])
-      _getMain().printKeyValueList(['state', project['state']])
+          printKeyValueList([field, formatLocalTime(project[field])])
+      printKeyValueList(['state', project['state']])
       jcount = len(project.get('labels', []))
       if jcount > 0:
-        _getMain().printKeyValueList(['labels', jcount])
+        printKeyValueList(['labels', jcount])
         Ind.Increment()
         for k, v in project['labels'].items():
-          _getMain().printKeyValueList([k, v])
+          printKeyValueList([k, v])
         Ind.Decrement()
       if 'parent' in project:
-        _getMain().printKeyValueList(['parent', project['parent']])
+        printKeyValueList(['parent', project['parent']])
       if policy:
-        _getMain().printKeyValueList([Ent.Singular(Ent.IAM_POLICY), ''])
+        printKeyValueList([Ent.Singular(Ent.IAM_POLICY), ''])
         Ind.Increment()
         bindings = policy.get('bindings', [])
         jcount = len(bindings)
-        _getMain().printKeyValueList(['version', policy['version']])
-        _getMain().printKeyValueList(['bindings', jcount])
+        printKeyValueList(['version', policy['version']])
+        printKeyValueList(['bindings', jcount])
         Ind.Increment()
         j = 0
         for binding in bindings:
           j += 1
-          _getMain().printKeyValueListWithCount(['role', binding['role']], j, jcount)
+          printKeyValueListWithCount(['role', binding['role']], j, jcount)
           Ind.Increment()
           for member in binding.get('members', []):
-            _getMain().printKeyValueList(['member', member])
+            printKeyValueList(['member', member])
           if 'condition' in binding:
-            _getMain().printKeyValueList(['condition', ''])
+            printKeyValueList(['condition', ''])
             Ind.Increment()
             for k, v in binding['condition'].items():
-              _getMain().printKeyValueList([k, v])
+              printKeyValueList([k, v])
             Ind.Decrement()
           Ind.Decrement()
         Ind.Decrement()
@@ -885,13 +958,13 @@ def doPrintShowProjects():
       if FJQC.formatJSON:
         if policy is not None:
           project['policy'] = policy
-        row = _getMain().flattenJSON(project, flattened={'User': login_hint}, timeObjects=PROJECT_TIMEOBJECTS)
+        row = flattenJSON(project, flattened={'User': login_hint}, timeObjects=PROJECT_TIMEOBJECTS)
         if csvPF.CheckRowTitles(row):
           csvPF.WriteRowNoFilter({'User': login_hint, 'projectId': projectId,
-                                  'JSON': json.dumps(_getMain().cleanJSON(project),
+                                  'JSON': json.dumps(cleanJSON(project),
                                                      ensure_ascii=False, sort_keys=True)})
         continue
-      row = _getMain().flattenJSON(project, flattened={'User': login_hint}, timeObjects=PROJECT_TIMEOBJECTS)
+      row = flattenJSON(project, flattened={'User': login_hint}, timeObjects=PROJECT_TIMEOBJECTS)
       if not policy:
         csvPF.WriteRowTitles(row)
         continue
@@ -915,8 +988,8 @@ def doPrintShowProjects():
 
 # gam info currentprojectid
 def doInfoCurrentProjectId():
-  _getMain().checkForExtraneousArguments()
-  _getMain().printEntity([Ent.PROJECT_ID, _getCurrentProjectId()])
+  checkForExtraneousArguments()
+  printEntity([Ent.PROJECT_ID, _getCurrentProjectId()])
 
 # gam create svcacct [[admin] <EmailAddress>] [<ProjectIDEntity>]
 #	[saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>] [sadescription <ServiceAccountDescription>]
@@ -928,11 +1001,11 @@ def doCreateSvcAcct():
   _, httpObj, login_hint, projects = _getLoginHintProjects(createSvcAcctCmd=True)
   svcAcctInfo = {'name': '', 'displayName': '', 'description': ''}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getSvcAcctInfo(myarg, svcAcctInfo):
       pass
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not svcAcctInfo['name']:
     svcAcctInfo['name'] = _generateProjectSvcAcctId('gam-svcacct')
   if not svcAcctInfo['displayName']:
@@ -940,7 +1013,7 @@ def doCreateSvcAcct():
   if not svcAcctInfo['description']:
     svcAcctInfo['description'] = svcAcctInfo['displayName']
   count = len(projects)
-  _getMain().entityPerformActionSubItemModifierNumItems([Ent.USER, login_hint], Ent.SVCACCT, Act.MODIFIER_TO, count, Ent.PROJECT)
+  entityPerformActionSubItemModifierNumItems([Ent.USER, login_hint], Ent.SVCACCT, Act.MODIFIER_TO, count, Ent.PROJECT)
   Ind.Increment()
   i = 0
   for project in projects:
@@ -955,26 +1028,26 @@ def doCreateSvcAcct():
 #	(saemail <ServiceAccountEmail>)|(saname <ServiceAccountName>)|(sauniqueid <ServiceAccountUniqueID>)
 def doDeleteSvcAcct():
   _, httpObj, login_hint, projects = _getLoginHintProjects(deleteSvcAcctCmd=True)
-  iam = _getMain().getAPIService(API.IAM, httpObj)
+  iam = getAPIService(API.IAM, httpObj)
   clientEmail = clientId = clientName = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'saemail':
-      clientEmail = _getMain().getEmailAddress(noUid=True)
+      clientEmail = getEmailAddress(noUid=True)
       clientName = clientId = None
     elif myarg == 'saname':
-      clientName = _getMain().getString(Cmd.OB_STRING, minLen=6, maxLen=30).strip()
+      clientName = getString(Cmd.OB_STRING, minLen=6, maxLen=30).strip()
       _checkProjectId(clientName)
       clientEmail = clientId = None
     elif myarg == 'sauniqueid':
-      clientId = _getMain().getInteger(minVal=0)
+      clientId = getInteger(minVal=0)
       clientEmail = clientName = None
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not clientEmail and not clientId and not clientName:
-    _getMain().missingArgumentExit('email|name|uniqueid')
+    missingArgumentExit('email|name|uniqueid')
   count = len(projects)
-  _getMain().entityPerformActionSubItemModifierNumItems([Ent.USER, login_hint], Ent.SVCACCT, Act.MODIFIER_FROM, count, Ent.PROJECT)
+  entityPerformActionSubItemModifierNumItems([Ent.USER, login_hint], Ent.SVCACCT, Act.MODIFIER_FROM, count, Ent.PROJECT)
   Ind.Increment()
   i = 0
   for project in projects:
@@ -989,12 +1062,12 @@ def doDeleteSvcAcct():
         saName = f'{clientName}@{projectId}.iam.gserviceaccount.com'
       else: #clientId
         saName = clientId
-      _getMain().callGAPI(iam.projects().serviceAccounts(), 'delete',
+      callGAPI(iam.projects().serviceAccounts(), 'delete',
                throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST],
                name=f'projects/{projectId}/serviceAccounts/{saName}')
-      _getMain().entityActionPerformed([Ent.PROJECT, projectId, Ent.SVCACCT, saName], i, count)
+      entityActionPerformed([Ent.PROJECT, projectId, Ent.SVCACCT, saName], i, count)
     except (GAPI.notFound, GAPI.badRequest) as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, saName], str(e), i, count)
+      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, saName], str(e), i, count)
     Ind.Decrement()
 
 def _getSvcAcctKeyProjectClientFields():
@@ -1007,10 +1080,10 @@ def _getSvcAcctKeyProjectClientFields():
 # gam <UserTypeEntity> update serviceaccount (scope|scopes <APIScopeURLList>)* [usecolor]
 def checkServiceAccount(users):
   def printMessage(message):
-    _getMain().writeStdout(Ind.Spaces()+message+'\n')
+    writeStdout(Ind.Spaces()+message+'\n')
 
   def printPassFail(description, result):
-    _getMain().writeStdout(Ind.Spaces()+f'{description:73} {result}'+'\n')
+    writeStdout(Ind.Spaces()+f'{description:73} {result}'+'\n')
 
   def authorizeScopes(message):
     long_url = ('https://admin.google.com/ac/owl/domainwidedelegation'
@@ -1019,36 +1092,36 @@ def checkServiceAccount(users):
     if GC.Values[GC.DOMAIN]:
       long_url += f'&dn={GC.Values[GC.DOMAIN]}'
     long_url += f'&authuser={_getAdminEmail()}'
-    short_url = _getMain().shortenURL(long_url)
-    _getMain().printLine(message.format('', short_url))
+    short_url = shortenURL(long_url)
+    printLine(message.format('', short_url))
 
-  credentials = _getMain().getSvcAcctCredentials([API.USERINFO_EMAIL_SCOPE], None, forceOauth=True)
+  credentials = getSvcAcctCredentials([API.USERINFO_EMAIL_SCOPE], None, forceOauth=True)
   allScopes = API.getSvcAcctScopes(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], Act.Get() == Act.UPDATE)
   checkScopesSet = set()
   saScopes = {}
   checkDeprecatedScopes = True
   useColor = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'scope', 'scopes'}:
       checkDeprecatedScopes = False
-      for scope in _getMain().getString(Cmd.OB_API_SCOPE_URL_LIST).lower().replace(',', ' ').split():
+      for scope in getString(Cmd.OB_API_SCOPE_URL_LIST).lower().replace(',', ' ').split():
         api = API.getSvcAcctScopeAPI(scope)
         if api is not None:
           saScopes.setdefault(api, [])
           saScopes[api].append(scope)
           checkScopesSet.add(scope)
         else:
-          _getMain().invalidChoiceExit(scope, allScopes, True)
+          invalidChoiceExit(scope, allScopes, True)
     elif myarg == 'usecolor':
       useColor = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if useColor:
-    testPass = _getMain().createGreenText('PASS')
-    testFail = _getMain().createRedText('FAIL')
-    testWarn = _getMain().createYellowText('WARN')
-    testDeprecated = _getMain().createRedText('DEPRECATED')
+    testPass = createGreenText('PASS')
+    testFail = createRedText('FAIL')
+    testWarn = createYellowText('WARN')
+    testDeprecated = createRedText('DEPRECATED')
   else:
     testPass = 'PASS'
     testFail = 'FAIL'
@@ -1086,13 +1159,13 @@ def checkServiceAccount(users):
     if API.DRIVE3 in saScopes:
       saScopes[API.DRIVE2] = saScopes[API.DRIVE3]
     GM.Globals[GM.OAUTH2SERVICE_JSON_DATA][API.OAUTH2SA_SCOPES] = saScopes
-    _getMain().writeFile(GC.Values[GC.OAUTH2SERVICE_JSON],
+    writeFile(GC.Values[GC.OAUTH2SERVICE_JSON],
               json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, indent=2, sort_keys=True),
               continueOnError=False)
   checkScopes = sorted(checkScopesSet)
   jcount = len(checkScopes)
   printMessage(Msg.SYSTEM_TIME_STATUS)
-  offsetSeconds, offsetFormatted = _getMain().getLocalGoogleTimeOffset()
+  offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset()
   if offsetSeconds <= _getMain().MAX_LOCAL_GOOGLE_TIME_OFFSET:
     timeStatus = testPass
   else:
@@ -1100,20 +1173,20 @@ def checkServiceAccount(users):
   Ind.Increment()
   printPassFail(Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(_getMain().GOOGLE_TIMECHECK_LOCATION, offsetFormatted), timeStatus)
   Ind.Decrement()
-  oa2 = _getMain().buildGAPIObject(API.OAUTH2)
+  oa2 = buildGAPIObject(API.OAUTH2)
   printMessage(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AUTHENTICATION)
   # We are explicitly not doing DwD here, just confirming service account can auth
   auth_error = ''
   try:
-    request = _getMain().transportCreateRequest()
+    request = transportCreateRequest()
     credentials.refresh(request)
-    sa_token_info = _getMain().callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+    sa_token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
     if sa_token_info:
       saTokenStatus = testPass
     else:
       saTokenStatus = testFail
   except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-    _getMain().handleServerError(e)
+    handleServerError(e)
   except google.auth.exceptions.RefreshError as e:
     saTokenStatus = testFail
     if isinstance(e.args, tuple):
@@ -1123,46 +1196,46 @@ def checkServiceAccount(users):
   printPassFail(f'Authentication{auth_error}', saTokenStatus)
   Ind.Decrement()
   if saTokenStatus == testFail:
-    _getMain().invalidOauth2serviceJsonExit(f'Authentication{auth_error}')
-  _getMain()._getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
+    invalidOauth2serviceJsonExit(f'Authentication{auth_error}')
+  _getSvcAcctData() # needed to read in GM.OAUTH2SERVICE_JSON_DATA
   if API.IAM not in GM.Globals[GM.SVCACCT_SCOPES]:
     GM.Globals[GM.SVCACCT_SCOPES][API.IAM] = [API.IAM_SCOPE]
   key_type = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
   if key_type == 'default':
     printMessage(Msg.SERVICE_ACCOUNT_CHECK_PRIVATE_KEY_AGE)
-    _, iam = _getMain().buildGAPIServiceObject(API.IAM, None)
+    _, iam = buildGAPIServiceObject(API.IAM, None)
     currentPrivateKeyId, projectId, _, clientId = _getSvcAcctKeyProjectClientFields()
     name = f'projects/{projectId}/serviceAccounts/{clientId}/keys/{currentPrivateKeyId}'
     Ind.Increment()
     try:
-      key = _getMain().callGAPI(iam.projects().serviceAccounts().keys(), 'get',
+      key = callGAPI(iam.projects().serviceAccounts().keys(), 'get',
                      throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.NOT_FOUND,
                                    GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                      name=name, fields='validAfterTime')
       key_created = arrow.get(key['validAfterTime'])
-      key_age = _getMain().todaysTime()-key_created
+      key_age = todaysTime()-key_created
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format(key_age.days), testWarn if key_age.days > 30 else testPass)
     except GAPI.permissionDenied:
       printMessage(Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format('UNKNOWN'), testWarn)
     except (GAPI.badRequest, GAPI.invalid, GAPI.notFound) as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'],
+      entityActionFailedWarning([Ent.PROJECT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'],
                                  Ent.SVCACCT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']],
                                 str(e))
       printPassFail(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AGE.format('UNKNOWN'), testWarn)
     except GAPI.serviceNotAvailable as e:
-      _getMain().entityActionFailedExit([Ent.PROJECT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'],
+      entityActionFailedExit([Ent.PROJECT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'],
                               Ent.SVCACCT, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']],
                              str(e))
   else:
     printPassFail(Msg.SERVICE_ACCOUNT_SKIPPING_KEY_AGE_CHECK.format(key_type), testPass)
   Ind.Decrement()
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     allScopesPass = True
-    user = _getMain().convertUIDtoEmailAddress(user)
-    _getMain().printKeyValueListWithCount([Msg.DOMAIN_WIDE_DELEGATION_AUTHENTICATION, '',
+    user = convertUIDtoEmailAddress(user)
+    printKeyValueListWithCount([Msg.DOMAIN_WIDE_DELEGATION_AUTHENTICATION, '',
                                 Ent.Singular(Ent.USER), user,
                                 Ent.Choose(Ent.SCOPE, jcount), jcount],
                                i, count)
@@ -1173,15 +1246,15 @@ def checkServiceAccount(users):
       # try with and without email scope
       for scopes in [[scope, API.USERINFO_EMAIL_SCOPE], [scope]]:
         try:
-          credentials = _getMain().getSvcAcctCredentials(scopes, user)
+          credentials = getSvcAcctCredentials(scopes, user)
           credentials.refresh(request)
           break
         except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-          _getMain().handleServerError(e)
+          handleServerError(e)
         except google.auth.exceptions.RefreshError:
           continue
       if credentials.token:
-        token_info = _getMain().callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+        token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
         if scope in token_info.get('scope', '').split(' ') and user == token_info.get('email', user).lower():
           scopeStatus = testPass
         else:
@@ -1190,12 +1263,12 @@ def checkServiceAccount(users):
       else:
         scopeStatus = testFail
         allScopesPass = False
-      printPassFail(scope, f'{scopeStatus}{_getMain().currentCount(j, jcount)}')
+      printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
     Ind.Decrement()
     if checkDeprecatedScopes:
       deprecatedScopes = sorted(API.DEPRECATED_SCOPES)
       jcount = len(deprecatedScopes)
-      _getMain().printKeyValueListWithCount([Msg.DEPRECATED_SCOPES, '',
+      printKeyValueListWithCount([Msg.DEPRECATED_SCOPES, '',
                                   Ent.Singular(Ent.USER), user,
                                   Ent.Choose(Ent.SCOPE, jcount), jcount],
                                  i, count)
@@ -1206,15 +1279,15 @@ def checkServiceAccount(users):
         # try with and without email scope
         for scopes in [[scope, API.USERINFO_EMAIL_SCOPE], [scope]]:
           try:
-            credentials = _getMain().getSvcAcctCredentials(scopes, user)
+            credentials = getSvcAcctCredentials(scopes, user)
             credentials.refresh(request)
             break
           except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-            _getMain().handleServerError(e)
+            handleServerError(e)
           except google.auth.exceptions.RefreshError:
             continue
         if credentials.token:
-          token_info = _getMain().callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
+          token_info = callGAPI(oa2, 'tokeninfo', access_token=credentials.token)
           if scope in token_info.get('scope', '').split(' ') and user == token_info.get('email', user).lower():
             scopeStatus = testDeprecated
             allScopesPass = False
@@ -1222,37 +1295,37 @@ def checkServiceAccount(users):
             scopeStatus = testPass
         else:
           scopeStatus = testPass
-        printPassFail(scope, f'{scopeStatus}{_getMain().currentCount(j, jcount)}')
+        printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
       Ind.Decrement()
     service_account = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
     if allScopesPass:
       if Act.Get() == Act.CHECK:
-        _getMain().printLine(Msg.SCOPE_AUTHORIZATION_PASSED.format(service_account))
+        printLine(Msg.SCOPE_AUTHORIZATION_PASSED.format(service_account))
       else:
         authorizeScopes(Msg.SCOPE_AUTHORIZATION_UPDATE_PASSED)
     else:
       # Tack on email scope for more accurate checking
       checkScopes.append(API.USERINFO_EMAIL_SCOPE)
-      _getMain().setSysExitRC(_getMain().SCOPES_NOT_AUTHORIZED_RC)
+      setSysExitRC(_getMain().SCOPES_NOT_AUTHORIZED_RC)
       authorizeScopes(Msg.SCOPE_AUTHORIZATION_FAILED)
-    _getMain().printBlankLine()
+    printBlankLine()
 
 # gam check svcacct <UserTypeEntity> (scope|scopes <APIScopeURLList>)*
 # gam update svcacct <UserTypeEntity> (scope|scopes <APIScopeURLList>)*
 def doCheckUpdateSvcAcct():
-  _, entityList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USER)
+  _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USER)
   checkServiceAccount(entityList)
 
 def _getSAKeys(iam, projectId, clientEmail, name, keyTypes):
   try:
-    keys = _getMain().callGAPIitems(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+    keys = callGAPIitems(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                          throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                          name=name, fields='*', keyTypes=keyTypes)
     return (True, keys)
   except GAPI.permissionDenied:
-    _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+    entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
   except GAPI.badRequest as e:
-    _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+    entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
   return (False, None)
 
 SVCACCT_KEY_TIME_OBJECTS = {'validAfterTime', 'validBeforeTime'}
@@ -1263,15 +1336,15 @@ def _showSAKeys(keys, count, currentPrivateKeyId):
   for key in keys:
     i += 1
     keyName = key.pop('name').rsplit('/', 1)[-1]
-    _getMain().printKeyValueListWithCount(['name', keyName], i, count)
+    printKeyValueListWithCount(['name', keyName], i, count)
     Ind.Increment()
     for k, v in sorted(key.items()):
       if k not in SVCACCT_KEY_TIME_OBJECTS:
-        _getMain().printKeyValueList([k, v])
+        printKeyValueList([k, v])
       else:
-        _getMain().printKeyValueList([k, _getMain().formatLocalTime(v)])
+        printKeyValueList([k, formatLocalTime(v)])
     if keyName == currentPrivateKeyId:
-      _getMain().printKeyValueList(['usedToAuthenticateThisRequest', True])
+      printKeyValueList(['usedToAuthenticateThisRequest', True])
     Ind.Decrement()
   Ind.Decrement()
 
@@ -1291,23 +1364,23 @@ SVCACCT_KEY_TYPE_CHOICE_MAP = {
 #	[showsakeys all|system|user]
 def doPrintShowSvcAccts():
   _, httpObj, login_hint, projects = _getLoginHintProjects(printShowCmd=True, readOnly=False)
-  csvPF = _getMain().CSVPrintFile(['User', 'projectId']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
-  iam = _getMain().getAPIService(API.IAM, httpObj)
+  csvPF = CSVPrintFile(['User', 'projectId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  iam = getAPIService(API.IAM, httpObj)
   keyTypes = None
   showSAKeys = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'showsakeys':
-      keyTypes = _getMain().getChoice(SVCACCT_KEY_TYPE_CHOICE_MAP, mapChoice=True)
+      keyTypes = getChoice(SVCACCT_KEY_TYPE_CHOICE_MAP, mapChoice=True)
       showSAKeys = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   count = len(projects)
   if not csvPF:
-    _getMain().entityPerformActionSubItemModifierNumItems([Ent.USER, login_hint], Ent.SVCACCT, Act.MODIFIER_FOR, count, Ent.PROJECT)
+    entityPerformActionSubItemModifierNumItems([Ent.USER, login_hint], Ent.SVCACCT, Act.MODIFIER_FOR, count, Ent.PROJECT)
   else:
     csvPF.AddTitles(['projectId']+SVCACCT_DISPLAY_FIELDS)
     csvPF.SetSortAllTitles()
@@ -1318,33 +1391,33 @@ def doPrintShowSvcAccts():
       continue
     projectId = project['projectId']
     if csvPF:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.SVCACCT, projectId, i, count)
+      printGettingAllEntityItemsForWhom(Ent.SVCACCT, projectId, i, count)
     if project['state'] != 'ACTIVE':
-      _getMain().entityActionNotPerformedWarning([Ent.PROJECT, projectId], Msg.DELETED, i, count)
+      entityActionNotPerformedWarning([Ent.PROJECT, projectId], Msg.DELETED, i, count)
       continue
     try:
-      svcAccts = _getMain().callGAPIpages(iam.projects().serviceAccounts(), 'list', 'accounts',
+      svcAccts = callGAPIpages(iam.projects().serviceAccounts(), 'list', 'accounts',
                                throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                                name=f'projects/{projectId}')
       if not csvPF:
         jcount = len(svcAccts)
-        _getMain().entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.SVCACCT, i, count)
+        entityPerformActionNumItems([Ent.PROJECT, projectId], jcount, Ent.SVCACCT, i, count)
         Ind.Increment()
         j = 0
         for svcAcct in svcAccts:
           j += 1
-          _getMain().printKeyValueListWithCount(['email', svcAcct['email']], j, jcount)
+          printKeyValueListWithCount(['email', svcAcct['email']], j, jcount)
           Ind.Increment()
           for field in SVCACCT_DISPLAY_FIELDS:
             if field in svcAcct:
-              _getMain().printKeyValueList([field, svcAcct[field]])
+              printKeyValueList([field, svcAcct[field]])
           if showSAKeys:
             name = f"projects/{projectId}/serviceAccounts/{svcAcct['oauth2ClientId']}"
             status, keys = _getSAKeys(iam, projectId, svcAcct['email'], name, keyTypes)
             if status:
               kcount = len(keys)
               if kcount > 0:
-                _getMain().printKeyValueList([Ent.Choose(Ent.SVCACCT_KEY, kcount), kcount])
+                printKeyValueList([Ent.Choose(Ent.SVCACCT_KEY, kcount), kcount])
                 _showSAKeys(keys, kcount, '')
           Ind.Decrement()
         Ind.Decrement()
@@ -1355,32 +1428,32 @@ def doPrintShowSvcAccts():
             status, keys = _getSAKeys(iam, projectId, svcAcct['email'], name, keyTypes)
             if status:
               svcAcct['keys'] = keys
-          row = _getMain().flattenJSON(svcAcct, flattened={'User': login_hint}, timeObjects=SVCACCT_KEY_TIME_OBJECTS)
+          row = flattenJSON(svcAcct, flattened={'User': login_hint}, timeObjects=SVCACCT_KEY_TIME_OBJECTS)
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
             csvPF.WriteRowNoFilter({'User': login_hint, 'projectId': projectId,
-                                    'JSON': json.dumps(_getMain().cleanJSON(svcAcct, timeObjects=SVCACCT_KEY_TIME_OBJECTS),
+                                    'JSON': json.dumps(cleanJSON(svcAcct, timeObjects=SVCACCT_KEY_TIME_OBJECTS),
                                                        ensure_ascii=False, sort_keys=True)})
     except (GAPI.notFound, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, projectId], str(e), i, count)
+      entityActionFailedWarning([Ent.PROJECT, projectId], str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Service Accounts')
 
 def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64enc_pub=True, validityHours=0):
   if projectId:
-    _getMain().printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.GENERATING_NEW_PRIVATE_KEY)
+    printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.GENERATING_NEW_PRIVATE_KEY)
   else:
-    _getMain().writeStdout(Msg.GENERATING_NEW_PRIVATE_KEY+'\n')
+    writeStdout(Msg.GENERATING_NEW_PRIVATE_KEY+'\n')
   private_key = rsa.generate_private_key(public_exponent=65537, key_size=key_size, backend=default_backend())
   private_pem = private_key.private_bytes(encoding=serialization.Encoding.PEM,
                                           format=serialization.PrivateFormat.PKCS8,
                                           encryption_algorithm=serialization.NoEncryption()).decode()
 
   if projectId:
-    _getMain().printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.EXTRACTING_PUBLIC_CERTIFICATE)
+    printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.EXTRACTING_PUBLIC_CERTIFICATE)
   else:
-    _getMain().writeStdout(Msg.EXTRACTING_PUBLIC_CERTIFICATE+'\n')
+    writeStdout(Msg.EXTRACTING_PUBLIC_CERTIFICATE+'\n')
   public_key = private_key.public_key()
   builder = x509.CertificateBuilder()
   # suppress cryptography warnings on service account email length
@@ -1414,9 +1487,9 @@ def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64
   certificate = builder.sign(private_key=private_key, algorithm=hashes.SHA256(), backend=default_backend())
   public_cert_pem = certificate.public_bytes(serialization.Encoding.PEM).decode()
   if projectId:
-    _getMain().printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.DONE_GENERATING_PRIVATE_KEY_AND_PUBLIC_CERTIFICATE)
+    printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.DONE_GENERATING_PRIVATE_KEY_AND_PUBLIC_CERTIFICATE)
   else:
-    _getMain().writeStdout(Msg.DONE_GENERATING_PRIVATE_KEY_AND_PUBLIC_CERTIFICATE+'\n')
+    writeStdout(Msg.DONE_GENERATING_PRIVATE_KEY_AND_PUBLIC_CERTIFICATE+'\n')
   if not b64enc_pub:
     return (private_pem, public_cert_pem)
   publicKeyData = base64.b64encode(public_cert_pem.encode())
@@ -1438,34 +1511,34 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
   def getSAKeyParms(body, new_data):
     nonlocal local_key_size, validityHours
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'algorithm':
-        body['keyAlgorithm'] = _getMain().getChoice(["key_alg_rsa_1024", "key_alg_rsa_2048"]).upper()
+        body['keyAlgorithm'] = getChoice(["key_alg_rsa_1024", "key_alg_rsa_2048"]).upper()
         local_key_size = 0
       elif myarg == 'localkeysize':
-        local_key_size = int(_getMain().getChoice(['1024', '2048', '4096']))
+        local_key_size = int(getChoice(['1024', '2048', '4096']))
       elif myarg == 'validityhours':
-        validityHours = _getMain().getInteger()
+        validityHours = getInteger()
       elif myarg == 'yubikey':
         new_data['key_type'] = 'yubikey'
       elif myarg == 'yubikeyslot':
-        new_data['yubikey_slot'] = _getMain().getString(Cmd.OB_STRING).upper()
+        new_data['yubikey_slot'] = getString(Cmd.OB_STRING).upper()
       elif myarg == 'yubikeypin':
-        new_data['yubikey_pin'] = _getMain().readStdin('Enter your YubiKey PIN: ')
+        new_data['yubikey_pin'] = readStdin('Enter your YubiKey PIN: ')
       elif myarg == 'yubikeyserialnumber':
-        new_data['yubikey_serial_number'] = _getMain().getInteger()
+        new_data['yubikey_serial_number'] = getInteger()
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
 
   local_key_size = 2048
   validityHours = 0
   body = {}
   if mode is None:
-    mode = _getMain().getChoice(['retainnone', 'retainexisting', 'replacecurrent'])
+    mode = getChoice(['retainnone', 'retainexisting', 'replacecurrent'])
   if iam is None or mode == 'upload':
     if iam is None:
-      _, iam = _getMain().buildGAPIServiceObject(API.IAM, None)
-    _getMain()._getSvcAcctData()
+      _, iam = buildGAPIServiceObject(API.IAM, None)
+    _getSvcAcctData()
     currentPrivateKeyId, projectId, clientEmail, clientId = _getSvcAcctKeyProjectClientFields()
     # dict() ensures we have a real copy, not pointer
     new_data = dict(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA])
@@ -1483,14 +1556,14 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
   name = f'projects/{projectId}/serviceAccounts/{clientId}'
   if mode != 'retainexisting':
     try:
-      keys = _getMain().callGAPIitems(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+      keys = callGAPIitems(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                            throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                            name=name, keyTypes='USER_MANAGED')
     except GAPI.permissionDenied:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
       return False
     except GAPI.badRequest as e:
-      _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+      entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
       return False
   if new_data.get('key_type') == 'yubikey':
     # Use yubikey private key
@@ -1514,29 +1587,29 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
   if local_key_size:
     Act.Set(Act.UPLOAD)
     maxRetries = 10
-    _getMain().printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPLOADING_NEW_PUBLIC_CERTIFICATE_TO_GOOGLE)
+    printEntityMessage([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPLOADING_NEW_PUBLIC_CERTIFICATE_TO_GOOGLE)
     for retry in range(1, maxRetries+1):
       try:
-        result = _getMain().callGAPI(iam.projects().serviceAccounts().keys(), 'upload',
+        result = callGAPI(iam.projects().serviceAccounts().keys(), 'upload',
                           throwReasons=[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                           name=name, body={'publicKeyData': publicKeyData})
         newPrivateKeyId = result['name'].rsplit('/', 1)[-1]
         break
       except GAPI.notFound as e:
         if retry == maxRetries:
-          _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+          entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
           return False
         _waitForSvcAcctCompletion(retry)
       except GAPI.permissionDenied:
         if retry == maxRetries:
-          _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+          entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
           return False
         _waitForSvcAcctCompletion(retry)
       except GAPI.badRequest as e:
-        _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+        entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         return False
       except GAPI.failedPrecondition as e:
-        _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+        entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         if 'iam.disableServiceAccountKeyUpload' not in str(e) and 'iam.managed.disableServiceAccountKeyUpload' not in str(e):
           return False
         if retry == maxRetries or mode != 'upload':
@@ -1552,38 +1625,38 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
     maxRetries = 10
     for retry in range(1, maxRetries+1):
       try:
-        result = _getMain().callGAPI(iam.projects().serviceAccounts().keys(), 'create',
+        result = callGAPI(iam.projects().serviceAccounts().keys(), 'create',
                           throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                           name=name, body=body)
         newPrivateKeyId = result['name'].rsplit('/', 1)[-1]
         break
       except GAPI.permissionDenied:
         if retry == maxRetries:
-          _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+          entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
           return False
         _waitForSvcAcctCompletion(retry)
       except GAPI.badRequest as e:
-        _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+        entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
         return False
-    oauth2service_data = base64.b64decode(result['privateKeyData']).decode(_getMain().UTF8)
+    oauth2service_data = base64.b64decode(result['privateKeyData']).decode(UTF8)
   if newPrivateKeyId != '':
-    _getMain().entityActionPerformed([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail, Ent.SVCACCT_KEY, newPrivateKeyId])
+    entityActionPerformed([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail, Ent.SVCACCT_KEY, newPrivateKeyId])
   if GM.Globals[GM.SVCACCT_SCOPES_DEFINED]:
     try:
       GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = json.loads(oauth2service_data)
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
-      _getMain().invalidOauth2serviceJsonExit(str(e))
+      invalidOauth2serviceJsonExit(str(e))
     GM.Globals[GM.OAUTH2SERVICE_JSON_DATA][API.OAUTH2SA_SCOPES] = GM.Globals[GM.SVCACCT_SCOPES]
     oauth2service_data = json.dumps(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA], ensure_ascii=False, indent=2, sort_keys=True)
-  _getMain().writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
+  writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], oauth2service_data, continueOnError=False)
   Act.Set(Act.UPDATE)
-  _getMain().entityActionPerformed([Ent.OAUTH2SERVICE_JSON_FILE, GC.Values[GC.OAUTH2SERVICE_JSON],
+  entityActionPerformed([Ent.OAUTH2SERVICE_JSON_FILE, GC.Values[GC.OAUTH2SERVICE_JSON],
                          Ent.SVCACCT_KEY, newPrivateKeyId])
   if mode in {'retainexisting', 'upload'}:
     return newPrivateKeyId != ''
   Act.Set(Act.REVOKE)
   count = len(keys) if mode == 'retainnone' else 1
-  _getMain().entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
+  entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
   Ind.Increment()
   i = 0
   for key in keys:
@@ -1593,18 +1666,18 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
       maxRetries = 5
       for retry in range(1, maxRetries+1):
         try:
-          _getMain().callGAPI(iam.projects().serviceAccounts().keys(), 'delete',
+          callGAPI(iam.projects().serviceAccounts().keys(), 'delete',
                    throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                    name=key['name'])
-          _getMain().entityActionPerformed([Ent.SVCACCT_KEY, keyName], i, count)
+          entityActionPerformed([Ent.SVCACCT_KEY, keyName], i, count)
           break
         except GAPI.permissionDenied:
           if retry == maxRetries:
-            _getMain().entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+            entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
             break
           _waitForSvcAcctCompletion(retry)
         except GAPI.badRequest as e:
-          _getMain().entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
+          entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
           break
       if mode != 'retainnone':
         break
@@ -1640,9 +1713,9 @@ def doReplaceSvcAcctKeys():
 #	(localkeysize 1024|2048|4096 [validityhours <Number>])|
 #	(yubikey yubikey_pin yubikey_slot AUTHENTICATION yubikey_serialnumber <String>)
 def doUploadSvcAcctKeys():
-  login_hint = _getMain().getEmailAddress(noUid=True) if _getMain().checkArgumentPresent(['admin']) else None
+  login_hint = getEmailAddress(noUid=True) if checkArgumentPresent(['admin']) else None
   httpObj, _ = getCRMService(login_hint)
-  iam = _getMain().getAPIService(API.IAM, httpObj)
+  iam = getAPIService(API.IAM, httpObj)
   if doProcessSvcAcctKeys(mode='upload', iam=iam):
     sa_email = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']
     _grantRotateRights(iam, GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id'], sa_email)
@@ -1650,31 +1723,31 @@ def doUploadSvcAcctKeys():
 
 # gam delete sakeys <ServiceAccountKeyList>
 def doDeleteSvcAcctKeys():
-  _, iam = _getMain().buildGAPIServiceObject(API.IAM, None)
+  _, iam = buildGAPIServiceObject(API.IAM, None)
   doit = False
   keyList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'doit':
       doit = True
     else:
       Cmd.Backup()
-      keyList.extend(_getMain().getString(Cmd.OB_SERVICE_ACCOUNT_KEY_LIST, minLen=0).strip().replace(',', ' ').split())
+      keyList.extend(getString(Cmd.OB_SERVICE_ACCOUNT_KEY_LIST, minLen=0).strip().replace(',', ' ').split())
   currentPrivateKeyId, projectId, clientEmail, clientId = _getSvcAcctKeyProjectClientFields()
   name = f'projects/{projectId}/serviceAccounts/{clientId}'
   try:
-    keys = _getMain().callGAPIitems(iam.projects().serviceAccounts().keys(), 'list', 'keys',
+    keys = callGAPIitems(iam.projects().serviceAccounts().keys(), 'list', 'keys',
                          throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                          name=name, keyTypes='USER_MANAGED')
   except GAPI.permissionDenied:
-    _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+    entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
     return
   except GAPI.badRequest as e:
-    _getMain().entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
+    entityActionFailedWarning([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], str(e))
     return
   Act.Set(Act.REVOKE)
   count = len(keyList)
-  _getMain().entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
+  entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
   Ind.Increment()
   i = 0
   for dkeyName in keyList:
@@ -1683,65 +1756,65 @@ def doDeleteSvcAcctKeys():
       keyName = key['name'].rsplit('/', 1)[-1]
       if keyName == dkeyName:
         if keyName == currentPrivateKeyId and not doit:
-          _getMain().entityActionNotPerformedWarning([Ent.SVCACCT_KEY, keyName],
+          entityActionNotPerformedWarning([Ent.SVCACCT_KEY, keyName],
                                           Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION+Msg.ON_CURRENT_PRIVATE_KEY, i, count)
           break
         try:
-          _getMain().callGAPI(iam.projects().serviceAccounts().keys(), 'delete',
+          callGAPI(iam.projects().serviceAccounts().keys(), 'delete',
                    throwReasons=[GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                    name=key['name'])
-          _getMain().entityActionPerformed([Ent.SVCACCT_KEY, keyName], i, count)
+          entityActionPerformed([Ent.SVCACCT_KEY, keyName], i, count)
         except GAPI.permissionDenied:
-          _getMain().entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
+          entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], Msg.UPDATE_PROJECT_TO_VIEW_MANAGE_SAKEYS)
         except GAPI.badRequest as e:
-          _getMain().entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
+          entityActionFailedWarning([Ent.SVCACCT_KEY, keyName], str(e), i, count)
         break
     else:
-      _getMain().entityActionNotPerformedWarning([Ent.SVCACCT_KEY, dkeyName], Msg.NOT_FOUND, i, count)
+      entityActionNotPerformedWarning([Ent.SVCACCT_KEY, dkeyName], Msg.NOT_FOUND, i, count)
   Ind.Decrement()
 
 # gam show sakeys [all|system|user]
 def doShowSvcAcctKeys():
-  _, iam = _getMain().buildGAPIServiceObject(API.IAM, None)
+  _, iam = buildGAPIServiceObject(API.IAM, None)
   keyTypes = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in SVCACCT_KEY_TYPE_CHOICE_MAP:
       keyTypes = SVCACCT_KEY_TYPE_CHOICE_MAP[myarg]
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   currentPrivateKeyId, projectId, clientEmail, clientId = _getSvcAcctKeyProjectClientFields()
   name = f'projects/{projectId}/serviceAccounts/{clientId}'
   status, keys = _getSAKeys(iam, projectId, clientEmail, name, keyTypes)
   if not status:
     return
   count = len(keys)
-  _getMain().entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
+  entityPerformActionNumItems([Ent.PROJECT, projectId, Ent.SVCACCT, clientEmail], count, Ent.SVCACCT_KEY)
   if count > 0:
     _showSAKeys(keys, count, currentPrivateKeyId)
 
 # gam create gcpserviceaccount|signjwtserviceaccount
 def doCreateGCPServiceAccount():
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON]])
   sa_info = {'key_type': 'signjwt', 'token_uri': API.GOOGLE_OAUTH2_TOKEN_ENDPOINT, 'type': 'service_account'}
-  request = _getMain().get_adc_request()
+  request = get_adc_request()
   try:
     credentials, sa_info['project_id'] = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
-    _getMain().systemErrorExit(_getMain().API_ACCESS_DENIED_RC, str(e))
+    systemErrorExit(_getMain().API_ACCESS_DENIED_RC, str(e))
   credentials.refresh(request)
   sa_info['client_email'] = credentials.service_account_email
-  oa2 = _getMain().buildGAPIObjectNoAuthentication(API.OAUTH2)
+  oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
   try:
-    token_info = _getMain().callGAPI(oa2, 'tokeninfo',
+    token_info = callGAPI(oa2, 'tokeninfo',
                           throwReasons=[GAPI.INVALID],
                           access_token=credentials.token)
   except GAPI.invalid as e:
-    _getMain().systemErrorExit(_getMain().API_ACCESS_DENIED_RC, str(e))
+    systemErrorExit(_getMain().API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']
   sa_output = json.dumps(sa_info, ensure_ascii=False, indent=2, sort_keys=True)
-  _getMain().writeStdout(f'Writing SignJWT service account data:\n\n{sa_output}\n')
-  _getMain().writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], sa_output, continueOnError=False)
+  writeStdout(f'Writing SignJWT service account data:\n\n{sa_output}\n')
+  writeFile(GC.Values[GC.OAUTH2SERVICE_JSON], sa_output, continueOnError=False)
 
 # Audit command utilities

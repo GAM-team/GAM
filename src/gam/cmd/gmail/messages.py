@@ -28,6 +28,72 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import (
+    _getAdminEmail,
+    buildGAPIObject,
+    buildGAPIServiceObject,
+    callGAPI,
+    callGAPIpages,
+    checkGAPIError,
+)
+from gam.util.args import (
+    SORF_MSG_FILE_ARGUMENTS,
+    UTF8,
+    checkArgumentPresent,
+    escapeCRsNLs,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCharSet,
+    getCharacter,
+    getEmailAddress,
+    getFilename,
+    getHTTPError,
+    getInteger,
+    getREPattern,
+    getString,
+    getStringOrFile,
+    getTimeOrDeltaFromNow,
+    splitEmailAddress,
+)
+from gam.util.csv_pf import CSVPrintFile, batchRequestID, flattenJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityActionPerformedMessage,
+    entityModifierItemValueListActionFailedWarning,
+    entityModifierItemValueListActionPerformed,
+    entityNumEntitiesActionNotPerformedWarning,
+    entityPerformActionModifierNumItemsModifier,
+    entityPerformActionNumItems,
+    entityPerformActionNumItemsModifier,
+    getPageMessageForWhom,
+    printEntity,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    printKeyValueListWithCount,
+    userDriveServiceNotEnabledWarning,
+    userGmailServiceNotEnabledWarning,
+)
+from gam.util.entity import (
+    _validateUserGetMessageIds,
+    getEntityArgument,
+    getEntityList,
+    shlexSplitList,
+    splitEmailAddressOrUID,
+)
+from gam.util.errors import entityDoesNotExistExit, missingArgumentExit, unknownArgumentExit
+from gam.util.fileio import (
+    ACTION_FAILED_RC,
+    cleanFilename,
+    readFile,
+    setFilePath,
+    uniqueFilename,
+    writeFileReturnError,
+)
+from gam.util.output import executeBatch, setSysExitRC, stderrWarningMsg
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -79,11 +145,11 @@ def _getMessageSelectParameters(myarg, parameters):
         parameters['query'] += ')'
         parameters['labelGroupOpen'] = False
       parameters['query'] += ' '
-    parameters['query'] += f'({_getMain().getString(Cmd.OB_QUERY)})'
+    parameters['query'] += f'({getString(Cmd.OB_QUERY)})'
   elif myarg.startswith('querytime'):
     parameters['queryTimes'][myarg] = getDateOrDeltaFromNow().replace('-', '/')
   elif myarg == 'matchlabel':
-    labelTemp = _getMain().getString(Cmd.OB_LABEL_NAME).lower()
+    labelTemp = getString(Cmd.OB_LABEL_NAME).lower()
     labelName = ''
     for c in labelTemp:
       labelName += c if c not in LABEL_QUERY_REPLACEMENT_CHARACTERS else '-'
@@ -104,11 +170,11 @@ def _getMessageSelectParameters(myarg, parameters):
     if parameters['currLabelOp'] == 'or' and parameters['query']:
       parameters['query'] += ' OR'
   elif myarg == 'labelmatchpattern':
-    parameters['labelMatchPattern'] = _getMain().getREPattern(re.IGNORECASE)
+    parameters['labelMatchPattern'] = getREPattern(re.IGNORECASE)
   elif myarg == 'sendermatchpattern':
-    parameters['senderMatchPattern'] = _getMain().getREPattern(re.IGNORECASE)
+    parameters['senderMatchPattern'] = getREPattern(re.IGNORECASE)
   elif myarg == 'labelids':
-    parameters['labelIds'].extend(_getMain().getEntityList(Cmd.OB_LABEL_ID_LIST))
+    parameters['labelIds'].extend(getEntityList(Cmd.OB_LABEL_ID_LIST))
   elif myarg == 'ids':
     parameters['messageEntity'] = getUserObjectEntity(Cmd.OB_MESSAGE_ID, parameters['entityType'])
   elif myarg == 'quick':
@@ -118,9 +184,9 @@ def _getMessageSelectParameters(myarg, parameters):
   elif myarg == 'doit':
     parameters['doIt'] = True
   elif myarg in parameters['maxToKeywords']:
-    parameters['maxToProcess'] = _getMain().getInteger(minVal=0)
+    parameters['maxToProcess'] = getInteger(minVal=0)
   elif myarg == 'maxmessagesperthread':
-    parameters['maxMessagesPerThread'] = _getMain().getInteger(minVal=0)
+    parameters['maxMessagesPerThread'] = getInteger(minVal=0)
   else:
     return False
   return True
@@ -151,7 +217,7 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
         parameters['query'] = parameters['query'].replace(f'#{queryTimeName}#', queryTimeValue)
     _mapMessageQueryDates(parameters)
   elif queryOrIdsRequired and parameters['messageEntity'] is None and not parameters['labelIds']:
-    _getMain().missingArgumentExit('query|matchlabel|ids|labelids')
+    missingArgumentExit('query|matchlabel|ids|labelids')
   else:
     parameters['query'] = None
   parameters['maxItems'] = parameters['maxToProcess'] if parameters['quick'] and not parameters['labelMatchPattern'] else 0
@@ -164,97 +230,97 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
 def archiveMessages(users):
   def _processMessageFailed(user, idsList, errMsg, j=0, jcount=0):
     if not csvPF:
-      _getMain().entityActionFailedWarning([Ent.USER, user, entityType, idsList], errMsg, j, jcount)
+      entityActionFailedWarning([Ent.USER, user, entityType, idsList], errMsg, j, jcount)
     else:
       csvPF.WriteRow({'User': user, entityHeader: idsList, 'action': Act.Failed(), 'error': errMsg})
 
   entityType = Ent.MESSAGE
   entityHeader = 'id'
   parameters = _initMessageThreadParameters(entityType, False, 0)
-  group = _getMain().getEmailAddress()
+  group = getEmailAddress()
   csvPF = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getMessageSelectParameters(myarg, parameters):
       pass
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['User', entityHeader, 'action', 'error'])
+      csvPF = CSVPrintFile(['User', entityHeader, 'action', 'error'])
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   _finalizeMessageSelectParameters(parameters, False)
   if not GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY]:
-    gm = _getMain().buildGAPIObject(API.GROUPSMIGRATION)
-    cd = _getMain().buildGAPIObject(API.DIRECTORY)
+    gm = buildGAPIObject(API.GROUPSMIGRATION)
+    cd = buildGAPIObject(API.DIRECTORY)
     try:
-      group = _getMain().callGAPI(cd.groups(), 'get',
+      group = callGAPI(cd.groups(), 'get',
                        throwReasons=GAPI.GROUP_GET_THROW_REASONS,
                        groupKey=group, fields='email')['email']
     except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest):
-      _getMain().entityDoesNotExistExit(Ent.GROUP, group)
-  i, count, users = _getMain().getEntityArgument(users)
+      entityDoesNotExistExit(Ent.GROUP, group)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, messageIds = _getMain()._validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
+    user, gmail, messageIds = _validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
     if not gmail:
       continue
     if GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY]:
-      _, gm = _getMain().buildGAPIServiceObject(API.GROUPSMIGRATION, user, i, count)
+      _, gm = buildGAPIServiceObject(API.GROUPSMIGRATION, user, i, count)
       if not gm:
         continue
     service = gmail.users().messages()
     try:
       if parameters['messageEntity'] is None:
-        _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
-        listResult = _getMain().callGAPIpages(service, 'list', parameters['listType'],
-                                   pageMessage=_getMain().getPageMessageForWhom(), maxItems=parameters['maxItems'],
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
+        listResult = callGAPIpages(service, 'list', parameters['listType'],
+                                   pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                                    userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
                                    fields=parameters['fields'],
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         messageIds = [message['id'] for message in listResult]
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
-      _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
         continue
       if not parameters['doIt']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
         continue
-    _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
+    entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
     Ind.Increment()
     j = 0
     for messageId in messageIds:
       j += 1
       try:
-        message = _getMain().callGAPI(service, 'get',
+        message = callGAPI(service, 'get',
                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                            userId='me', id=messageId, format='raw')
         stream = io.BytesIO()
         stream.write(base64.urlsafe_b64decode(str(message['raw'])))
         try:
-          _getMain().callGAPI(gm.archive(), 'insert',
+          callGAPI(gm.archive(), 'insert',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.BAD_REQUEST, GAPI.INVALID,
                                                           GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN],
                    retryReasons=[GAPI.NOT_FOUND],
                    groupId=group, media_body=googleapiclient.http.MediaIoBaseUpload(stream, mimetype='message/rfc822', resumable=True))
           if not csvPF:
-            _getMain().entityActionPerformed([Ent.USER, user, entityType, messageId], j, jcount)
+            entityActionPerformed([Ent.USER, user, entityType, messageId], j, jcount)
           else:
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except GAPI.notFound as e:
           _processMessageFailed(user, messageId, str(e), j, jcount)
@@ -263,7 +329,7 @@ def archiveMessages(users):
                 googleapiclient.errors.MediaUploadSizeError) as e:
           _processMessageFailed(user, messageId, str(e), j, jcount)
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
       except (GAPI.notFound, GAPI.invalidMessageId) as e:
         _processMessageFailed(user, messageId, str(e), j, jcount)
@@ -274,7 +340,7 @@ def archiveMessages(users):
 def _processMessagesThreads(users, entityType):
   def _processMessageFailed(user, idsList, errMsg, j=0, jcount=0):
     if not csvPF:
-      _getMain().entityActionFailedWarning([Ent.USER, user, entityType, idsList], errMsg, j, jcount)
+      entityActionFailedWarning([Ent.USER, user, entityType, idsList], errMsg, j, jcount)
     else:
       csvPF.WriteRow({'User': user, entityHeader: idsList, 'action': Act.Failed(), 'error': errMsg})
 
@@ -288,14 +354,14 @@ def _processMessagesThreads(users, entityType):
       if bcount > 5:
         idsList += ',...'
       try:
-        _getMain().callGAPI(gmail.users().messages(), function,
+        callGAPI(gmail.users().messages(), function,
                  throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_MESSAGE_ID, GAPI.INVALID, GAPI.INVALID_ARGUMENT,
                                                         GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED, GAPI.QUOTA_EXCEEDED],
                  userId='me', body=body)
         for messageId in body['ids']:
           mcount += 1
           if not csvPF:
-            _getMain().entityActionPerformed([Ent.USER, user, entityType, messageId], mcount, jcount)
+            entityActionPerformed([Ent.USER, user, entityType, messageId], mcount, jcount)
           else:
             csvPF.WriteRow({'User': user, entityHeader: messageId, 'action': Act.Performed()})
       except GAPI.serviceNotAvailable:
@@ -320,13 +386,13 @@ def _processMessagesThreads(users, entityType):
     ri = request_id.splitlines()
     if exception is None:
       if not csvPF:
-        _getMain().entityActionPerformed([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionPerformed([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       else:
         csvPF.WriteRow({'User': ri[RI_ENTITY], entityHeader: ri[RI_ITEM], 'action': Act.Performed()})
     else:
-      http_status, reason, message = _getMain().checkGAPIError(exception)
+      http_status, reason, message = checkGAPIError(exception)
       _processMessageFailed(ri[RI_ENTITY], ri[RI_ITEM],
-                            _getMain().getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message),
+                            getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message),
                             int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _batchProcessMessagesThreads(service, function, user, jcount, messageIds, **kwargs):
@@ -339,10 +405,10 @@ def _processMessagesThreads(users, entityType):
       j += 1
       svcparms = svcargs.copy()
       svcparms['id'] = messageId
-      dbatch.add(method(**svcparms), request_id=_getMain().batchRequestID(user, 0, 0, j, jcount, svcparms['id']))
+      dbatch.add(method(**svcparms), request_id=batchRequestID(user, 0, 0, j, jcount, svcparms['id']))
       bcount += 1
       if bcount == GC.Values[GC.EMAIL_BATCH_SIZE]:
-        _getMain().executeBatch(dbatch)
+        executeBatch(dbatch)
         dbatch = gmail.new_batch_http_request(callback=_callbackProcessMessage)
         bcount = 0
     if bcount > 0:
@@ -359,31 +425,31 @@ def _processMessagesThreads(users, entityType):
   csvPF = None
   entityHeader = 'id' if entityType == Ent.MESSAGE else 'threadId'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getMessageSelectParameters(myarg, parameters):
       pass
     elif (function == 'modify') and (myarg == 'addlabel'):
-      addLabelNames.append(_getMain().getString(Cmd.OB_LABEL_NAME))
+      addLabelNames.append(getString(Cmd.OB_LABEL_NAME))
     elif (function == 'modify') and (myarg == 'removelabel'):
-      removeLabelNames.append(_getMain().getString(Cmd.OB_LABEL_NAME))
+      removeLabelNames.append(getString(Cmd.OB_LABEL_NAME))
     elif myarg == 'csv':
-      csvPF = _getMain().CSVPrintFile(['User', entityHeader, 'action', 'error'])
+      csvPF = CSVPrintFile(['User', entityHeader, 'action', 'error'])
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if function == 'modify' and not addLabelNames and not removeLabelNames:
-    _getMain().missingArgumentExit('(addlabel <LabelName>)|(removelabel <LabelName>)')
+    missingArgumentExit('(addlabel <LabelName>)|(removelabel <LabelName>)')
   _finalizeMessageSelectParameters(parameters, True)
   includeSpamTrash = Act.Get() in [Act.DELETE, Act.MODIFY, Act.UNTRASH]
   if function == 'spam':
     function = 'modify'
     addLabelIds = ['SPAM']
     removeLabelIds = ['INBOX']
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, messageIds = _getMain()._validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
+    user, gmail, messageIds = _validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
     if not gmail:
       continue
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
@@ -395,13 +461,13 @@ def _processMessagesThreads(users, entityType):
       addLabelIds = _convertLabelNamesToIds(gmail, user, i, count, addLabelNames, labelNameMap, True)
       removeLabelIds = _convertLabelNamesToIds(gmail, user, i, count, removeLabelNames, labelNameMap, False)
       if not addLabelIds and not removeLabelIds:
-        _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_LABELS_TO_PROCESS, i, count)
+        entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_LABELS_TO_PROCESS, i, count)
         continue
     try:
       if parameters['messageEntity'] is None:
-        _getMain().printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count, query=parameters['query'])
-        listResult = _getMain().callGAPIpages(service, 'list', parameters['listType'],
-                                   pageMessage=_getMain().getPageMessageForWhom(), maxItems=parameters['maxItems'],
+        printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count, query=parameters['query'])
+        listResult = callGAPIpages(service, 'list', parameters['listType'],
+                                   pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                                    userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
                                    fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
@@ -409,30 +475,30 @@ def _processMessagesThreads(users, entityType):
         messageIds = [message['id'] for message in listResult]
       else:
         # Need to get authorization set up for batch
-        _getMain().callGAPI(gmail.users(), 'getProfile',
+        callGAPI(gmail.users(), 'getProfile',
                  throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                  userId='me', fields='')
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
-      _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount,
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount,
                                                    Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']),
                                                    i, count)
         continue
       if not parameters['doIt']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
         continue
-    _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
+    entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
     Ind.Increment()
     if function == 'delete' and entityType == Ent.MESSAGE:
       _batchDeleteModifyMessages(gmail, 'batchDelete', user, jcount, messageIds, {'ids': []})
@@ -512,25 +578,25 @@ def exportMessagesThreads(users, entityType):
   targetNamePattern = None
   includeSpamTrash = overwrite = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getMessageSelectParameters(myarg, parameters):
       pass
     elif myarg == 'targetfolder':
-      targetFolderPattern = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
-      targetNamePattern = _getMain().getString(Cmd.OB_FILE_NAME)
+      targetNamePattern = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'overwrite':
-      overwrite = _getMain().getBoolean()
+      overwrite = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   _finalizeMessageSelectParameters(parameters, True)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, entityIds = _getMain()._validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
+    user, gmail, entityIds = _validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
     if not gmail:
       continue
-    _, userName, _ = _getMain().splitEmailAddressOrUID(user)
+    _, userName, _ = splitEmailAddressOrUID(user)
     targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
     if not os.path.isdir(targetFolder):
       os.makedirs(targetFolder)
@@ -538,49 +604,49 @@ def exportMessagesThreads(users, entityType):
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
     try:
       if parameters['messageEntity'] is None:
-        _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
-        listResult = _getMain().callGAPIpages(service, 'list', parameters['listType'],
-                                   pageMessage=_getMain().getPageMessageForWhom(), maxItems=parameters['maxItems'],
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
+        listResult = callGAPIpages(service, 'list', parameters['listType'],
+                                   pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                                    userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
                                    fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         entityIds = [entity['id'] for entity in listResult]
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(entityIds)
     if jcount == 0:
-      _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
         continue
-    _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
+    entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
     Ind.Increment()
     j = 0
     for entityId in entityIds:
       j += 1
       if entityType == Ent.THREAD:
         try:
-          result = _getMain().callGAPI(gmail.users().threads(), 'get',
+          result = callGAPI(gmail.users().threads(), 'get',
                              throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT],
                              userId='me', id=entityId, fields='messages(id)')
           messageIds = [message['id'] for message in result['messages']]
           kcount = len(messageIds)
-          _getMain().entityPerformActionNumItems([Ent.USER, user, Ent.THREAD, entityId], kcount, Ent.MESSAGE, j, jcount)
+          entityPerformActionNumItems([Ent.USER, user, Ent.THREAD, entityId], kcount, Ent.MESSAGE, j, jcount)
           Ind.Increment()
           k = 0
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidArgument) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
           continue
       else:
         messageIds = [entityId]
@@ -589,24 +655,24 @@ def exportMessagesThreads(users, entityType):
       for messageId in messageIds:
         k += 1
         try:
-          result = _getMain().callGAPI(gmail.users().messages(), 'get',
+          result = callGAPI(gmail.users().messages(), 'get',
                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                             userId='me', id=messageId, format='raw')
           if targetName:
             msgName = targetName.replace('#id#', messageId)
           else:
             msgName = f'Msg-{messageId}.eml'
-          filename, _ = _getMain().uniqueFilename(targetFolder, msgName, overwrite)
-          status, e = _getMain().writeFileReturnError(filename, base64.urlsafe_b64decode(str(result['raw'])), mode='wb')
+          filename, _ = uniqueFilename(targetFolder, msgName, overwrite)
+          status, e = writeFileReturnError(filename, base64.urlsafe_b64decode(str(result['raw'])), mode='wb')
           if status:
-            _getMain().entityActionPerformed([Ent.MESSAGE, filename])
+            entityActionPerformed([Ent.MESSAGE, filename])
           else:
-            _getMain().entityActionFailedWarning([Ent.MESSAGE, filename], str(e))
+            entityActionFailedWarning([Ent.MESSAGE, filename], str(e))
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidMessageId) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
           continue
       if entityType == Ent.THREAD:
         Ind.Decrement()
@@ -627,7 +693,7 @@ def exportThreads(users):
 HEADER_ENCODE_PATTERN = re.compile(r'=\?([^?]*?)\?[qQbB]\?(.*?)\?=', re.VERBOSE | re.MULTILINE)
 
 def _decodeHeader(header):
-  header = header.encode(_getMain().UTF8, 'replace').decode(_getMain().UTF8)
+  header = header.encode(UTF8, 'replace').decode(UTF8)
   while True:
     mg = HEADER_ENCODE_PATTERN.search(header)
     if not mg:
@@ -635,7 +701,7 @@ def _decodeHeader(header):
     try:
       header = header[:mg.start()]+decode_header(mg.group())[0][0].decode(mg.group(1))+header[mg.end():]
     except LookupError:
-      _getMain().stderrWarningMsg(Msg.INVALID_CHARSET.format(mg.group(1)))
+      stderrWarningMsg(Msg.INVALID_CHARSET.format(mg.group(1)))
       return header
 
 # gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
@@ -645,81 +711,81 @@ def _decodeHeader(header):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
-  _getMain().checkArgumentPresent({'recipient', 'recipients', 'to'})
+  checkArgumentPresent({'recipient', 'recipients', 'to'})
   recipients = _getMain().getRecipients()
   parameters = _initMessageThreadParameters(entityType, False, 1)
   addOriginalFieldsToSubject = includeSpamTrash = False
   subject = ''
   encodings = [UTF8]
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getMessageSelectParameters(myarg, parameters):
       pass
     elif myarg == 'subject':
-      subject = _getMain().getString(Cmd.OB_STRING)
+      subject = getString(Cmd.OB_STRING)
     elif myarg == 'addorigfieldstosubject':
-      addOriginalFieldsToSubject = _getMain().getBoolean()
+      addOriginalFieldsToSubject = getBoolean()
     elif myarg == 'altcharset':
-      encodings.append(_getMain().getString(Cmd.OB_CHAR_SET))
+      encodings.append(getString(Cmd.OB_CHAR_SET))
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   _finalizeMessageSelectParameters(parameters, True)
   msgTo = ','.join(recipients)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, entityIds = _getMain()._validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
+    user, gmail, entityIds = _validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
     if not gmail:
       continue
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
     if parameters['messageEntity'] is None:
       try:
-        _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
-        listResult = _getMain().callGAPIpages(service, 'list', parameters['listType'],
-                                   pageMessage=_getMain().getPageMessageForWhom(), maxItems=parameters['maxItems'],
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
+        listResult = callGAPIpages(service, 'list', parameters['listType'],
+                                   pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                                    userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
                                    fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         entityIds = [entity['id'] for entity in listResult]
       except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
         continue
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         continue
     jcount = len(entityIds)
     if jcount == 0:
-      _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(jcount, Act.ToPerform(), parameters['maxToProcess']), i, count)
         continue
       if not parameters['doIt']:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, i, count)
         continue
-    _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
+    entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
     Ind.Increment()
     j = 0
     for entityId in entityIds:
       j += 1
       if entityType == Ent.THREAD:
         try:
-          result = _getMain().callGAPI(gmail.users().threads(), 'get',
+          result = callGAPI(gmail.users().threads(), 'get',
                              throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                              userId='me', id=entityId, fields='messages(id)')
           messageIds = [message['id'] for message in result['messages']]
           kcount = len(messageIds)
-          _getMain().entityPerformActionNumItems([Ent.USER, user, Ent.THREAD, entityId], kcount, Ent.MESSAGE, j, jcount)
+          entityPerformActionNumItems([Ent.USER, user, Ent.THREAD, entityId], kcount, Ent.MESSAGE, j, jcount)
           Ind.Increment()
           k = 0
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidMessageId) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.THREAD, entityId], str(e), j, jcount)
           continue
       else:
         messageIds = [entityId]
@@ -728,7 +794,7 @@ def forwardMessagesThreads(users, entityType):
       for messageId in messageIds:
         k += 1
         try:
-          result = _getMain().callGAPI(gmail.users().messages(), 'get',
+          result = callGAPI(gmail.users().messages(), 'get',
                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                             userId='me', id=messageId, format='raw')
           for encoding in encodings:
@@ -738,7 +804,7 @@ def forwardMessagesThreads(users, entityType):
             except UnicodeDecodeError as e:
               errMsg = str(e)
           else:
-            _getMain().entityActionNotPerformedWarning([Ent.RECIPIENT, msgTo, entityType, messageId], errMsg, k, kcount)
+            entityActionNotPerformedWarning([Ent.RECIPIENT, msgTo, entityType, messageId], errMsg, k, kcount)
             continue
           if not subject:
             msgSubject = f"Fwd: {_decodeHeader(message['Subject'])}"
@@ -756,19 +822,19 @@ def forwardMessagesThreads(users, entityType):
           message['To'] = msgTo
           message['Subject'] = msgSubject
           try:
-            result = _getMain().callGAPI(gmail.users().messages(), 'send',
+            result = callGAPI(gmail.users().messages(), 'send',
                               throwReasons=[GAPI.SERVICE_NOT_AVAILABLE, GAPI.AUTH_ERROR, GAPI.DOMAIN_POLICY,
                                             GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               userId='me', body={'raw': base64.urlsafe_b64encode(message.as_bytes()).decode(encoding)}, fields='id')
-            _getMain().entityActionPerformedMessage([Ent.RECIPIENT, msgTo], f"{result['id']}", k, kcount)
+            entityActionPerformedMessage([Ent.RECIPIENT, msgTo], f"{result['id']}", k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy,
                   GAPI.invalid, GAPI.invalidArgument, GAPI.forbidden, GAPI.permissionDenied, UnicodeEncodeError) as e:
-            _getMain().entityActionFailedWarning([Ent.RECIPIENT, msgTo], str(e), k, kcount)
+            entityActionFailedWarning([Ent.RECIPIENT, msgTo], str(e), k, kcount)
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
           break
         except (GAPI.notFound, GAPI.invalidMessageId) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], str(e), k, kcount)
           continue
       if entityType == Ent.THREAD:
         Ind.Decrement()
@@ -901,7 +967,7 @@ def _draftImportInsertMessage(users, operation):
     try:
       header.append(value)
     except UnicodeDecodeError:
-      header.append(value, _getMain().UTF8)
+      header.append(value, UTF8)
 
   labelNameMap = {}
   addLabelNames = []
@@ -916,66 +982,66 @@ def _draftImportInsertMessage(users, operation):
   emlFile = False
   emlEncoding = 'ascii'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in SMTP_HEADERS_MAP:
       if myarg == 'content-type':
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
       if myarg in SMTP_DATE_HEADERS:
-        msgDate, _, _ = _getMain().getTimeOrDeltaFromNow(True)
+        msgDate, _, _ = getTimeOrDeltaFromNow(True)
         msgHeaders[SMTP_HEADERS_MAP[myarg]] = formatdate(time.mktime(msgDate.timetuple()) + msgDate.microsecond/1E6, True)
         if myarg == 'date':
           internalDateSource = 'dateHeader'
       else:
-        value = _getMain().getString(Cmd.OB_STRING)
+        value = getString(Cmd.OB_STRING)
         if (value.find('#user#') >= 0) or (value.find('#email#') >= 0) or (value.find('#username#') >= 0):
           substituteForUserInHeaders = True
         msgHeaders[SMTP_HEADERS_MAP[myarg]] = value
     elif myarg == 'header':
-      header = _getMain().getString(Cmd.OB_STRING, minLen=1)
+      header = getString(Cmd.OB_STRING, minLen=1)
       if header.lower() == 'content-type':
-        _getMain().unknownArgumentExit()
-      value = _getMain().getString(Cmd.OB_STRING)
+        unknownArgumentExit()
+      value = getString(Cmd.OB_STRING)
       if (value.find('#user#') >= 0) or (value.find('#email#') >= 0) or (value.find('#username#') >= 0):
         substituteForUserInHeaders = True
       msgHeaders[SMTP_HEADERS_MAP.get(header.lower(), header)] = value
-    elif myarg in _getMain().SORF_MSG_FILE_ARGUMENTS:
+    elif myarg in SORF_MSG_FILE_ARGUMENTS:
       if 'html' in myarg:
-        msgHTML, _, _ = _getMain().getStringOrFile(myarg)
+        msgHTML, _, _ = getStringOrFile(myarg)
       else:
-        msgText, _, _ = _getMain().getStringOrFile(myarg)
+        msgText, _, _ = getStringOrFile(myarg)
       emlFile = False
     elif myarg == 'emlfile':
-      filename = _getMain().getString(Cmd.OB_FILE_NAME)
-      if _getMain().checkArgumentPresent('charset'):
-        emlEncoding = _getMain().getString(Cmd.OB_CHAR_SET)
-      filename = _getMain().setFilePath(filename, GC.INPUT_DIR)
-      msgText = _getMain().readFile(filename, encoding=emlEncoding)
+      filename = getString(Cmd.OB_FILE_NAME)
+      if checkArgumentPresent('charset'):
+        emlEncoding = getString(Cmd.OB_CHAR_SET)
+      filename = setFilePath(filename, GC.INPUT_DIR)
+      msgText = readFile(filename, encoding=emlEncoding)
       emlFile = True
       internalDateSource = 'dateHeader'
-      if _getMain().checkArgumentPresent('emlutf8'):
-        emlEncoding = _getMain().UTF8
+      if checkArgumentPresent('emlutf8'):
+        emlEncoding = UTF8
     elif _getMain()._getTagReplacement(myarg, tagReplacements, True):
       pass
     elif operation in IMPORT_INSERT and myarg == 'addlabel':
-      addLabelNames.append(_getMain().getString(Cmd.OB_LABEL_NAME, minLen=1))
+      addLabelNames.append(getString(Cmd.OB_LABEL_NAME, minLen=1))
     elif operation in IMPORT_INSERT and myarg == 'labels':
-      addLabelNames.extend(_getMain().shlexSplitList(_getMain().getString(Cmd.OB_LABEL_NAME_LIST)))
+      addLabelNames.extend(shlexSplitList(getString(Cmd.OB_LABEL_NAME_LIST)))
     elif operation in IMPORT_INSERT and myarg == 'deleted':
-      deleted = _getMain().getBoolean()
+      deleted = getBoolean()
     elif myarg == 'attach':
-      attachments.append((_getMain().getFilename(), _getMain().getCharSet()))
+      attachments.append((getFilename(), getCharSet()))
     elif myarg == 'embedimage':
-      embeddedImages.append((_getMain().getFilename(), _getMain().getString(Cmd.OB_STRING)))
+      embeddedImages.append((getFilename(), getString(Cmd.OB_STRING)))
     elif operation == 'import' and myarg == 'nevermarkspam':
-      neverMarkSpam = _getMain().getBoolean()
+      neverMarkSpam = getBoolean()
     elif operation == 'import' and myarg == 'checkspam':
-      neverMarkSpam = not _getMain().getBoolean()
+      neverMarkSpam = not getBoolean()
     elif operation == 'import' and myarg == 'processforcalendar':
-      processForCalendar = _getMain().getBoolean()
+      processForCalendar = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not msgText and not msgHTML:
-    _getMain().missingArgumentExit('textmessage|textfile|htmlmessage|htmlfile|empfile')
+    missingArgumentExit('textmessage|textfile|htmlmessage|htmlfile|empfile')
   if not emlFile:
     msgText = msgText.replace('\r', '').replace('\\n', '\n')
     msgHTML = msgHTML.replace('\r', '').replace('\\n', '<br/>')
@@ -988,7 +1054,7 @@ def _draftImportInsertMessage(users, operation):
         msgHeaders['To'] = '#user#'
         substituteForUserInHeaders = True
       if 'From' not in msgHeaders:
-        msgHeaders['From'] = _getMain()._getAdminEmail()
+        msgHeaders['From'] = _getAdminEmail()
     kwargs = {'internalDateSource': internalDateSource, 'deleted': deleted}
     if operation == 'import':
       function = 'import_'
@@ -997,14 +1063,14 @@ def _draftImportInsertMessage(users, operation):
       function = 'insert'
   else:
     function = 'create'
-  add_charset(_getMain().UTF8, QP, QP, _getMain().UTF8)
-  i, count, users = _getMain().getEntityArgument(users)
+  add_charset(UTF8, QP, QP, UTF8)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
-    userName, _ = _getMain().splitEmailAddress(user)
+    userName, _ = splitEmailAddress(user)
     if not emlFile:
       if tagReplacements['tags']:
         if tagReplacements['subs']:
@@ -1014,31 +1080,31 @@ def _draftImportInsertMessage(users, operation):
       if attachments or embeddedImages:
         if tmpText and tmpHTML:
           message = MIMEMultipart('alternative')
-          textpart = MIMEText(tmpText, 'plain', _getMain().UTF8)
+          textpart = MIMEText(tmpText, 'plain', UTF8)
           message.attach(textpart)
-          htmlpart = MIMEText(tmpHTML, 'html', _getMain().UTF8)
+          htmlpart = MIMEText(tmpHTML, 'html', UTF8)
           message.attach(htmlpart)
         elif tmpHTML:
           message = MIMEMultipart()
-          htmlpart = MIMEText(tmpHTML, 'html', _getMain().UTF8)
+          htmlpart = MIMEText(tmpHTML, 'html', UTF8)
           message.attach(htmlpart)
         else:
           message = MIMEMultipart()
-          textpart = MIMEText(tmpText, 'plain', _getMain().UTF8)
+          textpart = MIMEText(tmpText, 'plain', UTF8)
           message.attach(textpart)
         _addAttachmentsToMessage(message, attachments)
         _addEmbeddedImagesToMessage(message, embeddedImages)
       else:
         if tmpText and tmpHTML:
           message = MIMEMultipart('alternative')
-          textpart = MIMEText(tmpText, 'plain', _getMain().UTF8)
+          textpart = MIMEText(tmpText, 'plain', UTF8)
           message.attach(textpart)
-          htmlpart = MIMEText(tmpHTML, 'html', _getMain().UTF8)
+          htmlpart = MIMEText(tmpHTML, 'html', UTF8)
           message.attach(htmlpart)
         elif tmpHTML:
-          message = MIMEText(tmpHTML, 'html', _getMain().UTF8)
+          message = MIMEText(tmpHTML, 'html', UTF8)
         else:
-          message = MIMEText(tmpText, 'plain', _getMain().UTF8)
+          message = MIMEText(tmpText, 'plain', UTF8)
       for header, value in msgHeaders.items():
         if substituteForUserInHeaders:
           value = _getMain()._substituteForUser(value, user, userName)
@@ -1052,11 +1118,11 @@ def _draftImportInsertMessage(users, operation):
             _appendToHeader(message[header], value)
         else:
           _appendToHeader(message[header], value)
-      tmpFile = TemporaryFile(mode='w+', encoding=_getMain().UTF8)
+      tmpFile = TemporaryFile(mode='w+', encoding=UTF8)
       g = Generator(tmpFile, False)
       g.flatten(message)
       tmpFile.seek(0)
-      body = {'raw': base64.urlsafe_b64encode(bytes(tmpFile.read(), _getMain().UTF8)).decode()}
+      body = {'raw': base64.urlsafe_b64encode(bytes(tmpFile.read(), UTF8)).decode()}
       tmpFile.close()
     else:
       for header, value in msgHeaders.items():
@@ -1076,18 +1142,18 @@ def _draftImportInsertMessage(users, operation):
           body['labelIds'] = _convertLabelNamesToIds(gmail, user, i, count, addLabelNames, labelNameMap, True)
         else:
           body['labelIds'] = ['INBOX']
-        result = _getMain().callGAPI(gmail.users().messages(), function,
+        result = callGAPI(gmail.users().messages(), function,
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                           userId='me', body=body, fields='id', **kwargs)
       else:
-        result = _getMain().callGAPI(gmail.users().drafts(), function,
+        result = callGAPI(gmail.users().drafts(), function,
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                           userId='me', body={'message': body}, fields='id')
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.MESSAGE, result['id']], i, count)
+      entityActionPerformed([Ent.USER, user, Ent.MESSAGE, result['id']], i, count)
     except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> draft message
 #	<MessageContent>
@@ -1161,7 +1227,7 @@ def printShowMessagesThreads(users, entityType):
 
   def _getMessageBody(payload):
     if 'attachmentId' not in payload.get('body', {}) and 'data' in payload.get('body', {}):
-      return base64.urlsafe_b64decode(str(payload['body']['data'])).decode(_getMain().UTF8)
+      return base64.urlsafe_b64decode(str(payload['body']['data'])).decode(UTF8)
     data = _getBodyData(payload, False)
     if data:
       return data
@@ -1171,10 +1237,10 @@ def printShowMessagesThreads(users, entityType):
   CHARSET_NAME_PATTERN = re.compile(r'^.*charset="?(.*?)(?:"|;|$)')
 
   def _showAttachmentMimeTypeSizeCharset(part, charset):
-    _getMain().printKeyValueList(['mimeType', part['mimeType']])
-    _getMain().printKeyValueList(['size', part['body']['size']])
+    printKeyValueList(['mimeType', part['mimeType']])
+    printKeyValueList(['size', part['body']['size']])
     if charset:
-      _getMain().printKeyValueList(['charset', charset])
+      printKeyValueList(['charset', charset])
 
   def _showSaveAttachments(messageId, payload, attachmentNamePattern, j, jcount):
     for part in payload.get('parts', []):
@@ -1193,39 +1259,39 @@ def printShowMessagesThreads(users, entityType):
                   charset = mg.group(1)
               if (part['mimeType'] == 'text/plain' and not noshow_text_plain) or save_attachments or upload_attachments:
                 try:
-                  result = _getMain().callGAPI(gmail.users().messages().attachments(), 'get',
+                  result = callGAPI(gmail.users().messages().attachments(), 'get',
                                     throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
                                     messageId=messageId, id=part['body']['attachmentId'], userId='me')
                   if 'data' in result:
                     if show_attachments:
-                      _getMain().printKeyValueList(['Attachment', attachmentName])
+                      printKeyValueList(['Attachment', attachmentName])
                       Ind.Increment()
                       if part['mimeType'] == 'text/plain':
                         try:
-                          _getMain().printKeyValueList([Ind.MultiLineText(base64.urlsafe_b64decode(str(result['data'])).decode(charset)+'\n')])
+                          printKeyValueList([Ind.MultiLineText(base64.urlsafe_b64decode(str(result['data'])).decode(charset)+'\n')])
                         except (LookupError, UnicodeDecodeError, UnicodeError):
                           _showAttachmentMimeTypeSizeCharset(part, charset)
                       else:
                         _showAttachmentMimeTypeSizeCharset(part, charset)
                       Ind.Decrement()
                     if save_attachments:
-                      filename, _ = _getMain().uniqueFilename(targetFolder, _getMain().cleanFilename(attachmentName), overwrite)
+                      filename, _ = uniqueFilename(targetFolder, cleanFilename(attachmentName), overwrite)
                       action = Act.Get()
                       Act.Set(Act.DOWNLOAD)
-                      status, e = _getMain().writeFileReturnError(filename, base64.urlsafe_b64decode(str(result['data'])), mode='wb')
+                      status, e = writeFileReturnError(filename, base64.urlsafe_b64decode(str(result['data'])), mode='wb')
                       if status:
-                        _getMain().entityActionPerformed([Ent.ATTACHMENT, filename])
+                        entityActionPerformed([Ent.ATTACHMENT, filename])
                       else:
-                        _getMain().entityActionFailedWarning([Ent.ATTACHMENT, filename], str(e))
+                        entityActionFailedWarning([Ent.ATTACHMENT, filename], str(e))
                       Act.Set(action)
                     if upload_attachments:
-                      filename = _getMain().cleanFilename(attachmentName)
+                      filename = cleanFilename(attachmentName)
                       uploadAttachmentBody.update({'name': filename, 'mimeType': part['mimeType']})
                       action = Act.Get()
                       Act.Set(Act.CREATE)
                       media_body = googleapiclient.http.MediaIoBaseUpload(io.BytesIO(base64.urlsafe_b64decode(str(result['data']))), mimetype=part['mimeType'], resumable=True)
                       try:
-                        result = _getMain().callGAPI(drive.files(), 'create',
+                        result = callGAPI(drive.files(), 'create',
                                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                                       GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CANNOT_ADD_PARENT,
                                                                                       GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR, GAPI.INTERNAL_ERROR,
@@ -1233,7 +1299,7 @@ def printShowMessagesThreads(users, entityType):
                                                                                       GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
                                                                                       GAPI.UPLOAD_TOO_LARGE, GAPI.TEAMDRIVES_SHORTCUT_FILE_NOT_SUPPORTED],
                                           media_body=media_body, body=uploadAttachmentBody, fields='id,name', supportsAllDrives=True)
-                        _getMain().entityModifierItemValueListActionPerformed([Ent.DRIVE_FILE, f"{result['name']}({result['id']})"],
+                        entityModifierItemValueListActionPerformed([Ent.DRIVE_FILE, f"{result['name']}({result['id']})"],
                                                                    Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], j, jcount)
                       except (GAPI.forbidden, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
                               GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
@@ -1241,15 +1307,15 @@ def printShowMessagesThreads(users, entityType):
                               GAPI.storageQuotaExceeded, GAPI.teamdrivesSharingRestrictionNotAllowed,
                               GAPI.teamdrivefileLimitExceeded, GAPI.teamdriveHierarchyTooDeep,
                               GAPI.uploadTooLarge, GAPI.teamdrivesShortcutFileNotSupported) as e:
-                        _getMain().entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
+                        entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
                                                                        Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], str(e), j, jcount)
                       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-                        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+                        userDriveServiceNotEnabledWarning(user, str(e), i, count)
                       Act.Set(action)
                 except (GAPI.serviceNotAvailable, GAPI.notFound):
                   pass
               elif show_attachments:
-                _getMain().printKeyValueList(['Attachment', attachmentName])
+                printKeyValueList(['Attachment', attachmentName])
                 Ind.Increment()
                 _showAttachmentMimeTypeSizeCharset(part, charset)
                 Ind.Decrement()
@@ -1331,16 +1397,16 @@ def printShowMessagesThreads(users, entityType):
     status, messageLabels = _qualifyMessage(user, result)
     if not status:
       return
-    _getMain().printEntity([Ent.MESSAGE, result['id']], j, jcount)
+    printEntity([Ent.MESSAGE, result['id']], j, jcount)
     Ind.Increment()
     if show_snippet:
-      _getMain().printKeyValueList(['Snippet', dehtml(result['snippet']).replace('\n', ' ')])
+      printKeyValueList(['Snippet', dehtml(result['snippet']).replace('\n', ' ')])
     if show_all_headers:
       for header in result['payload'].get('headers', []):
         headerValue = _decodeHeader(header['value'])
         if dateHeaderFormat and header['name'].lower() in SMTP_DATE_HEADERS:
           headerValue = _convertDateTime(headerValue)
-        _getMain().printKeyValueList([header['name'], headerValue])
+        printKeyValueList([header['name'], headerValue])
     else:
       for name in headersToShow:
         for header in result['payload'].get('headers', []):
@@ -1348,17 +1414,17 @@ def printShowMessagesThreads(users, entityType):
             headerValue = _decodeHeader(header['value'])
             if dateHeaderFormat and name in SMTP_DATE_HEADERS:
               headerValue = _convertDateTime(headerValue)
-            _getMain().printKeyValueList([SMTP_HEADERS_MAP.get(name, header['name']), headerValue])
+            printKeyValueList([SMTP_HEADERS_MAP.get(name, header['name']), headerValue])
     if show_date:
-      _getMain().printKeyValueList(['Date', formatLocalTimestamp(result['internalDate'])])
+      printKeyValueList(['Date', formatLocalTimestamp(result['internalDate'])])
     if show_size:
-      _getMain().printKeyValueList(['SizeEstimate', result['sizeEstimate']])
+      printKeyValueList(['SizeEstimate', result['sizeEstimate']])
     if show_labels:
-      _getMain().printKeyValueList(['Labels', delimiter.join(messageLabels)])
+      printKeyValueList(['Labels', delimiter.join(messageLabels)])
     if show_body:
-      _getMain().printKeyValueList(['Body', None])
+      printKeyValueList(['Body', None])
       Ind.Increment()
-      _getMain().printKeyValueList([Ind.MultiLineText(_getMessageBody(result['payload']))])
+      printKeyValueList([Ind.MultiLineText(_getMessageBody(result['payload']))])
       Ind.Decrement()
     if show_attachments or save_attachments or upload_attachments:
       _showSaveAttachments(result['id'], result['payload'], attachmentNamePattern, j, jcount)
@@ -1431,7 +1497,7 @@ def printShowMessagesThreads(users, entityType):
       if not convertCRNL:
         row['Body'] = _getMessageBody(result['payload'])
       else:
-        row['Body'] = _getMain().escapeCRsNLs(_getMessageBody(result['payload']))
+        row['Body'] = escapeCRsNLs(_getMessageBody(result['payload']))
     if show_attachments:
       attachments = []
       _getAttachments(result['id'], result['payload'], attachmentNamePattern, attachments)
@@ -1484,10 +1550,10 @@ def printShowMessagesThreads(users, entityType):
       else:
         return
     messageThreadCounts['threads'] += 1
-    _getMain().printEntity([Ent.THREAD, result['id']], j, jcount)
+    printEntity([Ent.THREAD, result['id']], j, jcount)
     Ind.Increment()
     if show_snippet and 'snippet' in result:
-      _getMain().printKeyValueList(['Snippet', dehtml(result['snippet']).replace('\n', ' ')])
+      printKeyValueList(['Snippet', dehtml(result['snippet']).replace('\n', ' ')])
     kcount = len(result['messages'])
     k = 0
     for message in result['messages']:
@@ -1540,17 +1606,17 @@ def printShowMessagesThreads(users, entityType):
   _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST, GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
 
   def _handleGmailError(exception, ri):
-    http_status, reason, message = _getMain().checkGAPIError(exception)
-    errMsg = _getMain().getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+    http_status, reason, message = checkGAPIError(exception)
+    errMsg = getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message)
     if reason not in GAPI.DEFAULT_RETRY_REASONS:
       if not csvPF:
-        _getMain().printKeyValueListWithCount([Ent.Singular(entityType), ri[RI_ITEM], errMsg], int(ri[RI_J]), int(ri[RI_JCOUNT]))
-        _getMain().setSysExitRC(_getMain().ACTION_FAILED_RC)
+        printKeyValueListWithCount([Ent.Singular(entityType), ri[RI_ITEM], errMsg], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        setSysExitRC(ACTION_FAILED_RC)
       else:
-        _getMain().entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
       return
     try:
-      response = _getMain().callGAPI(service, 'get',
+      response = callGAPI(service, 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                           userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_size or show_body or show_attachments or save_attachments or upload_attachments])
       if countsOnly:
@@ -1561,11 +1627,11 @@ def printShowMessagesThreads(users, entityType):
         else:
           _callbacks['process'](ri[RI_ENTITY], response)
     except GAPI.notFound:
-      _getMain().entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.invalidMessageId:
-      _getMain().entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.INVALID_MESSAGE_ID, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.INVALID_MESSAGE_ID, int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
+      userGmailServiceNotEnabledWarning(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
 
   def _callbackShow(request_id, response, exception):
     ri = request_id.splitlines()
@@ -1609,12 +1675,12 @@ def printShowMessagesThreads(users, entityType):
       j += 1
       svcparms = svcargs.copy()
       svcparms['id'] = messageId
-      dbatch.add(method(**svcparms), request_id=_getMain().batchRequestID(user, 0, 0, j, jcount, svcparms['id']))
+      dbatch.add(method(**svcparms), request_id=batchRequestID(user, 0, 0, j, jcount, svcparms['id']))
       bcount += 1
       if not labelMatchPattern and parameters['maxToProcess'] and j == parameters['maxToProcess']:
         break
       if bcount == GC.Values[GC.EMAIL_BATCH_SIZE]:
-        _getMain().executeBatch(dbatch)
+        executeBatch(dbatch)
         dbatch = gmail.new_batch_http_request(callback=_callbacks['batch'])
         bcount = 0
         if labelMatchPattern and parameters['messagesProcessed'] == parameters['maxToProcess']:
@@ -1632,7 +1698,7 @@ def printShowMessagesThreads(users, entityType):
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
   defaultHeaders = ['Date', 'Subject', 'From', 'Reply-To', 'To', 'Delivered-To', 'Content-Type', 'Message-ID']
   headersToShow = [header.lower() for header in defaultHeaders]
-  csvPF = _getMain().CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
   showMode = Act.Get() == Act.SHOW
   dateHeaderFormat = ''
   dateHeaderConvertTimezone = False
@@ -1640,18 +1706,18 @@ def printShowMessagesThreads(users, entityType):
   addCSVData = {}
   parentParms = _getMain().initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getMessageSelectParameters(myarg, parameters):
       pass
     elif myarg == 'headers':
-      headersToShow = _getMain().getString(Cmd.OB_STRING, minLen=0).lower().replace(',', ' ').split()
+      headersToShow = getString(Cmd.OB_STRING, minLen=0).lower().replace(',', ' ').split()
       show_all_headers = headersToShow and headersToShow[0] == 'all'
     elif not showMode and myarg in {'convertcrnl', 'converttextnl', 'convertbodynl'}:
       convertCRNL = True
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif myarg == 'showdate':
       show_date = True
     elif myarg == 'showbody':
@@ -1669,13 +1735,13 @@ def printShowMessagesThreads(users, entityType):
     elif myarg == 'noshowtextplain':
       noshow_text_plain = True
     elif myarg == 'attachmentnamepattern':
-      attachmentNamePattern = _getMain().getREPattern(re.IGNORECASE)
+      attachmentNamePattern = getREPattern(re.IGNORECASE)
     elif showMode and myarg == 'saveattachments':
       save_attachments = True
     elif showMode and myarg == 'targetfolder':
-      targetFolderPattern = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif showMode and myarg == 'overwrite':
-      overwrite = _getMain().getBoolean()
+      overwrite = getBoolean()
     elif showMode and myarg == 'uploadattachments':
       upload_attachments = True
     elif showMode and _getMain().getDriveFileParentAttribute(myarg, parentParms):
@@ -1687,21 +1753,21 @@ def printShowMessagesThreads(users, entityType):
     elif myarg == 'positivecountsonly':
       countsOnly = positiveCountsOnly = True
     elif myarg in {'onlyuser', 'useronly'}:
-      onlyUser = _getMain().getBoolean()
+      onlyUser = getBoolean()
     elif myarg == 'dateheaderformat':
-      dateHeaderFormat = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      dateHeaderFormat = getString(Cmd.OB_STRING, minLen=0)
       if dateHeaderFormat == 'iso':
         dateHeaderFormat = _getMain().IS08601_TIME_FORMAT
       elif dateHeaderFormat == 'rfc2822':
         dateHeaderFormat = _getMain().RFC2822_TIME_FORMAT
     elif myarg == 'dateheaderconverttimezone':
-      dateHeaderConvertTimezone = _getMain().getBoolean()
+      dateHeaderConvertTimezone = getBoolean()
       if not dateHeaderFormat:
         dateHeaderFormat = _getMain().RFC2822_TIME_FORMAT
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   labelMatchPattern = parameters['labelMatchPattern']
   senderMatchPattern = parameters['senderMatchPattern']
   if senderMatchPattern and not show_all_headers and 'sender' not in headersToShow:
@@ -1754,15 +1820,15 @@ def printShowMessagesThreads(users, entityType):
         _callbacks = {'batch': _callbackCountLabels, 'process': _countMessages if entityType == Ent.MESSAGE else _countThreads}
     else:
       _callbacks = {'batch': _callbackShow, 'process': _showMessage if entityType == Ent.MESSAGE else _showThread}
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, messageIds = _getMain()._validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
+    user, gmail, messageIds = _validateUserGetMessageIds(user, i, count, parameters['messageEntity'])
     if not gmail:
       continue
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
     if upload_attachments:
-      _, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+      _, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
       if not drive:
         continue
       if not _getMain()._getDriveFileParentInfo(drive, user, i, count, uploadAttachmentBody, parentParms):
@@ -1779,15 +1845,15 @@ def printShowMessagesThreads(users, entityType):
       messageThreadCounts.update(addCSVData)
     senderCounts = {}
     if save_attachments:
-      _, userName, _ = _getMain().splitEmailAddressOrUID(user)
+      _, userName, _ = splitEmailAddressOrUID(user)
       targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     try:
       if parameters['messageEntity'] is None:
-        _getMain().printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
-        listResult = _getMain().callGAPIpages(service, 'list', parameters['listType'],
-                                   pageMessage=_getMain().getPageMessageForWhom(), maxItems=parameters['maxItems'],
+        printGettingAllEntityItemsForWhom(entityType, user, i, count, query=parameters['query'])
+        listResult = callGAPIpages(service, 'list', parameters['listType'],
+                                   pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                                    userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
                                    fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
@@ -1795,22 +1861,22 @@ def printShowMessagesThreads(users, entityType):
         messageIds = [message['id'] for message in listResult]
       else:
         # Need to get authorization set up for batch
-        _getMain().callGAPI(gmail.users(), 'getProfile',
+        callGAPI(gmail.users(), 'getProfile',
                  throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                  userId='me', fields='')
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     if countsOnly and not show_labels and not senderMatchPattern and not show_size:
       if not positiveCountsOnly or jcount > 0:
         if not csvPF:
-          _getMain().printEntityKVList([Ent.USER, user], [parameters['listType'], jcount], i, count)
+          printEntityKVList([Ent.USER, user], [parameters['listType'], jcount], i, count)
         else:
           row = {'User': user, parameters['listType']: jcount}
           if addCSVData:
@@ -1821,11 +1887,11 @@ def printShowMessagesThreads(users, entityType):
       if (parameters['messageEntity'] is not None or
           ((parameters['maxToProcess'] == 0 or jcount <= parameters['maxToProcess']) and
            (not labelMatchPattern and not senderMatchPattern))):
-        _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, entityType, i, count)
       elif not labelMatchPattern and not senderMatchPattern:
-        _getMain().entityPerformActionNumItemsModifier([Ent.USER, user], parameters['maxToProcess'], entityType, f'of {jcount} Total {Ent.Plural(entityType)}', i, count)
+        entityPerformActionNumItemsModifier([Ent.USER, user], parameters['maxToProcess'], entityType, f'of {jcount} Total {Ent.Plural(entityType)}', i, count)
       else:
-        _getMain().entityPerformActionModifierNumItemsModifier([Ent.USER, user], Msg.MAXIMUM_OF, parameters['maxToProcess'] or jcount, entityType,
+        entityPerformActionModifierNumItemsModifier([Ent.USER, user], Msg.MAXIMUM_OF, parameters['maxToProcess'] or jcount, entityType,
                                                     f'of {jcount} Total {Ent.Plural(entityType)}', i, count)
     if parameters['messageEntity'] is None and not labelMatchPattern and parameters['maxToProcess'] and (jcount > parameters['maxToProcess']):
       jcount = parameters['maxToProcess']
@@ -1853,15 +1919,15 @@ def printShowMessagesThreads(users, entityType):
             kvlist = [Ent.USER, user]
             if senderMatchPattern:
               kvlist.extend([Ent.SENDER, sender])
-            _getMain().entityPerformActionNumItems(kvlist, jcount, Ent.LABEL, i, count)
+            entityPerformActionNumItems(kvlist, jcount, Ent.LABEL, i, count)
             Ind.Increment()
             j = 0
             for label in sorted(labelsMap.values(), key=lambda k: k['name']):
               j += 1
               if not show_size:
-                _getMain().printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
+                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
               else:
-                _getMain().printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Size', label['size'], 'Type', label['type']], j, jcount)
+                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Size', label['size'], 'Type', label['type']], j, jcount)
             Ind.Decrement()
         else:
           for sender, labelsMap in sorted(senderLabelsMaps.items()):
@@ -1873,15 +1939,15 @@ def printShowMessagesThreads(users, entityType):
                 label.pop('size', None)
             if addCSVData:
               row.update(addCSVData)
-            csvPF.WriteRowTitles(_getMain().flattenJSON({'Labels': sorted(labelsMap.values(), key=lambda k: k['name'])}, flattened=row))
+            csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(labelsMap.values(), key=lambda k: k['name'])}, flattened=row))
       elif not senderMatchPattern:
         v = messageThreadCounts[parameters['listType']]
         if not positiveCountsOnly or v > 0:
           if not csvPF:
             if not show_size:
-              _getMain().printEntityKVList([Ent.USER, user], [parameters['listType'], v], i, count)
+              printEntityKVList([Ent.USER, user], [parameters['listType'], v], i, count)
             else:
-              _getMain().printEntityKVList([Ent.USER, user], [parameters['listType'], v, 'size', messageThreadCounts['size']], i, count)
+              printEntityKVList([Ent.USER, user], [parameters['listType'], v, 'size', messageThreadCounts['size']], i, count)
           else:
             if not show_size:
               messageThreadCounts.pop('size', None)
@@ -1891,7 +1957,7 @@ def printShowMessagesThreads(users, entityType):
           if not csvPF:
             for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
-                _getMain().printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count']], i, count)
+                printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count']], i, count)
           else:
             for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
@@ -1903,7 +1969,7 @@ def printShowMessagesThreads(users, entityType):
           if not csvPF:
             for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
-                _getMain().printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
+                printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
           else:
             for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:

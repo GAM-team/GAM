@@ -16,6 +16,45 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import _getAdminEmail, buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    AND_OR_CONJUNCTION_MAP,
+    OrderBy,
+    SORF_TEXT_ARGUMENTS,
+    StartEndTime,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getEmailAddress,
+    getString,
+    getStringOrFile,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformAction,
+    entityPerformActionNumItems,
+    userChatServiceNotEnabledWarning,
+)
+from gam.util.entity import (
+    convertEmailAddressToUID,
+    convertUIDtoEmailAddressWithType,
+    getEntityArgument,
+    getEntityList,
+    getEntityToModify,
+    getNormalizedEmailAddressEntity,
+)
+from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import stderrWarningMsg, writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -50,14 +89,14 @@ def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
     _, chatSpace = chatSpace.split('/', 1)
     chatSpace = 'spaces/'+chatSpace
   kwargsUAA = {'useAdminAccess': True, 'filter': 'member.type != "BOT"'}
-  user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS_ADMIN, _getMain()._getAdminEmail(), 0, 0, [Ent.CHAT_SPACE, chatSpace], True)
+  user, chat, kvList = buildChatServiceObject(API.CHAT_MEMBERSHIPS_ADMIN, _getAdminEmail(), 0, 0, [Ent.CHAT_SPACE, chatSpace], True)
   memberList = []
   if not chat:
     return memberList
-  fields = _getMain().getItemFieldsFromFieldsList('memberships', [])
+  fields = getItemFieldsFromFieldsList('memberships', [])
   qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {chatSpace}, {kwargsUAA["filter"]}'
   try:
-    members = _getMain().callGAPIpages(chat.spaces().members(), 'list', 'memberships',
+    members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                             pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, 0, 0, qfilter),
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -69,7 +108,7 @@ def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
         if member['member']['type'] == 'HUMAN':
           _, memberUid = member['member']['name'].split('/')
           gmember['type'] = Ent.TYPE_USER
-          email, _ = _getMain().convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['user'])
+          email, _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['user'])
           role = Ent.ROLE_MANAGER if member['role'] == 'ROLE_MANAGER' else Ent.ROLE_MEMBER
           if not ciGroupName:
             gmember['id'] = memberUid
@@ -86,7 +125,7 @@ def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
         _, memberUid = member['groupMember']['name'].split('/')
         gmember['type'] = Ent.TYPE_GROUP
         role = Ent.ROLE_MANAGER if member['role'] == 'ROLE_MANAGER' else Ent.ROLE_MEMBER
-        email, _ = _getMain().convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
+        email, _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
         if not ciGroupName:
           gmember['id'] = memberUid
           gmember['email'] = email
@@ -104,13 +143,13 @@ def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
     return memberList
 
 def normalizeUserMember(user, userList):
-  userList.append(_getMain().normalizeEmailAddressOrUID(user))
+  userList.append(normalizeEmailAddressOrUID(user))
 
 def getUserMemberID(cd, user, userList):
-  userList.append(_getMain().convertEmailAddressToUID(user, cd, emailType='user'))
+  userList.append(convertEmailAddressToUID(user, cd, emailType='user'))
 
 def getGroupMemberID(cd, group, groupList):
-  groupList.append(_getMain().convertEmailAddressToUID(group, cd, emailType='group'))
+  groupList.append(convertEmailAddressToUID(group, cd, emailType='group'))
 
 # gam <UserTypeEntity> create chatmember <ChatSpace>
 #	[type human|bot] [role member|manager|owner]
@@ -125,7 +164,7 @@ def getGroupMemberID(cd, group, groupList):
 def createChatMember(users):
   def addMembers(members, field, entityType, i, count):
     jcount = len(members)
-    _getMain().entityPerformActionNumItems(kvList, jcount, entityType, i, count)
+    entityPerformActionNumItems(kvList, jcount, entityType, i, count)
     if jcount == 0:
       return
     kvList.extend([entityType, ''])
@@ -135,13 +174,13 @@ def createChatMember(users):
       j += 1
       kvList[-1] = body[field]['name']
       try:
-        member = _getMain().callGAPI(chat.spaces().members(), 'create',
+        member = callGAPI(chat.spaces().members(), 'create',
                           bailOnInternalError=True,
                           throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT,
                                         GAPI.INTERNAL_ERROR, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                           parent=parent, body=body, **kwargsUAA)
         if role != 'ROLE_MEMBER' and entityType in (Ent.CHAT_MANAGER_USER, Ent.CHAT_OWNER_USER):
-          member = _getMain().callGAPI(chat.spaces().members(), 'patch',
+          member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                           GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
@@ -150,20 +189,20 @@ def createChatMember(users):
           kvList[-1] = member['name']
           _getChatMemberEmail(cd, member)
           if not FJQC.formatJSON:
-            _getMain().entityActionPerformed(kvList, j, jcount)
+            entityActionPerformed(kvList, j, jcount)
           Ind.Increment()
           _showChatItem(member, Ent.CHAT_MEMBER, FJQC)
           Ind.Decrement()
         else:
-          _getMain().writeStdout(f'{member["name"]}\n')
+          writeStdout(f'{member["name"]}\n')
       except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e))
+        entityActionFailedWarning(kvList, str(e))
       except GAPI.failedPrecondition:
-        _getMain().userChatServiceNotEnabledWarning(user, i, count)
+        userChatServiceNotEnabledWarning(user, i, count)
   Ind.Decrement()
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  cd = buildGAPIObject(API.DIRECTORY)
+  FJQC = FormatJSONQuoteChar()
   parent = None
   role = CHAT_MEMBER_ROLE_MAP['member']
   mtype = CHAT_MEMBER_TYPE_MAP['human']
@@ -172,32 +211,32 @@ def createChatMember(users):
   returnIdOnly = False
   useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getSpaceName(myarg)
     elif myarg == 'user':
-      normalizeUserMember(_getMain().getEmailAddress(returnUIDprefix='uid:'), userList)
+      normalizeUserMember(getEmailAddress(returnUIDprefix='uid:'), userList)
     elif myarg in {'member', 'members'}:
-      _, members = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       for user in members:
         normalizeUserMember(user, userList)
     elif myarg == 'group':
-      getGroupMemberID(cd, _getMain().getEmailAddress(returnUIDprefix='uid:'), groupList)
+      getGroupMemberID(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
     elif myarg == 'groups':
-      for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
         getGroupMemberID(cd, group, groupList)
     elif myarg == 'role':
-      role = _getMain().getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
+      role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
-      mtype = _getMain().getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
+      mtype = getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
     elif myarg == 'returnidonly':
       returnIdOnly = True
     else:
       FJQC.GetFormatJSON(myarg)
   if not parent:
-    _getMain().missingArgumentExit('space')
+    missingArgumentExit('space')
   if not userList and not groupList:
-    _getMain().missingArgumentExit('user|members|group|groups')
+    missingArgumentExit('user|members|group|groups')
   userEntityType = CHAT_ROLE_ENTITY_TYPE_MAP[role]
   userMembers = []
   for user in userList:
@@ -205,7 +244,7 @@ def createChatMember(users):
   groupMembers = []
   for group in groupList:
     groupMembers.append({'groupMember': {'name': f'groups/{group}'}})
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
   for user in users:
@@ -226,13 +265,13 @@ def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, kwargsUAA):
     j += 1
     kvList[-1] = name
     try:
-      _getMain().callGAPI(chat.spaces().members(), 'delete',
+      callGAPI(chat.spaces().members(), 'delete',
                bailOnInternalError=True,
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                name=name, **kwargsUAA)
-      _getMain().entityActionPerformed(kvList, j, jcount)
+      entityActionPerformed(kvList, j, jcount)
     except GAPI.notFound as e:
-      _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+      entityActionFailedWarning(kvList, str(e), j, jcount)
     except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
 
@@ -259,8 +298,8 @@ def _deleteChatMembers(chat, kvList, jcount, memberNames, i, count, kwargsUAA):
 #	role member|manager|owner
 #	members <ChatMemberList>
 def deleteUpdateChatMember(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  cd = buildGAPIObject(API.DIRECTORY)
+  FJQC = FormatJSONQuoteChar()
   action = Act.Get()
   deleteMode =  action in {Act.DELETE, Act.REMOVE}
   parent = None
@@ -270,46 +309,46 @@ def deleteUpdateChatMember(users):
   groupList = []
   useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if action in {Act.UPDATE, Act.MODIFY} and myarg == 'role':
-      body['role'] = _getMain().getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
+      body['role'] = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
       continue
     if action in {Act.REMOVE, Act.MODIFY}:
       if myarg in {'member', 'members'}:
-        memberNames.extend(_getMain().getString(Cmd.OB_CHAT_MEMBER).replace(',', ' ').split())
+        memberNames.extend(getString(Cmd.OB_CHAT_MEMBER).replace(',', ' ').split())
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     else: # {Act.DELETE, Act.UPDATE}
       if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
         parent = getSpaceName(myarg)
       elif myarg == 'user':
-        normalizeUserMember(_getMain().getEmailAddress(returnUIDprefix='uid:'), userList)
+        normalizeUserMember(getEmailAddress(returnUIDprefix='uid:'), userList)
       elif myarg in {'member', 'members'}:
-        _, members = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+        _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
         for user in members:
           normalizeUserMember(user, userList)
       elif deleteMode and myarg == 'group':
-        getGroupMemberID(cd, _getMain().getEmailAddress(returnUIDprefix='uid:'), groupList)
+        getGroupMemberID(cd, getEmailAddress(returnUIDprefix='uid:'), groupList)
       elif deleteMode and myarg == 'groups':
-        for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
+        for group in getEntityList(Cmd.OB_GROUP_ENTITY):
           getGroupMemberID(cd, group, groupList)
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   if not deleteMode and 'role' not in body:
-    _getMain().missingArgumentExit('role')
+    missingArgumentExit('role')
   if action in {Act.REMOVE, Act.MODIFY}:
     if not memberNames:
-      _getMain().missingArgumentExit('members')
+      missingArgumentExit('members')
   else: # {Act.DELETE, Act.UPDATE}
     if not parent:
-      _getMain().missingArgumentExit('space')
+      missingArgumentExit('space')
     if not userList and not groupList:
-      _getMain().missingArgumentExit('user|members|group|groups')
+      missingArgumentExit('user|members|group|groups')
     for user in userList:
       memberNames.append(f'{parent}/members/{user}')
     for group in groupList:
       memberNames.append(f'{parent}/members/group-{group}')
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
   for user in users:
@@ -318,7 +357,7 @@ def deleteUpdateChatMember(users):
     if not chat:
       continue
     jcount = len(memberNames)
-    _getMain().entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
+    entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
     kvList.extend([Ent.CHAT_MEMBER, ''])
     Ind.Increment()
     if deleteMode:
@@ -329,7 +368,7 @@ def deleteUpdateChatMember(users):
         j += 1
         kvList[-1] = name
         try:
-          member = _getMain().callGAPI(chat.spaces().members(), 'patch',
+          member = callGAPI(chat.spaces().members(), 'patch',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                           GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
@@ -339,11 +378,11 @@ def deleteUpdateChatMember(users):
           _showChatItem(member, Ent.CHAT_MEMBER, FJQC, j, jcount)
           Ind.Decrement()
         except GAPI.notFound as e:
-          _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+          entityActionFailedWarning(kvList, str(e), j, jcount)
         except (GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
           exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         except GAPI.failedPrecondition:
-          _getMain().userChatServiceNotEnabledWarning(user, i, count)
+          userChatServiceNotEnabledWarning(user, i, count)
           continue
     Ind.Decrement()
 
@@ -360,7 +399,7 @@ def syncChatMembers(users):
     j = 0
     for member in members:
       j += 1
-      _getMain().entityActionPerformed([Ent.CHAT_SPACE, parent, entityType, member, Ent.ROLE, role], j, jcount)
+      entityActionPerformed([Ent.CHAT_SPACE, parent, entityType, member, Ent.ROLE, role], j, jcount)
     Ind.Decrement()
     if csvPF:
       for member in members:
@@ -368,7 +407,7 @@ def syncChatMembers(users):
 
   def addMembers(memberNames, members, entityType, i, count):
     jcount = len(memberNames)
-    _getMain().entityPerformActionNumItems(kvList, jcount, entityType, i, count)
+    entityPerformActionNumItems(kvList, jcount, entityType, i, count)
     if jcount == 0:
       return
     if preview:
@@ -382,24 +421,24 @@ def syncChatMembers(users):
       body = members[memberName]
       kvList[-1] = memberName
       try:
-        _getMain().callGAPI(chat.spaces().members(), 'create',
+        callGAPI(chat.spaces().members(), 'create',
                  bailOnInternalError=True,
                  throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                  parent=parent, body=body, **kwargsUAA)
         if role != 'ROLE_MEMBER' and entityType == Ent.CHAT_MANAGER_USER:
-          _getMain().callGAPI(chat.spaces().members(), 'patch',
+          callGAPI(chat.spaces().members(), 'patch',
                    bailOnInternalError=True,
                    throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
                    name=memberName, updateMask='role', body={'role': role}, **kwargsUAA)
-        _getMain().entityActionPerformed(kvList, j, jcount)
+        entityActionPerformed(kvList, j, jcount)
       except (GAPI.alreadyExists, GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
     Ind.Decrement()
     del kvList[-2:]
 
   def deleteMembers(memberNames, entityType, i, count):
     jcount = len(memberNames)
-    _getMain().entityPerformActionNumItems(kvList, jcount, entityType, i, count)
+    entityPerformActionNumItems(kvList, jcount, entityType, i, count)
     if jcount == 0:
       return
     if preview:
@@ -412,7 +451,7 @@ def syncChatMembers(users):
     del kvList[-2:]
 
   useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   parent = None
   role = CHAT_MEMBER_ROLE_MAP['member']
   mtype = CHAT_MEMBER_TYPE_MAP['human']
@@ -425,36 +464,36 @@ def syncChatMembers(users):
   groupList = []
   groupsSpecified = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getSpaceName(myarg)
     elif myarg == 'role':
-      role = _getMain().getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
+      role = getChoice(CHAT_MEMBER_ROLE_MAP, mapChoice=True)
     elif myarg == 'type':
-      mtype = _getMain().getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
+      mtype = getChoice(CHAT_MEMBER_TYPE_MAP, mapChoice=True)
     elif myarg in {'addonly', 'removeonly'}:
       syncOperation = myarg
     elif myarg == 'preview':
       preview = True
     elif myarg == 'actioncsv':
-      csvPF = _getMain().CSVPrintFile(CHAT_SYNC_PREVIEW_TITLES)
+      csvPF = CSVPrintFile(CHAT_SYNC_PREVIEW_TITLES)
     elif myarg == 'users':
-      for user in _getMain().getEntityList(Cmd.OB_USER_ENTITY):
+      for user in getEntityList(Cmd.OB_USER_ENTITY):
         getUserMemberID(cd, user, userList)
       usersSpecified = True
     elif myarg in {'member', 'members'}:
-      _, members = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      _, members = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       for user in members:
         getUserMemberID(cd, user, userList)
       usersSpecified = True
     elif myarg == 'groups':
-      for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
         getGroupMemberID(cd, group, groupList)
       groupsSpecified = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not parent:
-    _getMain().missingArgumentExit('space')
+    missingArgumentExit('space')
   userEntityType = CHAT_ROLE_ENTITY_TYPE_MAP[role]
   userMembers = {}
   syncUsersSet = set()
@@ -469,7 +508,7 @@ def syncChatMembers(users):
     groupMembers[memberName] = {'groupMember': {'name': f'groups/{group}'}}
     syncGroupsSet.add(memberName)
   qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parent}'
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   if useAdminAccess:
     kwargs['filter'] = 'member.type != "BOT"'
     _chkChatAdminAccess(count)
@@ -481,7 +520,7 @@ def syncChatMembers(users):
     currentUsersSet = set()
     currentGroupsSet = set()
     try:
-      members = _getMain().callGAPIpages(chat.spaces().members(), 'list', 'memberships',
+      members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, i, count, qfilter),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -496,7 +535,7 @@ def syncChatMembers(users):
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
       continue
     if syncOperation != 'addonly':
       Act.Set([Act.REMOVE, Act.REMOVE_PREVIEW][preview])
@@ -530,23 +569,23 @@ CHAT_MEMBERS_FIELDS_CHOICE_MAP = {
 #	[fields <ChatMemberFieldNameList>]
 #	[formatjson]
 def infoChatMember(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  cd = buildGAPIObject(API.DIRECTORY)
+  FJQC = FormatJSONQuoteChar()
   useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   fieldsList = []
   memberNames = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'member', 'members'}:
-      memberNames.extend(_getMain().getString(Cmd.OB_CHAT_MEMBER).replace(',', ' ').split())
-    elif _getMain().getFieldsList(myarg, CHAT_MEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+      memberNames.extend(getString(Cmd.OB_CHAT_MEMBER).replace(',', ' ').split())
+    elif getFieldsList(myarg, CHAT_MEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
   if not memberNames:
-    _getMain().missingArgumentExit('members')
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+    missingArgumentExit('members')
+  fields = getFieldsFromFieldsList(fieldsList)
+  i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
   for user in users:
@@ -556,14 +595,14 @@ def infoChatMember(users):
       continue
     jcount = len(memberNames)
     if not FJQC.formatJSON:
-      _getMain().entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
+      entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MEMBER, i, count)
     kvList.extend([Ent.CHAT_MEMBER, ''])
     j = 0
     for name in memberNames:
       j += 1
       kvList[-1] = name
       try:
-        member = _getMain().callGAPI(chat.spaces().members(), 'get',
+        member = callGAPI(chat.spaces().members(), 'get',
                           bailOnInternalError=True,
                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                         GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
@@ -575,7 +614,7 @@ def infoChatMember(users):
       except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.internalError) as e:
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       except GAPI.failedPrecondition:
-        _getMain().userChatServiceNotEnabledWarning(user, i, count)
+        userChatServiceNotEnabledWarning(user, i, count)
         continue
 
 def doInfoChatMember():
@@ -606,10 +645,10 @@ def doInfoChatMember():
 #	(addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]]
 def printShowChatMembers(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  csvPF = _getMain().CSVPrintFile(['User', 'space.name', 'space.displayName', 'name'] if not isinstance(users, list) else ['space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
-  OBY = _getMain().OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name'] if not isinstance(users, list) else ['space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP)
   useAdminAccess, api, kwargsUAA = _getChatAdminAccess(API.CHAT_MEMBERSHIPS_ADMIN, API.CHAT_MEMBERSHIPS)
   if useAdminAccess:
     queries = ['customer = "customers/my_customer" AND spaceType = "SPACE"']
@@ -621,25 +660,25 @@ def printShowChatMembers(users):
   parentList = []
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parentList.append({'name': getSpaceName(myarg), 'displayName': ''})
-    elif _getMain().getFieldsList(myarg, CHAT_MEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+    elif getFieldsList(myarg, CHAT_MEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     elif myarg == 'showinvited':
-      kwargs['showInvited'] = _getMain().getBoolean()
+      kwargs['showInvited'] = getBoolean()
     elif myarg == 'showgroups':
-      kwargs['showGroups'] = _getMain().getBoolean()
+      kwargs['showGroups'] = getBoolean()
     elif myarg =='filter':
-      pfilter = _getMain().getString(Cmd.OB_STRING)
+      pfilter = getString(Cmd.OB_STRING)
     elif not useAdminAccess and _getChatSpaceListParms(myarg, kwargsCS):
       pass
     elif useAdminAccess and _getChatSpaceSearchParms(myarg, queries, queryTimes, OBY):
       pass
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if useAdminAccess:
@@ -658,8 +697,8 @@ def printShowChatMembers(users):
       kwargs['filter'] = pfilter
   else:
     kwargs['filter'] = 'member.type != "BOT"'
-  fields = _getMain().getItemFieldsFromFieldsList('memberships', fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  fields = getItemFieldsFromFieldsList('memberships', fieldsList)
+  i, count, users = getEntityArgument(users)
   if useAdminAccess:
     _chkChatAdminAccess(count)
     sortName = 'displayName'
@@ -679,7 +718,7 @@ def printShowChatMembers(users):
     if kwargsCS:
       if useAdminAccess:
         try:
-          spaces = _getMain().callGAPIpages(chatsp.spaces(), 'search', 'spaces',
+          spaces = callGAPIpages(chatsp.spaces(), 'search', 'spaces',
                                  pageMessage=_getChatPageMessage(Ent.CHAT_SPACE, user, i, count, queries[0], True),
                                  bailOnInternalError=True,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
@@ -696,7 +735,7 @@ def printShowChatMembers(users):
           continue
       else:
         try:
-          spaces = _getMain().callGAPIpages(chatsp.spaces(), 'list', 'spaces',
+          spaces = callGAPIpages(chatsp.spaces(), 'list', 'spaces',
                                  pageMessage=_getChatPageMessage(Ent.CHAT_SPACE, user, i, count, kwargsCS['filter']),
                                  bailOnInternalError=True,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
@@ -712,7 +751,7 @@ def printShowChatMembers(users):
           exitIfChatNotConfigured(chat, kvList, str(e), i, count)
           continue
         except GAPI.failedPrecondition:
-          _getMain().userChatServiceNotEnabledWarning(user, i, count)
+          userChatServiceNotEnabledWarning(user, i, count)
           continue
     jcount = len(parentList)
     j = 0
@@ -725,11 +764,11 @@ def printShowChatMembers(users):
         qfilter += f', {kwargs["filter"]}'
       try:
         if not parent['displayName']:
-          space = _getMain().callGAPI(chatsp.spaces(), 'get',
+          space = callGAPI(chatsp.spaces(), 'get',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                            name=parentName, fields='displayName', **kwargsUAA)
           parent['displayName'] = space.get('displayName', 'None')
-        members = _getMain().callGAPIpages(chat.spaces().members(), 'list', 'memberships',
+        members = callGAPIpages(chat.spaces().members(), 'list', 'memberships',
                                 pageMessage=_getChatPageMessage(Ent.CHAT_MEMBER, user, j, jcount, qfilter),
                                 throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -742,7 +781,7 @@ def printShowChatMembers(users):
       if not csvPF:
         kcount = len(members)
         if not FJQC.formatJSON:
-          _getMain().entityPerformActionNumItems(kvList, kcount, Ent.CHAT_MEMBER, j, jcount)
+          entityPerformActionNumItems(kvList, kcount, Ent.CHAT_MEMBER, j, jcount)
         Ind.Increment()
         k = 0
         for member in members:
@@ -772,7 +811,7 @@ def trimChatMessageIfRequired(body):
   if 'text' in body:
     msgLen = len(body['text'])
     if msgLen > 4096:
-      _getMain().stderrWarningMsg(Msg.TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM.format(msgLen, 4096))
+      stderrWarningMsg(Msg.TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM.format(msgLen, 4096))
       body['text'] = body['text'][:4095]
 
 CHAT_MESSAGE_REPLY_OPTION_MAP = {
@@ -790,43 +829,43 @@ def createChatMessage(users):
   body = {}
   returnIdOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parent = getSpaceName(myarg)
     elif myarg == 'thread':
       body.setdefault('thread', {})
-      body['thread']['name'] = _getMain().getString(Cmd.OB_CHAT_THREAD)
+      body['thread']['name'] = getString(Cmd.OB_CHAT_THREAD)
       Act.Set(Act.RESPOND)
     elif myarg == 'threadkey':
       body.setdefault('thread', {})
-      body['thread']['threadKey'] = _getMain().getString(Cmd.OB_STRING)
+      body['thread']['threadKey'] = getString(Cmd.OB_STRING)
       Act.Set(Act.RESPOND)
     elif myarg == 'replyoption':
-      messageReplyOption = _getMain().getChoice(CHAT_MESSAGE_REPLY_OPTION_MAP, mapChoice=True)
-    elif myarg in _getMain().SORF_TEXT_ARGUMENTS:
-      body['text'] = _getMain().getStringOrFile(myarg, minLen=0, unescapeCRLF=True)[0]
+      messageReplyOption = getChoice(CHAT_MESSAGE_REPLY_OPTION_MAP, mapChoice=True)
+    elif myarg in SORF_TEXT_ARGUMENTS:
+      body['text'] = getStringOrFile(myarg, minLen=0, unescapeCRLF=True)[0]
     elif myarg == 'messageid':
-      messageId = _getMain().getString(Cmd.OB_CHAT_MESSAGE_ID, minLen=1, maxLen=63)
+      messageId = getString(Cmd.OB_CHAT_MESSAGE_ID, minLen=1, maxLen=63)
     elif myarg == 'returnidonly':
       returnIdOnly = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not parent:
-    _getMain().missingArgumentExit('space')
+    missingArgumentExit('space')
   if 'text' not in body:
-    _getMain().missingArgumentExit('text or textfile')
+    missingArgumentExit('text or textfile')
   if 'thread' in body and messageReplyOption is None:
     messageReplyOption = CHAT_MESSAGE_REPLY_OPTION_MAP['fail']
   trimChatMessageIfRequired(body)
   action = Act.Get()
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_SPACE, parent])
     if not chat:
       continue
     try:
-      resp = _getMain().callGAPI(chat.spaces().messages(), 'create',
+      resp = callGAPI(chat.spaces().messages(), 'create',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                       parent=parent, requestId=str(uuid.uuid4()),
                       messageReplyOption=messageReplyOption, messageId=messageId, body=body)
@@ -837,14 +876,14 @@ def createChatMessage(users):
         kvList.extend([Ent.CHAT_THREAD, resp['thread']['name']])
         if (action == Act.RESPOND) and not resp.get('threadReply', False):
           Act.Set(Act.CREATE)
-        _getMain().entityActionPerformed(kvList, i, count)
+        entityActionPerformed(kvList, i, count)
         Act.Set(action)
       else:
-        _getMain().writeStdout(f'{resp["name"]}\n')
+        writeStdout(f'{resp["name"]}\n')
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doCreateChatMessage():
   createChatMessage([None])
@@ -857,24 +896,24 @@ def updateChatMessage(users):
   updateMask = []
   clearMsg = ''
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      name = _getMain().getString(Cmd.OB_CHAT_MESSAGE)
-    elif myarg in _getMain().SORF_TEXT_ARGUMENTS:
-      body['text'] = _getMain().getStringOrFile(myarg, minLen=0, unescapeCRLF=True)[0]
+      name = getString(Cmd.OB_CHAT_MESSAGE)
+    elif myarg in SORF_TEXT_ARGUMENTS:
+      body['text'] = getStringOrFile(myarg, minLen=0, unescapeCRLF=True)[0]
       updateMask.append('text')
     elif myarg == 'clearattachments':
-      clearMsg = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      clearMsg = getString(Cmd.OB_STRING, minLen=0)
       body['attachment'] = []
       updateMask.append('attachment')
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not name:
-    _getMain().missingArgumentExit('name')
+    missingArgumentExit('name')
   if not updateMask:
-    _getMain().missingArgumentExit('text|textfile|clearattachments')
+    missingArgumentExit('text|textfile|clearattachments')
   trimChatMessageIfRequired(body)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_MESSAGE, name])
@@ -882,7 +921,7 @@ def updateChatMessage(users):
       continue
     try:
       if 'attachment' in updateMask and 'text' not in updateMask:
-        resp = _getMain().callGAPI(chat.spaces().messages(), 'get',
+        resp = callGAPI(chat.spaces().messages(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                         name=name, fields='text')
         body['text'] = resp.get('text', '')
@@ -891,15 +930,15 @@ def updateChatMessage(users):
         elif not body['text']:
           body['text'] = 'Attachments cleared'
         updateMask.append('text')
-      resp = _getMain().callGAPI(chat.spaces().messages(), 'patch',
+      resp = callGAPI(chat.spaces().messages(), 'patch',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                       name=name, updateMask=','.join(updateMask), body=body)
       kvList.extend([Ent.CHAT_THREAD, resp['thread']['name']])
-      _getMain().entityActionPerformed(kvList, i, count)
+      entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doUpdateChatMessage():
   updateChatMessage([None])
@@ -908,28 +947,28 @@ def doUpdateChatMessage():
 def deleteChatMessage(users):
   name = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      name = _getMain().getString(Cmd.OB_CHAT_MESSAGE)
+      name = getString(Cmd.OB_CHAT_MESSAGE)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not name:
-    _getMain().missingArgumentExit('name')
-  i, count, users = _getMain().getEntityArgument(users)
+    missingArgumentExit('name')
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_MESSAGE, name])
     if not chat:
       continue
     try:
-      _getMain().callGAPI(chat.spaces().messages(), 'delete',
+      callGAPI(chat.spaces().messages(), 'delete',
                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                name=name)
-      _getMain().entityActionPerformed(kvList, i, count)
+      entityActionPerformed(kvList, i, count)
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doDeleteChatMessage():
   deleteChatMessage([None])
@@ -967,42 +1006,42 @@ CHAT_MESSAGES_FIELDS_CHOICE_MAP = {
 #	[fields <ChatMessageFieldNameList>]
 #	[formatjson]
 def infoChatMessage(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  cd = buildGAPIObject(API.DIRECTORY)
+  FJQC = FormatJSONQuoteChar()
   fieldsList = []
   name = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      name = _getMain().getString(Cmd.OB_CHAT_MESSAGE)
-    elif _getMain().getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+      name = getString(Cmd.OB_CHAT_MESSAGE)
+    elif getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
   if not name:
-    _getMain().missingArgumentExit('name')
+    missingArgumentExit('name')
   chatSenders = {}
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  fields = getFieldsFromFieldsList(fieldsList)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_MESSAGE, name])
     if not chat:
       continue
     try:
-      message = _getMain().callGAPI(chat.spaces().messages(), 'get',
+      message = callGAPI(chat.spaces().messages(), 'get',
                          throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                          name=name, fields=fields)
       _getChatSenderEmail(cd, message['sender'], chatSenders)
       if not FJQC.formatJSON:
-        _getMain().entityPerformAction(kvList, i, count)
+        entityPerformAction(kvList, i, count)
       Ind.Increment()
       _showChatItem(message, Ent.CHAT_MESSAGE, FJQC)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doInfoChatMessage():
   infoChatMessage([None])
@@ -1028,38 +1067,38 @@ CHAT_MESSAGES_ORDERBY_CHOICE_MAP = {
 #	[orderby createtime [ascending|descending]]
 #	[formatjson [quotechar <Character>]]
 def printShowChatMessages(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  csvPF = _getMain().CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
-  OBY = _getMain().OrderBy(CHAT_MESSAGES_ORDERBY_CHOICE_MAP, ascendingKeyword='ASC', descendingKeyword='DESC')
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CHAT_MESSAGES_ORDERBY_CHOICE_MAP, ascendingKeyword='ASC', descendingKeyword='DESC')
   fieldsList = []
   pfilter = None
   parentList = []
   showDeleted = False
-  startEndTime = _getMain().StartEndTime()
+  startEndTime = StartEndTime()
   threadName = ''
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parentList.append({'name': getSpaceName(myarg), 'displayName': ''})
-    elif _getMain().getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+    elif getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     elif myarg == 'showdeleted':
-      showDeleted = _getMain().getBoolean()
+      showDeleted = getBoolean()
     elif myarg =='filter':
-      pfilter = _getMain().getString(Cmd.OB_STRING)
+      pfilter = getString(Cmd.OB_STRING)
     elif myarg in {'start', 'starttime', 'end', 'endtime', 'range'}:
       startEndTime.Get(myarg)
     elif myarg == 'thread':
-      threadName = _getMain().getString(Cmd.OB_CHAT_THREAD)
+      threadName = getString(Cmd.OB_CHAT_THREAD)
     elif myarg == 'orderby':
       OBY.GetChoice()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parentList:
-    _getMain().missingArgumentExit('space')
+    missingArgumentExit('space')
   if startEndTime.startDateTime is not None or startEndTime.endDateTime is not None:
     if pfilter:
       pfilter += ' AND '
@@ -1080,8 +1119,8 @@ def printShowChatMessages(users):
       pfilter = ''
     pfilter += f'thread.name = {threadName}'
   chatSenders = {}
-  fields = _getMain().getItemFieldsFromFieldsList('messages', fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  fields = getItemFieldsFromFieldsList('messages', fieldsList)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_SPACE, None])
@@ -1101,11 +1140,11 @@ def printShowChatMessages(users):
         qfilter += f', {pfilter}'
       try:
         if not parent['displayName']:
-          space = _getMain().callGAPI(chatspg.spaces(), 'get',
+          space = callGAPI(chatspg.spaces(), 'get',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                            name=parentName, fields='displayName')
           parent['displayName'] = space.get('displayName', 'None')
-        messages = _getMain().callGAPIpages(chat.spaces().messages(), 'list', 'messages',
+        messages = callGAPIpages(chat.spaces().messages(), 'list', 'messages',
                                  pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, qfilter),
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1119,12 +1158,12 @@ def printShowChatMessages(users):
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         continue
       except GAPI.failedPrecondition:
-        _getMain().userChatServiceNotEnabledWarning(user, i, count)
+        userChatServiceNotEnabledWarning(user, i, count)
         break
       if not csvPF:
         kcount = len(messages)
         if not FJQC.formatJSON:
-          _getMain().entityPerformActionNumItems(kvList, kcount, Ent.CHAT_MESSAGE, j, jcount)
+          entityPerformActionNumItems(kvList, kcount, Ent.CHAT_MESSAGE, j, jcount)
         Ind.Increment()
         k = 0
         for message in messages:
@@ -1145,7 +1184,7 @@ def _getChatSpaceDisplayName(chat, space, chatSpaces):
   spaceName = space['name']
   if spaceName not in chatSpaces:
     try:
-      result = _getMain().callGAPI(chat.spaces(), 'get',
+      result = callGAPI(chat.spaces(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR,
                                       GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                         name=spaceName, fields='displayName')
@@ -1188,10 +1227,10 @@ CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP = {'basic': 'SEARCH_MESSAGES_VIEW_BASIC', 'f
 def printShowChatSearchMessages(users):
   if API.CHAT not in GM.Globals[GM.DEVELOPER_PREVIEW_APIS]:
     Cmd.Backup()
-    _getMain().usageErrorExit(Msg.DEVELOPER_PREVIEW_REQUIRED)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  csvPF = _getMain().CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+    usageErrorExit(Msg.DEVELOPER_PREVIEW_REQUIRED)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   orderBy = None
   fieldsList = []
   keywordList = []
@@ -1200,41 +1239,41 @@ def printShowChatSearchMessages(users):
   displayNameList = []
   senderList = []
   userMentionList = []
-  startEndTime = _getMain().StartEndTime()
+  startEndTime = StartEndTime()
   hasAttachment = False
   body = {'view': CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP['basic'],
           'pageSize': GC.Values[GC.CHAT_MAX_RESULTS], 'pageToken': None}
   parent = 'spaces/-'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg =='keywords':
-      keywordList = _getMain().getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
+      keywordList = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       spaceList.append(getSpaceName(myarg))
     elif myarg == 'displaynames':
-      displayNameConjunction = _getMain().getChoice(_getMain().AND_OR_CONJUNCTION_MAP, mapChoice=True, defaultChoice='OR')
-      displayNameList = _getMain().getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
+      displayNameConjunction = getChoice(AND_OR_CONJUNCTION_MAP, mapChoice=True, defaultChoice='OR')
+      displayNameList = getString(Cmd.OB_STRING_LIST, minLen=0).replace(',', ' ').split()
     elif myarg == 'senders':
-      senderList.extend(_getMain().getNormalizedEmailAddressEntity(noUid=False))
+      senderList.extend(getNormalizedEmailAddressEntity(noUid=False))
     elif myarg == 'usermentions':
-      userMentionConjunction = _getMain().getChoice(_getMain().AND_OR_CONJUNCTION_MAP, mapChoice=True, defaultChoice='OR')
-      userMentionList.extend(_getMain().getNormalizedEmailAddressEntity(noUid=False))
+      userMentionConjunction = getChoice(AND_OR_CONJUNCTION_MAP, mapChoice=True, defaultChoice='OR')
+      userMentionList.extend(getNormalizedEmailAddressEntity(noUid=False))
     elif myarg in {'start', 'starttime', 'end', 'endtime`', 'range'}:
       startEndTime.Get(myarg)
     elif myarg == 'hasattachment':
       hasAttachment = True
     elif myarg == 'orderby':
-      orderBy = _getMain().getChoice(CHAT_SEARCHMESSAGES_ORDERBY_CHOICE_MAP, mapChoice=True)
+      orderBy = getChoice(CHAT_SEARCHMESSAGES_ORDERBY_CHOICE_MAP, mapChoice=True)
     elif myarg in CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP:
       body['view'] = CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP[myarg]
-    elif _getMain().getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
+    elif getFieldsList(myarg, CHAT_MESSAGES_FIELDS_CHOICE_MAP, fieldsList, initialField='name', onlyFieldsArg=True):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not keywordList:
-    _getMain().missingArgumentExit('keywords')
+    missingArgumentExit('keywords')
   if orderBy is not None:
     body['orderBy'] = f'{orderBy} desc'
   body['filter'] = f'({" ".join(keywordList)})'
@@ -1271,10 +1310,10 @@ def printShowChatSearchMessages(users):
     body['filter'] += ' AND attachment:*'
   chatSenders = {}
   chatSpaces = {}
-  fields = _getMain().getItemFieldsFromFieldsList('results(message', fieldsList)
+  fields = getItemFieldsFromFieldsList('results(message', fieldsList)
   if fields:
     fields += ')'
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_MESSAGES, user, i, count, [Ent.CHAT_SPACE, None])
@@ -1284,7 +1323,7 @@ def printShowChatSearchMessages(users):
     if not chat:
       continue
     try:
-      results = _getMain().callGAPIpages(chat.spaces().messages(), 'search', 'results',
+      results = callGAPIpages(chat.spaces().messages(), 'search', 'results',
                               pageMessage=_getChatPageMessage(Ent.CHAT_MESSAGE, user, i, count, body['filter']),
                               throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1298,12 +1337,12 @@ def printShowChatSearchMessages(users):
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
       continue
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
       break
     if not csvPF:
       jcount = len(results)
       if not FJQC.formatJSON:
-        _getMain().entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MESSAGE, i, count)
+        entityPerformActionNumItems(kvList, jcount, Ent.CHAT_MESSAGE, i, count)
       Ind.Increment()
       j = 0
       for result in results:
@@ -1321,35 +1360,35 @@ def printShowChatSearchMessages(users):
 # gam <UserTypeEntity> info chatevent name <ChatEvent>
 #	[formatjson]
 def infoChatEvent(users):
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   name = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      name = _getMain().getString(Cmd.OB_CHAT_EVENT)
+      name = getString(Cmd.OB_CHAT_EVENT)
     else:
       FJQC.GetFormatJSON(myarg)
   if not name:
-    _getMain().missingArgumentExit('name')
-  i, count, users = _getMain().getEntityArgument(users)
+    missingArgumentExit('name')
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_EVENTS, user, i, count, [Ent.CHAT_EVENT, name])
     if not chat:
       continue
     try:
-      event = _getMain().callGAPI(chat.spaces().spaceEvents(), 'get',
+      event = callGAPI(chat.spaces().spaceEvents(), 'get',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                        name=name)
       if not FJQC.formatJSON:
-        _getMain().entityPerformAction(kvList, i, count)
+        entityPerformAction(kvList, i, count)
       Ind.Increment()
       _showChatItem(event, Ent.CHAT_EVENT, FJQC)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       exitIfChatNotConfigured(chat, kvList, str(e), i, count)
     except GAPI.failedPrecondition:
-      _getMain().userChatServiceNotEnabledWarning(user, i, count)
+      userChatServiceNotEnabledWarning(user, i, count)
 
 def doInfoChatEvent():
   infoChatEvent([None])
@@ -1363,25 +1402,25 @@ def doInfoChatEvent():
 #	filter <String>
 #	[formatjson [quotechar <Character>]]
 def printShowChatEvents(users):
-  csvPF = _getMain().CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   pfilter = None
   parentList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/'):
       parentList.append({'name': getSpaceName(myarg), 'displayName': ''})
     elif myarg =='filter':
-      pfilter = _getMain().getString(Cmd.OB_STRING)
+      pfilter = getString(Cmd.OB_STRING)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not parentList:
-    _getMain().missingArgumentExit('space')
+    missingArgumentExit('space')
   if not pfilter:
-    _getMain().missingArgumentExit('filter')
-  i, count, users = _getMain().getEntityArgument(users)
+    missingArgumentExit('filter')
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, chat, kvList = buildChatServiceObject(API.CHAT_EVENTS, user, i, count, [Ent.CHAT_SPACE, None])
@@ -1399,11 +1438,11 @@ def printShowChatEvents(users):
       qfilter = f'{Ent.Singular(Ent.CHAT_SPACE)}: {parentName}, {pfilter}'
       try:
         if not parent['displayName']:
-          space = _getMain().callGAPI(chatspg.spaces(), 'get',
+          space = callGAPI(chatspg.spaces(), 'get',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                            name=parentName, fields='displayName')
           parent['displayName'] = space.get('displayName', 'None')
-        events = _getMain().callGAPIpages(chat.spaces().spaceEvents(), 'list', 'spaceEvents',
+        events = callGAPIpages(chat.spaces().spaceEvents(), 'list', 'spaceEvents',
                                pageMessage=_getChatPageMessage(Ent.CHAT_EVENT, user, i, count, qfilter),
                                throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1412,12 +1451,12 @@ def printShowChatEvents(users):
         exitIfChatNotConfigured(chat, kvList, str(e), i, count)
         continue
       except GAPI.failedPrecondition:
-        _getMain().userChatServiceNotEnabledWarning(user, i, count)
+        userChatServiceNotEnabledWarning(user, i, count)
         break
       if not csvPF:
         kcount = len(events)
         if not FJQC.formatJSON:
-          _getMain().entityPerformActionNumItems(kvList, kcount, Ent.CHAT_EVENT, j, jcount)
+          entityPerformActionNumItems(kvList, kcount, Ent.CHAT_EVENT, j, jcount)
         Ind.Increment()
         k = 0
         for event in events:

@@ -19,6 +19,47 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import _getAdminEmail, buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    BCP47_LANGUAGE_CODES_MAP,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getEmailAddress,
+    getInteger,
+    getLanguageCode,
+    getString,
+    getYYYYMMDD,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    entityPerformActionSubItemModifierNumItems,
+    getPageMessageForWhom,
+    printEntity,
+    printGettingAllEntityItemsForWhom,
+    printLine,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import (
+    _validateUserGetObjectList,
+    convertEmailAddressToUID,
+    convertEntityToList,
+    convertUIDtoEmailAddressWithType,
+    getEntityArgument,
+    getEntityList,
+    getUserObjectEntity,
+)
+from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -68,13 +109,13 @@ def _getDisplayDriveLabelsParameters(myarg, parameters):
   if myarg in DRIVELABELS_PROJECTION_CHOICE_MAP:
     parameters['view'] = DRIVELABELS_PROJECTION_CHOICE_MAP[myarg]
   elif myarg == 'language':
-    parameters['languageCode'] = _getMain().getLanguageCode(_getMain().BCP47_LANGUAGE_CODES_MAP)
+    parameters['languageCode'] = getLanguageCode(BCP47_LANGUAGE_CODES_MAP)
   elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
     parameters['useAdminAccess'] = True
   elif myarg == 'publishedonly':
-    parameters['publishedOnly'] = _getMain().getBoolean()
+    parameters['publishedOnly'] = getBoolean()
   elif myarg == 'minimumrole':
-    parameters['minimumRole'] = _getMain().getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
+    parameters['minimumRole'] = getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
   else:
     return False
   return True
@@ -98,43 +139,43 @@ def validateDriveLabelName(name, kvList, j, jcount, permName=False):
   if not permName:
     mg = re.match(r'^(labels/[^/]+)$', name)
     if not mg:
-      _getMain().entityActionNotPerformedWarning(kvList, 'Expected labels/<String>', j, jcount)
+      entityActionNotPerformedWarning(kvList, 'Expected labels/<String>', j, jcount)
       return None
     return name
 # Label permission name
   mg = re.match(r'^(labels/[^/]+)/permissions/(?:audiences|groups|people)/.+$', name)
   if not mg:
-    _getMain().entityActionNotPerformedWarning(kvList, 'Expected labels/<String>/permissions/(audiences|groups|people)/<String>', j, jcount)
+    entityActionNotPerformedWarning(kvList, 'Expected labels/<String>/permissions/(audiences|groups|people)/<String>', j, jcount)
     return (None, None)
   return (name, mg.group(1))
 
 def _showDriveLabel(label, j, jcount, FJQC):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(label, timeObjects=DRIVELABELS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(label, timeObjects=DRIVELABELS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CLASSIFICATION_LABEL_NAME, f'{label["name"]}'], j, jcount)
+  printEntity([Ent.CLASSIFICATION_LABEL_NAME, f'{label["name"]}'], j, jcount)
   Ind.Increment()
-  _getMain().showJSON(None, label, timeObjects=DRIVELABELS_TIME_OBJECTS, dictObjectsKey={'fields': 'id', 'choices': 'id'})
+  showJSON(None, label, timeObjects=DRIVELABELS_TIME_OBJECTS, dictObjectsKey={'fields': 'id', 'choices': 'id'})
   Ind.Decrement()
 
 # gam [<UserTypeEntity>] info classificationlabels <ClassificationLabelNameEntity>
 #	[[basic|full] [languagecode <BCP47LanguageCode>]
 #	[formatjson] [asadmin]
 def infoDriveLabels(users, useAdminAccess=False):
-  driveLabelNameEntity = _getMain().getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL, shlexSplit=True)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL, shlexSplit=True)
+  FJQC = FormatJSONQuoteChar()
   parameters = {'useAdminAccess': useAdminAccess}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getDisplayDriveLabelsParameters(myarg, parameters):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
   api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive, labelNames, jcount = _getMain()._validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+    user, drive, labelNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
                                                                  api=api, showAction=not FJQC.formatJSON)
     if jcount == 0:
       continue
@@ -147,24 +188,24 @@ def infoDriveLabels(users, useAdminAccess=False):
       if name is None:
         continue
       try:
-        label = _getMain().callGAPI(drive.labels(), 'get',
+        label = callGAPI(drive.labels(), 'get',
                          bailOnInternalError=True,
                          throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                                                                      GAPI.INVALID_ARGUMENT, GAPI.INTERNAL_ERROR],
                          name=name, **parameters)
         _showDriveLabel(label, j, jcount, FJQC)
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.permissionDenied, GAPI.invalidArgument, GAPI.internalError) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
         break
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
 def doInfoDriveLabels():
-  infoDriveLabels([_getMain()._getAdminEmail()], True)
+  infoDriveLabels([_getAdminEmail()], True)
 
 # gam [<UserTypeEntity>] print classificationlabels> [todrive <ToDriveAttribute>*]
 #	[basic|full] [languagecode <BCP47LanguageCode>]
@@ -175,11 +216,11 @@ def doInfoDriveLabels():
 #	[publishedonly [<Boolean>]] [minimumrole applier|editor|organizer|reader]
 #	[formatjson] [asadmin]
 def printShowDriveLabels(users, useAdminAccess=False):
-  csvPF = _getMain().CSVPrintFile(['User', 'name', 'description', 'id'], 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'name', 'description', 'id'], 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   parameters = {'useAdminAccess': useAdminAccess}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getDisplayDriveLabelsParameters(myarg, parameters):
@@ -189,26 +230,26 @@ def printShowDriveLabels(users, useAdminAccess=False):
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['User', 'name', 'JSON'])
   api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive = _getMain().buildGAPIServiceObject(api, user, i, count)
+    user, drive = buildGAPIServiceObject(api, user, i, count)
     if not drive:
       continue
     if csvPF:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.CLASSIFICATION_LABEL, user, i, count)
-      pageMessage = _getMain().getPageMessageForWhom()
+      printGettingAllEntityItemsForWhom(Ent.CLASSIFICATION_LABEL, user, i, count)
+      pageMessage = getPageMessageForWhom()
     else:
       pageMessage = None
     try:
-      labels = _getMain().callGAPIpages(drive.labels(), 'list', 'labels',
+      labels = callGAPIpages(drive.labels(), 'list', 'labels',
                              pageMessage=pageMessage,
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                              **parameters, fields='nextPageToken,labels', pageSize=200)
       if not csvPF:
         jcount = len(labels)
         if not FJQC.formatJSON:
-          _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CLASSIFICATION_LABEL, i, count)
+          entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CLASSIFICATION_LABEL, i, count)
         Ind.Increment()
         j = 0
         for label in labels:
@@ -217,31 +258,31 @@ def printShowDriveLabels(users, useAdminAccess=False):
         Ind.Decrement()
       else:
         for label in labels:
-          row = _getMain().flattenJSON(label, flattened={'User': user}, timeObjects=DRIVELABELS_TIME_OBJECTS)
+          row = flattenJSON(label, flattened={'User': user}, timeObjects=DRIVELABELS_TIME_OBJECTS)
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
             row = {'User': user, 'name': label['name']}
-            row['JSON'] = json.dumps(_getMain().cleanJSON(label, timeObjects=DRIVELABELS_TIME_OBJECTS),
+            row['JSON'] = json.dumps(cleanJSON(label, timeObjects=DRIVELABELS_TIME_OBJECTS),
                                      ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(row)
     except GAPI.permissionDenied as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.CLASSIFICATION_LABEL, None], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.CLASSIFICATION_LABEL, None], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Classification Labels')
 
 def doPrintShowDriveLabels():
-  printShowDriveLabels([_getMain()._getAdminEmail()], True)
+  printShowDriveLabels([_getAdminEmail()], True)
 
 def _showDriveLabelPermission(labelperm, j, jcount, FJQC):
   if FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(labelperm), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(labelperm), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.CLASSIFICATION_LABEL_PERMISSION_NAME, f'{labelperm["name"]}'], j, jcount)
+  printEntity([Ent.CLASSIFICATION_LABEL_PERMISSION_NAME, f'{labelperm["name"]}'], j, jcount)
   Ind.Increment()
-  _getMain().showJSON(None, labelperm)
+  showJSON(None, labelperm)
   Ind.Decrement()
 
 # gam [<UserTypeEntity>] create classificationlabelpermission <ClassificationLabelNameEntity>
@@ -249,25 +290,25 @@ def _showDriveLabelPermission(labelperm, j, jcount, FJQC):
 #	role applier|editor|organizer|reader
 #	[nodetails|formatjson] [asadmin]
 def createDriveLabelPermissions(users, useAdminAccess=False):
-  driveLabelNameEntity = _getMain().getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
+  FJQC = FormatJSONQuoteChar()
   parameters = {'useAdminAccess': useAdminAccess}
   body = {}
   showDetails = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in _getMain().ADMIN_ACCESS_OPTIONS:
       parameters['useAdminAccess'] = True
     elif myarg == 'role':
-      body['role'] = _getMain().getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
+      body['role'] = getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
     elif myarg in {'user', 'group'}:
-      email = _getMain().getEmailAddress(returnUIDprefix='id:')
-      body['email'], status = _getMain().convertUIDtoEmailAddressWithType(email, emailTypes=[myarg])
+      email = getEmailAddress(returnUIDprefix='id:')
+      body['email'], status = convertUIDtoEmailAddressWithType(email, emailTypes=[myarg])
       if status == 'unknown':
         Cmd.Backup()
-        _getMain().usageErrorExit(Msg.ENTITY_DOES_NOT_EXIST.format(email))
+        usageErrorExit(Msg.ENTITY_DOES_NOT_EXIST.format(email))
     elif myarg == 'audience':
-      audience = _getMain().getString(Cmd.OB_STRING)
+      audience = getString(Cmd.OB_STRING)
       if not audience.startswith('audiences/'):
         audience = 'audiences/'+audience
       body['audience'] = audience
@@ -276,14 +317,14 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
     else:
       FJQC.GetFormatJSON(myarg)
   if 'role' not in body:
-    _getMain().missingArgumentExit(f'role {"|".join(DRIVELABELS_PERMISSION_ROLE_MAP.keys())}')
+    missingArgumentExit(f'role {"|".join(DRIVELABELS_PERMISSION_ROLE_MAP.keys())}')
   if 'email' not in body and 'audience' not in body:
-    _getMain().missingArgumentExit('(user <UserItem>) | (group <GroupItem) | (audience <String>)')
+    missingArgumentExit('(user <UserItem>) | (group <GroupItem) | (audience <String>)')
   api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive, labelNames, jcount = _getMain()._validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+    user, drive, labelNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
                                                                  api=api, showAction=not FJQC.formatJSON)
     if jcount == 0:
       continue
@@ -296,27 +337,27 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
       if name is None:
         continue
       try:
-        labelperm = _getMain().callGAPI(drive.labels().permissions(), 'create',
+        labelperm = callGAPI(drive.labels().permissions(), 'create',
                              bailOnInternalError=True,
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND,
                                                                          GAPI.INVALID, GAPI.INTERNAL_ERROR],
                              parent=name, body=body, **parameters)
         kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_PERMISSION, labelperm['name']]
         if not FJQC.formatJSON:
-          _getMain().entityActionPerformed(kvList, j, jcount)
+          entityActionPerformed(kvList, j, jcount)
         if showDetails:
           Ind.Increment()
           _showDriveLabelPermission(labelperm, j, jcount, FJQC)
           Ind.Decrement()
       except (GAPI.permissionDenied, GAPI.notFound, GAPI.invalid, GAPI.internalError)  as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
 def doCreateDriveLabelPermissions():
-  createDriveLabelPermissions([_getMain()._getAdminEmail()], True)
+  createDriveLabelPermissions([_getAdminEmail()], True)
 
 # gam [<UserTypeEntity>] delete classificationlabelpermission <ClassificationLabelNameEntity>
 #	(user <UserItem>) | (group <GroupItem) | (audience <String>)
@@ -326,31 +367,31 @@ def doCreateDriveLabelPermissions():
 def deleteDriveLabelPermissions(users, useAdminAccess=False):
   doDelete = Act.Get() == Act.DELETE
   if doDelete:
-    driveLabelNameEntity = _getMain().getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL, shlexSplit=True)
+    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL, shlexSplit=True)
   else:
-    driveLabelNameEntity = _getMain().getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_PERMISSION_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
+    driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_PERMISSION_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
   parameters = {'useAdminAccess': useAdminAccess, 'requests': [None]}
   labelperm = ''
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in _getMain().ADMIN_ACCESS_OPTIONS:
       parameters['useAdminAccess'] = True
     elif doDelete and myarg in {'user', 'group'}:
-      labelperm = ['people/', 'groups/'][myarg == 'group']+_getMain().convertEmailAddressToUID(_getMain().getEmailAddress(), cd=None, emailType=myarg, savedLocation=None)
+      labelperm = ['people/', 'groups/'][myarg == 'group']+convertEmailAddressToUID(getEmailAddress(), cd=None, emailType=myarg, savedLocation=None)
     elif doDelete and myarg == 'audience':
-      audience = _getMain().getString(Cmd.OB_STRING)
+      audience = getString(Cmd.OB_STRING)
       if not audience.startswith('audiences/'):
         audience = 'audiences/'+audience
       labelperm = audience
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if doDelete and not labelperm:
-    _getMain().missingArgumentExit('(user <UserItem>) | (group <GroupItem) | (audience <String>)')
+    missingArgumentExit('(user <UserItem>) | (group <GroupItem) | (audience <String>)')
   api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive, labelPermNames, jcount = _getMain()._validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+    user, drive, labelPermNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
                                                                      api=api, showAction=True)
     if jcount == 0:
       continue
@@ -371,31 +412,31 @@ def deleteDriveLabelPermissions(users, useAdminAccess=False):
       kvList[-1] = name
       parameters['requests'][0] = {'name': name}
       try:
-        _getMain().callGAPI(drive.labels().permissions(), 'batchDelete',
+        callGAPI(drive.labels().permissions(), 'batchDelete',
                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.INVALID, GAPI.NOT_FOUND],
                  parent=parent, body=parameters)
-        _getMain().entityActionPerformed(kvList, j, jcount)
+        entityActionPerformed(kvList, j, jcount)
       except (GAPI.permissionDenied, GAPI.invalid, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
 def doDeleteDriveLabelPermissions():
-  deleteDriveLabelPermissions([_getMain()._getAdminEmail()], True)
+  deleteDriveLabelPermissions([_getAdminEmail()], True)
 
 # gam [<UserTypeEntity>] print classificationlabelpermissions <ClassificationLabelNameEntity> [todrive <ToDriveAttribute>*]
 #	[formatjson [quotechar <Character>]] [asadmin]
 # gam [<UserTypeEntity>] show classificationlabelpermissions <ClassificationLabelNameEntity>
 #	[formatjson] [asadmin]
 def printShowDriveLabelPermissions(users, useAdminAccess=False):
-  csvPF = _getMain().CSVPrintFile(['User', 'name', 'email', 'role', 'person', 'group', 'audience'], 'sortall') if Act.csvFormat() else None
-  driveLabelNameEntity = _getMain().getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'name', 'email', 'role', 'person', 'group', 'audience'], 'sortall') if Act.csvFormat() else None
+  driveLabelNameEntity = getUserObjectEntity(Cmd.OB_CLASSIFICATION_LABEL_NAME, Ent.CLASSIFICATION_LABEL_PERMISSION, shlexSplit=True)
+  FJQC = FormatJSONQuoteChar(csvPF)
   parameters = {'useAdminAccess': useAdminAccess}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
@@ -405,10 +446,10 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
   if csvPF and FJQC.formatJSON:
     csvPF.SetJSONTitles(['User', 'name', 'JSON'])
   api = API.DRIVELABELS_ADMIN if parameters['useAdminAccess'] else API.DRIVELABELS_USER
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive, labelNames, jcount = _getMain()._validateUserGetObjectList(user, i, count, driveLabelNameEntity,
+    user, drive, labelNames, jcount = _validateUserGetObjectList(user, i, count, driveLabelNameEntity,
                                                                  api=api, showAction=FJQC is None or not FJQC.formatJSON)
     if jcount == 0:
       continue
@@ -422,19 +463,19 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
         continue
       kvList = [Ent.USER, user, Ent.CLASSIFICATION_LABEL_NAME, name]
       if csvPF:
-        _getMain().printGettingAllEntityItemsForWhom(Ent.CLASSIFICATION_LABEL_PERMISSION, name, j, jcount)
-        pageMessage = _getMain().getPageMessageForWhom()
+        printGettingAllEntityItemsForWhom(Ent.CLASSIFICATION_LABEL_PERMISSION, name, j, jcount)
+        pageMessage = getPageMessageForWhom()
       else:
         pageMessage = None
       try:
-        labelperms = _getMain().callGAPIpages(drive.labels().permissions(), 'list', 'labelPermissions',
+        labelperms = callGAPIpages(drive.labels().permissions(), 'list', 'labelPermissions',
                                    pageMessage=pageMessage,
                                    throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND],
                                    parent=name, **parameters, fields='nextPageToken,labelPermissions', pageSize=200)
         if not csvPF:
           jcount = len(labelperms)
           if not FJQC.formatJSON:
-            _getMain().entityPerformActionNumItems(kvList, jcount, Ent.CLASSIFICATION_LABEL_PERMISSION, i, count)
+            entityPerformActionNumItems(kvList, jcount, Ent.CLASSIFICATION_LABEL_PERMISSION, i, count)
           Ind.Increment()
           j = 0
           for labelperm in labelperms:
@@ -443,24 +484,24 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
           Ind.Decrement()
         else:
           for labelperm in labelperms:
-            row = _getMain().flattenJSON(labelperm, flattened={'User': user})
+            row = flattenJSON(labelperm, flattened={'User': user})
             if not FJQC.formatJSON:
               csvPF.WriteRowTitles(row)
             elif csvPF.CheckRowTitles(row):
               row = {'User': user, 'name': labelperm['name']}
-              row['JSON'] = json.dumps(_getMain().cleanJSON(labelperm), ensure_ascii=False, sort_keys=True)
+              row['JSON'] = json.dumps(cleanJSON(labelperm), ensure_ascii=False, sort_keys=True)
               csvPF.WriteRowNoFilter(row)
       except (GAPI.permissionDenied, GAPI.notFound) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('Classification Label Permissions')
 
 def doPrintShowDriveLabelPermissions():
-  printShowDriveLabelPermissions([_getMain()._getAdminEmail()], True)
+  printShowDriveLabelPermissions([_getAdminEmail()], True)
 
 DRIVELABEL_FIELD_TYPE_MAP = {
   'text': 'setTextValues',
@@ -488,52 +529,52 @@ def processFileDriveLabels(users):
   showDetails = True
   kcount = 0
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'addlabel':
-      labelIds = _getMain().getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
+      labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
       for labelId in labelIds:
         actionList[myarg]['list'].append({'labelModifications': [{'labelId': normalizeDriveLabelID(labelId)}]})
         kcount += 1
     elif myarg == 'deletelabel':
-      labelIds = _getMain().getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
+      labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
       for labelId in labelIds:
         actionList[myarg]['list'].append({'labelModifications': [{'labelId': normalizeDriveLabelID(labelId), 'removeLabel': True}]})
         kcount += 1
     elif myarg == 'addlabelfield':
-      labelId = normalizeDriveLabelID(_getMain().getString(Cmd.OB_CLASSIFICATION_LABEL_ID))
-      fieldId = _getMain().getString(Cmd.OB_CLASSIFICATION_LABEL_FIELD_ID)
-      fieldType = _getMain().getChoice(DRIVELABEL_FIELD_TYPE_MAP, mapChoice=True)
+      labelId = normalizeDriveLabelID(getString(Cmd.OB_CLASSIFICATION_LABEL_ID))
+      fieldId = getString(Cmd.OB_CLASSIFICATION_LABEL_FIELD_ID)
+      fieldType = getChoice(DRIVELABEL_FIELD_TYPE_MAP, mapChoice=True)
       if fieldType == 'setTextValues':
-        valueList = [_getMain().getString(Cmd.OB_STRING, minLen=0)]
+        valueList = [getString(Cmd.OB_STRING, minLen=0)]
       elif fieldType == 'setSelectionValues':
-        valueList = _getMain().convertEntityToList(_getMain().getString(Cmd.OB_CLASSIFICATION_LABEL_SELECTION_ID_LIST, minLen=0), shlexSplit=True)
+        valueList = convertEntityToList(getString(Cmd.OB_CLASSIFICATION_LABEL_SELECTION_ID_LIST, minLen=0), shlexSplit=True)
       elif fieldType == 'setIntegerValues':
-        valueList = [_getMain().getInteger()]
+        valueList = [getInteger()]
       elif fieldType == 'setDateValues':
-        valueList = [_getMain().getYYYYMMDD()]
+        valueList = [getYYYYMMDD()]
       else: #elif fieldType == 'setUserValues':
-        valueList = _getMain().convertEntityToList(_getMain().getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0))
+        valueList = convertEntityToList(getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0))
       actionList[myarg]['list'].append({'labelModifications': [{'labelId': labelId,
                                                                 'fieldModifications': [{'fieldId': fieldId, fieldType: valueList}]}]})
       kcount += 1
     elif myarg == 'deletelabelfield':
-      labelId = normalizeDriveLabelID(_getMain().getString(Cmd.OB_CLASSIFICATION_LABEL_ID))
-      fieldId = _getMain().getString(Cmd.OB_CLASSIFICATION_LABEL_FIELD_ID)
+      labelId = normalizeDriveLabelID(getString(Cmd.OB_CLASSIFICATION_LABEL_ID))
+      fieldId = getString(Cmd.OB_CLASSIFICATION_LABEL_FIELD_ID)
       actionList[myarg]['list'].append({'labelModifications': [{'labelId': labelId,
                                                                 'fieldModifications': [{'fieldId': fieldId, 'unsetValues': True}]}]})
       kcount += 1
     elif myarg == 'nodetails':
       showDetails = False
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=None)
     if jcount == 0:
       continue
     Act.Set(Act.PROCESS)
-    _getMain().entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.CLASSIFICATION_LABEL, Act.MODIFIER_FOR, jcount, Ent.DRIVE_FILE_OR_FOLDER)
+    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.CLASSIFICATION_LABEL, Act.MODIFIER_FOR, jcount, Ent.DRIVE_FILE_OR_FOLDER)
     Ind.Increment()
     j = 0
     userError = False
@@ -542,7 +583,7 @@ def processFileDriveLabels(users):
       k = 0
       kvList = [Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId]
       Act.Set(Act.PROCESS)
-      _getMain().entityPerformActionNumItems(kvList, kcount, Ent.CLASSIFICATION_LABEL)
+      entityPerformActionNumItems(kvList, kcount, Ent.CLASSIFICATION_LABEL)
       Ind.Increment()
       for operation in ['deletelabelfield', 'deletelabel', 'addlabel', 'addlabelfield']:
         Act.Set(actionList[operation]['action'])
@@ -553,25 +594,25 @@ def processFileDriveLabels(users):
           if 'fieldModifications' in action['labelModifications'][0]:
             xkvList.extend([Ent.CLASSIFICATION_LABEL_FIELD_ID, action['labelModifications'][0]['fieldModifications'][0]['fieldId']])
           try:
-            label = _getMain().callGAPI(drive.files(), 'modifyLabels',
+            label = callGAPI(drive.files(), 'modifyLabels',
                              throwReasons=GAPI.DRIVE3_MODIFY_LABEL_THROW_REASONS,
                              fileId=fileId, body=action)
-            _getMain().entityActionPerformed(xkvList, k, kcount)
+            entityActionPerformed(xkvList, k, kcount)
             if showDetails:
               Ind.Increment()
-              _getMain().showJSON(None, label, timeObjects=DRIVELABELS_TIME_OBJECTS, dictObjectsKey={'fields': 'id', 'modifiedLabels': 'id'})
+              showJSON(None, label, timeObjects=DRIVELABELS_TIME_OBJECTS, dictObjectsKey={'fields': 'id', 'modifiedLabels': 'id'})
               Ind.Decrement()
           except GAPI.fileNotFound as e:
-            _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+            entityActionFailedWarning(kvList, str(e), j, jcount)
             break
           except (GAPI.notFound, GAPI.forbidden, GAPI.internalError,
                   GAPI.fileNeverWritable, GAPI.applyLabelForbidden,
                   GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.invalidInput, GAPI.badRequest,
                   GAPI.labelMutationUnknownField, GAPI.labelMutationIllegalSelection, GAPI.labelMutationForbidden,
                   GAPI.labelMultipleValuesForSingularField) as e:
-            _getMain().entityActionFailedWarning(xkvList, str(e), k, kcount)
+            entityActionFailedWarning(xkvList, str(e), k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             userError = True
             break
       Ind.Decrement()

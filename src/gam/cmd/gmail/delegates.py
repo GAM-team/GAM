@@ -16,6 +16,22 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
+from gam.util.args import checkArgumentPresent, checkForExtraneousArguments, getArgument
+from gam.util.csv_pf import CSVPrintFile
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    printEntity,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    userGmailServiceNotEnabledWarning,
+)
+from gam.util.entity import _validateUserGetObjectList, convertUIDtoEmailAddress, getEntityArgument, getUserObjectEntity
+from gam.util.errors import unknownArgumentExit
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -74,53 +90,53 @@ def sendCreateDelegateNotification(user, delegate, basenotify, i=0, count=0, msg
 #	]
 # gam <UserTypeEntity> delete delegate|delegates [convertalias] <UserEntity>
 def processDelegates(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   createCmd = Act.Get() != Act.DELETE
-  aliasAllowed = not _getMain().checkArgumentPresent(['convertalias'])
-  delegateEntity = _getMain().getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DELEGATE)
+  aliasAllowed = not checkArgumentPresent(['convertalias'])
+  delegateEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DELEGATE)
   notify = {'notify': False, 'subject': '', 'message': '', 'html': False, 'charset': UTF8}
   if createCmd:
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if _getMain().getNotifyArguments(myarg, notify, False):
         pass
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   else:
-    _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+    checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, delegates, jcount = _getMain()._validateUserGetObjectList(user, i, count, delegateEntity)
+    user, gmail, delegates, jcount = _validateUserGetObjectList(user, i, count, delegateEntity)
     if jcount == 0:
       continue
     Ind.Increment()
     j = 0
     for delegate in delegates:
       j += 1
-      delegateEmail = _getMain().convertUIDtoEmailAddress(delegate, cd=cd, emailTypes=['user', 'group'], aliasAllowed=aliasAllowed)
+      delegateEmail = convertUIDtoEmailAddress(delegate, cd=cd, emailTypes=['user', 'group'], aliasAllowed=aliasAllowed)
       kvList = [Ent.USER, user, Ent.DELEGATE, delegateEmail]
       try:
         if createCmd:
-          _getMain().callGAPI(gmail.users().settings().delegates(), 'create',
+          callGAPI(gmail.users().settings().delegates(), 'create',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION, GAPI.INVALID,
                                                           GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                    userId='me', body={'delegateEmail': delegateEmail})
-          _getMain().entityActionPerformed(kvList, j, jcount)
+          entityActionPerformed(kvList, j, jcount)
           if notify['notify']:
             Ind.Increment()
             sendCreateDelegateNotification(user, delegateEmail, notify, j, jcount)
             Ind.Decrement()
         else:
-          _getMain().callGAPI(gmail.users().settings().delegates(), 'delete',
+          callGAPI(gmail.users().settings().delegates(), 'delete',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_INPUT, GAPI.PERMISSION_DENIED],
                    userId='me', delegateEmail=delegateEmail)
-          _getMain().entityActionPerformed(kvList, j, jcount)
+          entityActionPerformed(kvList, j, jcount)
       except (GAPI.alreadyExists, GAPI.failedPrecondition, GAPI.invalid,
               GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> delegate to [convertalias] <UserEntity>
@@ -131,40 +147,40 @@ def processDelegates(users):
 #	    [<NotifyMessageContent>] [html [<Boolean>]]
 #	]
 def delegateTo(users):
-  _getMain().checkArgumentPresent('to', required=True)
+  checkArgumentPresent('to', required=True)
   processDelegates(users)
 
 # gam <UserTypeEntity> update delegate|delegates [convertalias] [<UserEntity>]
 def updateDelegates(users):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  aliasAllowed = not _getMain().checkArgumentPresent(['convertalias'])
+  cd = buildGAPIObject(API.DIRECTORY)
+  aliasAllowed = not checkArgumentPresent(['convertalias'])
   if Cmd.ArgumentsRemaining():
-    delegateEntity = _getMain().getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DELEGATE)
-    _getMain().checkForExtraneousArguments()
+    delegateEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DELEGATE)
+    checkForExtraneousArguments()
   else:
     delegateEntity = None
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     if delegateEntity is None:
-      user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+      user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
       if not gmail:
         continue
       try:
-        result = _getMain().callGAPI(gmail.users().settings().delegates(), 'list',
+        result = callGAPI(gmail.users().settings().delegates(), 'list',
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED],
                           userId='me')
       except GAPI.permissionDenied as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
         continue
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         continue
       delegates = result.get('delegates', []) if result is not None else []
       jcount = len(delegates)
-      _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.DELEGATE, i, count)
+      entityPerformActionModifierNumItems([Ent.USER, user], Msg.MAXIMUM_OF, jcount, Ent.DELEGATE, i, count)
     else:
-      user, gmail, delegates, jcount = _getMain()._validateUserGetObjectList(user, i, count, delegateEntity)
+      user, gmail, delegates, jcount = _validateUserGetObjectList(user, i, count, delegateEntity)
       if jcount == 0:
         continue
     Ind.Increment()
@@ -172,60 +188,60 @@ def updateDelegates(users):
     for delegate in delegates:
       j += 1
       if delegateEntity is not None or delegate['verificationStatus'] == 'accepted':
-        delegateEmail = delegate['delegateEmail'] if delegateEntity is None else _getMain().convertUIDtoEmailAddress(delegate, cd=cd, aliasAllowed=aliasAllowed)
+        delegateEmail = delegate['delegateEmail'] if delegateEntity is None else convertUIDtoEmailAddress(delegate, cd=cd, aliasAllowed=aliasAllowed)
         try:
-          _getMain().callGAPI(gmail.users().settings().delegates(), 'create',
+          callGAPI(gmail.users().settings().delegates(), 'create',
                    throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION,
                                                           GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                    userId='me', body={'delegateEmail': delegateEmail, 'verificationStatus': 'accepted'})
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.DELEGATE, delegateEmail], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.DELEGATE, delegateEmail], j, jcount)
         except GAPI.alreadyExists:
-          _getMain().entityActionPerformed([Ent.USER, user, Ent.DELEGATE, delegateEmail], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.DELEGATE, delegateEmail], j, jcount)
         except (GAPI.failedPrecondition, GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, delegateEmail], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, delegateEmail], str(e), j, jcount)
         except GAPI.serviceNotAvailable:
-          _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+          userGmailServiceNotEnabledWarning(user, i, count)
     Ind.Decrement()
 
 # gam <UserTypeEntity> print delegates|delegate [todrive <ToDriveAttribute>*] [shownames]
 # gam <UserTypeEntity> show delegates|delegate [shownames] [csv]
 def printShowDelegates(users):
   titlesList = ['User', 'delegateAddress', 'delegationStatus']
-  csvPF = _getMain().CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
   cd = None
   csvStyle = showNames = False
   delegateNames = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif not csvPF and myarg == 'csv':
       csvStyle = True
     elif myarg == 'shownames':
-      cd = _getMain().buildGAPIObject(API.DIRECTORY)
+      cd = buildGAPIObject(API.DIRECTORY)
       titlesList = ['User', 'delegateName', 'delegateAddress', 'delegationStatus']
       showNames = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if csvPF:
     csvPF.AddTitles(titlesList)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if csvPF:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.DELEGATE, user, i, count)
+      printGettingAllEntityItemsForWhom(Ent.DELEGATE, user, i, count)
     try:
-      result = _getMain().callGAPI(gmail.users().settings().delegates(), 'list',
+      result = callGAPI(gmail.users().settings().delegates(), 'list',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION],
                         userId='me')
       delegates = result.get('delegates', []) if result is not None else []
       if not csvPF:
         jcount = len(delegates)
         if not csvStyle:
-          _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DELEGATE, i, count)
+          entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DELEGATE, i, count)
           Ind.Increment()
           j = 0
           for delegate in delegates:
@@ -233,15 +249,15 @@ def printShowDelegates(users):
             status = delegate['verificationStatus']
             delegateEmail = delegate['delegateEmail']
             if cd:
-              _getMain().printEntity([Ent.DELEGATE, _getMain()._getDelegateName(cd, delegateEmail, delegateNames)], j, jcount)
+              printEntity([Ent.DELEGATE, _getMain()._getDelegateName(cd, delegateEmail, delegateNames)], j, jcount)
               Ind.Increment()
-              _getMain().printKeyValueList(['Status', status])
-              _getMain().printKeyValueList(['Delegate Email', delegateEmail])
+              printKeyValueList(['Status', status])
+              printKeyValueList(['Delegate Email', delegateEmail])
               Ind.Decrement()
             else:
-              _getMain().printEntity([Ent.DELEGATE, delegateEmail], j, jcount)
+              printEntity([Ent.DELEGATE, delegateEmail], j, jcount)
               Ind.Increment()
-              _getMain().printKeyValueList(['Status', status])
+              printKeyValueList(['Status', status])
               Ind.Decrement()
           Ind.Decrement()
         else:
@@ -251,9 +267,9 @@ def printShowDelegates(users):
             status = delegate['verificationStatus']
             delegateEmail = delegate['delegateEmail']
             if cd:
-              _getMain().writeStdout(f'{user},{_getDelegateName(cd, delegateEmail, delegateNames)},{status},{delegateEmail}\n')
+              writeStdout(f'{user},{_getDelegateName(cd, delegateEmail, delegateNames)},{status},{delegateEmail}\n')
             else:
-              _getMain().writeStdout(f'{user},{status},{delegateEmail}\n')
+              writeStdout(f'{user},{status},{delegateEmail}\n')
       elif delegates:
         if showNames:
           for delegate in delegates:
@@ -266,9 +282,9 @@ def printShowDelegates(users):
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})
     except (GAPI.permissionDenied, GAPI.failedPrecondition) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.DELEGATE, None], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.writeCSVfile('Delegates')
 

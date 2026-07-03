@@ -24,6 +24,19 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import callGAPI, callGAPIpages
+from gam.util.args import getArgument, getBoolean
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityModifierItemValueListActionNotPerformedWarning,
+    entityModifierItemValueListActionPerformed,
+    entityPerformActionModifierItemValueList,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.errors import unknownArgumentExit
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -78,7 +91,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
   def getPermissions(fid):
     permissions = {}
     try:
-      result = _getMain().callGAPIpages(drive.permissions(), 'list', 'permissions',
+      result = callGAPIpages(drive.permissions(), 'list', 'permissions',
                              throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              fileId=fid,
@@ -94,7 +107,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
             GAPI.unknownError, GAPI.invalid):
       pass
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, stat)
     return None
 
@@ -129,7 +142,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
       return False
     deleteSourcePerms[permission['id']] = permission.copy()
     if copyMoveOptions['showPermissionMessages']:
-      _getMain().entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
+      entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
     return True
 
   def mapPermissionsDomains(kvList, permission):
@@ -140,7 +153,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
         deleteSourcePerms[permission['id']] = permission.copy()
         if copyMoveOptions['showPermissionMessages']:
           notMovedMessage = f"email {sourceEmail} mapped to {destEmail}"
-          _getMain().entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
+          entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
         permission['emailAddress'] = destEmail
         addSourcePerms[permission['id']] = permission
         return True
@@ -150,7 +163,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
         deleteSourcePerms[permission['id']] = permission.copy()
         if copyMoveOptions['showPermissionMessages']:
           notMovedMessage = f"email {sourceEmail} mapped to {destEmail}"
-          _getMain().entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
+          entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
         permission['emailAddress'] = destEmail
         addSourcePerms[permission['id']] = permission
         return True
@@ -160,7 +173,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
         deleteSourcePerms[permission['id']] = permission.copy()
         if copyMoveOptions['showPermissionMessages']:
           notMovedMessage = f"domain {domain} mapped to {copyMoveOptions['mapPermissionsDomains'][domain]}"
-          _getMain().entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
+          entityActionNotPerformedWarning(kvList, notMovedMessage, 0, 0)
         permission['domain'] = copyMoveOptions['mapPermissionsDomains'][domain]
         addSourcePerms[permission['id']] = permission
         return True
@@ -187,20 +200,20 @@ def _updateMoveFilePermissions(drive, user, i, count,
       k += 1
       kvList = permissionKVList(user, entityType, fileTitle, permission)
       try:
-        _getMain().callGAPI(drive.permissions(), 'delete',
+        callGAPI(drive.permissions(), 'delete',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_DELETE_ACL_THROW_REASONS,
                  useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'],
                  fileId=fileId, permissionId=permissionId,  supportsAllDrives=True)
         if copyMoveOptions['showPermissionMessages']:
-          _getMain().entityActionPerformed(kvList, k, kcount)
+          entityActionPerformed(kvList, k, kcount)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.invalid,
               GAPI.badRequest, GAPI.notFound, GAPI.permissionNotFound, GAPI.cannotRemoveOwner,
               GAPI.cannotModifyInheritedTeamDrivePermission, GAPI.cannotModifyInheritedPermission,
               GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded, GAPI.cannotDeletePermission,
               GAPI.fileNeverWritable) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), k, kcount)
+        entityActionFailedWarning(kvList, str(e), k, kcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, stat)
         Act.Set(action)
         return
@@ -217,13 +230,13 @@ def _updateMoveFilePermissions(drive, user, i, count,
       sendNotificationEmail = False
       while True:
         try:
-          _getMain().callGAPI(drive.permissions(), 'create',
+          callGAPI(drive.permissions(), 'create',
                    throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_CREATE_ACL_THROW_REASONS,
 #                   retryReasons=[GAPI.INVALID_SHARING_REQUEST],
                    fileId=fileId, sendNotificationEmail=sendNotificationEmail, emailMessage=None,
                    body=permission, fields='', useDomainAdminAccess=copyMoveOptions['useDomainAdminAccess'], supportsAllDrives=True)
           if copyMoveOptions['showPermissionMessages']:
-            _getMain().entityActionPerformed(kvList, k, kcount)
+            entityActionPerformed(kvList, k, kcount)
           break
         except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                 GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
@@ -238,15 +251,15 @@ def _updateMoveFilePermissions(drive, user, i, count,
                 GAPI.fileOrganizerOnNonTeamDriveNotSupported,
                 GAPI.cannotModifyInheritedPermission,
                 GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility, GAPI.abusiveContentRestriction) as e:
-          _getMain().entityActionFailedWarning(kvList, str(e), k, kcount)
+          entityActionFailedWarning(kvList, str(e), k, kcount)
           break
         except GAPI.invalidSharingRequest as e:
           if not copyMoveOptions['sendEmailIfRequired'] or sendNotificationEmail or 'You are trying to invite' not in str(e):
-            _getMain().entityActionFailedWarning(kvList, str(e), k, kcount)
+            entityActionFailedWarning(kvList, str(e), k, kcount)
             break
           sendNotificationEmail = True
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           _incrStatistic(statistics, stat)
           Act.Set(action)
           return
@@ -258,7 +271,7 @@ def _recursiveUpdateMovePermissions(drive, user, i, count,
   _updateMoveFilePermissions(drive, user, i, count,
                              Ent.DRIVE_FOLDER, fileId, fileTitle,
                              statistics, STAT_FOLDER_PERMISSIONS_FAILED, copyMoveOptions)
-  sourceChildren = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+  sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
                                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                  retryReasons=[GAPI.UNKNOWN_ERROR],
                                  q=_getMain().WITH_PARENTS.format(fileId),
@@ -324,7 +337,7 @@ def moveDriveFile(users):
     if atTop and (copyMoveOptions['mergeWithParent'] or copyMoveOptions['mergeWithParentRetain']):
       action = Act.Get()
       Act.Set(Act.MOVE_MERGE)
-      _getMain().entityPerformActionModifierItemValueList(kvList, Act.MODIFIER_CONTENTS_WITH, [Ent.DRIVE_FOLDER, newParentNameId], j, jcount)
+      entityPerformActionModifierItemValueList(kvList, Act.MODIFIER_CONTENTS_WITH, [Ent.DRIVE_FOLDER, newParentNameId], j, jcount)
       Act.Set(action)
       _incrStatistic(statistics, STAT_FOLDER_MERGED)
       if (copyMoveOptions['copyFolderPermissions'] and
@@ -355,7 +368,7 @@ def moveDriveFile(users):
             newFolderId = target['id']
             action = Act.Get()
             Act.Set(Act.MOVE_MERGE)
-            _getMain().entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_CONTENTS_WITH, [Ent.DRIVE_FOLDER, f'{newFolderName}({newFolderId})'], j, jcount)
+            entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_CONTENTS_WITH, [Ent.DRIVE_FOLDER, f'{newFolderName}({newFolderId})'], j, jcount)
             Act.Set(action)
             _incrStatistic(statistics, STAT_FOLDER_MERGED)
             if (copyMoveOptions['copyFolderPermissions'] and
@@ -373,7 +386,7 @@ def moveDriveFile(users):
                                copyFolderNonInheritedPermissions,
                                False)
             return (newFolderId, newFolderName, True, True)
-          _getMain().entityActionFailedWarning(kvList+[Ent.DRIVE_FOLDER, newParentNameId], Msg.NOT_WRITABLE, j, jcount)
+          entityActionFailedWarning(kvList+[Ent.DRIVE_FOLDER, newParentNameId], Msg.NOT_WRITABLE, j, jcount)
           _incrStatistic(statistics, STAT_FOLDER_NOT_WRITABLE)
           copyMoveOptions['retainSourceFolders'] = True
           return (None, None, False, False)
@@ -382,7 +395,7 @@ def moveDriveFile(users):
     elif copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_SKIP:
       targetChild = _targetFilenameExists(newFolderName, sourceMimeType, targetChildren)
       if targetChild is not None:
-        _getMain().entityModifierItemValueListActionNotPerformedWarning(kvList, Act.MODIFIER_TO,
+        entityModifierItemValueListActionNotPerformedWarning(kvList, Act.MODIFIER_TO,
                                                              [Ent.DRIVE_FOLDER, newParentNameId, Ent.DRIVE_FOLDER, f"{newFolderName}({targetChild['id']})"],
                                                              Msg.DUPLICATE, j, jcount)
         _incrStatistic(statistics, STAT_FOLDER_DUPLICATE)
@@ -398,7 +411,7 @@ def moveDriveFile(users):
         body = {}
       removeParents = ','.join([parentId for parentId in source.pop('oldparents', []) if parentId not in source['parents']])
       try:
-        _getMain().callGAPI(drive.files(), 'update',
+        callGAPI(drive.files(), 'update',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST,
                                                                GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                GAPI.FILE_OWNER_NOT_MEMBER_OF_TEAMDRIVE,
@@ -412,7 +425,7 @@ def moveDriveFile(users):
                  fileId=folderId,
                  addParents=newParentId, removeParents=removeParents,
                  body=body, fields=None, supportsAllDrives=True)
-        _getMain().entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_TO,
+        entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_TO,
                                                    [Ent.DRIVE_FOLDER, newParentNameId, Ent.DRIVE_FOLDER, f'{newFolderName}({folderId})'],
                                                    j, jcount)
         _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
@@ -421,9 +434,9 @@ def moveDriveFile(users):
               GAPI.fileWriterTeamDriveMoveInDisabled, GAPI.targetUserRoleLimitedByLicenseRestriction,
               GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
               GAPI.crossDomainMoveRestriction, GAPI.storageQuotaExceeded) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, folderName], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, folderName], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
       _incrStatistic(statistics, STAT_FILE_FAILED)
       copyMoveOptions['retainSourceFolders'] = True
       return (None, None, False, False)
@@ -439,7 +452,7 @@ def moveDriveFile(users):
       body.pop('driveId', None)
     body['name'] = newFolderName
     try:
-      result = _getMain().callGAPI(drive.files(), 'create',
+      result = callGAPI(drive.files(), 'create',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                     GAPI.INTERNAL_ERROR, GAPI.STORAGE_QUOTA_EXCEEDED,
                                                                     GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
@@ -448,7 +461,7 @@ def moveDriveFile(users):
       newFolderId = result['id']
       action = Act.Get()
       Act.Set(Act.RECREATE)
-      _getMain().entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
+      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
                                                  [Ent.DRIVE_FOLDER, newParentNameId, Ent.DRIVE_FOLDER, f'{newFolderName}({newFolderId})'],
                                                  j, jcount)
       Act.Set(action)
@@ -466,9 +479,9 @@ def moveDriveFile(users):
     except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.internalError, GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
             GAPI.badRequest, GAPI.targetUserRoleLimitedByLicenseRestriction) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, newFolderName], str(e), j, jcount)
+      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, newFolderName], str(e), j, jcount)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
     _incrStatistic(statistics, STAT_FOLDER_FAILED)
     copyMoveOptions['retainSourceFolders'] = True
     return (None, None, False, False)
@@ -488,7 +501,7 @@ def moveDriveFile(users):
     existingShortcut = _checkForExistingShortcut(drive, childId, childName, newParentId)
     if existingShortcut:
       Act.Set(Act.CREATE_SHORTCUT)
-      _getMain().entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_PREVIOUSLY_IN,
+      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_PREVIOUSLY_IN,
                                                  [Ent.DRIVE_FOLDER, newParentNameId, targetEntityType, f"{childName}({existingShortcut})"],
                                                  k, kcount)
       Act.Set(action)
@@ -497,7 +510,7 @@ def moveDriveFile(users):
     body = {'name': childName, 'mimeType': MIMETYPE_GA_SHORTCUT,
             'parents': [newParentId], 'shortcutDetails': {'targetId': childId}}
     try:
-      result = _getMain().callGAPI(drive.files(), 'create',
+      result = callGAPI(drive.files(), 'create',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                     GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
                                                                     GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVES_SHARING_RESTRICTION_NOT_ALLOWED,
@@ -505,7 +518,7 @@ def moveDriveFile(users):
                                                                     GAPI.TARGET_USER_ROLE_LIMITED_BY_LICENSE_RESTRICTION, GAPI.SHARE_OUT_WARNING],
                         body=body, fields='id', supportsAllDrives=True)
       Act.Set(Act.CREATE_SHORTCUT)
-      _getMain().entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
+      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_IN,
                                                  [Ent.DRIVE_FOLDER, newParentNameId, targetEntityType, f"{childName}({result['id']})"],
                                                  k, kcount)
       Act.Set(action)
@@ -515,7 +528,7 @@ def moveDriveFile(users):
             GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
             GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep, GAPI.shortcutTargetInvalid,
             GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.shareOutWarning) as e:
-      _getMain().entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), k, kcount)
+      entityActionFailedWarning(kvList+[Ent.DRIVE_FILE_SHORTCUT, childName], str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
 
   def _moveFile(drive, user, i, count, k, kcount, entityType, childId, childName, newChildName, newParentId, newParentName, removeParents, body):
@@ -526,7 +539,7 @@ def moveDriveFile(users):
                                  entityType, childId, childName,
                                  statistics, STAT_FILE_PERMISSIONS_FAILED, copyMoveOptions)
     try:
-      _getMain().callGAPI(drive.files(), 'update',
+      callGAPI(drive.files(), 'update',
                throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST,
                                                              GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                              GAPI.FILE_OWNER_NOT_MEMBER_OF_TEAMDRIVE,
@@ -541,7 +554,7 @@ def moveDriveFile(users):
                                                              GAPI.STORAGE_QUOTA_EXCEEDED],
                fileId=childId, addParents=newParentId, removeParents=removeParents,
                body=body, fields='', supportsAllDrives=True)
-      _getMain().entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_TO,
+      entityModifierItemValueListActionPerformed(kvList, Act.MODIFIER_TO,
                                                  [Ent.DRIVE_FOLDER, newParentNameId, entityType, f'{newChildName}({childId})'],
                                                  k, kcount)
       _incrStatistic(statistics, STAT_FILE_COPIED_MOVED)
@@ -550,14 +563,14 @@ def moveDriveFile(users):
             GAPI.shareOutNotPermitted, GAPI.targetUserRoleLimitedByLicenseRestriction,
             GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
             GAPI.teamDrivesShortcutFileNotSupported, GAPI.storageQuotaExceeded) as e:
-      _getMain().entityActionFailedWarning(kvList, str(e), k, kcount)
+      entityActionFailedWarning(kvList, str(e), k, kcount)
       _incrStatistic(statistics, STAT_FILE_FAILED)
     except (GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions,
             GAPI.fileOwnerNotMemberOfTeamDrive, GAPI.fileOwnerNotMemberOfWriterDomain,
             GAPI.fileWriterTeamDriveMoveInDisabled,
             GAPI.crossDomainMoveRestriction) as e:
       if not copyMoveOptions['createShortcutsForNonmovableFiles']:
-        _getMain().entityActionFailedWarning(kvList, str(e), k, kcount)
+        entityActionFailedWarning(kvList, str(e), k, kcount)
         _incrStatistic(statistics, STAT_FILE_FAILED)
       else:
         _makeMoveShortcut(drive, user, k, kcount, entityType, childId, childName, newParentId, newParentName)
@@ -579,7 +592,7 @@ def moveDriveFile(users):
                                         statistics, copyMoveOptions, sourceSearchArgs)
       return
     movedFiles[newFolderId] = 1
-    sourceChildren = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+    sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
                                    throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                    retryReasons=[GAPI.UNKNOWN_ERROR],
                                    q=_getMain().WITH_PARENTS.format(folderId),
@@ -590,7 +603,7 @@ def moveDriveFile(users):
     kcount = len(sourceChildren)
     if kcount > 0:
       if existingTargetFolder:
-        subTargetChildren = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+        subTargetChildren = callGAPIpages(drive.files(), 'list', 'files',
                                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                           retryReasons=[GAPI.UNKNOWN_ERROR],
                                           q=_getMain().ANY_NON_TRASHED_WITH_PARENTS.format(newFolderId),
@@ -610,7 +623,7 @@ def moveDriveFile(users):
           continue
         trashed = child.pop('trashed', False)
         if (childId == newFolderId) or (copyMoveOptions['destDriveId'] and trashed):
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, _getMain()._getEntityMimeType(child), childNameId],
+          entityActionNotPerformedWarning([Ent.USER, user, _getMain()._getEntityMimeType(child), childNameId],
                                           [Msg.NOT_MOVABLE, Msg.NOT_MOVABLE_IN_TRASH][trashed], k, kcount)
           _incrStatistic(statistics, STAT_FILE_NOT_COPYABLE_MOVABLE)
           continue
@@ -635,19 +648,19 @@ def moveDriveFile(users):
     kvList = [Ent.USER, user, Ent.DRIVE_FOLDER, f"{sourceName}({folderId})"]
     if (atTop and (copyMoveOptions['mergeWithParentRetain'] or copyMoveOptions['sourceIsMyDriveSharedDrive'])) or copyMoveOptions['retainSourceFolders']:
       Act.Set(Act.RETAIN)
-      _getMain().entityActionPerformed(kvList, i, count)
+      entityActionPerformed(kvList, i, count)
     else:
       Act.Set(Act.DELETE)
       try:
-        _getMain().callGAPI(drive.files(), 'delete',
+        callGAPI(drive.files(), 'delete',
                  throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
                  fileId=folderId, supportsAllDrives=True)
-        _getMain().entityActionPerformed(kvList, i, count)
+        entityActionPerformed(kvList, i, count)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.fileNeverWritable) as e:
-        _getMain().entityActionFailedWarning(kvList, str(e), j, jcount)
+        entityActionFailedWarning(kvList, str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
     Act.Set(Act.MOVE)
     return
 
@@ -667,20 +680,20 @@ def moveDriveFile(users):
   movedFiles = {}
   verifyOrganizer = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if getCopyMoveOptions(myarg, copyMoveOptions):
       pass
     elif getDriveFileParentAttribute(myarg, parentParms):
       newParentsSpecified = True
     elif myarg == 'verifyorganizer':
-      verifyOrganizer = _getMain().getBoolean()
+      verifyOrganizer = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   updateMovePermissions = ((not copyMoveOptions['moveFilePermissions']) or
                            copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains'] or
                            copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails'])
 
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DRIVE_FILE_OR_FOLDER)
@@ -694,7 +707,7 @@ def moveDriveFile(users):
     for fileId in fileIdEntity['list']:
       j += 1
       try:
-        source = _getMain().callGAPI(drive.files(), 'get',
+        source = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=fileId,
                           fields='id,name,parents,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
@@ -711,7 +724,7 @@ def moveDriveFile(users):
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
         kvList = [Ent.USER, user, _getMain()._getEntityMimeType(source), sourceNameId]
         if fileId in movedFiles:
-          _getMain().entityActionNotPerformedWarning(kvList, Msg.DUPLICATE, j, jcount)
+          entityActionNotPerformedWarning(kvList, Msg.DUPLICATE, j, jcount)
           _incrStatistic(statistics, STAT_FILE_DUPLICATE)
           continue
         if copyMoveOptions['sourceDriveId']:
@@ -720,7 +733,7 @@ def moveDriveFile(users):
             _incrStatistic(statistics, STAT_USER_NOT_ORGANIZER)
             continue
           if source['trashed']:
-            _getMain().entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_IN_TRASH, j, jcount)
+            entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_IN_TRASH, j, jcount)
             _incrStatistic(statistics, STAT_FILE_NOT_COPYABLE_MOVABLE)
             continue
           sourceSearchArgs = {'driveId': copyMoveOptions['sourceDriveId'], 'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
@@ -731,7 +744,7 @@ def moveDriveFile(users):
           newParents = parentBody['parents']
           numNewParents = len(newParents)
           if numNewParents > 1:
-            _getMain().entityActionNotPerformedWarning(kvList, Msg.MULTIPLE_PARENTS_SPECIFIED.format(numNewParents), j, jcount)
+            entityActionNotPerformedWarning(kvList, Msg.MULTIPLE_PARENTS_SPECIFIED.format(numNewParents), j, jcount)
             _incrStatistic(statistics, STAT_FILE_FAILED)
             continue
         else:
@@ -764,18 +777,18 @@ def moveDriveFile(users):
             continue
 # 3rd party shortcuts can't be moved to Shared Drives
           if sourceMimeType.startswith(MIMETYPE_GA_3P_SHORTCUT):
-            _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_3PSHORTCUT, sourceNameId], Msg.NOT_MOVABLE, j, jcount)
+            entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_3PSHORTCUT, sourceNameId], Msg.NOT_MOVABLE, j, jcount)
             _incrStatistic(statistics, STAT_FILE_NOT_COPYABLE_MOVABLE)
             continue
 # Move folder
         if sourceMimeType == MIMETYPE_GA_FOLDER:
           if fileId == newParentId:
-            _getMain().entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_INTO_ITSELF, j, jcount)
+            entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_INTO_ITSELF, j, jcount)
             _incrStatistic(statistics, STAT_FOLDER_FAILED)
             continue
           if copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_MERGE:
             if _identicalSourceTarget(fileId, targetChildren):
-              _getMain().entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_SAME_NAME_CURRENT_FOLDER_MERGE, j, jcount)
+              entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_SAME_NAME_CURRENT_FOLDER_MERGE, j, jcount)
               _incrStatistic(statistics, STAT_FOLDER_FAILED)
               continue
           elif copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_UNIQUE_NAME:
@@ -783,7 +796,7 @@ def moveDriveFile(users):
           elif copyMoveOptions['duplicateFolders'] == DUPLICATE_FOLDER_SKIP:
             targetChild = _targetFilenameExists(destName, sourceMimeType, targetChildren)
             if targetChild is not None:
-              _getMain().entityModifierItemValueListActionNotPerformedWarning(kvList, Act.MODIFIER_TO,
+              entityModifierItemValueListActionNotPerformedWarning(kvList, Act.MODIFIER_TO,
                                                                    [Ent.DRIVE_FOLDER, newParentNameId, Ent.DRIVE_FOLDER, f"{destName}({targetChild['id']})"],
                                                                    Msg.DUPLICATE, j, jcount)
               _incrStatistic(statistics, STAT_FOLDER_DUPLICATE)
@@ -800,7 +813,7 @@ def moveDriveFile(users):
 # Move file
         else:
           if copyMoveOptions['duplicateFiles'] in [DUPLICATE_FILE_OVERWRITE_ALL, DUPLICATE_FILE_OVERWRITE_OLDER] and _identicalSourceTarget(fileId, targetChildren):
-            _getMain().entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_SAME_NAME_CURRENT_FOLDER_OVERWRITE, j, jcount)
+            entityActionNotPerformedWarning(kvList, Msg.NOT_MOVABLE_SAME_NAME_CURRENT_FOLDER_OVERWRITE, j, jcount)
             _incrStatistic(statistics, STAT_FILE_FAILED)
             continue
           if _checkForDuplicateTargetFile(drive, user, j, jcount, source, destName, targetChildren, copyMoveOptions, statistics):
@@ -821,10 +834,10 @@ def moveDriveFile(users):
               GAPI.fileWriterTeamDriveMoveInDisabled,
               GAPI.cannotMoveTrashedItemIntoTeamDrive, GAPI.cannotMoveTrashedItemOutOfTeamDrive,
               GAPI.teamDrivesShortcutFileNotSupported, GAPI.crossDomainMoveRestriction) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
         _incrStatistic(statistics, STAT_FILE_FAILED)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         _incrStatistic(statistics, STAT_FILE_FAILED)
         break
     Ind.Decrement()

@@ -13,6 +13,51 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    LANGUAGE_CODES_MAP,
+    UID_PATTERN,
+    checkForExtraneousArguments,
+    escapeCRsNLs,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getFloat,
+    getInteger,
+    getLanguageCode,
+    getString,
+    getStringReturnInList,
+    getStringWithCRsNLs,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    cleanJSON,
+    flattenJSON,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityDuplicateWarning,
+    getPageMessage,
+    performActionNumItems,
+    printEntitiesCount,
+    printEntity,
+    printGettingAllAccountEntities,
+    printKeyValueList,
+    printKeyValueListWithCount,
+    printKeyValueWithCRsNLs,
+    printLine,
+    userCalServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityList, shlexSplitList
+from gam.util.errors import entityDoesNotExistExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import printErrorMessage, writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -33,58 +78,58 @@ def __getattr__(name):
 
 def _getBuildingAttributes(body):
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'id':
-      body['buildingId'] = _getMain().getString(Cmd.OB_BUILDING_ID, maxLen=100)
+      body['buildingId'] = getString(Cmd.OB_BUILDING_ID, maxLen=100)
     elif myarg == 'name':
-      body['buildingName'] = _getMain().getString(Cmd.OB_STRING, maxLen=100)
+      body['buildingName'] = getString(Cmd.OB_STRING, maxLen=100)
     elif myarg in {'lat', 'latitude'}:
       body.setdefault('coordinates', {})
-      body['coordinates']['latitude'] = _getMain().getFloat(minVal=-180.0, maxVal=180.0)
+      body['coordinates']['latitude'] = getFloat(minVal=-180.0, maxVal=180.0)
     elif myarg in {'long', 'lng', 'longitude'}:
       body.setdefault('coordinates', {})
-      body['coordinates']['longitude'] = _getMain().getFloat(minVal=-180.0, maxVal=180.0)
+      body['coordinates']['longitude'] = getFloat(minVal=-180.0, maxVal=180.0)
     elif myarg == 'description':
-      body['description'] = _getMain().getString(Cmd.OB_STRING)
+      body['description'] = getString(Cmd.OB_STRING)
     elif myarg == 'floors':
-      body['floorNames'] = _getMain().getString(Cmd.OB_STRING).split(',')
+      body['floorNames'] = getString(Cmd.OB_STRING).split(',')
     elif myarg in _getMain().BUILDING_ADDRESS_FIELD_MAP:
       myarg = _getMain().BUILDING_ADDRESS_FIELD_MAP[myarg]
       body.setdefault('address', {})
       if myarg == 'addressLines':
         body['address'][myarg] = getStringWithCRsNLs().split('\n')
       elif myarg == 'languageCode':
-        body['address'][myarg] = _getMain().getLanguageCode(_getMain().LANGUAGE_CODES_MAP)
+        body['address'][myarg] = getLanguageCode(LANGUAGE_CODES_MAP)
       else:
-        body['address'][myarg] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        body['address'][myarg] = getString(Cmd.OB_STRING, minLen=0)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return body
 
 # gam create building <Name> <BuildingAttribute>*
 def doCreateBuilding():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   body = _getBuildingAttributes({'buildingId': str(uuid.uuid4()),
-                                 'buildingName': _getMain().getString(Cmd.OB_NAME, maxLen=100),
+                                 'buildingName': getString(Cmd.OB_NAME, maxLen=100),
                                  'floorNames': ['1']})
   try:
-    _getMain().callGAPI(cd.resources().buildings(), 'insert',
+    callGAPI(cd.resources().buildings(), 'insert',
              throwReasons=[GAPI.DUPLICATE, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], body=body)
-    _getMain().entityActionPerformed([Ent.BUILDING_ID, body['buildingId'], Ent.BUILDING, body['buildingName']])
+    entityActionPerformed([Ent.BUILDING_ID, body['buildingId'], Ent.BUILDING, body['buildingName']])
   except GAPI.duplicate:
-    _getMain().entityDuplicateWarning([Ent.BUILDING_ID, body['buildingId'], Ent.BUILDING, body['buildingName']])
+    entityDuplicateWarning([Ent.BUILDING_ID, body['buildingId'], Ent.BUILDING, body['buildingName']])
   except GAPI.invalidInput as e:
-    _getMain().entityActionFailedWarning([Ent.BUILDING_ID, body['buildingId'], Ent.BUILDING, body['buildingName']], str(e))
+    entityActionFailedWarning([Ent.BUILDING_ID, body['buildingId'], Ent.BUILDING, body['buildingName']], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
 def _makeBuildingIdNameMap(cd=None):
   GM.Globals[GM.MAKE_BUILDING_ID_NAME_MAP] = False
   if cd is None:
-    cd = _getMain().buildGAPIObject(API.DIRECTORY)
+    cd = buildGAPIObject(API.DIRECTORY)
   try:
-    buildings = _getMain().callGAPIpages(cd.resources().buildings(), 'list', 'buildings',
+    buildings = callGAPIpages(cd.resources().buildings(), 'list', 'buildings',
                               throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                               customer=GC.Values[GC.CUSTOMER_ID],
                               fields='nextPageToken,buildings(buildingId,buildingName)')
@@ -95,10 +140,10 @@ def _makeBuildingIdNameMap(cd=None):
     GM.Globals[GM.MAP_BUILDING_NAME_TO_ID][building['buildingName']] = building['buildingId']
 
 def _getBuildingByNameOrId(cd, minLen=1, allowNV=False):
-  which_building = _getMain().getString(Cmd.OB_BUILDING_ID, minLen=minLen)
+  which_building = getString(Cmd.OB_BUILDING_ID, minLen=minLen)
   if not which_building or (minLen == 0 and which_building in {'id:', 'uid:'}):
     return ''
-  cg = _getMain().UID_PATTERN.match(which_building)
+  cg = UID_PATTERN.match(which_building)
   if cg:
     return cg.group(1)
   if allowNV and which_building.startswith('nv:'):
@@ -128,15 +173,15 @@ def _getBuildingByNameOrId(cd, minLen=1, allowNV=False):
       return buildingId
 # Multiple name  matches
   if len(ci_matches) > 1:
-    _getMain().printErrorMessage(1, Msg.MULTIPLE_BUILDINGS_SAME_NAME.format(len(ci_matches), Ent.Plural(Ent.BUILDING)))
+    printErrorMessage(1, Msg.MULTIPLE_BUILDINGS_SAME_NAME.format(len(ci_matches), Ent.Plural(Ent.BUILDING)))
     Ind.Increment()
     for building in ci_matches:
-      _getMain().printEntity([Ent.BUILDING, building['buildingName'], Ent.BUILDING_ID, building['buildingId']])
+      printEntity([Ent.BUILDING, building['buildingName'], Ent.BUILDING_ID, building['buildingId']])
     Ind.Decrement()
     Cmd.Backup()
-    _getMain().usageErrorExit(Msg.PLEASE_SPECIFY_BUILDING_EXACT_CASE_NAME_OR_ID)
+    usageErrorExit(Msg.PLEASE_SPECIFY_BUILDING_EXACT_CASE_NAME_OR_ID)
 # No matches
-  _getMain().entityDoesNotExistExit(Ent.BUILDING, which_building)
+  entityDoesNotExistExit(Ent.BUILDING, which_building)
 
 def _getBuildingNameById(cd, buildingId):
   if GM.Globals[GM.MAKE_BUILDING_ID_NAME_MAP]:
@@ -145,38 +190,38 @@ def _getBuildingNameById(cd, buildingId):
 
 # gam update building <BuildIngID> <BuildingAttribute>*
 def doUpdateBuilding():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   buildingId = _getBuildingByNameOrId(cd)
   body = _getBuildingAttributes({})
   try:
-    _getMain().callGAPI(cd.resources().buildings(), 'patch',
+    callGAPI(cd.resources().buildings(), 'patch',
              throwReasons=[GAPI.DUPLICATE, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], buildingId=buildingId, body=body)
-    _getMain().entityActionPerformed([Ent.BUILDING_ID, buildingId])
+    entityActionPerformed([Ent.BUILDING_ID, buildingId])
   except GAPI.duplicate:
-    _getMain().entityDuplicateWarning([Ent.BUILDING, body['buildingName']])
+    entityDuplicateWarning([Ent.BUILDING, body['buildingName']])
   except GAPI.resourceNotFound:
-    _getMain().entityUnknownWarning(Ent.BUILDING_ID, buildingId)
+    entityUnknownWarning(Ent.BUILDING_ID, buildingId)
   except GAPI.invalidInput as e:
-    _getMain().entityActionFailedWarning([Ent.BUILDING_ID, buildingId], str(e))
+    entityActionFailedWarning([Ent.BUILDING_ID, buildingId], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
 # gam delete building <BuildIngID>
 def doDeleteBuilding():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   buildingId = _getBuildingByNameOrId(cd)
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(cd.resources().buildings(), 'delete',
+    callGAPI(cd.resources().buildings(), 'delete',
              throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.CONDITION_NOT_MET,
                            GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], buildingId=buildingId)
-    _getMain().entityActionPerformed([Ent.BUILDING_ID, buildingId])
+    entityActionPerformed([Ent.BUILDING_ID, buildingId])
   except GAPI.resourceNotFound:
-    _getMain().entityUnknownWarning(Ent.BUILDING_ID, buildingId)
+    entityUnknownWarning(Ent.BUILDING_ID, buildingId)
   except GAPI.conditionNotMet as e:
-    _getMain().entityActionFailedWarning([Ent.BUILDING_ID, buildingId], str(e))
+    entityActionFailedWarning([Ent.BUILDING_ID, buildingId], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
@@ -184,37 +229,37 @@ BUILDING_ADDRESS_PRINT_ORDER = ['addressLines', 'sublocality', 'locality', 'admi
 
 def _showBuilding(building, delimiter=',', i=0, count=0, FJQC=None):
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(building), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(building), ensure_ascii=False, sort_keys=True))
     return
   if 'buildingName' in building:
-    _getMain().printEntity([Ent.BUILDING, building['buildingName']], i, count)
+    printEntity([Ent.BUILDING, building['buildingName']], i, count)
     Ind.Increment()
-    _getMain().printKeyValueList(['buildingId', f'id:{building["buildingId"]}'])
+    printKeyValueList(['buildingId', f'id:{building["buildingId"]}'])
   else:
-    _getMain().printEntity([Ent.BUILDING_ID, f'id:{building["buildingId"]}'], i, count)
+    printEntity([Ent.BUILDING_ID, f'id:{building["buildingId"]}'], i, count)
     Ind.Increment()
   if 'description' in building:
-    _getMain().printKeyValueList(['description', building['description']])
+    printKeyValueList(['description', building['description']])
   if 'floorNames' in building:
-    _getMain().printKeyValueList(['floorNames', delimiter.join(building['floorNames'])])
+    printKeyValueList(['floorNames', delimiter.join(building['floorNames'])])
   if 'coordinates' in building:
-    _getMain().printKeyValueList(['coordinates', None])
+    printKeyValueList(['coordinates', None])
     Ind.Increment()
-    _getMain().printKeyValueList(['latitude', f'{building["coordinates"].get("latitude", 0):4.7f}'])
-    _getMain().printKeyValueList(['longitude', f'{building["coordinates"].get("longitude", 0):4.7f}'])
+    printKeyValueList(['latitude', f'{building["coordinates"].get("latitude", 0):4.7f}'])
+    printKeyValueList(['longitude', f'{building["coordinates"].get("longitude", 0):4.7f}'])
     Ind.Decrement()
   if 'address' in building:
-    _getMain().printKeyValueList(['address', None])
+    printKeyValueList(['address', None])
     Ind.Increment()
     for field in BUILDING_ADDRESS_PRINT_ORDER:
       if field in building['address']:
         if field != 'addressLines':
-          _getMain().printKeyValueList([field, building['address'][field]])
+          printKeyValueList([field, building['address'][field]])
         else:
-          _getMain().printKeyValueList([field, None])
+          printKeyValueList([field, None])
           Ind.Increment()
           for line in building['address'][field]:
-            _getMain().printKeyValueList([line])
+            printKeyValueList([line])
           Ind.Decrement()
     Ind.Decrement()
   Ind.Decrement()
@@ -222,19 +267,19 @@ def _showBuilding(building, delimiter=',', i=0, count=0, FJQC=None):
 # gam info building <BuildingID>
 #	[formatjson]
 def doInfoBuilding():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   buildingId = _getBuildingByNameOrId(cd)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     FJQC.GetFormatJSON(myarg)
   try:
-    building = _getMain().callGAPI(cd.resources().buildings(), 'get',
+    building = callGAPI(cd.resources().buildings(), 'get',
                         throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                         customer=GC.Values[GC.CUSTOMER_ID], buildingId=buildingId)
     _showBuilding(building, FJQC=FJQC)
   except GAPI.resourceNotFound:
-    _getMain().entityUnknownWarning(Ent.BUILDING_ID, buildingId)
+    entityUnknownWarning(Ent.BUILDING_ID, buildingId)
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
@@ -258,33 +303,33 @@ BUILDINGS_SORT_TITLES = ['buildingId', 'buildingName', 'description', 'floorName
 #	[allfields|<BuildingFildName>*|(fields <BuildingFieldNameList>)]
 #	[formatjson]
 def doPrintShowBuildings():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  csvPF = _getMain().CSVPrintFile(['buildingId'], BUILDINGS_SORT_TITLES) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['buildingId'], BUILDINGS_SORT_TITLES) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER] if csvPF else ','
   fieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif myarg == 'allfields':
       fieldsList = []
-    elif _getMain().getFieldsList(myarg, BUILDINGS_FIELDS_CHOICE_MAP, fieldsList, initialField='buildingId'):
+    elif getFieldsList(myarg, BUILDINGS_FIELDS_CHOICE_MAP, fieldsList, initialField='buildingId'):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  fields = _getMain().getItemFieldsFromFieldsList('buildings', fieldsList)
+  fields = getItemFieldsFromFieldsList('buildings', fieldsList)
   try:
-    buildings = _getMain().callGAPIpages(cd.resources().buildings(), 'list', 'buildings',
+    buildings = callGAPIpages(cd.resources().buildings(), 'list', 'buildings',
                               throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                               customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
   if not csvPF:
     jcount = len(buildings)
-    _getMain().performActionNumItems(jcount, Ent.BUILDING)
+    performActionNumItems(jcount, Ent.BUILDING)
     Ind.Increment()
     j = 0
     for building in buildings:
@@ -302,38 +347,38 @@ def doPrintShowBuildings():
       if 'coordinates' in building:
         building['coordinates']['latitude'] = f'{building["coordinates"].get("latitude", 0):4.7f}'
         building['coordinates']['longitude'] = f'{building["coordinates"].get("longitude", 0):4.7f}'
-      row = _getMain().flattenJSON(building)
+      row = flattenJSON(building)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       else:
         if (not csvPF.rowFilter and not csvPF.rowDropFilter) or csvPF.CheckRowTitles(row):
           csvPF.WriteRowNoFilter({'buildingId': building['buildingId'],
-                                  'JSON': json.dumps(_getMain().cleanJSON(building), ensure_ascii=False, sort_keys=True)})
+                                  'JSON': json.dumps(cleanJSON(building), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Buildings')
 
 def _getFeatureAttributes(body):
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'name':
-      body['name'] = _getMain().getString(Cmd.OB_STRING)
+      body['name'] = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return body
 
 # gam create feature name <Name>
 def doCreateFeature():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   body = _getFeatureAttributes({})
   try:
-    _getMain().callGAPI(cd.resources().features(), 'insert',
+    callGAPI(cd.resources().features(), 'insert',
              throwReasons=[GAPI.DUPLICATE, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], body=body)
-    _getMain().entityActionPerformed([Ent.FEATURE, body['name']])
+    entityActionPerformed([Ent.FEATURE, body['name']])
   except GAPI.duplicate:
-    _getMain().entityDuplicateWarning([Ent.FEATURE, body['name']])
+    entityDuplicateWarning([Ent.FEATURE, body['name']])
   except GAPI.invalidInput as e:
-    _getMain().entityActionFailedWarning([Ent.FEATURE, body['name']], str(e))
+    entityActionFailedWarning([Ent.FEATURE, body['name']], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
@@ -342,37 +387,37 @@ def doUpdateFeature():
   # update does not work for name and name is only field to be updated
   # if additional writable fields are added to feature in the future
   # we'll add support for update as well as rename
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  oldName = _getMain().getString(Cmd.OB_STRING)
-  _getMain().getChoice(['name'])
-  body = {'newName': _getMain().getString(Cmd.OB_STRING)}
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  oldName = getString(Cmd.OB_STRING)
+  getChoice(['name'])
+  body = {'newName': getString(Cmd.OB_STRING)}
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(cd.resources().features(), 'rename',
+    callGAPI(cd.resources().features(), 'rename',
              throwReasons=[GAPI.DUPLICATE, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], oldName=oldName, body=body)
-    _getMain().entityActionPerformed([Ent.FEATURE, oldName])
+    entityActionPerformed([Ent.FEATURE, oldName])
   except GAPI.duplicate:
-    _getMain().entityDuplicateWarning([Ent.FEATURE, body['newName']])
+    entityDuplicateWarning([Ent.FEATURE, body['newName']])
   except GAPI.resourceNotFound:
-    _getMain().entityUnknownWarning(Ent.FEATURE, oldName)
+    entityUnknownWarning(Ent.FEATURE, oldName)
   except GAPI.invalidInput as e:
-    _getMain().entityActionFailedWarning([Ent.FEATURE, oldName], str(e))
+    entityActionFailedWarning([Ent.FEATURE, oldName], str(e))
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
 # gam delete feature <Name>
 def doDeleteFeature():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  featureKey = _getMain().getString(Cmd.OB_NAME)
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  featureKey = getString(Cmd.OB_NAME)
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(cd.resources().features(), 'delete',
+    callGAPI(cd.resources().features(), 'delete',
              throwReasons=[GAPI.RESOURCE_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
              customer=GC.Values[GC.CUSTOMER_ID], featureKey=featureKey)
-    _getMain().entityActionPerformed([Ent.FEATURE, featureKey])
+    entityActionPerformed([Ent.FEATURE, featureKey])
   except GAPI.resourceNotFound:
-    _getMain().entityUnknownWarning(Ent.FEATURE, featureKey)
+    entityUnknownWarning(Ent.FEATURE, featureKey)
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
 
@@ -383,37 +428,37 @@ FEATURE_FIELDS_CHOICE_MAP = {
 # gam print features [todrive <ToDriveAttribute>*]
 # gam show features
 def doPrintShowFeatures():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  csvPF = _getMain().CSVPrintFile('name') if Act.csvFormat() else None
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile('name') if Act.csvFormat() else None
   fieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'allfields':
       fieldsList = []
-    elif _getMain().getFieldsList(myarg, FEATURE_FIELDS_CHOICE_MAP, fieldsList):
+    elif getFieldsList(myarg, FEATURE_FIELDS_CHOICE_MAP, fieldsList):
       pass
     else:
-      _getMain().unknownArgumentExit()
-  fields = _getMain().getItemFieldsFromFieldsList('features', fieldsList)
+      unknownArgumentExit()
+  fields = getItemFieldsFromFieldsList('features', fieldsList)
   try:
-    features = _getMain().callGAPIpages(cd.resources().features(), 'list', 'features',
+    features = callGAPIpages(cd.resources().features(), 'list', 'features',
                              throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                              customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     accessErrorExit(cd)
   if not csvPF:
     jcount = len(features)
-    _getMain().performActionNumItems(jcount, Ent.FEATURE)
+    performActionNumItems(jcount, Ent.FEATURE)
     Ind.Increment()
     j = 0
     for feature in features:
       j += 1
-      _getMain().printEntity([Ent.FEATURE, feature['name']], j, jcount)
+      printEntity([Ent.FEATURE, feature['name']], j, jcount)
   else:
     for feature in features:
-      csvPF.WriteRowTitles(_getMain().flattenJSON(feature))
+      csvPF.WriteRowTitles(flattenJSON(feature))
   if csvPF:
     csvPF.writeCSVfile('Features')
 
@@ -430,44 +475,44 @@ def _getResourceCalendarAttributes(cd, body, updateMode):
   autoAcceptInvitations = None
   featureChanges = {'add': set(), 'remove': set()}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'name', 'resourcename'}:
-      body['resourceName'] = _getMain().getString(Cmd.OB_STRING)
+      body['resourceName'] = getString(Cmd.OB_STRING)
     elif myarg in {'description', 'resourcedescription'}:
-      body['resourceDescription'] = _getMain().getStringWithCRsNLs()
+      body['resourceDescription'] = getStringWithCRsNLs()
     elif myarg in {'type', 'resourcetype'}:
-      body['resourceType'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      body['resourceType'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg in {'building', 'buildingid'}:
       body['buildingId'] = _getBuildingByNameOrId(cd, minLen=0)
     elif myarg == 'capacity':
-      body['capacity'] = _getMain().getInteger(minVal=0)
+      body['capacity'] = getInteger(minVal=0)
     elif myarg in {'feature', 'features', 'featureinstances'}:
       body.setdefault('featureInstances', [])
-      for feature in _getMain().shlexSplitList(_getMain().getString(Cmd.OB_STRING, minLen=0)):
+      for feature in shlexSplitList(getString(Cmd.OB_STRING, minLen=0)):
         body['featureInstances'].append({'feature': {'name': feature}})
     elif myarg in {'addfeature', 'addfeatures', 'addfeatureinstances'}:
       if not updateMode:
         body.setdefault('featureInstances', [])
-        for feature in _getMain().shlexSplitList(_getMain().getString(Cmd.OB_STRING, minLen=0)):
+        for feature in shlexSplitList(getString(Cmd.OB_STRING, minLen=0)):
           body['featureInstances'].append({'feature': {'name': feature}})
       else:
-        for feature in _getMain().shlexSplitList(_getMain().getString(Cmd.OB_STRING, minLen=0)):
+        for feature in shlexSplitList(getString(Cmd.OB_STRING, minLen=0)):
           featureChanges['add'].add(feature)
     elif updateMode and myarg in {'removefeature', 'removefeatures', 'removefeatureinstances'}:
-      for feature in _getMain().shlexSplitList(_getMain().getString(Cmd.OB_STRING, minLen=0)):
+      for feature in shlexSplitList(getString(Cmd.OB_STRING, minLen=0)):
         featureChanges['remove'].add(feature)
     elif myarg in {'floor', 'floorname'}:
-      body['floorName'] = _getMain().getString(Cmd.OB_STRING)
+      body['floorName'] = getString(Cmd.OB_STRING)
     elif myarg == 'floorsection':
-      body['floorSection'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      body['floorSection'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg in {'category', 'resourcecategory'}:
-      body['resourceCategory'] = _getMain().getChoice(RESOURCE_CATEGORY_MAP, mapChoice=True)
+      body['resourceCategory'] = getChoice(RESOURCE_CATEGORY_MAP, mapChoice=True)
     elif myarg in {'userdescription', 'uservisibledescription'}:
-      body['userVisibleDescription'] = _getMain().getString(Cmd.OB_STRING)
+      body['userVisibleDescription'] = getString(Cmd.OB_STRING)
     elif myarg == 'autoacceptinvitations':
-      autoAcceptInvitations = _getMain().getBoolean()
+      autoAcceptInvitations = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if ('featureInstances' in body and not body['featureInstances'] and
       not featureChanges['add'] and not featureChanges['remove']):
     body['featureInstances'] = [{}]
@@ -478,58 +523,58 @@ def _getResourceCalendarAttributes(cd, body, updateMode):
 def updateAutoAcceptInvitations(cal, calId, autoAcceptInvitations, i=0, count=0):
   Ind.Increment()
   try:
-    _getMain().callGAPI(cal.calendars(), 'patch',
+    callGAPI(cal.calendars(), 'patch',
              throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
              calendarId=calId, body={'autoAcceptInvitations': autoAcceptInvitations})
-    _getMain().entityActionPerformed([Ent.CALENDAR, calId], i, count)
+    entityActionPerformed([Ent.CALENDAR, calId], i, count)
   except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+    entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
   except GAPI.notACalendarUser:
-    _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+    userCalServiceNotEnabledWarning(calId, i, count)
   Ind.Decrement()
 
 # gam create resource <ResourceID> <Name> <ResourceAttribute>*
 def doCreateResourceCalendar():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  body, autoAcceptInvitations, _ = _getResourceCalendarAttributes(cd, {'resourceId': _getMain().getString(Cmd.OB_RESOURCE_ID), 'resourceName': _getMain().getString(Cmd.OB_NAME)}, False)
+  cd = buildGAPIObject(API.DIRECTORY)
+  body, autoAcceptInvitations, _ = _getResourceCalendarAttributes(cd, {'resourceId': getString(Cmd.OB_RESOURCE_ID), 'resourceName': getString(Cmd.OB_NAME)}, False)
   if autoAcceptInvitations is not None:
-    cal = _getMain().buildGAPIObject(API.CALENDAR)
+    cal = buildGAPIObject(API.CALENDAR)
   try:
-    result = _getMain().callGAPI(cd.resources().calendars(), 'insert',
+    result = callGAPI(cd.resources().calendars(), 'insert',
                       throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE,
                                     GAPI.REQUIRED, GAPI.DUPLICATE, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='resourceEmail')
-    _getMain().entityActionPerformed([Ent.RESOURCE_CALENDAR, body['resourceId']])
+    entityActionPerformed([Ent.RESOURCE_CALENDAR, body['resourceId']])
     if autoAcceptInvitations is not None:
       updateAutoAcceptInvitations(cal, result['resourceEmail'], autoAcceptInvitations)
   except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], str(e))
+    entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], str(e))
   except GAPI.required as e:
     errMsg = str(e)
     if '[resourceCapacity, resourceFloorName]' in errMsg:
-      _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], Msg.RESOURCE_CAPACITY_FLOOR_REQUIRED)
+      entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], Msg.RESOURCE_CAPACITY_FLOOR_REQUIRED)
     elif'[resourceFloorName]' in errMsg:
-      _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], Msg.RESOURCE_FLOOR_REQUIRED)
+      entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], Msg.RESOURCE_FLOOR_REQUIRED)
     else:
-      _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], errMsg)
+      entityActionFailedWarning([Ent.RESOURCE_CALENDAR, body['resourceId']], errMsg)
   except GAPI.duplicate:
-    _getMain().entityDuplicateWarning([Ent.RESOURCE_CALENDAR, body['resourceId']])
+    entityDuplicateWarning([Ent.RESOURCE_CALENDAR, body['resourceId']])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
     accessErrorExit(cd)
 
 def _doUpdateResourceCalendars(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   body, autoAcceptInvitations, featureChanges = _getResourceCalendarAttributes(cd, {}, True)
   if autoAcceptInvitations is not None:
-    cal = _getMain().buildGAPIObject(API.CALENDAR)
+    cal = buildGAPIObject(API.CALENDAR)
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
     try:
       if autoAcceptInvitations is not None  or featureChanges['add'] or featureChanges['remove']:
-        result = _getMain().callGAPI(cd.resources().calendars(), 'get',
+        result = callGAPI(cd.resources().calendars(), 'get',
                           throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.FORBIDDEN],
                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields='resourceEmail,featureInstances(feature(name))')
@@ -552,64 +597,64 @@ def _doUpdateResourceCalendars(entityList):
             featureSet.add(featureName)
         if not body['featureInstances']:
           body['featureInstances'] = [{}]
-      _getMain().callGAPI(cd.resources().calendars(), 'patch',
+      callGAPI(cd.resources().calendars(), 'patch',
                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.SERVICE_NOT_AVAILABLE, GAPI.REQUIRED,
                              GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, body=body, fields='')
-      _getMain().entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
+      entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
       if autoAcceptInvitations is not None:
         updateAutoAcceptInvitations(cal, result['resourceEmail'], autoAcceptInvitations, i, count)
     except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.required)  as e:
-      _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
+      entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
 
 # gam update resources <ResourceEntity> <ResourceAttribute>*
 def doUpdateResourceCalendars():
-  _doUpdateResourceCalendars(_getMain().getEntityList(Cmd.OB_RESOURCE_ENTITY))
+  _doUpdateResourceCalendars(getEntityList(Cmd.OB_RESOURCE_ENTITY))
 
 # gam update resource <ResourceID> <ResourceAttribute>*
 def doUpdateResourceCalendar():
-  _doUpdateResourceCalendars(_getMain().getStringReturnInList(Cmd.OB_RESOURCE_ID))
+  _doUpdateResourceCalendars(getStringReturnInList(Cmd.OB_RESOURCE_ID))
 
 def _doDeleteResourceCalendars(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  checkForExtraneousArguments()
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
     try:
-      _getMain().callGAPI(cd.resources().calendars(), 'delete',
+      callGAPI(cd.resources().calendars(), 'delete',
                throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId)
-      _getMain().entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
+      entityActionPerformed([Ent.RESOURCE_CALENDAR, resourceId], i, count)
     except GAPI.serviceNotAvailable as e:
-      _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
+      entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
 
 # gam delete resources <ResourceEntity>
 def doDeleteResourceCalendars():
-  _doDeleteResourceCalendars(_getMain().getEntityList(Cmd.OB_RESOURCE_ENTITY))
+  _doDeleteResourceCalendars(getEntityList(Cmd.OB_RESOURCE_ENTITY))
 
 # gam delete resource <ResourceID>
 def doDeleteResourceCalendar():
-  _doDeleteResourceCalendars(_getMain().getStringReturnInList(Cmd.OB_RESOURCE_ID))
+  _doDeleteResourceCalendars(getStringReturnInList(Cmd.OB_RESOURCE_ID))
 
 def _getResourceACLsCalSettings(cal, resource, getCalSettings, getCalPermissions, i, count):
   calId = resource['resourceEmail']
   try:
     if getCalPermissions:
-      acls = _getMain().callGAPIpages(cal.acl(), 'list', 'items',
+      acls = callGAPIpages(cal.acl(), 'list', 'items',
                            throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.AUTH_ERROR],
                            calendarId=calId, fields='nextPageToken,items(id,role,scope)')
     else:
       acls = {}
     if getCalSettings:
-      settings = _getMain().callGAPI(cal.calendars(), 'get',
+      settings = callGAPI(cal.calendars(), 'get',
                           throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
                           calendarId=calId)
       settings.pop('etag', None)
@@ -617,9 +662,9 @@ def _getResourceACLsCalSettings(cal, resource, getCalSettings, getCalPermissions
       resource.update({'calendar': settings})
     return (True, acls)
   except (GAPI.forbidden, GAPI.serviceNotAvailable, GAPI.authError, GAPI.notACalendarUser) as e:
-    _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, calId], str(e), i, count)
+    entityActionFailedWarning([Ent.RESOURCE_CALENDAR, calId], str(e), i, count)
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.RESOURCE_CALENDAR, calId, i, count)
+    entityUnknownWarning(Ent.RESOURCE_CALENDAR, calId, i, count)
   return (False, None)
 
 RESOURCE_DFLT_FIELDS = ['resourceId', 'resourceName', 'resourceEmail', 'resourceDescription', 'resourceType']
@@ -641,9 +686,9 @@ def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
   def _showResourceField(title, resource, field):
     if field in resource:
       if field not in RESOURCE_FIELDS_WITH_CRS_NLS:
-        _getMain().printKeyValueList([title, resource[field]])
+        printKeyValueList([title, resource[field]])
       else:
-        _getMain().printKeyValueWithCRsNLs(title, resource[field])
+        printKeyValueWithCRsNLs(title, resource[field])
 
   if 'buildingId' in resource:
     resource['buildingName'] = _getBuildingNameById(cd, resource['buildingId'])
@@ -651,9 +696,9 @@ def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
   if FJQC.formatJSON:
     if acls:
       resource['acls'] = [{'id': rule['id'], 'role': rule['role']} for rule in acls]
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(resource), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(resource), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.RESOURCE_ID, resource['resourceId']], i, count)
+  printEntity([Ent.RESOURCE_ID, resource['resourceId']], i, count)
   Ind.Increment()
   _showResourceField('Name', resource, 'resourceName')
   _showResourceField('Email', resource, 'resourceEmail')
@@ -672,23 +717,23 @@ def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
   if acls:
     j = 0
     jcount = len(acls)
-    _getMain().printEntitiesCount(Ent.CALENDAR_ACL, acls)
+    printEntitiesCount(Ent.CALENDAR_ACL, acls)
     Ind.Increment()
     for rule in acls:
       j += 1
       if noSelfOwner and rule['role'] == 'owner' and rule['scope']['value'] == resource['resourceEmail']:
         continue
-      _getMain().printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(rule), j, jcount)
+      printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(rule), j, jcount)
     Ind.Decrement()
   Ind.Decrement()
 
 def _doInfoResourceCalendars(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   getCalSettings = getCalPermissions = noSelfOwner = False
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   acls = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in [Cmd.ARG_ACLS, Cmd.ARG_CALENDARACLS, Cmd.ARG_PERMISSIONS]:
       getCalPermissions = True
     elif myarg == 'noselfowner':
@@ -698,14 +743,14 @@ def _doInfoResourceCalendars(entityList):
     else:
       FJQC.GetFormatJSON(myarg)
   if getCalSettings or getCalPermissions:
-    cal = _getMain().buildGAPIObject(API.CALENDAR)
+    cal = buildGAPIObject(API.CALENDAR)
   fields = ','.join(RESOURCE_ALL_FIELDS)
   i = 0
   count = len(entityList)
   for resourceId in entityList:
     i += 1
     try:
-      resource = _getMain().callGAPI(cd.resources().calendars(), 'get',
+      resource = callGAPI(cd.resources().calendars(), 'get',
                           throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                           customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields=fields)
       if getCalSettings or getCalPermissions:
@@ -714,17 +759,17 @@ def _doInfoResourceCalendars(entityList):
           continue
       _showResource(cd, resource, i, count, FJQC, acls, noSelfOwner)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
 
 # gam info resources <ResourceEntity>
 #	[acls] [noselfowner] [calendar] [formatjson]
 def doInfoResourceCalendars():
-  _doInfoResourceCalendars(_getMain().getEntityList(Cmd.OB_RESOURCE_ENTITY))
+  _doInfoResourceCalendars(getEntityList(Cmd.OB_RESOURCE_ENTITY))
 
 # gam info resource <ResourceID>
 #	[acls] [noselfowner] [calendar] [formatjson]
 def doInfoResourceCalendar():
-  _doInfoResourceCalendars(_getMain().getStringReturnInList(Cmd.OB_RESOURCE_ID))
+  _doInfoResourceCalendars(getStringReturnInList(Cmd.OB_RESOURCE_ID))
 
 RESOURCE_FIELDS_CHOICE_MAP = {
   'description': 'resourceDescription',
@@ -763,20 +808,20 @@ RESOURCE_FIELDS_CHOICE_MAP = {
 #	[acls] [noselfowner] [calendar] [convertcrnl] [formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintShowResourceCalendars():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   getCalSettings = getCalPermissions = noSelfOwner = False
   acls = query = None
   fieldsList = []
-  csvPF = _getMain().CSVPrintFile() if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   showItemCountOnly = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'query':
-      query = _getMain().getString(Cmd.OB_QUERY)
+      query = getString(Cmd.OB_QUERY)
     elif myarg == 'allfields':
       fieldsList = RESOURCE_ALL_FIELDS[:]
     elif myarg in [Cmd.ARG_ACLS, Cmd.ARG_CALENDARACLS, Cmd.ARG_PERMISSIONS]:
@@ -792,7 +837,7 @@ def doPrintShowResourceCalendars():
     elif myarg == 'fields':
       if not fieldsList:
         fieldsList = ['resourceId']
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in [Cmd.ARG_ACLS, Cmd.ARG_CALENDARACLS, Cmd.ARG_PERMISSIONS]:
           getCalPermissions = True
         elif field == Cmd.ARG_CALENDAR:
@@ -800,7 +845,7 @@ def doPrintShowResourceCalendars():
         elif field in RESOURCE_FIELDS_CHOICE_MAP:
           fieldsList.append(RESOURCE_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, RESOURCE_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, RESOURCE_FIELDS_CHOICE_MAP, True)
     elif myarg in {'convertcrnl', 'converttextnl'}:
       convertCRNL = True
     elif myarg == 'showitemcountonly':
@@ -810,10 +855,10 @@ def doPrintShowResourceCalendars():
   if not fieldsList:
     fieldsList = RESOURCE_DFLT_FIELDS[:]
   if getCalSettings or getCalPermissions:
-    cal = _getMain().buildGAPIObject(API.CALENDAR)
-    fields = _getMain().getItemFieldsFromFieldsList('items', fieldsList+['resourceEmail'])
+    cal = buildGAPIObject(API.CALENDAR)
+    fields = getItemFieldsFromFieldsList('items', fieldsList+['resourceEmail'])
   else:
-    fields = _getMain().getItemFieldsFromFieldsList('items', fieldsList)
+    fields = getItemFieldsFromFieldsList('items', fieldsList)
   if 'buildingId' in fieldsList:
     fieldsList.append('buildingName')
   if csvPF:
@@ -826,10 +871,10 @@ def doPrintShowResourceCalendars():
       else:
         sortTitles = ['resourceId', 'JSON']
       csvPF.AddJSONTitles(sortTitles)
-  _getMain().printGettingAllAccountEntities(Ent.RESOURCE_CALENDAR)
+  printGettingAllAccountEntities(Ent.RESOURCE_CALENDAR)
   try:
-    resources = _getMain().callGAPIpages(cd.resources().calendars(), 'list', 'items',
-                              pageMessage=_getMain().getPageMessage(showFirstLastItems=True), messageAttribute='resourceName',
+    resources = callGAPIpages(cd.resources().calendars(), 'list', 'items',
+                              pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='resourceName',
                               throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN,
                                             GAPI.PERMISSION_DENIED, GAPI.INVALID_INPUT],
                               query=query, customer=GC.Values[GC.CUSTOMER_ID], fields=fields)
@@ -838,11 +883,11 @@ def doPrintShowResourceCalendars():
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
   except GAPI.invalidInput as e:
-    _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, ''], str(e))
+    entityActionFailedWarning([Ent.RESOURCE_CALENDAR, ''], str(e))
     return
   count = len(resources)
   if showItemCountOnly:
-    _getMain().writeStdout(f'{count}\n')
+    writeStdout(f'{count}\n')
     return
   i = 0
   for resource in resources:
@@ -863,16 +908,16 @@ def doPrintShowResourceCalendars():
         row = {}
         for field in fieldsList:
           if convertCRNL and field in RESOURCE_FIELDS_WITH_CRS_NLS:
-            row[field] = _getMain().escapeCRsNLs(resource.get(field, ''))
+            row[field] = escapeCRsNLs(resource.get(field, ''))
           else:
             row[field] = resource.get(field, '')
         if getCalSettings and 'calendar' in resource:
-          _getMain().flattenJSON(resource['calendar'], flattened=row)
+          flattenJSON(resource['calendar'], flattened=row)
         if getCalPermissions:
           for rule in acls:
             if noSelfOwner and rule['role'] == 'owner' and rule['scope']['value'] == resource['resourceEmail']:
               continue
-            csvPF.WriteRowTitles(_getMain().flattenJSON(rule, flattened=row.copy()))
+            csvPF.WriteRowTitles(flattenJSON(rule, flattened=row.copy()))
         else:
           csvPF.WriteRowTitles(row)
       else:
@@ -882,7 +927,7 @@ def doPrintShowResourceCalendars():
             if noSelfOwner and rule['role'] == 'owner' and rule['scope']['value'] == resource['resourceEmail']:
               continue
             resource['acls'].append({'id': rule['id'], 'role': rule['role']})
-        row = {'resourceId': resource['resourceId'], 'JSON': json.dumps(_getMain().cleanJSON(resource), ensure_ascii=False, sort_keys=True)}
+        row = {'resourceId': resource['resourceId'], 'JSON': json.dumps(cleanJSON(resource), ensure_ascii=False, sort_keys=True)}
         if 'resourceName' in resource:
           row['resourceName'] = resource['resourceName']
         csvPF.WriteRow(row)

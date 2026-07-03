@@ -17,23 +17,31 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    OrderBy,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    removeCourseIdScope,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+)
+from gam.util.display import entityActionFailedWarning, entityDoesNotHaveItemWarning, getPageMessageForWhom, printGettingAllEntityItemsForWhom
+from gam.util.entity import getEntityList
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def doPrintCourseAnnouncements():
   def _printCourseAnnouncement(course, courseAnnouncement, i, count):
@@ -47,29 +55,29 @@ def doPrintCourseAnnouncements():
         courseAnnouncement['creatorUserEmail'] = creatorUserEmail
       if showCreatorName:
         courseAnnouncement['creatorUserName'] = creatorUserName
-    row = _getMain().flattenJSON(courseAnnouncement, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_ANNOUNCEMENTS_TIME_OBJECTS)
+    row = flattenJSON(courseAnnouncement, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_ANNOUNCEMENTS_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'courseId': course['id'], 'courseName': course['name'],
-                              'JSON': json.dumps(_getMain().cleanJSON(courseAnnouncement, timeObjects=COURSE_ANNOUNCEMENTS_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(courseAnnouncement, timeObjects=COURSE_ANNOUNCEMENTS_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
-  csvPF = _getMain().CSVPrintFile(['courseId', 'courseName'], COURSE_ANNOUNCEMENTS_SORT_TITLES, COURSE_ANNOUNCEMENTS_INDEXED_TITLES)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  croom = buildGAPIObject(API.CLASSROOM)
+  csvPF = CSVPrintFile(['courseId', 'courseName'], COURSE_ANNOUNCEMENTS_SORT_TITLES, COURSE_ANNOUNCEMENTS_INDEXED_TITLES)
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   courseSelectionParameters = _initCourseSelectionParameters()
   courseItemFilter = _initCourseItemFilter()
   courseShowProperties = _initCourseShowProperties(['name'])
   courseAnnouncementIds = []
   courseAnnouncementStates = []
-  OBY = _getMain().OrderBy(COURSE_ANNOUNCEMENTS_ORDERBY_CHOICE_MAP)
+  OBY = OrderBy(COURSE_ANNOUNCEMENTS_ORDERBY_CHOICE_MAP)
   creatorEmails = {}
   countsOnly = showCreatorEmail = showCreatorName = False
   items = 'courseAnnouncements'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
@@ -77,7 +85,7 @@ def doPrintCourseAnnouncements():
     elif _getCourseItemFilter(myarg, courseItemFilter, COURSE_CUS_FILTER_FIELDS_MAP):
       pass
     elif myarg in {'announcementid', 'announcementids'}:
-      courseAnnouncementIds = _getMain().getEntityList(Cmd.OB_COURSE_ANNOUNCEMENT_ID_ENTITY)
+      courseAnnouncementIds = getEntityList(Cmd.OB_COURSE_ANNOUNCEMENT_ID_ENTITY)
     elif myarg in {'announcementstate', 'announcementstates'}:
       _getCourseStates(Cmd.OB_COURSE_ANNOUNCEMENT_STATE_LIST, courseAnnouncementStates)
     elif myarg == 'orderby':
@@ -86,7 +94,7 @@ def doPrintCourseAnnouncements():
       showCreatorEmail = True
     elif myarg in {'showcreatornames', 'creatorname'}:
       showCreatorName = True
-    elif _getMain().getFieldsList(myarg, COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
+    elif getFieldsList(myarg, COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     elif myarg == 'countsonly':
       countsOnly = True
@@ -110,12 +118,12 @@ def doPrintCourseAnnouncements():
     if courseAnnouncementIdsLists:
       courseAnnouncementIds = courseAnnouncementIdsLists[courseId]
     if not courseAnnouncementIds:
-      fields = _getMain().getItemFieldsFromFieldsList('announcements', fieldsList)
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_ANNOUNCEMENT_ID, Ent.TypeName(Ent.COURSE, courseId), i, count,
+      fields = getItemFieldsFromFieldsList('announcements', fieldsList)
+      printGettingAllEntityItemsForWhom(Ent.COURSE_ANNOUNCEMENT_ID, Ent.TypeName(Ent.COURSE, courseId), i, count,
                                         _gettingCourseEntityQuery(Ent.COURSE_ANNOUNCEMENT_STATE, courseAnnouncementStates))
       try:
-        results = _getMain().callGAPIpages(croom.courses().announcements(), 'list', 'announcements',
-                                pageMessage=_getMain().getPageMessageForWhom(),
+        results = callGAPIpages(croom.courses().announcements(), 'list', 'announcements',
+                                pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId, announcementStates=courseAnnouncementStates, orderBy=OBY.orderBy,
@@ -126,7 +134,7 @@ def doPrintCourseAnnouncements():
         else:
           _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, csvPF)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     else:
       jcount = len(courseAnnouncementIds)
       if jcount == 0:
@@ -136,15 +144,15 @@ def doPrintCourseAnnouncements():
       for courseAnnouncementId in courseAnnouncementIds:
         j += 1
         try:
-          courseAnnouncement = _getMain().callGAPI(croom.courses().announcements(), 'get',
+          courseAnnouncement = callGAPI(croom.courses().announcements(), 'get',
                                         throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                         courseId=courseId, id=courseAnnouncementId, fields=fields)
           _printCourseAnnouncement(course, courseAnnouncement, i, count)
         except GAPI.notFound:
-          _getMain().entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], j, jcount)
+          entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], j, jcount)
         except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-          _getMain().entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncementId], str(e), j, jcount)
   csvPF.writeCSVfile('Course Announcements')
 
 COURSE_TOPICS_TIME_OBJECTS = {'updateTime'}
@@ -159,17 +167,17 @@ def doPrintCourseTopics():
   def _printCourseTopic(course, courseTopic):
     if applyCourseItemFilter and not _courseItemPassesFilter(courseTopic, courseItemFilter):
       return
-    row = _getMain().flattenJSON(courseTopic, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_TOPICS_TIME_OBJECTS)
+    row = flattenJSON(courseTopic, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_TOPICS_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'courseId': course['id'], 'courseName': course['name'],
-                              'JSON': json.dumps(_getMain().cleanJSON(courseTopic, timeObjects=COURSE_TOPICS_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(courseTopic, timeObjects=COURSE_TOPICS_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
-  csvPF = _getMain().CSVPrintFile(['courseId', 'courseName'], COURSE_TOPICS_SORT_TITLES)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  croom = buildGAPIObject(API.CLASSROOM)
+  csvPF = CSVPrintFile(['courseId', 'courseName'], COURSE_TOPICS_SORT_TITLES)
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = ['topicId', 'name', 'updateTime']
   courseSelectionParameters = _initCourseSelectionParameters()
   courseItemFilter = _initCourseItemFilter()
@@ -178,7 +186,7 @@ def doPrintCourseTopics():
   countsOnly = False
   items = 'courseTopics'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
@@ -186,7 +194,7 @@ def doPrintCourseTopics():
     elif _getCourseItemFilter(myarg, courseItemFilter, COURSE_U_FILTER_FIELDS_MAP):
       pass
     elif myarg in {'topicid', 'topicids'}:
-      courseTopicIds = _getMain().getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY)
+      courseTopicIds = getEntityList(Cmd.OB_COURSE_TOPIC_ID_ENTITY)
     elif myarg == 'countsonly':
       countsOnly = True
       csvPF.AddTitles(items)
@@ -207,11 +215,11 @@ def doPrintCourseTopics():
     if courseTopicIdsLists:
       courseTopicIds = courseTopicIdsLists[courseId]
     if not courseTopicIds:
-      fields = _getMain().getItemFieldsFromFieldsList('topic', fieldsList)
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_TOPIC, Ent.TypeName(Ent.COURSE, courseId), i, count)
+      fields = getItemFieldsFromFieldsList('topic', fieldsList)
+      printGettingAllEntityItemsForWhom(Ent.COURSE_TOPIC, Ent.TypeName(Ent.COURSE, courseId), i, count)
       try:
-        results = _getMain().callGAPIpages(croom.courses().topics(), 'list', 'topic',
-                                pageMessage=_getMain().getPageMessageForWhom(),
+        results = callGAPIpages(croom.courses().topics(), 'list', 'topic',
+                                pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId,
@@ -222,25 +230,25 @@ def doPrintCourseTopics():
         else:
           _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, csvPF)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     else:
       jcount = len(courseTopicIds)
       if jcount == 0:
         continue
-      fields = _getMain().getFieldsFromFieldsList(fieldsList)
+      fields = getFieldsFromFieldsList(fieldsList)
       j = 0
       for courseTopicId in courseTopicIds:
         j += 1
         try:
-          courseTopic = _getMain().callGAPI(croom.courses().topics(), 'get',
+          courseTopic = callGAPI(croom.courses().topics(), 'get',
                                  throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  courseId=courseId, id=courseTopicId, fields=fields)
           _printCourseTopic(course, courseTopic)
         except GAPI.notFound:
-          _getMain().entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_TOPIC_ID, courseTopicId], j, jcount)
+          entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_TOPIC_ID, courseTopicId], j, jcount)
         except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-          _getMain().entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_TOPIC_ID, courseTopicId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_TOPIC_ID, courseTopicId], str(e), j, jcount)
   csvPF.writeCSVfile('Course Topics')
 
 def _initCourseWMSelectionParameters():
@@ -250,7 +258,7 @@ def _getCourseWMSelectionParameters(myarg, courseWMSelectionParameters,
                                     IDArguments, OBIDEntity,
                                     StateArguments, OBStateList):
   if myarg in IDArguments:
-    courseWMSelectionParameters['courseWMIds'] = _getMain().getEntityList(OBIDEntity)
+    courseWMSelectionParameters['courseWMIds'] = getEntityList(OBIDEntity)
   elif myarg in StateArguments:
     _getCourseStates(OBStateList, courseWMSelectionParameters['courseWMStates'])
   else:
@@ -319,7 +327,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
   def _getTopicNames(croom, courseId):
     topicNames = {}
     try:
-      results = _getMain().callGAPIpages(croom.courses().topics(), 'list', 'topic',
+      results = callGAPIpages(croom.courses().topics(), 'list', 'topic',
                               throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                               courseId=courseId,
@@ -331,13 +339,13 @@ def doPrintCourseWM(entityIDType, entityStateType):
     return topicNames
 
   def _printCourseWMrow(course, courseWM):
-    row = _getMain().flattenJSON(courseWM, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=TimeObjects,
+    row = flattenJSON(courseWM, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=TimeObjects,
                       simpleLists=['studentIds'] if showStudentsAsList else None, delimiter=delimiter)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'courseId': course['id'], 'courseName': course['name'],
-                              'JSON': json.dumps(_getMain().cleanJSON(courseWM, timeObjects=TimeObjects),
+                              'JSON': json.dumps(cleanJSON(courseWM, timeObjects=TimeObjects),
                                                  ensure_ascii=False, sort_keys=True)})
 
   def _printCourseWM(course, courseWM, i, count):
@@ -363,7 +371,7 @@ def doPrintCourseWM(entityIDType, entityStateType):
         courseWM['materials'] = courseMaterial
         _printCourseWMrow(course, courseWM)
 
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
+  croom = buildGAPIObject(API.CLASSROOM)
   if entityIDType == Ent.COURSE_WORK_ID:
     SortTitles = COURSE_WORK_SORT_TITLES
     IndexedTitles = COURSE_WORK_INDEXED_TITLES
@@ -390,20 +398,20 @@ def doPrintCourseWM(entityIDType, entityStateType):
     CSVTitle = 'Course Work Material'
     service = croom.courses().courseWorkMaterials()
     items = 'courseWorkMaterial'
-  csvPF = _getMain().CSVPrintFile(['courseId', 'courseName'], SortTitles, IndexedTitles)
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['courseId', 'courseName'], SortTitles, IndexedTitles)
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   courseSelectionParameters = _initCourseSelectionParameters()
   courseWMSelectionParameters = _initCourseWMSelectionParameters()
   courseItemFilter = _initCourseItemFilter()
   courseShowProperties = _initCourseShowProperties(['name'])
-  OBY = _getMain().OrderBy(OrderbyChoiceMap)
+  OBY = OrderBy(OrderbyChoiceMap)
   creatorEmails = {}
   oneItemPerRow = showCreatorEmail = showCreatorName = showTopicNames = False
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   countsOnly = showStudentsAsList = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
@@ -425,12 +433,12 @@ def doPrintCourseWM(entityIDType, entityStateType):
       showCreatorName = True
     elif myarg == 'showtopicnames':
       showTopicNames = True
-    elif _getMain().getFieldsList(myarg, FieldsChoiceMap, fieldsList, initialField='id'):
+    elif getFieldsList(myarg, FieldsChoiceMap, fieldsList, initialField='id'):
       pass
     elif myarg == 'showstudentsaslist':
-      showStudentsAsList = _getMain().getBoolean()
+      showStudentsAsList = getBoolean()
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif myarg == 'countsonly':
       countsOnly = True
       csvPF.AddTitles(items)
@@ -462,12 +470,12 @@ def doPrintCourseWM(entityIDType, entityStateType):
     if courseWMIdsLists:
       courseWMIds = courseWMIdsLists[courseId]
     if not courseWMIds:
-      fields = _getMain().getItemFieldsFromFieldsList(items, fieldsList)
-      _getMain().printGettingAllEntityItemsForWhom(entityIDType, Ent.TypeName(Ent.COURSE, courseId), i, count,
+      fields = getItemFieldsFromFieldsList(items, fieldsList)
+      printGettingAllEntityItemsForWhom(entityIDType, Ent.TypeName(Ent.COURSE, courseId), i, count,
                                         _gettingCourseEntityQuery(entityStateType, courseWMSelectionParameters['courseWMStates']))
       try:
-        results = _getMain().callGAPIpages(service, 'list', items,
-                                pageMessage=_getMain().getPageMessageForWhom(),
+        results = callGAPIpages(service, 'list', items,
+                                pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS,
                                 courseId=courseId, orderBy=OBY.orderBy,
                                 fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS], **kwargs)
@@ -477,24 +485,24 @@ def doPrintCourseWM(entityIDType, entityStateType):
         else:
           _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, csvPF)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     else:
       jcount = len(courseWMIds)
       if jcount == 0:
         continue
-      fields = _getMain().getFieldsFromFieldsList(fieldsList)
+      fields = getFieldsFromFieldsList(fieldsList)
       j = 0
       for courseWMId in courseWMIds:
         j += 1
         try:
-          courseWM = _getMain().callGAPI(service, 'get',
+          courseWM = callGAPI(service, 'get',
                               throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS,
                               courseId=courseId, id=courseWMId, fields=fields)
           _printCourseWM(course, courseWM, i, count)
         except GAPI.notFound:
-          _getMain().entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], entityIDType, courseWMId], j, jcount)
+          entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], entityIDType, courseWMId], j, jcount)
         except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument) as e:
-          _getMain().entityActionFailedWarning([Ent.COURSE_NAME, course['name'], entityIDType, courseWMId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.COURSE_NAME, course['name'], entityIDType, courseWMId], str(e), j, jcount)
   csvPF.writeCSVfile(CSVTitle)
 
 # gam print course-materials [todrive <ToDriveAttribute>*]
@@ -572,7 +580,7 @@ def doPrintCourseSubmissions():
       if userId:
         if userId not in userProfiles:
           try:
-            userProfile = _getMain().callGAPI(tcroom.userProfiles(), 'get',
+            userProfile = callGAPI(tcroom.userProfiles(), 'get',
                                    throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                                    retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                    userId=userId, fields='emailAddress,name')
@@ -580,16 +588,16 @@ def doPrintCourseSubmissions():
           except (GAPI.notFound, GAPI.permissionDenied, GAPI.serviceNotAvailable):
             userProfiles[userId] = {'profile': {'emailAddress': '', 'name': {'givenName': '', 'familyName': '', 'fullName': ''}}}
         courseSubmission.update(userProfiles[userId])
-    row = _getMain().flattenJSON(courseSubmission, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_SUBMISSION_TIME_OBJECTS)
+    row = flattenJSON(courseSubmission, flattened={'courseId': course['id'], 'courseName': course['name']}, timeObjects=COURSE_SUBMISSION_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'courseId': course['id'], 'courseName': course['name'],
-                              'JSON': json.dumps(_getMain().cleanJSON(courseSubmission, timeObjects=COURSE_SUBMISSION_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(courseSubmission, timeObjects=COURSE_SUBMISSION_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
-  csvPF = _getMain().CSVPrintFile(['courseId', 'courseName'],
+  croom = buildGAPIObject(API.CLASSROOM)
+  csvPF = CSVPrintFile(['courseId', 'courseName'],
                        ['courseId', 'courseName', 'courseWorkId', 'id', 'userId',
                         f'profile{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}emailAddress',
                         f'profile{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}givenName',
@@ -597,7 +605,7 @@ def doPrintCourseSubmissions():
                         f'profile{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}fullName',
                         'state'],
                        ['submissionHistory'])
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   courseSelectionParameters = _initCourseSelectionParameters()
   courseWMSelectionParameters = _initCourseWMSelectionParameters()
@@ -605,13 +613,13 @@ def doPrintCourseSubmissions():
   courseShowProperties = _initCourseShowProperties(['name'])
   courseSubmissionStates = []
   courseSubmissionIds = []
-  OBY = _getMain().OrderBy(COURSE_WORK_ORDERBY_CHOICE_MAP)
+  OBY = OrderBy(COURSE_WORK_ORDERBY_CHOICE_MAP)
   late = None
   userProfiles = {}
   countsOnly = showUserProfile = False
   items = 'courseSubmissions'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
@@ -625,7 +633,7 @@ def doPrintCourseSubmissions():
     elif myarg == 'orderby':
       OBY.GetChoice()
     elif myarg in {'submissionid', 'submissionids', 'coursesubmissionid', 'coursesubmissionids'}:
-      courseSubmissionIds = _getMain().getEntityList(Cmd.OB_COURSE_SUBMISSION_ID_ENTITY)
+      courseSubmissionIds = getEntityList(Cmd.OB_COURSE_SUBMISSION_ID_ENTITY)
     elif myarg in {'submissionstate', 'submissionstates', 'coursesubmissionstate', 'coursesubmissionstates'}:
       _getCourseStates(Cmd.OB_COURSE_SUBMISSION_STATE_LIST, courseSubmissionStates)
     elif myarg == 'late':
@@ -634,7 +642,7 @@ def doPrintCourseSubmissions():
       late = 'NOT_LATE_ONLY'
     elif myarg == 'showuserprofile':
       showUserProfile = True
-    elif _getMain().getFieldsList(myarg, COURSE_SUBMISSION_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
+    elif getFieldsList(myarg, COURSE_SUBMISSION_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     elif myarg == 'countsonly':
       countsOnly = True
@@ -654,7 +662,7 @@ def doPrintCourseSubmissions():
   count = len(coursesInfo)
   for course in coursesInfo:
     i += 1
-    _, tcroom = _getMain().buildGAPIServiceObject(API.CLASSROOM, f"uid:{course['ownerId']}")
+    _, tcroom = buildGAPIServiceObject(API.CLASSROOM, f"uid:{course['ownerId']}")
     if tcroom is None:
       continue
     submissionsCount = 0
@@ -662,11 +670,11 @@ def doPrintCourseSubmissions():
     if courseWorkIdsLists:
       courseWorkIds = courseWorkIdsLists[courseId]
     if not courseWorkIds:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_WORK_ID, Ent.TypeName(Ent.COURSE, courseId), i, count,
+      printGettingAllEntityItemsForWhom(Ent.COURSE_WORK_ID, Ent.TypeName(Ent.COURSE, courseId), i, count,
                                         _gettingCourseEntityQuery(Ent.COURSE_WORK_STATE, courseWMSelectionParameters['courseWMStates']))
       try:
-        results = _getMain().callGAPIpages(croom.courses().courseWork(), 'list', 'courseWork',
-                                pageMessage=_getMain().getPageMessageForWhom(),
+        results = callGAPIpages(croom.courses().courseWork(), 'list', 'courseWork',
+                                pageMessage=getPageMessageForWhom(),
                                 throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 courseId=courseId, courseWorkStates=courseWMSelectionParameters['courseWMStates'], orderBy=OBY.orderBy,
@@ -675,7 +683,7 @@ def doPrintCourseSubmissions():
       except GAPI.notFound:
         continue
       except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
         continue
     else:
       courseWorkIdsForCourse = courseWorkIds
@@ -686,12 +694,12 @@ def doPrintCourseSubmissions():
     for courseWorkId in courseWorkIdsForCourse:
       j += 1
       if not courseSubmissionIds:
-        fields = _getMain().getItemFieldsFromFieldsList('studentSubmissions', fieldsList)
-        _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_SUBMISSION_ID, Ent.TypeName(Ent.COURSE_WORK_ID, courseWorkId), j, jcount,
+        fields = getItemFieldsFromFieldsList('studentSubmissions', fieldsList)
+        printGettingAllEntityItemsForWhom(Ent.COURSE_SUBMISSION_ID, Ent.TypeName(Ent.COURSE_WORK_ID, courseWorkId), j, jcount,
                                           _gettingCourseSubmissionQuery(courseSubmissionStates, late, courseSelectionParameters['studentId']))
         try:
-          results = _getMain().callGAPIpages(croom.courses().courseWork().studentSubmissions(), 'list', 'studentSubmissions',
-                                  pageMessage=_getMain().getPageMessageForWhom(),
+          results = callGAPIpages(croom.courses().courseWork().studentSubmissions(), 'list', 'studentSubmissions',
+                                  pageMessage=getPageMessageForWhom(),
                                   throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   courseId=courseId, courseWorkId=courseWorkId, states=courseSubmissionStates, late=late, userId=courseSelectionParameters['studentId'],
@@ -702,9 +710,9 @@ def doPrintCourseSubmissions():
           else:
             submissionsCount += _printCourseItemCount(course, results, items, applyCourseItemFilter, courseItemFilter, None)
         except GAPI.notFound:
-          _getMain().entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId], j, jcount)
+          entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId], j, jcount)
         except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-          _getMain().entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId], str(e), j, jcount)
       else:
         if courseSubmissionIdsLists:
           if not GM.Globals[GM.CSV_SUBKEY_FIELD]:
@@ -719,16 +727,16 @@ def doPrintCourseSubmissions():
         for courseSubmissionId in courseSubmissionIds:
           k += 1
           try:
-            submission = _getMain().callGAPI(croom.courses().courseWork().studentSubmissions(), 'get',
+            submission = callGAPI(croom.courses().courseWork().studentSubmissions(), 'get',
                                   throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                   courseId=courseId, courseWorkId=courseWorkId, id=courseSubmissionId,
                                   fields=fields)
             _printCourseSubmission(course, submission)
           except GAPI.notFound:
-            _getMain().entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId, Ent.COURSE_SUBMISSION_ID, courseSubmissionId], k, kcount)
+            entityDoesNotHaveItemWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId, Ent.COURSE_SUBMISSION_ID, courseSubmissionId], k, kcount)
           except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-            _getMain().entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId, Ent.COURSE_SUBMISSION_ID, courseSubmissionId], str(e), k, kcount)
+            entityActionFailedWarning([Ent.COURSE_NAME, course['name'], Ent.COURSE_WORK_ID, courseWorkId, Ent.COURSE_SUBMISSION_ID, courseSubmissionId], str(e), k, kcount)
     if countsOnly:
       csvPF.WriteRowTitles({'courseId': course['id'], 'courseName': course['name'], items: submissionsCount})
   csvPF.writeCSVfile('Course Submissions')

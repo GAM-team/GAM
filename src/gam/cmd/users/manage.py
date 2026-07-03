@@ -25,6 +25,69 @@ from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
+from gam.util.access import accessErrorExit, duplicateAliasGroupUserWarning, entityUnknownWarning
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, checkGAPIError
+from gam.util.args import (
+    LANGUAGE_CODES_MAP,
+    SORF_MSG_FILE_ARGUMENTS,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    formatLocalTime,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getDeliverySettings,
+    getEmailAddress,
+    getGoogleProduct,
+    getGoogleSKUList,
+    getInteger,
+    getJSON,
+    getREPatternSubstitution,
+    getString,
+    getStringOrFile,
+    getStringReturnInList,
+    getStringWithCRsNLs,
+    getStringWithCRsNLsOrFile,
+    makeOrgUnitPathAbsolute,
+    normalizeEmailAddressOrUID,
+    splitEmailAddress,
+)
+from gam.util.csv_pf import showJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityDoesNotExistWarning,
+    performAction,
+    printEntity,
+    printEntityKVList,
+    printKeyValueList,
+)
+from gam.util.entity import (
+    convertEntityToList,
+    getEntityArgument,
+    getEntityList,
+    getEntitySelection,
+    getEntitySelector,
+    getEntityToModify,
+    getNormalizedEmailAddressEntity,
+)
+from gam.util.errors import (
+    USAGE_ERROR_RC,
+    csvFieldErrorExit,
+    entityActionFailedExit,
+    entityDoesNotExistExit,
+    invalidArgumentExit,
+    invalidChoiceExit,
+    missingArgumentExit,
+    missingChoiceExit,
+    unknownArgumentExit,
+    usageErrorExit,
+)
+from gam.util.fileio import closeFile, writeFile
+from gam.util.gdoc import openCSVFileReader
+from gam.util.orgunits import getOrgUnitItem
+from gam.util.output import readStdin, setSysExitRC, systemErrorExit, writeStderr
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -52,16 +115,16 @@ UNKNOWN = 'Unknown'
 def _getGroupOrgUnitMap():
 
   def getKeyFieldInfo(keyword, defaultField):
-    if not _getMain().checkArgumentPresent(keyword):
+    if not checkArgumentPresent(keyword):
       field = defaultField
     else:
-      field = _getMain().getString(Cmd.OB_FIELD_NAME)
+      field = getString(Cmd.OB_FIELD_NAME)
     if field not in fieldnames:
-      _getMain().csvFieldErrorExit(field, fieldnames, backupArg=True)
+      csvFieldErrorExit(field, fieldnames, backupArg=True)
     return field
 
-  filename = _getMain().getString(Cmd.OB_FILE_NAME)
-  f, csvFile, fieldnames = _getMain().openCSVFileReader(filename)
+  filename = getString(Cmd.OB_FILE_NAME)
+  f, csvFile, fieldnames = openCSVFileReader(filename)
   keyField = getKeyFieldInfo('keyfield', 'Group')
   dataField = getKeyFieldInfo('datafield', 'OrgUnit')
   groupOrgUnitMap = {}
@@ -69,14 +132,14 @@ def _getGroupOrgUnitMap():
     group = row[keyField].strip().lower()
     orgUnit = row[dataField].strip()
     if not group or not orgUnit:
-      _getMain().systemErrorExit(_getMain().USAGE_ERROR_RC, Msg.GROUP_MAPS_TO_OU_INVALID_ROW.format(filename, group, orgUnit))
-    orgUnit = _getMain().makeOrgUnitPathAbsolute(orgUnit)
+      systemErrorExit(USAGE_ERROR_RC, Msg.GROUP_MAPS_TO_OU_INVALID_ROW.format(filename, group, orgUnit))
+    orgUnit = makeOrgUnitPathAbsolute(orgUnit)
     if group in groupOrgUnitMap:
       origOrgUnit = groupOrgUnitMap[group]
       if origOrgUnit != orgUnit:
-        _getMain().systemErrorExit(_getMain().USAGE_ERROR_RC, Msg.GROUP_MAPS_TO_MULTIPLE_OUS.format(filename, group, ','.join([origOrgUnit, orgUnit])))
+        systemErrorExit(USAGE_ERROR_RC, Msg.GROUP_MAPS_TO_MULTIPLE_OUS.format(filename, group, ','.join([origOrgUnit, orgUnit])))
     groupOrgUnitMap[group] = orgUnit
-  _getMain().closeFile(f)
+  closeFile(f)
   return groupOrgUnitMap
 
 class PasswordOptions():
@@ -99,10 +162,10 @@ class PasswordOptions():
     self.filename = ''
 
   def GetPassword(self):
-    return _getMain().getString(Cmd.OB_PASSWORD, minLen=1 if not self.ignoreNullPassword else 0, maxLen=100)
+    return getString(Cmd.OB_PASSWORD, minLen=1 if not self.ignoreNullPassword else 0, maxLen=100)
 
   def SetCleanPasswordLen(self):
-    self.cleanPasswordLen = _getMain().getInteger(minVal=8, maxVal=100, default=25)
+    self.cleanPasswordLen = getInteger(minVal=8, maxVal=100, default=25)
 
   def CreateRandomPassword(self):
     rnd = SystemRandom()
@@ -141,7 +204,7 @@ class PasswordOptions():
           notFoundBody[up] = password
         self.notFoundPassword = notFoundBody[up]
     elif myarg in {'lograndompassword', 'logpassword'}:
-      self.filename = _getMain().getString(Cmd.OB_FILE_NAME)
+      self.filename = getString(Cmd.OB_FILE_NAME)
     else:
       return False
     return True
@@ -212,10 +275,10 @@ class PasswordOptions():
       body[up] = self.CreateRandomPassword()
       self.password = body[up]
     elif user and (self.promptForPassword or self.promptForUniquePassword):
-      body[up] = _getMain().readStdin(f'Enter password for {user}: ')
+      body[up] = readStdin(f'Enter password for {user}: ')
       self.password = body[up]
     elif self.promptForPassword:
-      body[up] = _getMain().readStdin('Enter password: ')
+      body[up] = readStdin('Enter password: ')
       self.password = body[up]
     if up in body:
       self.FinalizePassword(body, notify, up)
@@ -343,21 +406,21 @@ ALLOW_EMPTY_CUSTOM_TYPE = 'allowEmptyCustomType'
 def getNotifyArguments(myarg, notify, userNotification):
   if myarg == 'notify':
     if userNotification:
-      notify['recipients'].extend(_getMain().getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True))
+      notify['recipients'].extend(getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True))
     else: #delegateNotificatiomn
-      notify['notify'] = _getMain().getBoolean()
+      notify['notify'] = getBoolean()
   elif myarg == 'subject':
-    notify['subject'] = _getMain().getString(Cmd.OB_STRING)
-  elif myarg in _getMain().SORF_MSG_FILE_ARGUMENTS:
-    notify['message'], notify['charset'], notify['html'] = _getMain().getStringOrFile(myarg)
+    notify['subject'] = getString(Cmd.OB_STRING)
+  elif myarg in SORF_MSG_FILE_ARGUMENTS:
+    notify['message'], notify['charset'], notify['html'] = getStringOrFile(myarg)
   elif myarg == 'html':
-    notify['html'] = _getMain().getBoolean()
+    notify['html'] = getBoolean()
   elif myarg == 'from':
-    notify['from'] = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+    notify['from'] = getString(Cmd.OB_EMAIL_ADDRESS)
   elif myarg == 'mailbox':
-    notify['mailbox'] = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+    notify['mailbox'] = getString(Cmd.OB_EMAIL_ADDRESS)
   elif myarg == 'replyto':
-    notify['replyto'] = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+    notify['replyto'] = getString(Cmd.OB_EMAIL_ADDRESS)
   else:
     return False
   return True
@@ -382,8 +445,8 @@ def getUserAttributes(cd, updateCmd, noUid=False):
               attrdict.pop(keywords[UProp.PTKW_ATTR_TYPE_KEYWORD], None)
             attrdict[keywords[UProp.PTKW_ATTR_CUSTOMTYPE_KEYWORD]] = customType
             return
-        _getMain().missingArgumentExit('custom attribute type')
-      elif _getMain().DEFAULT_CHOICE in opts:
+        missingArgumentExit('custom attribute type')
+      elif DEFAULT_CHOICE in opts:
         attrdict[keywords[UProp.PTKW_ATTR_TYPE_KEYWORD]] = opts[DEFAULT_CHOICE]
         return
       elif keywords[UProp.PTKW_CL_CUSTOM_KEYWORD]:
@@ -394,11 +457,11 @@ def getUserAttributes(cd, updateCmd, noUid=False):
         attrdict[keywords[UProp.PTKW_ATTR_CUSTOMTYPE_KEYWORD]] = Cmd.Current()
         Cmd.Advance()
         return
-      _getMain().invalidChoiceExit(keyword, keywords[UProp.PTKW_KEYWORD_LIST], False)
-    elif _getMain().DEFAULT_CHOICE in opts:
+      invalidChoiceExit(keyword, keywords[UProp.PTKW_KEYWORD_LIST], False)
+    elif DEFAULT_CHOICE in opts:
       attrdict[keywords[UProp.PTKW_ATTR_TYPE_KEYWORD]] = opts[DEFAULT_CHOICE]
       return
-    _getMain().missingChoiceExit(keywords[UProp.PTKW_KEYWORD_LIST])
+    missingChoiceExit(keywords[UProp.PTKW_KEYWORD_LIST])
 
   def primaryNotPrimary(pnp, entry):
     if pnp == 'notprimary':
@@ -410,12 +473,12 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     return False
 
   def getPrimaryNotPrimaryChoice(entry, defaultChoice):
-    if _getMain().getChoice({'primary': True, 'notprimary': False}, defaultChoice=defaultChoice, mapChoice=True):
+    if getChoice({'primary': True, 'notprimary': False}, defaultChoice=defaultChoice, mapChoice=True):
       entry['primary'] = True
       primary['location'] = Cmd.Location()
 
   def checkClearBodyList(body, itemName):
-    if _getMain().checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
+    if checkArgumentPresent(Cmd.CLEAR_NONE_ARGUMENT):
       body.pop(itemName, None)
       body[itemName] = None
       return True
@@ -432,7 +495,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
           if citem.get('primary', False):
             if not checkSystemId or itemValue.get('systemId') == citem.get('systemId'):
               Cmd.SetLocation(primary['location']-1)
-              _getMain().usageErrorExit(Msg.MULTIPLE_ITEMS_MARKED_PRIMARY.format(itemName))
+              usageErrorExit(Msg.MULTIPLE_ITEMS_MARKED_PRIMARY.format(itemName))
       body[itemName].append(itemValue)
 
   def _splitSchemaNameDotFieldName(sn_fn, fnRequired=True):
@@ -446,7 +509,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       schemaName = sn_fn.strip()
       if schemaName:
         return (schemaName, None)
-    _getMain().invalidArgumentExit(Cmd.OB_SCHEMA_NAME_FIELD_NAME)
+    invalidArgumentExit(Cmd.OB_SCHEMA_NAME_FIELD_NAME)
 
   parameters = {
     'notifyRecoveryEmail': False,
@@ -464,7 +527,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     body = {}
   else:
     body = {'name': {'givenName': UNKNOWN, 'familyName': UNKNOWN}}
-    body['primaryEmail'] = _getMain().getEmailAddress(noUid=noUid)
+    body['primaryEmail'] = getEmailAddress(noUid=noUid)
   notFoundBody = {}
   notify = {'recipients': [], 'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
   primary = {}
@@ -476,7 +539,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   PwdOpts = PasswordOptions(updateCmd)
   resolveConflictAccount = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if getNotifyArguments(myarg, notify, True):
       pass
     elif myarg == 'notifyrecoveryemail':
@@ -486,10 +549,10 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif _getMain()._getTagReplacement(myarg, tagReplacements, True):
       pass
     elif myarg == 'admin':
-      value = _getMain().getBoolean()
+      value = getBoolean()
       if updateCmd or value:
         Cmd.Backup()
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     elif myarg == 'verifynotinvitable':
       parameters['verifyNotInvitable'] = True
     elif myarg == 'alwaysevict':
@@ -499,33 +562,33 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif updateCmd and myarg == 'noactionifalias':
       parameters['noActionIfAlias'] = True
     elif updateCmd and myarg == 'notifyonupdate':
-      parameters['notifyOnUpdate'] = _getMain().getBoolean()
+      parameters['notifyOnUpdate'] = getBoolean()
     elif updateCmd and myarg == 'setchangepasswordoncreate':
-      parameters['setChangePasswordOnCreate'] = _getMain().getBoolean()
+      parameters['setChangePasswordOnCreate'] = getBoolean()
     elif updateCmd and myarg in {'immutableous', 'immutableorgs', 'immutableorgunitpaths'}:
-      parameters['immutableOUs'] = set(_getMain().getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
+      parameters['immutableOUs'] = set(getEntityList(Cmd.OB_ORGUNIT_ENTITY, shlexSplit=True))
     elif not updateCmd and myarg == 'addnumericsuffixonduplicate':
-      parameters['addNumericSuffixOnDuplicate'] = _getMain().getInteger(minVal=0, default=0)
+      parameters['addNumericSuffixOnDuplicate'] = getInteger(minVal=0, default=0)
     elif not updateCmd and myarg in {'license', 'licence', 'licenses', 'licences'}:
       if parameters['lic'] is None:
-        parameters['lic'] = _getMain().buildGAPIObject(API.LICENSING)
-      parameters[_getMain().LICENSE_PRODUCT_SKUIDS] = _getMain().getGoogleSKUList(allowUnknownProduct=True)
-      if _getMain().checkArgumentPresent(['product', 'productid']):
-        productId = _getMain().getGoogleProduct()
+        parameters['lic'] = buildGAPIObject(API.LICENSING)
+      parameters[_getMain().LICENSE_PRODUCT_SKUIDS] = getGoogleSKUList(allowUnknownProduct=True)
+      if checkArgumentPresent(['product', 'productid']):
+        productId = getGoogleProduct()
         for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
           productSku = (productId, productSku[1])
       for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
         if not productSku[0]:
-          _getMain().invalidChoiceExit(productSku[1], SKU.getSortedSKUList(), True)
+          invalidChoiceExit(productSku[1], SKU.getSortedSKUList(), True)
     elif updateCmd and myarg == 'updateoufromgroup':
       groupOrgUnitMap = _getGroupOrgUnitMap()
     elif updateCmd and myarg == 'updateprimaryemail':
-      updatePrimaryEmail = list(_getMain().getREPatternSubstitution(re.IGNORECASE))
-      updatePrimaryEmail.append(_getMain().checkArgumentPresent(['preview']))
+      updatePrimaryEmail = list(getREPatternSubstitution(re.IGNORECASE))
+      updatePrimaryEmail.append(checkArgumentPresent(['preview']))
 #    elif updateCmd and myarg == 'primaryguestemail':
-#      body['guestAccountInfo'] = {'primaryGuestEmail': _getMain().getEmailAddress(noUid=True)}
+#      body['guestAccountInfo'] = {'primaryGuestEmail': getEmailAddress(noUid=True)}
     elif myarg == 'json':
-      body.update(_getMain().getJSON(USER_JSON_SKIP_FIELDS))
+      body.update(getJSON(USER_JSON_SKIP_FIELDS))
       if 'name' in body and 'fullName' in body['name']:
         body['name'].pop('fullName')
       if 'sshPublicKeys' in body and 'fingerprint' in body['sshPublicKeys']:
@@ -533,10 +596,10 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       for location in body.get('locations', []):
         location.pop('buildingName', None)
     elif myarg == 'employeeid':
-      entry = {'type': 'organization', 'value': _getMain().getString(Cmd.OB_STRING, minLen=0)}
+      entry = {'type': 'organization', 'value': getString(Cmd.OB_STRING, minLen=0)}
       appendItemToBodyList(body, 'externalIds', entry, 'value')
     elif myarg == 'manager':
-      entry = {'type': 'manager', 'value': _getMain().getString(Cmd.OB_STRING, minLen=0)}
+      entry = {'type': 'manager', 'value': getString(Cmd.OB_STRING, minLen=0)}
       appendItemToBodyList(body, 'relations', entry, 'value')
     elif myarg in UPDATE_USER_ARGUMENT_TO_PROPERTY_MAP:
       up = UPDATE_USER_ARGUMENT_TO_PROPERTY_MAP[myarg]
@@ -547,38 +610,38 @@ def getUserAttributes(cd, updateCmd, noUid=False):
         clTypeKeyword = typeKeywords[UProp.PTKW_CL_TYPE_KEYWORD]
       if up == 'givenName':
         body.setdefault('name', {})
-        body['name'][up] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=60)
+        body['name'][up] = getString(Cmd.OB_STRING, minLen=0, maxLen=60)
       elif up == 'familyName':
         body.setdefault('name', {})
-        body['name'][up] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=60)
+        body['name'][up] = getString(Cmd.OB_STRING, minLen=0, maxLen=60)
       elif up == 'displayName':
         body.setdefault('name', {})
-        body['name']['displayName'] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=256)
+        body['name']['displayName'] = getString(Cmd.OB_STRING, minLen=0, maxLen=256)
       elif PwdOpts.ProcessPropertyArgument(myarg, up, body):
         pass
       elif propertyClass == UProp.PC_BOOLEAN:
-        body[up] = _getMain().getBoolean()
+        body[up] = getBoolean()
       elif up == 'primaryEmail':
         if updateCmd:
-          body[up] = _getMain().getEmailAddress(noUid=True)
-        elif body[up] != _getMain().getEmailAddress(noUid=True):
+          body[up] = getEmailAddress(noUid=True)
+        elif body[up] != getEmailAddress(noUid=True):
           Cmd.Backup()
-          _getMain().unknownArgumentExit()
+          unknownArgumentExit()
       elif up == 'recoveryEmail':
-        rcvryEmail = _getMain().getEmailAddress(noUid=True, optional=True)
+        rcvryEmail = getEmailAddress(noUid=True, optional=True)
         body[up] = rcvryEmail if rcvryEmail is not None else ""
       elif up == 'recoveryPhone':
-        body[up] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        body[up] = getString(Cmd.OB_STRING, minLen=0)
         if body[up] and body[up][0] != '+':
           body[up] = '+' + body[up]
       elif up == 'customerId':
-        body[up] = _getMain().getString(Cmd.OB_STRING)
+        body[up] = getString(Cmd.OB_STRING)
       elif up == 'orgUnitPath':
-        body[up] = _getMain().getOrgUnitItem(pathOnly=True, cd=cd)
+        body[up] = getOrgUnitItem(pathOnly=True, cd=cd)
       elif up == 'languages':
         if checkClearBodyList(body, up):
           continue
-        for language in _getMain().getString(Cmd.OB_LANGUAGE_LIST).replace('_', '-').replace(',', ' ').split():
+        for language in getString(Cmd.OB_LANGUAGE_LIST).replace('_', '-').replace(',', ' ').split():
           langItem = {}
           if language[-1] == '+':
             suffix = '+'
@@ -590,243 +653,243 @@ def getUserAttributes(cd, updateCmd, noUid=False):
             langItem['preference'] = 'not_preferred'
           else:
             suffix = ''
-          if language.lower() in _getMain().LANGUAGE_CODES_MAP:
-            langItem['languageCode'] = _getMain().LANGUAGE_CODES_MAP[language.lower()]
+          if language.lower() in LANGUAGE_CODES_MAP:
+            langItem['languageCode'] = LANGUAGE_CODES_MAP[language.lower()]
           else:
             if suffix:
               Cmd.Backup()
-              _getMain().usageErrorExit(Msg.SUFFIX_NOT_ALLOWED_WITH_CUSTOMLANGUAGE.format(suffix, language))
+              usageErrorExit(Msg.SUFFIX_NOT_ALLOWED_WITH_CUSTOMLANGUAGE.format(suffix, language))
             langItem['customLanguage'] = language
           appendItemToBodyList(body, up, langItem)
       elif up == 'gender':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        if _getMain().checkArgumentPresent('addressmeas'):
-          entry['addressMeAs'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        if checkArgumentPresent('addressmeas'):
+          entry['addressMeAs'] = getString(Cmd.OB_STRING, minLen=0)
         body[up] = entry
       elif up == 'addresses':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        if _getMain().checkArgumentPresent(['unstructured', 'formatted']):
+        if checkArgumentPresent(['unstructured', 'formatted']):
           entry['sourceIsStructured'] = False
-          entry['formatted'] = _getMain().getStringWithCRsNLs()
+          entry['formatted'] = getStringWithCRsNLs()
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument in ADDRESS_ARGUMENT_TO_FIELD_MAP:
-            value = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            value = getString(Cmd.OB_STRING, minLen=0)
             if value:
               entry[ADDRESS_ARGUMENT_TO_FIELD_MAP[argument]] = value
           elif primaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         appendItemToBodyList(body, up, entry)
       elif up == 'ims':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        _getMain().getChoice([UProp.IM_PROTOCOLS[UProp.PTKW_CL_TYPE_KEYWORD]])
+        getChoice([UProp.IM_PROTOCOLS[UProp.PTKW_CL_TYPE_KEYWORD]])
         getKeywordAttribute(UProp.IM_PROTOCOLS, entry)
         # Backwards compatability: notprimary|primary on either side of IM address
         getPrimaryNotPrimaryChoice(entry, False)
-        entry['im'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['im'] = getString(Cmd.OB_STRING, minLen=0)
         getPrimaryNotPrimaryChoice(entry, entry.get('primary', False))
         appendItemToBodyList(body, up, entry, 'im')
       elif up == 'keywords':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         appendItemToBodyList(body, up, entry, 'value')
       elif up == 'locations':
         if checkClearBodyList(body, up):
           continue
         entry = {'type': 'desk'}
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument == clTypeKeyword:
             getKeywordAttribute(typeKeywords, entry)
           elif argument == 'area':
-            entry['area'] = _getMain().getString(Cmd.OB_STRING)
+            entry['area'] = getString(Cmd.OB_STRING)
           elif argument in {'building', 'buildingid'}:
             entry['buildingId'] = _getMain()._getBuildingByNameOrId(cd, allowNV=True)
           elif argument in {'floor', 'floorname'}:
-            entry['floorName'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['floorName'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument in {'section', 'floorsection'}:
-            entry['floorSection'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['floorSection'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument in {'desk', 'deskcode'}:
-            entry['deskCode'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['deskCode'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument == 'endlocation':
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         if 'area' not in entry:
-          _getMain().missingArgumentExit('area <String>')
+          missingArgumentExit('area <String>')
         appendItemToBodyList(body, up, entry)
       elif up == 'notes':
         if checkClearBodyList(body, up):
           continue
         entry = {}
         getKeywordAttribute(typeKeywords, entry, defaultChoice='text_plain')
-        entry['value'] = _getMain().getStringWithCRsNLsOrFile()[0]
+        entry['value'] = getStringWithCRsNLsOrFile()[0]
         body[up] = entry
       elif up == 'organizations':
         if checkClearBodyList(body, up):
           continue
         entry = {}
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument == clTypeKeyword:
             getKeywordAttribute(typeKeywords, entry)
           elif argument == typeKeywords[UProp.PTKW_CL_CUSTOMTYPE_KEYWORD]:
-            entry[typeKeywords[UProp.PTKW_ATTR_CUSTOMTYPE_KEYWORD]] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry[typeKeywords[UProp.PTKW_ATTR_CUSTOMTYPE_KEYWORD]] = getString(Cmd.OB_STRING, minLen=0)
             entry.pop(typeKeywords[UProp.PTKW_ATTR_TYPE_KEYWORD], None)
           elif argument in ORGANIZATION_ARGUMENT_TO_FIELD_MAP:
             argument = ORGANIZATION_ARGUMENT_TO_FIELD_MAP[argument]
             if argument != 'fullTimeEquivalent':
-              value = _getMain().getString(Cmd.OB_STRING, minLen=0)
+              value = getString(Cmd.OB_STRING, minLen=0)
               if value:
                 entry[argument] = value
             else:
-              entry[argument] = _getMain().getInteger(minVal=0, maxVal=100000, default=0)
+              entry[argument] = getInteger(minVal=0, maxVal=100000, default=0)
           elif primaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         appendItemToBodyList(body, up, entry)
       elif up == 'phones':
         if checkClearBodyList(body, up):
           continue
         entry = {}
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument == clTypeKeyword:
             getKeywordAttribute(typeKeywords, entry)
           elif argument == 'value':
-            entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['value'] = getString(Cmd.OB_STRING, minLen=0)
           elif primaryNotPrimary(argument, entry):
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         appendItemToBodyList(body, up, entry, 'value')
       elif up == 'posixAccounts':
         if checkClearBodyList(body, up):
           continue
         entry = {}
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument in {'username', 'name'}:
-            entry['username'] = _getMain().getString(Cmd.OB_STRING)
+            entry['username'] = getString(Cmd.OB_STRING)
           elif argument == 'uid':
-            entry['uid'] = _getMain().getInteger(minVal=1000)
+            entry['uid'] = getInteger(minVal=1000)
           elif argument == 'gid':
-            entry['gid'] = _getMain().getInteger(minVal=0)
+            entry['gid'] = getInteger(minVal=0)
           elif argument in {'system', 'systemid'}:
-            entry['systemId'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['systemId'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument in {'home', 'homedirectory'}:
-            entry['homeDirectory'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['homeDirectory'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument == 'shell':
-            entry['shell'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['shell'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument == 'gecos':
-            entry['gecos'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            entry['gecos'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument == 'primary':
             primary['location'] = Cmd.Location()
-            entry['primary'] = _getMain().getBoolean()
+            entry['primary'] = getBoolean()
           elif argument in {'os', 'operatingsystemtype'}:
-            entry['operatingSystemType'] = _getMain().getChoice(['linux', 'unspecified', 'windows'])
+            entry['operatingSystemType'] = getChoice(['linux', 'unspecified', 'windows'])
           elif argument == 'endposix':
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         if 'username' not in entry:
-          _getMain().missingArgumentExit('username <String>')
+          missingArgumentExit('username <String>')
         if 'uid' not in entry:
-          _getMain().missingArgumentExit('uid <Integer>')
+          missingArgumentExit('uid <Integer>')
         appendItemToBodyList(body, up, entry, checkSystemId=True)
       elif up == 'relations':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         appendItemToBodyList(body, up, entry, 'value')
       elif up == 'emails':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        entry['address'] = _getMain().getEmailAddress(noUid=True, minLen=0)
+        entry['address'] = getEmailAddress(noUid=True, minLen=0)
         appendItemToBodyList(body, up, entry, 'address')
       elif up == 'sshPublicKeys':
         if checkClearBodyList(body, up):
           continue
         entry = {}
         while Cmd.ArgumentsRemaining():
-          argument = _getMain().getArgument()
+          argument = getArgument()
           if argument == 'expires':
-            entry['expirationTimeUsec'] = _getMain().getInteger(minVal=0)
+            entry['expirationTimeUsec'] = getInteger(minVal=0)
           elif argument == 'key':
-            entry['key'] = _getMain().getString(Cmd.OB_STRING)
+            entry['key'] = getString(Cmd.OB_STRING)
           elif argument == 'endssh':
             break
           else:
-            _getMain().unknownArgumentExit()
+            unknownArgumentExit()
         if 'key' not in entry:
-          _getMain().missingArgumentExit('key <String>')
+          missingArgumentExit('key <String>')
         appendItemToBodyList(body, up, entry)
       elif up == 'externalIds':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry, allowEmptyCustomType=True)
-        entry['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        entry['value'] = getString(Cmd.OB_STRING, minLen=0)
         appendItemToBodyList(body, up, entry, 'value')
       elif up == 'websites':
         if checkClearBodyList(body, up):
           continue
         entry = {}
-        _getMain().getChoice([clTypeKeyword], defaultChoice=None)
+        getChoice([clTypeKeyword], defaultChoice=None)
         getKeywordAttribute(typeKeywords, entry)
-        entry['value'] = _getMain().getString(Cmd.OB_URL, minLen=0)
+        entry['value'] = getString(Cmd.OB_URL, minLen=0)
         getPrimaryNotPrimaryChoice(entry, False)
         appendItemToBodyList(body, up, entry, 'value')
     elif myarg in {'group', 'groups'}:
-      role = _getMain().getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
-      delivery_settings = _getMain().getDeliverySettings()
-      for group in _getMain().getEntityList(Cmd.OB_GROUP_ENTITY):
-        addGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': delivery_settings}
+      role = getChoice(GROUP_ROLES_MAP, defaultChoice=Ent.ROLE_MEMBER, mapChoice=True)
+      delivery_settings = getDeliverySettings()
+      for group in getEntityList(Cmd.OB_GROUP_ENTITY):
+        addGroups[normalizeEmailAddressOrUID(group)] = {'role': role, 'delivery_settings': delivery_settings}
     elif myarg in {'alias', 'aliases'}:
-      addAliases.extend(_getMain().convertEntityToList(_getMain().getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0)))
+      addAliases.extend(convertEntityToList(getString(Cmd.OB_EMAIL_ADDRESS_LIST, minLen=0)))
     elif myarg == 'clearschema':
       if not updateCmd:
-        _getMain().unknownArgumentExit()
-      schemaName, fieldName = _splitSchemaNameDotFieldName(_getMain().getString(Cmd.OB_SCHEMA_NAME_FIELD_NAME), False)
+        unknownArgumentExit()
+      schemaName, fieldName = _splitSchemaNameDotFieldName(getString(Cmd.OB_SCHEMA_NAME_FIELD_NAME), False)
       up = 'customSchemas'
       body.setdefault(up, {})
       body[up].setdefault(schemaName, {})
       if fieldName is None:
         try:
-          schema = _getMain().callGAPI(cd.schemas(), 'get',
+          schema = callGAPI(cd.schemas(), 'get',
                             throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                             customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaName, fields='fields(fieldName)')
           for field in schema['fields']:
             body[up][schemaName][field['fieldName']] = None
         except (GAPI.invalid, GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-          _getMain().entityDoesNotExistWarning(Ent.USER_SCHEMA, schemaName)
-          _getMain().unknownArgumentExit()
+          entityDoesNotExistWarning(Ent.USER_SCHEMA, schemaName)
+          unknownArgumentExit()
       else:
         body[up][schemaName][fieldName] = None
     elif myarg.find('.') >= 0:
@@ -834,27 +897,27 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       up = 'customSchemas'
       body.setdefault(up, {})
       body[up].setdefault(schemaName, {})
-      multivalue, ignoreEmpty = _getMain().getChoice(SCHEMA_VALUE_PROCESS_MAP, defaultChoice=(False, False), mapChoice=True)
+      multivalue, ignoreEmpty = getChoice(SCHEMA_VALUE_PROCESS_MAP, defaultChoice=(False, False), mapChoice=True)
       if multivalue:
         body[up][schemaName].setdefault(fieldName, [])
         typeKeywords = UProp.PROPERTIES[up][UProp.TYPE_KEYWORDS]
         clTypeKeyword = typeKeywords[UProp.PTKW_CL_TYPE_KEYWORD]
         schemaValue = {}
-        if _getMain().checkArgumentPresent(clTypeKeyword):
+        if checkArgumentPresent(clTypeKeyword):
           getKeywordAttribute(typeKeywords, schemaValue)
         else:
           schemaValue['type'] = 'work'
-        schemaValue['value'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        schemaValue['value'] = getString(Cmd.OB_STRING, minLen=0)
         if schemaValue['value'] or not ignoreEmpty:
           body[up][schemaName][fieldName].append(schemaValue)
       else:
-        schemaValue = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        schemaValue = getString(Cmd.OB_STRING, minLen=0)
         if schemaValue or not ignoreEmpty:
           body[up][schemaName][fieldName] = schemaValue
         elif updateCmd:
           body[up][schemaName][fieldName] = None
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if PwdOpts.promptForPassword or PwdOpts.promptForUniquePassword:
     if not updateCmd:
       PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'], body['primaryEmail'])
@@ -898,7 +961,7 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[logpassword <FileName>] [ignorenullpassword]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     _, _, _, \
     parameters, resolveConflictAccount = getUserAttributes(cd, False, noUid=True)
@@ -911,10 +974,10 @@ def doCreateUser():
     if parameters['verifyNotInvitable']:
       isInvitableUser, _ = _getMain()._getIsInvitableUser(None, user)
       if isInvitableUser:
-        _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
+        entityActionNotPerformedWarning([Ent.USER, user], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
         return
     try:
-      result = _getMain().callGAPI(cd.users(), 'insert',
+      result = callGAPI(cd.users(), 'insert',
                         throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND,
                                       GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN,
                                       GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
@@ -923,25 +986,25 @@ def doCreateUser():
                         body=body,
                         fields=fields,
                         resolveConflictAccount=resolveConflictAccount)
-      _getMain().entityActionPerformed([Ent.USER, user])
+      entityActionPerformed([Ent.USER, user])
       break
     except GAPI.duplicate:
-      if _getMain().duplicateAliasGroupUserWarning(cd, [Ent.USER, user]) == Ent.USER and parameters['addNumericSuffixOnDuplicate'] > 0:
+      if duplicateAliasGroupUserWarning(cd, [Ent.USER, user]) == Ent.USER and parameters['addNumericSuffixOnDuplicate'] > 0:
         parameters['addNumericSuffixOnDuplicate'] -= 1
         suffix +=1
         body['primaryEmail'] = originalEmail[0:atLoc]+str(suffix)+originalEmail[atLoc:]
-        _getMain().setSysExitRC(0)
+        setSysExitRC(0)
         continue
       return
     except GAPI.invalidSchemaValue:
-      _getMain().entityActionFailedExit([Ent.USER, user], Msg.INVALID_SCHEMA_VALUE)
+      entityActionFailedExit([Ent.USER, user], Msg.INVALID_SCHEMA_VALUE)
     except GAPI.invalidOrgunit:
-      _getMain().entityActionFailedExit([Ent.USER, user], Msg.INVALID_ORGUNIT)
+      entityActionFailedExit([Ent.USER, user], Msg.INVALID_ORGUNIT)
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
             GAPI.invalid, GAPI.invalidInput, GAPI.invalidParameter, GAPI.conditionNotMet, GAPI.limitExceeded) as e:
-      _getMain().entityActionFailedExit([Ent.USER, user], str(e))
+      entityActionFailedExit([Ent.USER, user], str(e))
   if PwdOpts.filename and PwdOpts.password:
-    _getMain().writeFile(PwdOpts.filename, f'{user},{PwdOpts.password}\n', mode='a', continueOnError=True)
+    writeFile(PwdOpts.filename, f'{user},{PwdOpts.password}\n', mode='a', continueOnError=True)
   if addGroups:
     createUserAddToGroups(cd, result['primaryEmail'], addGroups, 0, 0)
   if addAliases:
@@ -954,24 +1017,24 @@ def doCreateUser():
     productId = productSku[0]
     skuId = productSku[1]
     try:
-      _getMain().callGAPI(parameters['lic'].licenseAssignments(), 'insert',
+      callGAPI(parameters['lic'].licenseAssignments(), 'insert',
                throwReasons=[GAPI.INTERNAL_ERROR, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.INVALID,
                              GAPI.USER_NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                productId=productId, skuId=skuId, body={'userId': user}, fields='')
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)])
+      entityActionPerformed([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)])
     except (GAPI.internalError, GAPI.duplicate, GAPI.conditionNotMet, GAPI.invalid,
             GAPI.userNotFound, GAPI.forbidden, GAPI.backendError, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)], str(e))
+      entityActionFailedWarning([Ent.USER, user, Ent.LICENSE, SKU.formatSKUIdDisplayName(skuId)], str(e))
 
 def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
   try:
-    result = _getMain().callGAPI(cd.users(), 'get',
+    result = callGAPI(cd.users(), 'get',
                       throwReasons=GAPI.USER_GET_THROW_REASONS,
                       userKey=user, fields='id,primaryEmail')
     if (result['primaryEmail'].lower() == user) or (result['id'] == user):
       return True
-    _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.NOT_A_PRIMARY_EMAIL_ADDRESS, i, count)
+    entityActionNotPerformedWarning([Ent.USER, user], Msg.NOT_A_PRIMARY_EMAIL_ADDRESS, i, count)
     return False
   except GAPI.userNotFound:
     if createIfNotFound:
@@ -979,25 +1042,25 @@ def verifyUserPrimaryEmail(cd, user, createIfNotFound, i, count):
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.backendError, GAPI.systemError):
     pass
-  _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+  entityUnknownWarning(Ent.USER, user, i, count)
   return False
 
 # gam create guestuser <EmailAddress>
 def doCreateGuestUser():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  body = {'primaryGuestEmail':  _getMain().getEmailAddress(noUid=True),
+  cd = buildGAPIObject(API.DIRECTORY)
+  body = {'primaryGuestEmail':  getEmailAddress(noUid=True),
           'customer': GC.Values[GC.CUSTOMER_ID]}
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   try:
-    result = _getMain().callGAPI(cd.users(), 'createGuest',
+    result = callGAPI(cd.users(), 'createGuest',
                       throwReasons=[GAPI.FAILED_PRECONDITION, GAPI.INVALID_ARGUMENT],
                       body=body)
-    _getMain().entityActionPerformed([Ent.GUEST_USER, body['primaryGuestEmail']])
+    entityActionPerformed([Ent.GUEST_USER, body['primaryGuestEmail']])
     Ind.Increment()
-    _getMain().showJSON(None, result)
+    showJSON(None, result)
     Ind.Decrement()
   except (GAPI.failedPrecondition, GAPI.invalidArgument) as e:
-    _getMain().entityActionFailedExit([Ent.GUEST_USER, body['primaryGuestEmail']], str(e))
+    entityActionFailedExit([Ent.GUEST_USER, body['primaryGuestEmail']], str(e))
 
 # gam <UserTypeEntity> update user <UserAttribute>*
 #	[verifynotinvitable|alwaysevict] [noactionifalias]
@@ -1020,10 +1083,10 @@ def doCreateGuestUser():
 #	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
   def waitingForCreationToComplete(sleep_time):
-    _getMain().writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.USER), sleep_time))
+    writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.USER), sleep_time))
     time.sleep(sleep_time)
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   ci = None
   errorRetries = 5
   updateRetryDelay = 5
@@ -1036,23 +1099,23 @@ def updateUsers(entityList):
     checkImmutableOUs = True
   else:
     checkImmutableOUs = False
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  i, count, entityList = getEntityArgument(entityList)
   fields = '*' if tagReplacements['subs'] else 'primaryEmail,name,recoveryEmail'
   for user in entityList:
     i += 1
-    user = userKey = _getMain().normalizeEmailAddressOrUID(user)
+    user = userKey = normalizeEmailAddressOrUID(user)
     if parameters['noActionIfAlias'] and not verifyUserPrimaryEmail(cd, user, parameters['createIfNotFound'], i, count):
       continue
     if checkImmutableOUs:
       body = ubody.copy()
     try:
       if vfe:
-        result = _getMain().callGAPI(cd.users(), 'get',
+        result = callGAPI(cd.users(), 'get',
                           throwReasons=GAPI.USER_GET_THROW_REASONS,
                           userKey=userKey, fields='primaryEmail,id')
         userKey = result['id']
         userPrimary = result['primaryEmail']
-        userName, userDomain = _getMain().splitEmailAddress(userPrimary)
+        userName, userDomain = splitEmailAddress(userPrimary)
         body['primaryEmail'] = f'vfe.{userName}.{random.randint(1, 99999):05d}@{userDomain}'
         body['emails'] = [{'type': 'custom',
                            'customType': 'former_employee',
@@ -1061,19 +1124,19 @@ def updateUsers(entityList):
         if updatePrimaryEmail[0].search(user) is not None:
           body['primaryEmail'] = re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], user)
           if updatePrimaryEmail[2]:
-            _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.UPDATE_PRIMARY_EMAIL_PREVIEW.format(body['primaryEmail']), i, count)
+            entityActionNotPerformedWarning([Ent.USER, user], Msg.UPDATE_PRIMARY_EMAIL_PREVIEW.format(body['primaryEmail']), i, count)
             continue
         else:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
+          entityActionNotPerformedWarning([Ent.USER, user], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
           continue
       if groupOrgUnitMap:
         try:
-          groups = _getMain().callGAPIpages(cd.groups(), 'list', 'groups',
+          groups = callGAPIpages(cd.groups(), 'list', 'groups',
                                  throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                  userKey=userKey, orderBy='email', fields='nextPageToken,groups(email)')
         except (GAPI.invalidMember, GAPI.invalidInput):
-          _getMain().entityUnknownWarning(Ent.USER, userKey, i, count)
+          entityUnknownWarning(Ent.USER, userKey, i, count)
           continue
         groupList = []
         for group in groups:
@@ -1082,12 +1145,12 @@ def updateUsers(entityList):
             groupList.append(group['email'])
         jcount = len(groupList)
         if jcount != 1:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.USER_BELONGS_TO_N_GROUPS_THAT_MAP_TO_ORGUNITS.format(jcount, ','.join(groupList)), i, count)
+          entityActionNotPerformedWarning([Ent.USER, user], Msg.USER_BELONGS_TO_N_GROUPS_THAT_MAP_TO_ORGUNITS.format(jcount, ','.join(groupList)), i, count)
           continue
         body['orgUnitPath'] = orgUnit
       if checkImmutableOUs:
         try:
-          result = _getMain().callGAPI(cd.users(), 'get',
+          result = callGAPI(cd.users(), 'get',
                             throwReasons=GAPI.USER_GET_THROW_REASONS,
                             userKey=userKey, fields='orgUnitPath')
           if result['orgUnitPath'] in parameters['immutableOUs']:
@@ -1098,23 +1161,23 @@ def updateUsers(entityList):
         if 'primaryEmail' in body and parameters['verifyNotInvitable']:
           isInvitableUser, ci = _getMain()._getIsInvitableUser(ci, body['primaryEmail'])
           if isInvitableUser:
-            _getMain().entityActionNotPerformedWarning([Ent.USER, body['primaryEmail']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT, i, count)
+            entityActionNotPerformedWarning([Ent.USER, body['primaryEmail']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT, i, count)
             continue
         if PwdOpts.makeUniqueRandomPassword or PwdOpts.promptForUniquePassword:
           PwdOpts.AssignPassword(body, notify, notFoundBody, parameters['createIfNotFound'], userKey)
         retry = 0
         while True:
           try:
-            result = _getMain().callGAPI(cd.users(), 'update',
+            result = callGAPI(cd.users(), 'update',
                               throwReasons=[GAPI.CONDITION_NOT_MET, GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
                                             GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.ADMIN_CANNOT_UNSUSPEND,
                                             GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                             GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.DUPLICATE,
                                             GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, GAPI.CONFLICT],
                               userKey=userKey, body=body, fields=fields)
-            _getMain().entityActionPerformed([Ent.USER, user], i, count)
+            entityActionPerformed([Ent.USER, user], i, count)
             if PwdOpts.filename and PwdOpts.password:
-              _getMain().writeFile(PwdOpts.filename, f'{userKey},{PwdOpts.password}\n', mode='a', continueOnError=True)
+              writeFile(PwdOpts.filename, f'{userKey},{PwdOpts.password}\n', mode='a', continueOnError=True)
             if (parameters['notifyOnUpdate'] and notify['password'] and
                 (notify.get('recipients') or (parameters['notifyRecoveryEmail'] and result.get('recoveryEmail')))):
               if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
@@ -1124,7 +1187,7 @@ def updateUsers(entityList):
           except GAPI.conditionNotMet as e:
             retry += 1
             if ('User creation is not complete' not in str(e)) or retry > errorRetries:
-              _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+              entityActionFailedWarning([Ent.USER, user], str(e), i, count)
               break
             waitingForCreationToComplete(updateRetryDelay)
             continue
@@ -1138,16 +1201,16 @@ def updateUsers(entityList):
                   body['changePasswordAtNextLogin'] = True
                 Act.Set(Act.CREATE)
                 try:
-                  result = _getMain().callGAPI(cd.users(), 'insert',
+                  result = callGAPI(cd.users(), 'insert',
                                     throwReasons=[GAPI.DUPLICATE, GAPI.DOMAIN_NOT_FOUND, GAPI.FORBIDDEN,
                                                   GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                                   GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.CONDITION_NOT_MET],
                                     body=body,
                                     fields=fields,
                                     resolveConflictAccount=resolveConflictAccount)
-                  _getMain().entityActionPerformed([Ent.USER, body['primaryEmail']], i, count)
+                  entityActionPerformed([Ent.USER, body['primaryEmail']], i, count)
                   if PwdOpts.filename and PwdOpts.notFoundPassword:
-                    _getMain().writeFile(PwdOpts.filename, f'{user},{PwdOpts.notFoundPassword}\n', mode='a', continueOnError=True)
+                    writeFile(PwdOpts.filename, f'{user},{PwdOpts.notFoundPassword}\n', mode='a', continueOnError=True)
                   if addGroups:
                     createUserAddToGroups(cd, result['primaryEmail'], addGroups, i, count)
                   if addAliases:
@@ -1158,238 +1221,238 @@ def updateUsers(entityList):
                       notify['recipients'].append(result['recoveryEmail'])
                     _getMain().sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count)
                 except GAPI.duplicate:
-                  _getMain().duplicateAliasGroupUserWarning(cd, [Ent.USER, body['primaryEmail']], i, count)
+                  duplicateAliasGroupUserWarning(cd, [Ent.USER, body['primaryEmail']], i, count)
               else:
-                _getMain().entityActionFailedWarning([Ent.USER, user], Msg.UNABLE_TO_CREATE_NOT_FOUND_USER, i, count)
+                entityActionFailedWarning([Ent.USER, user], Msg.UNABLE_TO_CREATE_NOT_FOUND_USER, i, count)
             else:
-              _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+              entityUnknownWarning(Ent.USER, user, i, count)
           break
       else:
-        _getMain().entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_CHANGES, i, count)
+        entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_CHANGES, i, count)
     except GAPI.userNotFound:
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
     except GAPI.invalidSchemaValue:
-      _getMain().entityActionFailedWarning([Ent.USER, user], Msg.INVALID_SCHEMA_VALUE, i, count)
+      entityActionFailedWarning([Ent.USER, user], Msg.INVALID_SCHEMA_VALUE, i, count)
     except GAPI.duplicate as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.USER, body['primaryEmail']], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.USER, body['primaryEmail']], str(e), i, count)
     except GAPI.invalidOrgunit:
-      _getMain().entityActionFailedWarning([Ent.USER, user], Msg.INVALID_ORGUNIT, i, count)
+      entityActionFailedWarning([Ent.USER, user], Msg.INVALID_ORGUNIT, i, count)
     except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.adminCannotUnsuspend,
             GAPI.invalid, GAPI.invalidInput, GAPI.invalidParameter, GAPI.insufficientArchivedUserLicenses,
             GAPI.conflict, GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.conditionNotMet) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam update users <UserTypeEntity> ...
 def doUpdateUsers():
-  updateUsers(_getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1])
+  updateUsers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1])
 
 # gam update user <UserItem> ...
 def doUpdateUser():
-  updateUsers(_getMain().getStringReturnInList(Cmd.OB_USER_ITEM))
+  updateUsers(getStringReturnInList(Cmd.OB_USER_ITEM))
 
 # gam <UserTypeEntity> delete users [noactionifalias]
 def deleteUsers(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  noActionIfAlias = _getMain().checkArgumentPresent('noactionifalias')
-  _getMain().checkForExtraneousArguments()
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  cd = buildGAPIObject(API.DIRECTORY)
+  noActionIfAlias = checkArgumentPresent('noactionifalias')
+  checkForExtraneousArguments()
+  i, count, entityList = getEntityArgument(entityList)
   for user in entityList:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if noActionIfAlias and not verifyUserPrimaryEmail(cd, user, False, i, count):
       continue
     try:
-      _getMain().callGAPI(cd.users(), 'delete',
+      callGAPI(cd.users(), 'delete',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
                              GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN,
                              GAPI.CONDITION_NOT_MET],
                userKey=user)
-      _getMain().entityActionPerformed([Ent.USER, user], i, count)
+      entityActionPerformed([Ent.USER, user], i, count)
     except GAPI.userNotFound:
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
     except GAPI.conditionNotMet as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], Msg.CAN_NOT_DELETE_USER_WITH_VAULT_HOLD.format(str(e), user), i, count)
+      entityActionFailedWarning([Ent.USER, user], Msg.CAN_NOT_DELETE_USER_WITH_VAULT_HOLD.format(str(e), user), i, count)
 
 # gam delete users <UserTypeEntity> [noactionifalias]
 def doDeleteUsers():
-  deleteUsers(_getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1])
+  deleteUsers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1])
 
 # gam delete user <UserItem> [noactionifalias]
 def doDeleteUser():
-  deleteUsers(_getMain().getStringReturnInList(Cmd.OB_USER_ITEM))
+  deleteUsers(getStringReturnInList(Cmd.OB_USER_ITEM))
 
 # gam <UserEntity> undelete users [ou|org|orgunit <OrgUnitPath>]
 def undeleteUsers(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  if _getMain().checkArgumentPresent(['ou', 'org', 'orgunit']):
-    entitySelector = _getMain().getEntitySelector()
+  cd = buildGAPIObject(API.DIRECTORY)
+  if checkArgumentPresent(['ou', 'org', 'orgunit']):
+    entitySelector = getEntitySelector()
     if entitySelector:
-      orgUnitPaths = _getMain().getEntitySelection(entitySelector, True)
+      orgUnitPaths = getEntitySelection(entitySelector, True)
     else:
-      orgUnitPaths = [_getMain().getOrgUnitItem()]
+      orgUnitPaths = [getOrgUnitItem()]
     userOrgUnitLists = orgUnitPaths if isinstance(orgUnitPaths, dict) else None
   else:
     orgUnitPaths = ['/']
     userOrgUnitLists = None
-  _getMain().checkForExtraneousArguments()
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  checkForExtraneousArguments()
+  i, count, entityList = getEntityArgument(entityList)
   for user in entityList:
     i += 1
     origUser = user
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     user_uid = user if user.find('@') == -1 else None
     if not user_uid:
-      _getMain().printEntityKVList([Ent.DELETED_USER, user],
+      printEntityKVList([Ent.DELETED_USER, user],
                         [Msg.LOOKING_UP_GOOGLE_UNIQUE_ID, None],
                         i, count)
       try:
-        deleted_users = _getMain().callGAPIpages(cd.users(), 'list', 'users',
+        deleted_users = callGAPIpages(cd.users(), 'list', 'users',
                                       throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                       customer=GC.Values[GC.CUSTOMER_ID], showDeleted=True, orderBy='email',
                                       maxResults=GC.Values[GC.USER_MAX_RESULTS])
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-        _getMain().accessErrorExit(cd)
+        accessErrorExit(cd)
       matching_users = []
       for deleted_user in deleted_users:
         if str(deleted_user['primaryEmail']).lower() == user:
           matching_users.append(deleted_user)
       jcount = len(matching_users)
       if jcount == 0:
-        _getMain().entityUnknownWarning(Ent.DELETED_USER, user, i, count)
-        _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        entityUnknownWarning(Ent.DELETED_USER, user, i, count)
+        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
         continue
       if jcount > 1:
-        _getMain().entityActionNotPerformedWarning([Ent.DELETED_USER, user],
+        entityActionNotPerformedWarning([Ent.DELETED_USER, user],
                                         Msg.PLEASE_SELECT_ENTITY_TO_PROCESS.format(jcount, Ent.Plural(Ent.DELETED_USER), 'undelete', 'uid:<String>'),
                                         i, count)
         Ind.Increment()
         j = 0
         for matching_user in matching_users:
-          _getMain().printEntity([Ent.UNIQUE_ID, matching_user['id']], j, jcount)
+          printEntity([Ent.UNIQUE_ID, matching_user['id']], j, jcount)
           Ind.Increment()
           for attr_name in ['creationTime', 'lastLoginTime', 'deletionTime']:
             if attr_name in matching_user:
-              _getMain().printKeyValueList([attr_name, _getMain().formatLocalTime(matching_user[attr_name])])
+              printKeyValueList([attr_name, formatLocalTime(matching_user[attr_name])])
           Ind.Decrement()
         Ind.Decrement()
-        _getMain().setSysExitRC(_getMain().MULTIPLE_DELETED_USERS_FOUND_RC)
+        setSysExitRC(_getMain().MULTIPLE_DELETED_USERS_FOUND_RC)
         continue
       user_uid = matching_users[0]['id']
     if userOrgUnitLists:
       orgUnitPaths = userOrgUnitLists[origUser]
     try:
-      _getMain().callGAPI(cd.users(), 'undelete',
+      callGAPI(cd.users(), 'undelete',
                throwReasons=[GAPI.DELETED_USER_NOT_FOUND, GAPI.INVALID_ORGUNIT,
                              GAPI.DOMAIN_NOT_FOUND, GAPI.DOMAIN_CANNOT_USE_APIS,
                              GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.DUPLICATE,
                              GAPI.LIMIT_EXCEEDED],
-               userKey=user_uid, body={'orgUnitPath': _getMain().makeOrgUnitPathAbsolute(orgUnitPaths[0])})
-      _getMain().entityActionPerformed([Ent.DELETED_USER, user], i, count)
+               userKey=user_uid, body={'orgUnitPath': makeOrgUnitPathAbsolute(orgUnitPaths[0])})
+      entityActionPerformed([Ent.DELETED_USER, user], i, count)
     except GAPI.deletedUserNotFound:
-      _getMain().entityUnknownWarning(Ent.DELETED_USER, user, i, count)
+      entityUnknownWarning(Ent.DELETED_USER, user, i, count)
     except GAPI.invalidOrgunit:
-      _getMain().entityActionFailedWarning([Ent.USER, user], Msg.INVALID_ORGUNIT, i, count)
+      entityActionFailedWarning([Ent.USER, user], Msg.INVALID_ORGUNIT, i, count)
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest,
             GAPI.invalid, GAPI.duplicate, GAPI.limitExceeded) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam undelete users <UserEntity> [ou|org|orgunit <OrgUnitPath>]
 def doUndeleteUsers():
-  undeleteUsers(_getMain().getEntityList(Cmd.OB_USER_ENTITY))
+  undeleteUsers(getEntityList(Cmd.OB_USER_ENTITY))
 
 # gam undelete user <UserItem> [ou|org|orgunit <OrgUnitPath>]
 def doUndeleteUser():
-  undeleteUsers(_getMain().getStringReturnInList(Cmd.OB_USER_ITEM))
+  undeleteUsers(getStringReturnInList(Cmd.OB_USER_ITEM))
 
 # gam check suspended <UserItem>
 def doCheckUserSuspended():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  user = _getMain().getEmailAddress()
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  user = getEmailAddress()
+  checkForExtraneousArguments()
   try:
-    result = _getMain().callGAPI(cd.users(), 'get',
+    result = callGAPI(cd.users(), 'get',
                       throwReasons=GAPI.USER_GET_THROW_REASONS,
                       userKey=user, fields='suspended,suspensionReason', projection='basic')
   except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden):
-    _getMain().entityDoesNotExistExit(Ent.USER, user)
+    entityDoesNotExistExit(Ent.USER, user)
   except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
-    _getMain().accessErrorExit(cd)
+    accessErrorExit(cd)
   kvList = [Ent.Singular(Ent.USER), user]
   up = 'suspended'
   kvList.extend([UProp.PROPERTIES[up][UProp.TITLE], result[up]])
   if result[up]:
     up = 'suspensionReason'
     kvList.extend([UProp.PROPERTIES[up][UProp.TITLE], result[up]])
-    _getMain().setSysExitRC(_getMain().USER_SUSPENDED_RC)
-  _getMain().printKeyValueList(kvList)
+    setSysExitRC(_getMain().USER_SUSPENDED_RC)
+  printKeyValueList(kvList)
 
 # gam <UserTypeEntity> suspend users [noactionifalias]
 # gam <UserTypeEntity> unsuspend users [noactionifalias]
 def suspendUnsuspendUsers(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  noActionIfAlias = _getMain().checkArgumentPresent('noactionifalias')
-  _getMain().checkForExtraneousArguments()
+  cd = buildGAPIObject(API.DIRECTORY)
+  noActionIfAlias = checkArgumentPresent('noactionifalias')
+  checkForExtraneousArguments()
   body = {'suspended': Act.Get() == Act.SUSPEND}
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  i, count, entityList = getEntityArgument(entityList)
   for user in entityList:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     if noActionIfAlias and not verifyUserPrimaryEmail(cd, user, False, i, count):
       continue
     try:
-      _getMain().callGAPI(cd.users(), 'update',
+      callGAPI(cd.users(), 'update',
                throwReasons=[GAPI.USER_NOT_FOUND, GAPI.DOMAIN_NOT_FOUND,
                              GAPI.DOMAIN_CANNOT_USE_APIS, GAPI.FORBIDDEN, GAPI.BAD_REQUEST,
                              GAPI.ADMIN_CANNOT_UNSUSPEND],
                userKey=user, body=body)
-      _getMain().entityActionPerformed([Ent.USER, user], i, count)
+      entityActionPerformed([Ent.USER, user], i, count)
     except GAPI.userNotFound:
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
             GAPI.badRequest, GAPI.adminCannotUnsuspend) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam suspend users <UserTypeEntity> [noactionifalias]
 # gam unsuspend users <UserTypeEntity> [noactionifalias]
 def doSuspendUnsuspendUsers():
-  suspendUnsuspendUsers(_getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1])
+  suspendUnsuspendUsers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1])
 
 # gam suspend user <UserItem> [noactionifalias]
 # gam unsuspend user <UserItem> [noactionifalias]
 def doSuspendUnsuspendUser():
-  suspendUnsuspendUsers(_getMain().getStringReturnInList(Cmd.OB_USER_ITEM))
+  suspendUnsuspendUsers(getStringReturnInList(Cmd.OB_USER_ITEM))
 
 # gam <UserTypeEntity> signout
 # gam <UserTypeEntity> turnoff2sv
 def signoutTurnoff2SVUsers(entityList):
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   if Act.Get() == Act.SIGNOUT:
     service = cd.users()
     function = 'signOut'
   else:
     service = cd.twoStepVerification()
     function = 'turnOff'
-  _getMain().checkForExtraneousArguments()
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+  checkForExtraneousArguments()
+  i, count, entityList = getEntityArgument(entityList)
   for user in entityList:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     try:
-      _getMain().callGAPI(service, function,
+      callGAPI(service, function,
                throwReasons=[GAPI.NOT_FOUND, GAPI.USER_NOT_FOUND, GAPI.INVALID, GAPI.INVALID_INPUT,
                              GAPI.DOMAIN_NOT_FOUND, GAPI.DOMAIN_CANNOT_USE_APIS,
                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED, GAPI.AUTH_ERROR],
                userKey=user)
-      _getMain().entityActionPerformed([Ent.USER, user], i, count)
+      entityActionPerformed([Ent.USER, user], i, count)
     except (GAPI.notFound, GAPI.userNotFound):
-      _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+      entityUnknownWarning(Ent.USER, user, i, count)
     except (GAPI.invalid, GAPI.invalidInput, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.permissionDenied, GAPI.authError) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
 
 # gam <UserTypeEntity> waitformailbox [retries <Number>]
 def waitForMailbox(entityList):
@@ -1399,36 +1462,36 @@ def waitForMailbox(entityList):
       kvList.extend(['Retry', f'{retries}/{maxRetries}'])
     else:
       kvList.extend(['Retry', f'{retries}'])
-    _getMain().printEntityKVList([Ent.USER, user], kvList, i, count)
+    printEntityKVList([Ent.USER, user], kvList, i, count)
     if maxRetries and retries >= maxRetries:
-      _getMain().entityActionFailedWarning([Ent.USER, user], Msg.RETRIES_EXHAUSTED.format(maxRetries), i, count)
+      entityActionFailedWarning([Ent.USER, user], Msg.RETRIES_EXHAUSTED.format(maxRetries), i, count)
       return False
     time.sleep(3)
     return True
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   maxRetries = 0
   while Cmd.ArgumentsRemaining():
-    argument = _getMain().getArgument()
+    argument = getArgument()
     if argument == 'retries':
-      maxRetries = _getMain().getInteger(minVal=0)
+      maxRetries = getInteger(minVal=0)
     else:
-      _getMain().unknownArgumentExit()
-  i, count, entityList = _getMain().getEntityArgument(entityList)
+      unknownArgumentExit()
+  i, count, entityList = getEntityArgument(entityList)
   for user in entityList:
     i += 1
-    user = _getMain().normalizeEmailAddressOrUID(user)
+    user = normalizeEmailAddressOrUID(user)
     retries = 0
-    _getMain().performAction(Ent.USER, user, i, count)
+    performAction(Ent.USER, user, i, count)
     Ind.Increment()
     while True:
       retries += 1
       try:
-        result = _getMain().callGAPI(cd.users(), 'get',
+        result = callGAPI(cd.users(), 'get',
                           throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND],
                           userKey=user, fields='isMailboxSetup')
         if result.get('isMailboxSetup', False):
-          _getMain().entityActionPerformed([Ent.USER, user], i, count)
+          entityActionPerformed([Ent.USER, user], i, count)
           break
         if not showRetryStatus(user, True, i, count):
           break
@@ -1436,10 +1499,10 @@ def waitForMailbox(entityList):
         if not showRetryStatus(user, False, i, count):
           break
       except (GAPI.invalid, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.authError) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
         break
       except KeyboardInterrupt:
-        _getMain().entityActionFailedWarning([Ent.USER, user], Msg.CHECK_INTERRUPTED, i, count)
+        entityActionFailedWarning([Ent.USER, user], Msg.CHECK_INTERRUPTED, i, count)
         break
     Ind.Decrement()
 
@@ -1456,7 +1519,7 @@ def getUserLicenses(lic, user, skus):
         licenses.append(response['skuId'])
         del sku_calls[request_id]
     else:
-      _, reason, _ = _getMain().checkGAPIError(exception, softErrors=True)
+      _, reason, _ = checkGAPIError(exception, softErrors=True)
       if reason in reasons_to_quit:
         del sku_calls[request_id]
 
@@ -1710,8 +1773,8 @@ USER_SKIP_OBJECTS = {'thumbnailPhotoEtag'}
 USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime', 'suspensionTime', 'archivalTime', 'disabledTime'}
 
 def _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters):
-  up = _getMain().getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
-  filterValue = _getMain().getString(Cmd.OB_STRING)
+  up = getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
+  filterValue = getString(Cmd.OB_STRING)
   userMultiAttributeFilters.setdefault(up, [])
   if myarg == 'filtermultiattrtype':
     userMultiAttributeFilters[up].append({'type': filterValue})
@@ -1749,7 +1812,7 @@ def _initSchemaParms(projection):
   return {'projection': projection, 'customFieldMask': None, 'selectedSchemaFields': {}}
 
 def _getSchemaNameList(schemaParms):
-  customFieldMask = _getMain().getString(Cmd.OB_SCHEMA_NAME_LIST).replace(' ', ',')
+  customFieldMask = getString(Cmd.OB_SCHEMA_NAME_LIST).replace(' ', ',')
   if customFieldMask.lower() == 'all':
     schemaParms['projection'] = 'full'
     schemaParms['customFieldMask'] = None

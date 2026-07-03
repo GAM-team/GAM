@@ -75,6 +75,37 @@ from gam.cmd.drive.filelist import (
     _checkUpdateLastModifiction, _getLastModificationPath,
     _initLastModification, _showLastModification, _updateLastModificationRow,
 )
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, yieldGAPIpages
+from gam.util.args import (
+    OrderBy,
+    formatFileSize,
+    formatLocalSecondsTimestamp,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getInteger,
+    getString,
+)
+from gam.util.csv_pf import CSVPrintFile, _getFieldsList, getFieldsFromFieldsList, getItemFieldsFromFieldsList
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    getPageMessageForWhom,
+    invalidQuery,
+    printEntity,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printGotEntityItemsForWhom,
+    printKeyValueList,
+    printKeyValueListWithCount,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import writeStdout
 
 
 
@@ -130,18 +161,18 @@ def printShowFileCounts(users):
       if showSize:
         dataList.extend(['Size', sizeTotal])
       if showSizeUnits:
-        dataList.extend(['SizeUnits', _getMain().formatFileSize(sizeTotal)])
+        dataList.extend(['SizeUnits', formatFileSize(sizeTotal)])
       if sharedDriveId:
         dataList.extend(['Item cap', f"{countTotal/SHARED_DRIVE_MAX_FILES_FOLDERS:.2%}"])
-      _getMain().printEntityKVList(kvList, dataList, i, count)
+      printEntityKVList(kvList, dataList, i, count)
       Ind.Increment()
       if showLastModification:
         _showLastModification(lastModification)
       for mimeType, mtinfo in sorted(mimeTypeInfo.items()):
         if not showMimeTypeSize:
-          _getMain().printKeyValueList([mimeType, mtinfo['count']])
+          printKeyValueList([mimeType, mtinfo['count']])
         else:
-          _getMain().printKeyValueList([mimeType, f"{mtinfo['count']}, {mtinfo['size']}"])
+          printKeyValueList([mimeType, f"{mtinfo['count']}, {mtinfo['size']}"])
       Ind.Decrement()
     else:
       if sharedDriveId:
@@ -151,7 +182,7 @@ def printShowFileCounts(users):
       if showSize:
         row['Size'] = sizeTotal
       if showSizeUnits:
-        row['SizeUnits'] = _getMain().formatFileSize(sizeTotal)
+        row['SizeUnits'] = formatFileSize(sizeTotal)
       if showLastModification:
         _updateLastModificationRow(row, lastModification)
       if addCSVData:
@@ -162,7 +193,7 @@ def printShowFileCounts(users):
           row[f'{mimeType}:Size'] = mtinfo['size']
       csvPF.WriteRowTitles(row)
 
-  csvPF = _getMain().CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
   if csvPF:
     csvPF.SetZeroBlankMimeTypeCounts(True)
   fieldsList = ['mimeType']
@@ -178,14 +209,14 @@ def printShowFileCounts(users):
   addCSVData = {}
   summaryLastModification = _initLastModification()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif DLP.ProcessArgument(myarg, fileIdEntity):
       pass
     elif myarg == 'select':
       if fileIdEntity:
-        _getMain().usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
+        usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
       fileIdEntity = getSharedDriveEntity()
     elif myarg == 'showsize':
       showSize = True
@@ -194,21 +225,21 @@ def printShowFileCounts(users):
     elif myarg == 'showmimetypesize':
       showMimeTypeSize = showSize = True
     elif myarg == 'sizefield':
-      sizeField = _getMain().getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'showlastmodification':
       showLastModification = True
     elif myarg == 'summary':
-      summary = _getMain().getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
+      summary = getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'summaryuser':
-      summaryUser = _getMain().getString(Cmd.OB_STRING)
+      summaryUser = getString(Cmd.OB_STRING)
     elif myarg == 'pathdelimiter':
-      pathDelimiter = _getMain().getCharacter()
+      pathDelimiter = getCharacter()
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'continueoninvalidquery':
-      continueOnInvalidQuery = _getMain().getBoolean()
+      continueOnInvalidQuery = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not fileIdEntity:
     fileIdEntity = DLP.GetFileIdEntity()
   if not fileIdEntity.get('shareddrive'):
@@ -238,8 +269,8 @@ def printShowFileCounts(users):
       sortTitles.extend(sorted(addCSVData.keys()))
     csvPF.SetTitles(sortTitles)
     csvPF.SetSortAllTitles()
-  pagesFields = _getMain().getItemFieldsFromFieldsList('files', fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive = _validateUserSharedDrive(user, i, count, fileIdEntity)
@@ -250,10 +281,10 @@ def printShowFileCounts(users):
     mimeTypeInfo = {}
     userLastModification = _initLastModification()
     gettingEntity = _getGettingEntity(user, fileIdEntity)
-    _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
+    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
     try:
-      feed = _getMain().yieldGAPIpages(drive.files(), 'list', 'files',
-                            pageMessage=_getMain().getPageMessageForWhom(),
+      feed = yieldGAPIpages(drive.files(), 'list', 'files',
+                            pageMessage=getPageMessageForWhom(),
                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                         GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                         GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
@@ -275,7 +306,7 @@ def printShowFileCounts(users):
             continue
           if getCheckFilePermissions:
             try:
-              f_file['permissions'] = _getMain().callGAPIpages(drive.permissions(), 'list', 'permissions',
+              f_file['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                                     throwReasons=GAPI.DRIVE3_GET_ACL_REASONS+[GAPI.BAD_REQUEST],
                                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                                     fileId=f_file['id'], fields=permissionsFields, supportsAllDrives=True)
@@ -298,16 +329,16 @@ def printShowFileCounts(users):
       if showLastModification and userLastModification['lastModifiedTime'] > summaryLastModification['lastModifiedTime']:
         summaryLastModification = userLastModification.copy()
     except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], _getMain().invalidQuery(DLP.fileIdEntity['query']), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(DLP.fileIdEntity['query']), i, count)
       if not continueOnInvalidQuery:
         break
       continue
     except GAPI.fileNotFound:
-      _getMain().printGotEntityItemsForWhom(0)
+      printGotEntityItemsForWhom(0)
     except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, sharedDriveId], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, sharedDriveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
   if summary != FILECOUNT_SUMMARY_NONE:
     showMimeTypeInfo(summaryUser, summaryMimeTypeInfo,
@@ -331,7 +362,7 @@ def printShowDrivelastModifications(users):
         kvList = [Ent.USER, user, Ent.SHAREDDRIVE, f'{sharedDriveName} ({sharedDriveId})']
       else:
         kvList = [Ent.USER, user]
-      _getMain().printEntity(kvList, i, count)
+      printEntity(kvList, i, count)
       Ind.Increment()
       _showLastModification(lastModification)
       Ind.Decrement()
@@ -345,7 +376,7 @@ def printShowDrivelastModifications(users):
         row.update(addCSVData)
       csvPF.WriteRowTitles(row)
 
-  csvPF = _getMain().CSVPrintFile() if Act.csvFormat() else None
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
   fieldsList = ['id', 'driveId', 'name', 'mimeType', 'lastModifyingUser', 'modifiedTime', 'parents']
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': False, 'allowQuery': False, 'mimeTypeInQuery': True})
   pathDelimiter = '/'
@@ -353,19 +384,19 @@ def printShowDrivelastModifications(users):
   fileIdEntity = {}
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'select':
       if fileIdEntity:
-        _getMain().usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
+        usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
       fileIdEntity = getSharedDriveEntity()
     elif myarg == 'pathdelimiter':
-      pathDelimiter = _getMain().getCharacter()
+      pathDelimiter = getCharacter()
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not fileIdEntity:
     fileIdEntity = DLP.GetFileIdEntity()
   if not fileIdEntity.get('shareddrive'):
@@ -383,8 +414,8 @@ def printShowDrivelastModifications(users):
                        'lastModifyingUser', 'lastModifiedTime'])
     csvPF.SetTitles(sortTitles)
     csvPF.SetSortAllTitles()
-  pagesFields = _getMain().getItemFieldsFromFieldsList('files', fieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive = _validateUserSharedDrive(user, i, count, fileIdEntity)
@@ -394,10 +425,10 @@ def printShowDrivelastModifications(users):
     sharedDriveName = _getSharedDriveNameFromId(drive, sharedDriveId) if sharedDriveId else ''
     userLastModification = _initLastModification()
     gettingEntity = _getGettingEntity(user, fileIdEntity)
-    _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count)
+    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count)
     try:
-      feed = _getMain().yieldGAPIpages(drive.files(), 'list', 'files',
-                            pageMessage=_getMain().getPageMessageForWhom(),
+      feed = yieldGAPIpages(drive.files(), 'list', 'files',
+                            pageMessage=getPageMessageForWhom(),
                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                         GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
                             retryReasons=[GAPI.UNKNOWN_ERROR],
@@ -408,14 +439,14 @@ def printShowDrivelastModifications(users):
       _getLastModificationPath(drive, userLastModification, pathDelimiter)
       showLastModificationInfo(user, sharedDriveId, sharedDriveName, userLastModification, i, count)
     except (GAPI.invalid, GAPI.badRequest) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], str(e), i, count)
       continue
     except GAPI.fileNotFound:
-      _getMain().printGotEntityItemsForWhom(0)
+      printGotEntityItemsForWhom(0)
     except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, sharedDriveId], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, sharedDriveId], str(e), i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
   if csvPF:
     csvPF.writeCSVfile('Drive File Last Modification')
@@ -433,20 +464,20 @@ def printDiskUsage(users):
     fileEntry['depth'] = depth
     q = _getMain().WITH_PARENTS.format(fileEntry['id'])
     try:
-      children = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+      children = callGAPIpages(drive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
                                retryReasons=[GAPI.UNKNOWN_ERROR],
                                q=q, orderBy=orderBy, fields=pagesFields,
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], supportsAllDrives=True, includeItemsFromAllDrives=True)
     except (GAPI.invalidQuery, GAPI.invalid):
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, None], _getMain().invalidQuery(q), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, None], invalidQuery(q), i, count)
       return
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return
     Ind.Increment()
     if showProgress:
-      _getMain().entityActionPerformed([Ent.USER, user, Ent.DRIVE_FOLDER, fileEntry['path']])
+      entityActionPerformed([Ent.USER, user, Ent.DRIVE_FOLDER, fileEntry['path']])
     for childEntryInfo in children:
       trashed = childEntryInfo['trashed']
       if trashed and excludeTrashed:
@@ -490,7 +521,7 @@ def printDiskUsage(users):
             trashFolder['directFileSize'] += fsize
     Ind.Decrement()
 
-  csvPF = _getMain().CSVPrintFile(['User', 'Owner', 'id', 'name', 'ownedByMe', 'trashed', 'explicitlyTrashed',
+  csvPF = CSVPrintFile(['User', 'Owner', 'id', 'name', 'ownedByMe', 'trashed', 'explicitlyTrashed',
                         'directFileCount', 'directFileSize', 'directFolderCount',
                         'totalFileCount', 'totalFileSize', 'totalFolderCount', 'depth', 'path'])
   excludeTrashed = stripCRsFromName = False
@@ -505,37 +536,37 @@ def printDiskUsage(users):
   addCSVData = {}
   showResults = 'all'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'anyowner':
       showOwnedBy = None
     elif myarg == 'showownedby':
-      showOwnedBy = _getMain().getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
+      showOwnedBy = getChoice(SHOW_OWNED_BY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'sizefield':
-      sizeField = _getMain().getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'pathdelimiter':
-      pathDelimiter = _getMain().getCharacter()
+      pathDelimiter = getCharacter()
     elif myarg == 'excludetrashed':
       excludeTrashed = True
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'show':
-      showResults = _getMain().getChoice(DISKUSAGE_SHOW_CHOICES)
+      showResults = getChoice(DISKUSAGE_SHOW_CHOICES)
     elif myarg == 'noprogress':
       showProgress = False
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if addCSVData:
     csvPF.AddTitles(sorted(addCSVData.keys()))
   fieldsList = ['id', 'name', 'mimeType', sizeField, 'trashed', 'explicitlyTrashed', 'owners(emailAddress)', 'ownedByMe']
-  pagesFields = _getMain().getItemFieldsFromFieldsList('files', fieldsList)
+  pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
   topFieldsList = fieldsList[:]
   topFieldsList.extend(['driveId', 'parents'])
-  topFields = _getMain().getFieldsFromFieldsList(topFieldsList)
-  i, count, users = _getMain().getEntityArgument(users)
+  topFields = getFieldsFromFieldsList(topFieldsList)
+  i, count, users = getEntityArgument(users)
   i = 0
   for user in users:
     i += 1
@@ -550,7 +581,7 @@ def printDiskUsage(users):
       trashFolder = {'User': user, 'id': 'Trash', 'name': 'Trash', 'path': 'Trash'}
       trashFolder.update(zeroFolderInfo)
       try:
-        topFolder = _getMain().callGAPI(drive.files(), 'get',
+        topFolder = callGAPI(drive.files(), 'get',
                                  throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                  fileId=fileId, fields=topFields, supportsAllDrives=True)
         if stripCRsFromName:
@@ -558,12 +589,12 @@ def printDiskUsage(users):
         mimeType = topFolder.pop('mimeType')
         if mimeType != MIMETYPE_GA_FOLDER:
           entityValueList = [Ent.USER, user, _getMain()._getEntityMimeType(topFolder), topFolder['name']]
-          _getMain().entityActionNotPerformedWarning(entityValueList, Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_FOLDER), i, count)
+          entityActionNotPerformedWarning(entityValueList, Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_FOLDER), i, count)
           continue
         if topFolder['trashed']:
           if excludeTrashed:
             entityValueList = [Ent.USER, user, Ent.DRIVE_FOLDER, topFolder['name']]
-            _getMain().entityActionNotPerformedWarning(entityValueList, Msg.IN_TRASH_AND_EXCLUDE_TRASHED, i, count)
+            entityActionNotPerformedWarning(entityValueList, Msg.IN_TRASH_AND_EXCLUDE_TRASHED, i, count)
             continue
           trashFolder['totalFolderCount'] += 1
           if topFolder['explicitlyTrashed']:
@@ -594,13 +625,13 @@ def printDiskUsage(users):
         foldersList.append(topFolder)
         _getChildDriveFolderInfo(drive, topFolder, user, i, count, -1)
       except GAPI.fileNotFound:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
         continue
       except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       if showResults == 'all':
         for folder in foldersList:
@@ -670,40 +701,40 @@ def printShowFileShareCounts(users):
         if summary == FILECOUNT_SUMMARY_ONLY:
           return
     if not csvPF:
-      _getMain().printEntity([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, shareCounts[FILESHARECOUNTS_TOTAL]], i, count)
+      printEntity([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, shareCounts[FILESHARECOUNTS_TOTAL]], i, count)
       Ind.Increment()
       for field, shareCount in shareCounts.items():
-        _getMain().printKeyValueList([field, shareCount])
+        printKeyValueList([field, shareCount])
       Ind.Decrement()
     else:
       row = {FILESHARECOUNTS_OWNER: user}
       row.update(shareCounts)
       csvPF.WriteRow(row)
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  csvPF = _getMain().CSVPrintFile([FILESHARECOUNTS_OWNER]+list(FILESHARECOUNTS_ZEROCOUNTS.keys())) if Act.csvFormat() else None
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile([FILESHARECOUNTS_OWNER]+list(FILESHARECOUNTS_ZEROCOUNTS.keys())) if Act.csvFormat() else None
   query =  ME_IN_OWNERS
   summary = FILECOUNT_SUMMARY_NONE
   summaryUser = FILECOUNT_SUMMARY_USER
   fileIdEntity = {}
   internalDomains = 'all'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'excludetrashed':
       query += ' and trashed=false'
     elif myarg == 'internaldomains':
-      internalDomains = _getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower()
+      internalDomains = getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower()
     elif myarg == 'summary':
-      summary = _getMain().getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
+      summary = getChoice(FILECOUNT_SUMMARY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'summaryuser':
-      summaryUser = _getMain().getString(Cmd.OB_STRING)
+      summaryUser = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   internalDomains = _getMain().finalizeInternalDomains(cd, internalDomains)
   summaryShareCounts = FILESHARECOUNTS_ZEROCOUNTS.copy()
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive = _validateUserSharedDrive(user, i, count, fileIdEntity)
@@ -711,10 +742,10 @@ def printShowFileShareCounts(users):
       continue
     userShareCounts = FILESHARECOUNTS_ZEROCOUNTS.copy()
     gettingEntity = _getGettingEntity(user, fileIdEntity)
-    _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=query)
+    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=query)
     try:
-      feed = _getMain().yieldGAPIpages(drive.files(), 'list', 'files',
-                            pageMessage=_getMain().getPageMessageForWhom(),
+      feed = yieldGAPIpages(drive.files(), 'list', 'files',
+                            pageMessage=getPageMessageForWhom(),
                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                             retryReasons=[GAPI.UNKNOWN_ERROR],
                             q=query, fields='nextPageToken,files(permissions(type,role,emailAddress,domain,allowFileDiscovery,deleted))',
@@ -748,7 +779,7 @@ def printShowFileShareCounts(users):
                   userShareCounts[FILESHARECOUNTS_CATEGORIES[ptype][internal]] += 1
       showShareCounts(user, userShareCounts, i, count)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       continue
   if summary != FILECOUNT_SUMMARY_NONE:
     showShareCounts(summaryUser, summaryShareCounts, 0, 0)
@@ -818,9 +849,9 @@ def printShowFileTree(users):
           else:
             fileInfoList.extend([field, fileEntry.get(field, '')])
       if fileInfoList:
-        _getMain().printKeyValueListWithCount([fileEntry['name'], formatKeyValueList('(', fileInfoList, ')')], j, jcount)
+        printKeyValueListWithCount([fileEntry['name'], formatKeyValueList('(', fileInfoList, ')')], j, jcount)
       else:
-        _getMain().printKeyValueList([fileEntry['name']])
+        printKeyValueList([fileEntry['name']])
     else:
       userInfo['index'] += 1
       row = userInfo.copy()
@@ -861,16 +892,16 @@ def printShowFileTree(users):
     if selectSubQuery:
       q += ' and ('+selectSubQuery+')'
     try:
-      children = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+      children = callGAPIpages(drive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
                                retryReasons=[GAPI.UNKNOWN_ERROR],
                                q=q, orderBy=OBY.orderBy, fields=pagesFields,
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], supportsAllDrives=True, includeItemsFromAllDrives=True)
     except (GAPI.invalidQuery, GAPI.invalid):
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], _getMain().invalidQuery(selectSubQuery), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(selectSubQuery), i, count)
       return
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return
     for childEntryInfo in children:
       if not DLP.CheckExcludeTrashed(childEntryInfo):
@@ -886,7 +917,7 @@ def printShowFileTree(users):
         _showChildDriveFolderContents(drive, childEntryInfo, user, i, count, depth+1)
         Ind.Decrement()
 
-  csvPF = _getMain().CSVPrintFile(['User', 'index', 'depth', 'name']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['User', 'index', 'depth', 'name']) if Act.csvFormat() else None
   maxdepth = -1
   fileIdEntity = {}
   selectSubQuery = ''
@@ -896,42 +927,42 @@ def printShowFileTree(users):
     showFields[mappedField] = False
   buildTree = noindent = stripCRsFromName = False
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  OBY = _getMain().OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
+  OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   DLP = DriveListParameters({'allowChoose': False, 'allowCorpora': False, 'allowQuery': False, 'mimeTypeInQuery': False})
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif DLP.ProcessArgument(myarg, fileIdEntity):
       pass
     elif myarg == 'select':
       if fileIdEntity:
-        _getMain().usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
+        usageErrorExit(Msg.CAN_NOT_BE_SPECIFIED_MORE_THAN_ONCE.format('select'))
       fileIdEntity = getDriveFileEntity(DLP=DLP)
     elif myarg == 'selectsubquery':
-      selectSubQuery = _getMain().getString(Cmd.OB_QUERY, minLen=0)
+      selectSubQuery = getString(Cmd.OB_QUERY, minLen=0)
     elif myarg == 'orderby':
       OBY.GetChoice()
     elif myarg == 'depth':
-      maxdepth = _getMain().getInteger(minVal=-1)
+      maxdepth = getInteger(minVal=-1)
     elif myarg == 'sizefield':
-      sizeField = _getMain().getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
+      sizeField = getChoice(SIZE_FIELD_CHOICE_MAP, mapChoice=True)
     elif myarg == 'fields':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in FILETREE_FIELDS_CHOICE_MAP:
           showFields[FILETREE_FIELDS_CHOICE_MAP[field]] = True
           if csvPF:
             csvPF.AddTitle(FILETREE_FIELDS_CHOICE_MAP[field])
         else:
-          _getMain().invalidChoiceExit(field, FILETREE_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, FILETREE_FIELDS_CHOICE_MAP, True)
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif csvPF and myarg == 'noindent':
       noindent = True
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   fieldsList = ['driveId', 'id', 'name', 'parents', 'mimeType', 'ownedByMe', 'owners(emailAddress)',
                 'shared', sizeField, 'explicitlyTrashed', 'trashed', 'webViewLink']
   buildTree = (not fileIdEntity
@@ -954,10 +985,10 @@ def printShowFileTree(users):
     fileIdEntity = initDriveFileEntity()
   if DLP.PM.permissionMatches:
     fieldsList.append('permissions')
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
-  pagesFields = _getMain().getItemFieldsFromFieldsList('files', fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
+  pagesFields = getItemFieldsFromFieldsList('files', fieldsList)
   shareddriveFields = []
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
@@ -969,10 +1000,10 @@ def printShowFileTree(users):
       if not status:
         continue
       gettingEntity = _getGettingEntity(user, fileIdEntity)
-      _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
+      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, gettingEntity, i, count, query=DLP.fileIdEntity['query'])
       try:
-        feed = _getMain().yieldGAPIpages(drive.files(), 'list', 'files',
-                              pageMessage=_getMain().getPageMessageForWhom(),
+        feed = yieldGAPIpages(drive.files(), 'list', 'files',
+                              pageMessage=getPageMessageForWhom(),
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
                               retryReasons=[GAPI.UNKNOWN_ERROR],
                               orderBy=OBY.orderBy,
@@ -982,10 +1013,10 @@ def printShowFileTree(users):
         extendFileTreeParents(drive, fileTree, fields)
         DLP.GetLocationFileIdsFromTree(fileTree, fileIdEntity)
       except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), i, count)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     else:
       fileTree = {}
@@ -1003,7 +1034,7 @@ def printShowFileTree(users):
         fileEntryInfo = fileEntry['info']
       else:
         try:
-          fileEntryInfo = _getMain().callGAPI(drive.files(), 'get',
+          fileEntryInfo = callGAPI(drive.files(), 'get',
                                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                    fileId=fileId, fields=fields, supportsAllDrives=True)
           if (fileEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER and fileEntryInfo.get('driveId') and
@@ -1014,13 +1045,13 @@ def printShowFileTree(users):
           if buildTree:
             fileTree[fileId] = {'info': fileEntryInfo}
         except GAPI.fileNotFound:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, fileId], Msg.NOT_FOUND, j, jcount)
           continue
         except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, fileIdEntity['shareddrive']['driveId']], str(e), j, jcount)
           continue
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+          userDriveServiceNotEnabledWarning(user, str(e), i, count)
           break
       _showFileInfo(fileEntryInfo, -1, j, jcount)
       Ind.Increment()
@@ -1050,25 +1081,25 @@ def getCreationModificationTimes(path_to_file):
       # We're probably on Linux. No easy way to get creation dates here,
       # so we'll settle for when its content was last modified.
       ctime = stat.st_mtime
-  return (_getMain().formatLocalSecondsTimestamp(ctime), _getMain().formatLocalSecondsTimestamp(mtime))
+  return (formatLocalSecondsTimestamp(ctime), formatLocalSecondsTimestamp(mtime))
 
 def writeReturnIdLink(returnIdLink, mimeType, result):
   if returnIdLink != 'editLink':
-    _getMain().writeStdout(f'{result[returnIdLink]}\n')
+    writeStdout(f'{result[returnIdLink]}\n')
     return
   if mimeType is None:
-    _getMain().writeStdout(f'{result["webViewLink"]}\n')
+    writeStdout(f'{result["webViewLink"]}\n')
     return
   for mt in MICROSOFT_FORMATS_LIST:
     if mimeType == mt['mime']:
       if mt['ext'][1] == 'd':
-        _getMain().writeStdout(f'https://docs.google.com/document/d/{result["id"]}/edit\n')
+        writeStdout(f'https://docs.google.com/document/d/{result["id"]}/edit\n')
         return
       if mt['ext'][1] == 'x':
-        _getMain().writeStdout(f'https://docs.google.com/spreadsheets/d/{result["id"]}/edit\n')
+        writeStdout(f'https://docs.google.com/spreadsheets/d/{result["id"]}/edit\n')
         return
       if mt['ext'][1] == 'p':
-        _getMain().writeStdout(f'https://docs.google.com/presentation/d/{result["id"]}/edit\n')
+        writeStdout(f'https://docs.google.com/presentation/d/{result["id"]}/edit\n')
         return
-  _getMain().writeStdout(f'https://drive.google.com/file/d/{result["id"]}/edit\n')
+  writeStdout(f'https://drive.google.com/file/d/{result["id"]}/edit\n')
 

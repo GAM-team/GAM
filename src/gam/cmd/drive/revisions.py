@@ -18,6 +18,38 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import callGAPI, callGAPIpages
+from gam.util.args import (
+    OrderBy,
+    StartEndTime,
+    getArgument,
+    getBoolean,
+    getInteger,
+    getString,
+    getStringReturnInList,
+    getTimeOrDeltaFromNow,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    flattenJSON,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityDoesNotHaveItemWarning,
+    entityNumEntitiesActionNotPerformedWarning,
+    entityPerformActionNumItems,
+    entityPerformActionNumItemsModifier,
+    printEntity,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument, getEntitySelection, getEntitySelector
+from gam.util.errors import missingArgumentExit, unknownArgumentExit
+from gam.util.output import _stripControlCharsFromName, setSysExitRC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -65,29 +97,29 @@ def __getattr__(name):
 
 def getRevisionsEntity():
   revisionsEntity = {'list': [], 'dict': None, 'count': None, 'time': None, 'range': None}
-  startEndTime = _getMain().StartEndTime()
-  entitySelector = _getMain().getEntitySelector()
+  startEndTime = StartEndTime()
+  entitySelector = getEntitySelector()
   if entitySelector:
-    entityList = _getMain().getEntitySelection(entitySelector, False)
+    entityList = getEntitySelection(entitySelector, False)
     if isinstance(entityList, dict):
       revisionsEntity['dict'] = entityList
     else:
       revisionsEntity['list'] = entityList
   else:
-    myarg = _getMain().getString(Cmd.OB_DRIVE_FILE_REVISION_ID, checkBlank=True)
+    myarg = getString(Cmd.OB_DRIVE_FILE_REVISION_ID, checkBlank=True)
     mycmd = myarg.lower()
     if mycmd == 'id':
-      revisionsEntity['list'] = _getMain().getStringReturnInList(Cmd.OB_DRIVE_FILE_REVISION_ID)
+      revisionsEntity['list'] = getStringReturnInList(Cmd.OB_DRIVE_FILE_REVISION_ID)
     elif mycmd[:3] == 'id:':
       revisionsEntity['list'] = [myarg[3:]]
     elif mycmd == 'ids':
-      revisionsEntity['list'] = _getMain().getString(Cmd.OB_DRIVE_FILE_REVISION_ID).replace(',', ' ').split()
+      revisionsEntity['list'] = getString(Cmd.OB_DRIVE_FILE_REVISION_ID).replace(',', ' ').split()
     elif mycmd[:4] == 'ids:':
       revisionsEntity['list'] = myarg[4:].replace(',', ' ').split()
     elif mycmd in {'first', 'last', 'allexceptfirst', 'allexceptlast'}:
-      revisionsEntity['count'] = (mycmd, _getMain().getInteger(minVal=1))
+      revisionsEntity['count'] = (mycmd, getInteger(minVal=1))
     elif mycmd in {'before', 'after'}:
-      dateTime, _, _ = _getMain().getTimeOrDeltaFromNow(True)
+      dateTime, _, _ = getTimeOrDeltaFromNow(True)
       revisionsEntity['time'] = (mycmd, dateTime)
     elif mycmd == 'range':
       startEndTime.Get(mycmd)
@@ -104,16 +136,16 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
       return revisionsEntity['dict'][fileId]
     return revisionsEntity['dict'][origUser][fileId]
   try:
-    results = _getMain().callGAPIpages(drive.revisions(), 'list', 'revisions',
+    results = callGAPIpages(drive.revisions(), 'list', 'revisions',
                             throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.REVISIONS_NOT_SUPPORTED],
                             fileId=fileId, fields='nextPageToken,revisions(id,modifiedTime)',
                             pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
   except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
           GAPI.badRequest, GAPI.revisionsNotSupported) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
+    entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
     return []
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
     return []
   numRevisions = len(results)
   if numRevisions == 0:
@@ -184,7 +216,7 @@ def deleteFileRevisions(users):
   previewDelete = showTitles = doIt = False
   maxToProcess = 1
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'select':
       revisionsEntity = getRevisionsEntity()
     elif myarg == 'previewdelete':
@@ -194,12 +226,12 @@ def deleteFileRevisions(users):
     elif myarg == 'doit':
       doIt = True
     elif myarg in {'maxtodelete', 'maxtoprocess'}:
-      maxToProcess = _getMain().getInteger(minVal=0)
+      maxToProcess = getInteger(minVal=0)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not revisionsEntity:
-    _getMain().missingArgumentExit('select <DriveFileRevisionIdEntity>')
-  i, count, users = _getMain().getEntityArgument(users)
+    missingArgumentExit('select <DriveFileRevisionIdEntity>')
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
@@ -216,43 +248,43 @@ def deleteFileRevisions(users):
       revisionIds = _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revisionsEntity)
       kcount = len(revisionIds)
       if kcount == 0:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                    Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.DRIVE_FILE_REVISION)), j, jcount)
-        _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
         continue
       if not previewDelete:
         if maxToProcess and kcount > maxToProcess:
-          _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
+          entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                      Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(kcount, Act.ToPerform(), maxToProcess), j, jcount)
           continue
         if not doIt:
-          _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
+          entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                      Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, j, jcount)
           continue
-        _getMain().entityPerformActionNumItems([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, j, jcount)
+        entityPerformActionNumItems([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, j, jcount)
       else:
-        _getMain().entityPerformActionNumItemsModifier([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, Msg.PREVIEW_ONLY, j, jcount)
+        entityPerformActionNumItemsModifier([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, Msg.PREVIEW_ONLY, j, jcount)
       Ind.Increment()
       k = 0
       for revisionId in revisionIds:
         k += 1
         if not previewDelete:
           try:
-            _getMain().callGAPI(drive.revisions(), 'delete',
+            callGAPI(drive.revisions(), 'delete',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.REVISION_NOT_FOUND, GAPI.REVISION_DELETION_NOT_SUPPORTED,
                                                                    GAPI.CANNOT_DELETE_ONLY_REVISION, GAPI.REVISIONS_NOT_SUPPORTED],
                      fileId=fileId, revisionId=revisionId)
-            _getMain().entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
+            entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
           except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
                   GAPI.badRequest, GAPI.revisionDeletionNotSupported, GAPI.cannotDeleteOnlyRevision, GAPI.revisionsNotSupported) as e:
-            _getMain().entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
+            entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
           except GAPI.revisionNotFound:
-            _getMain().entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
+            entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
         else:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], Msg.PREVIEW_ONLY, k, kcount)
+          entityActionNotPerformedWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], Msg.PREVIEW_ONLY, k, kcount)
       Ind.Decrement()
 
 REVISIONS_FIELDS_CHOICE_MAP = {
@@ -272,11 +304,11 @@ def updateFileRevisions(users):
   maxToProcess = 1
   body = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'select':
       revisionsEntity = getRevisionsEntity()
     elif myarg in REVISIONS_FIELDS_CHOICE_MAP:
-      body[REVISIONS_FIELDS_CHOICE_MAP[myarg]] = _getMain().getBoolean()
+      body[REVISIONS_FIELDS_CHOICE_MAP[myarg]] = getBoolean()
     elif myarg == 'previewupdate':
       previewUpdate = True
     elif myarg == 'showtitles':
@@ -284,12 +316,12 @@ def updateFileRevisions(users):
     elif myarg == 'doit':
       doIt = True
     elif myarg in {'maxtoupdate', 'maxtoprocess'}:
-      maxToProcess = _getMain().getInteger(minVal=0)
+      maxToProcess = getInteger(minVal=0)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not revisionsEntity:
-    _getMain().missingArgumentExit('select <DriveFileRevisionIdEntity>')
-  i, count, users = _getMain().getEntityArgument(users)
+    missingArgumentExit('select <DriveFileRevisionIdEntity>')
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
@@ -306,42 +338,42 @@ def updateFileRevisions(users):
       revisionIds = _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revisionsEntity)
       kcount = len(revisionIds)
       if kcount == 0:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
+        entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                    Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.DRIVE_FILE_REVISION)), j, jcount)
-        _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
         continue
       if not previewUpdate:
         if maxToProcess and kcount > maxToProcess:
-          _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
+          entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                      Msg.COUNT_N_EXCEEDS_MAX_TO_PROCESS_M.format(kcount, Act.ToPerform(), maxToProcess), j, jcount)
           continue
         if not doIt:
-          _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
+          entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                      Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, j, jcount)
           continue
-        _getMain().entityPerformActionNumItems([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, j, jcount)
+        entityPerformActionNumItems([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, j, jcount)
       else:
-        _getMain().entityPerformActionNumItemsModifier([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, Msg.PREVIEW_ONLY, j, jcount)
+        entityPerformActionNumItemsModifier([Ent.USER, user, entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, Msg.PREVIEW_ONLY, j, jcount)
       Ind.Increment()
       k = 0
       for revisionId in revisionIds:
         k += 1
         if not previewUpdate:
           try:
-            _getMain().callGAPI(drive.revisions(), 'update',
+            callGAPI(drive.revisions(), 'update',
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.REVISION_NOT_FOUND, GAPI.REVISIONS_NOT_SUPPORTED],
                      fileId=fileId, revisionId=revisionId, body=body)
-            _getMain().entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
+            entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
           except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
                   GAPI.badRequest, GAPI.revisionsNotSupported) as e:
-            _getMain().entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
+            entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
           except GAPI.revisionNotFound:
-            _getMain().entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
+            entityDoesNotHaveItemWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], k, kcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
         else:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], Msg.PREVIEW_ONLY, k, kcount)
+          entityActionNotPerformedWarning([Ent.USER, user, entityType, fileName, Ent.DRIVE_FILE_REVISION, revisionId], Msg.PREVIEW_ONLY, k, kcount)
       Ind.Decrement()
 
 def _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDelete):
@@ -446,9 +478,9 @@ FILEREVISIONS_FIELDS_CHOICE_MAP = {
 FILEREVISIONS_TIME_OBJECTS = {'modifiedTime'}
 
 def _showRevision(revision, i=0, count=0):
-  _getMain().printEntity([Ent.DRIVE_FILE_REVISION, revision['id']], i, count)
+  printEntity([Ent.DRIVE_FILE_REVISION, revision['id']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, revision, ['id'], timeObjects=FILEREVISIONS_TIME_OBJECTS)
+  showJSON(None, revision, ['id'], timeObjects=FILEREVISIONS_TIME_OBJECTS)
   Ind.Decrement()
 
 DRIVE_REVISIONS_INDEXED_TITLES = ['revisions']
@@ -466,14 +498,14 @@ DRIVE_REVISIONS_INDEXED_TITLES = ['revisions']
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[stripcrsfromname]
 def printShowFileRevisions(users):
-  csvPF = _getMain().CSVPrintFile(['Owner', 'id']) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['Owner', 'id']) if Act.csvFormat() else None
   fieldsList = []
   fileIdEntity = getDriveFileEntity()
   revisionsEntity = None
   oneItemPerRow = previewDelete = showTitles = stripCRsFromName = False
-  OBY = _getMain().OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
+  OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'select':
@@ -492,15 +524,15 @@ def printShowFileRevisions(users):
         csvPF.AddTitles('name')
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
-    elif _getMain().getFieldsList(myarg, FILEREVISIONS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
+    elif getFieldsList(myarg, FILEREVISIONS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if fieldsList:
-    fields = _getMain().getItemFieldsFromFieldsList('revisions', fieldsList)
+    fields = getItemFieldsFromFieldsList('revisions', fieldsList)
   else:
     fields = '*'
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     origUser = user
@@ -518,23 +550,23 @@ def printShowFileRevisions(users):
       if showTitles:
         fileName, entityType, _ = _getDriveFileNameFromId(drive, fileId, not csvPF)
         if stripCRsFromName:
-          fileName = _getMain()._stripControlCharsFromName(fileName)
+          fileName = _stripControlCharsFromName(fileName)
       try:
-        results = _getMain().callGAPIpages(drive.revisions(), 'list', 'revisions',
+        results = callGAPIpages(drive.revisions(), 'list', 'revisions',
                                 throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.REVISIONS_NOT_SUPPORTED],
                                 fileId=fileId, fields=fields, pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.badRequest, GAPI.revisionsNotSupported) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
       if revisionsEntity:
         results = _selectRevisionResults(results, fileId, origUser, revisionsEntity, previewDelete)
       if not csvPF:
         kcount = len(results)
-        _getMain().entityPerformActionNumItems([entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, j, jcount)
+        entityPerformActionNumItems([entityType, fileName], kcount, Ent.DRIVE_FILE_REVISION, j, jcount)
         Ind.Increment()
         k = 0
         for revision in results:
@@ -547,12 +579,12 @@ def printShowFileRevisions(users):
             row = {'Owner': user, 'id': fileId}
             if showTitles:
               row['name'] = fileName
-            csvPF.WriteRowTitles(_getMain().flattenJSON({'revision': revision}, flattened=row, timeObjects=FILEREVISIONS_TIME_OBJECTS))
+            csvPF.WriteRowTitles(flattenJSON({'revision': revision}, flattened=row, timeObjects=FILEREVISIONS_TIME_OBJECTS))
         else:
           if showTitles:
-            csvPF.WriteRowTitles(_getMain().flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId, 'name': fileName}, timeObjects=FILEREVISIONS_TIME_OBJECTS))
+            csvPF.WriteRowTitles(flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId, 'name': fileName}, timeObjects=FILEREVISIONS_TIME_OBJECTS))
           else:
-            csvPF.WriteRowTitles(_getMain().flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId}, timeObjects=FILEREVISIONS_TIME_OBJECTS))
+            csvPF.WriteRowTitles(flattenJSON({'revisions': results}, flattened={'Owner': user, 'id': fileId}, timeObjects=FILEREVISIONS_TIME_OBJECTS))
     Ind.Decrement()
   if csvPF:
     if oneItemPerRow:

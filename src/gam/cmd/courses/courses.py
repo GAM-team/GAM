@@ -18,6 +18,58 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    addCourseIdScope,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    getCourseAlias,
+    getEmailAddress,
+    getPhraseDNEorSNA,
+    getREPattern,
+    getString,
+    getStringReturnInList,
+    getStringWithCRsNLs,
+    getTimeOrDeltaFromNow,
+    removeCourseAliasScope,
+    removeCourseIdScope,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityDoesNotExistWarning,
+    entityDoesNotHaveItemWarning,
+    entityModifierItemValueListActionFailedWarning,
+    entityModifierItemValueListActionNotPerformedWarning,
+    entityModifierItemValueListActionPerformed,
+    entityModifierNewValueActionPerformed,
+    entityPerformActionModifierItemValueList,
+    getPageMessage,
+    getPageMessageForWhom,
+    printEntity,
+    printGettingAllAccountEntities,
+    printGettingAllEntityItemsForWhom,
+    printGettingEntityItemForWhom,
+    printKeyValueList,
+    printLine,
+)
+from gam.util.entity import getEntityList
+from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
+from gam.util.fileio import UNKNOWN
+from gam.util.output import currentCount, formatKeyValueList, writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -37,17 +89,17 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def checkCourseExists(croom, courseId, i=0, count=0, entityType=Ent.COURSE):
-  courseId = _getMain().addCourseIdScope(courseId)
+  courseId = addCourseIdScope(courseId)
   try:
-    result = _getMain().callGAPI(croom.courses(), 'get',
+    result = callGAPI(croom.courses(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       id=courseId, fields='id,ownerId')
     return result
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning([entityType, _getMain().removeCourseIdScope(courseId)], Msg.DOES_NOT_EXIST, i, count)
+    entityActionFailedWarning([entityType, removeCourseIdScope(courseId)], Msg.DOES_NOT_EXIST, i, count)
   except (GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+    entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
   return None
 
 COURSE_MEMBER_ARGUMENTS = ['none', 'all', 'students', 'teachers']
@@ -92,13 +144,13 @@ COURSE_STATE_MAPS = {
 
 def _getCourseStates(item, states):
   stateMap = COURSE_STATE_MAPS[item]
-  for state in _getMain().getString(item).lower().replace(',', ' ').split():
+  for state in getString(item).lower().replace(',', ' ').split():
     if state == 'all':
       states.extend([stateMap[state] for state in stateMap])
     elif state in stateMap:
       states.append(stateMap[state])
     else:
-      _getMain().invalidChoiceExit(state, stateMap, True)
+      invalidChoiceExit(state, stateMap, True)
 
 def _gettingCourseEntityQuery(entityType, courseWorkStates):
   query = ''
@@ -200,8 +252,8 @@ class CourseAttributes():
       elif 'form' in material:
         action = Act.Get()
         Act.Set(Act.COPY)
-        _getMain().entityActionNotPerformedWarning([Ent.COURSE, self.courseId, entityType, entityId,
-                                         Ent.COURSE_MATERIAL_FORM, self.trimTitle(material['form'].get('title', _getMain().UNKNOWN))],
+        entityActionNotPerformedWarning([Ent.COURSE, self.courseId, entityType, entityId,
+                                         Ent.COURSE_MATERIAL_FORM, self.trimTitle(material['form'].get('title', UNKNOWN))],
                                         Msg.NOT_COPYABLE)
         Act.Set(action)
 
@@ -221,27 +273,27 @@ class CourseAttributes():
 
   def GetAttributes(self):
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if not self.updateMode and myarg in {'alias', 'id'}:
-        self.body['id'] = _getMain().getCourseAlias()
+        self.body['id'] = getCourseAlias()
       elif myarg == 'name':
-        self.body['name'] = _getMain().getString(Cmd.OB_STRING)
+        self.body['name'] = getString(Cmd.OB_STRING)
       elif myarg == 'section':
-        self.body['section'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        self.body['section'] = getString(Cmd.OB_STRING, minLen=0)
       elif myarg in {'heading', 'descriptionheading'}:
-        self.body['descriptionHeading'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        self.body['descriptionHeading'] = getString(Cmd.OB_STRING, minLen=0)
       elif myarg == 'description':
-        self.body['description'] = _getMain().getStringWithCRsNLs()
+        self.body['description'] = getStringWithCRsNLs()
       elif myarg == 'room':
-        self.body['room'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+        self.body['room'] = getString(Cmd.OB_STRING, minLen=0)
       elif myarg in {'owner', 'ownerid', 'teacher'}:
-        self.body['ownerId'] = _getMain().getEmailAddress()
+        self.body['ownerId'] = getEmailAddress()
       elif myarg in {'state', 'status', 'coursestate'}:
-        self.body['courseState'] = _getMain().getChoice(COURSE_STATE_MAPS[Cmd.OB_COURSE_STATE_LIST], mapChoice=True)
+        self.body['courseState'] = getChoice(COURSE_STATE_MAPS[Cmd.OB_COURSE_STATE_LIST], mapChoice=True)
       elif myarg == 'guardiansenabled':
-        self.body['guardiansEnabled'] = _getMain().getBoolean()
+        self.body['guardiansEnabled'] = getBoolean()
       elif myarg == 'copyfrom':
-        self.courseId = _getMain().getString(Cmd.OB_COURSE_ID)
+        self.courseId = getString(Cmd.OB_COURSE_ID)
       elif myarg in {'announcementstate', 'announcementstates'}:
         _getCourseStates(Cmd.OB_COURSE_ANNOUNCEMENT_STATE_LIST, self.announcementStates)
       elif myarg in {'workstate', 'workstates', 'courseworkstate', 'courseworkstates'}:
@@ -249,40 +301,40 @@ class CourseAttributes():
       elif myarg in {'materialstate', 'materialstates', 'coursematerialstate', 'coursematerialstates'}:
         _getCourseStates(Cmd.OB_COURSE_MATERIAL_STATE_LIST, self.materialStates)
       elif myarg == 'individualstudentannouncements':
-        self.individualStudentAnnouncements = _getMain().getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+        self.individualStudentAnnouncements = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'individualstudentmaterials':
-        self.individualStudentMaterials = _getMain().getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+        self.individualStudentMaterials = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'individualstudentcoursework':
-        self.individualStudentCourseWork = _getMain().getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+        self.individualStudentCourseWork = getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'individualstudentassignments':
         self.individualStudentAnnouncements = self.individualStudentMaterials = self.individualStudentCourseWork =\
-          _getMain().getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
+          getChoice(self.COURSE_INDIVIDUAL_STUDENT_OPTIONS)
       elif myarg == 'members':
-        self.members = _getMain().getChoice(COURSE_MEMBER_ARGUMENTS)
+        self.members = getChoice(COURSE_MEMBER_ARGUMENTS)
       elif myarg == 'markdraftaspublished':
-        self.markDraftAsPublished = _getMain().getBoolean()
+        self.markDraftAsPublished = getBoolean()
       elif myarg == 'markpublishedasdraft':
-        self.markPublishedAsDraft = _getMain().getBoolean()
+        self.markPublishedAsDraft = getBoolean()
       elif myarg == 'removeduedate':
-        self.removeDueDate = _getMain().getBoolean()
+        self.removeDueDate = getBoolean()
       elif myarg == 'mapsharemodestudentcopy':
-        self.mapShareModeStudentCopy = _getMain().getChoice(self.COURSE_MATERIAL_SHAREMODE_MAP, mapChoice=True)
+        self.mapShareModeStudentCopy = getChoice(self.COURSE_MATERIAL_SHAREMODE_MAP, mapChoice=True)
       elif myarg == 'copymaterialsfiles':
-        self.copyMaterialsFiles = _getMain().getBoolean()
+        self.copyMaterialsFiles = getBoolean()
       elif myarg == 'copytopics':
-        self.copyTopics = _getMain().getBoolean()
+        self.copyTopics = getBoolean()
       elif myarg == 'logdrivefileids':
-        if _getMain().getBoolean():
-          self.csvPF = _getMain().CSVPrintFile(['courseId', 'ownerId', 'fileId'])
+        if getBoolean():
+          self.csvPF = CSVPrintFile(['courseId', 'ownerId', 'fileId'])
         else:
           self.csvPF = None
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     if not self.updateMode:
       if 'ownerId' not in self.body:
-        _getMain().missingArgumentExit('teacher <UserItem>')
+        missingArgumentExit('teacher <UserItem>')
       if 'name' not in self.body:
-        _getMain().missingArgumentExit('name <String>')
+        missingArgumentExit('name <String>')
     if self.courseId:
       copyFromCourseInfo = checkCourseExists(self.croom, self.courseId, entityType=Ent.COPYFROM_COURSE)
       if copyFromCourseInfo is None:
@@ -291,14 +343,14 @@ class CourseAttributes():
       if (self.announcementStates or self.materialStates or self.workStates) and self.copyMaterialsFiles:
         self.body['courseState'] = 'ACTIVE'
     elif self.members != 'none' or self.announcementStates or self.materialStates or self.workStates or self.copyTopics:
-      _getMain().missingArgumentExit('copyfrom <CourseID>')
+      missingArgumentExit('copyfrom <CourseID>')
     else:
       return True
 # ocroom - copyfrom course owner
     self.ocroom = self.croom
     if GC.Values[GC.USE_COURSE_OWNER_ACCESS]:
       if self.announcementStates or self.materialStates or self.workStates or self.copyTopics or self.members != 'none':
-        _, self.ocroom = _getMain().buildGAPIServiceObject(API.CLASSROOM, f'uid:{self.ownerId}')
+        _, self.ocroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{self.ownerId}')
         if self.ocroom is None:
           return False
     if self.members != 'none':
@@ -306,11 +358,11 @@ class CourseAttributes():
                                                                  'nextPageToken,teachers(profile(emailAddress,id))',
                                                                  'nextPageToken,students(profile(emailAddress))')
     if self.announcementStates:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_ANNOUNCEMENT_ID, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0,
+      printGettingAllEntityItemsForWhom(Ent.COURSE_ANNOUNCEMENT_ID, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0,
                                         _gettingCourseEntityQuery(Ent.COURSE_ANNOUNCEMENT_STATE, self.announcementStates))
       try:
-        self.courseAnnouncements = _getMain().callGAPIpages(self.ocroom.courses().announcements(), 'list', 'announcements',
-                                                 pageMessage=_getMain().getPageMessageForWhom(),
+        self.courseAnnouncements = callGAPIpages(self.ocroom.courses().announcements(), 'list', 'announcements',
+                                                 pageMessage=getPageMessageForWhom(),
                                                  throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                                  courseId=self.courseId, announcementStates=self.announcementStates,
@@ -320,14 +372,14 @@ class CourseAttributes():
             courseAnnouncement.pop(field, None)
           self.CleanMaterials(courseAnnouncement, Ent.COURSE_ANNOUNCEMENT_ID, courseAnnouncement['id'])
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
+        entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
         return False
     if self.materialStates:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_MATERIAL_ID, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0,
+      printGettingAllEntityItemsForWhom(Ent.COURSE_MATERIAL_ID, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0,
                                         _gettingCourseEntityQuery(Ent.COURSE_MATERIAL_STATE, self.materialStates))
       try:
-        self.courseMaterials = _getMain().callGAPIpages(self.ocroom.courses().courseWorkMaterials(), 'list', 'courseWorkMaterial',
-                                             pageMessage=_getMain().getPageMessageForWhom(),
+        self.courseMaterials = callGAPIpages(self.ocroom.courses().courseWorkMaterials(), 'list', 'courseWorkMaterial',
+                                             pageMessage=getPageMessageForWhom(),
                                              throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                              courseId=self.courseId, courseWorkMaterialStates=self.materialStates,
@@ -341,14 +393,14 @@ class CourseAttributes():
             courseMaterial['state'] = 'PUBLISHED'
           self.CleanMaterials(courseMaterial, Ent.COURSE_MATERIAL_ID, courseMaterial['id'])
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
+        entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
         return False
     if self.workStates:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_WORK_ID, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0,
+      printGettingAllEntityItemsForWhom(Ent.COURSE_WORK_ID, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0,
                                         _gettingCourseEntityQuery(Ent.COURSE_WORK_STATE, self.workStates))
       try:
-        self.courseWorks = _getMain().callGAPIpages(self.ocroom.courses().courseWork(), 'list', 'courseWork',
-                                         pageMessage=_getMain().getPageMessageForWhom(),
+        self.courseWorks = callGAPIpages(self.ocroom.courses().courseWork(), 'list', 'courseWork',
+                                         pageMessage=getPageMessageForWhom(),
                                          throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                          courseId=self.courseId, courseWorkStates=self.workStates,
@@ -366,13 +418,13 @@ class CourseAttributes():
             courseWork.pop('dueDate', None)
             courseWork.pop('dueTime', None)
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
+        entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
         return False
     if self.copyTopics:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.COURSE_TOPIC, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0)
+      printGettingAllEntityItemsForWhom(Ent.COURSE_TOPIC, Ent.TypeName(Ent.COURSE, self.courseId), 0, 0)
       try:
-        courseTopics = _getMain().callGAPIpages(self.ocroom.courses().topics(), 'list', 'topic',
-                                     pageMessage=_getMain().getPageMessageForWhom(),
+        courseTopics = callGAPIpages(self.ocroom.courses().topics(), 'list', 'topic',
+                                     pageMessage=getPageMessageForWhom(),
                                      throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.SERVICE_NOT_AVAILABLE],
                                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                      courseId=self.courseId, fields='nextPageToken,topic(topicId,name)',
@@ -382,13 +434,13 @@ class CourseAttributes():
           self.reversedTopicIdList.append(topic['topicId'])
         self.reversedTopicIdList.reverse()
       except (GAPI.notFound, GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
+        entityActionFailedWarning([Ent.COURSE, self.courseId], str(e))
         return False
     return True
 
   def CopyMaterials(self, drive, newCourseId, body, entityType, entityId, teacherFolderId):
     def _copyMaterialsError(fileId, errMsg):
-      _getMain().entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId, Ent.COURSE_MATERIAL_DRIVEFILE, ''], Act.MODIFIER_FROM,
+      entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId, Ent.COURSE_MATERIAL_DRIVEFILE, ''], Act.MODIFIER_FROM,
                                                            [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL_DRIVEFILE, fileId], errMsg)
 
     if 'materials' not in body:
@@ -401,7 +453,7 @@ class CourseAttributes():
       if 'driveFile' in material:
         fileId = material['driveFile']['driveFile']['id']
         try:
-          source = _getMain().callGAPI(drive.files(), 'get',
+          source = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId,
                             fields='name,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
@@ -411,12 +463,12 @@ class CourseAttributes():
             _copyMaterialsError(fileId, Msg.NOT_COPYABLE)
             continue
           source['parents'] = [teacherFolderId]
-          result = _getMain().callGAPI(drive.files(), 'copy',
+          result = callGAPI(drive.files(), 'copy',
                             throwReasons=GAPI.DRIVE_COPY_THROW_REASONS,
                             fileId=fileId, body=source, fields='id', supportsAllDrives=True)
           material['driveFile']['driveFile']['id'] = result['id']
           body['materials'].append(material)
-          _getMain().entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, entityType, entityId, Ent.COURSE_MATERIAL_DRIVEFILE, result['id']], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, entityType, entityId, Ent.COURSE_MATERIAL_DRIVEFILE, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL_DRIVEFILE, fileId])
           if self.csvPF:
             self.csvPF.WriteRow({'courseId': self.courseId, 'ownerId': self.ownerId, 'fileId': result['id']})
@@ -449,12 +501,12 @@ class CourseAttributes():
 
   def checkItemCopyable(self, state, newCourseId, entityType, entityId, body, individualStudentOption, clarg, j, jcount):
     if state == 'DELETED':
-      _getMain().entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
+      entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
                                                            [Ent.COURSE, self.courseId], Msg.DELETED, j, jcount)
       return False
     if body['assigneeMode'] == 'INDIVIDUAL_STUDENTS':
       if individualStudentOption == 'delete':
-        _getMain().entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
+        entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, entityType, entityId], Act.MODIFIER_FROM,
                                                              [Ent.COURSE, self.courseId], f'{clarg} delete', j, jcount)
         return False
       if individualStudentOption == 'maptoall':
@@ -471,11 +523,11 @@ class CourseAttributes():
     teacherFolderId = newCourse['teacherFolder']['id']
 # tcroom - new/update course owner
     if self.announcementStates or self.materialStates or self.workStates or self.copyTopics:
-      _, self.tcroom = _getMain().buildGAPIServiceObject(API.CLASSROOM, f'uid:{ownerId}')
+      _, self.tcroom = buildGAPIServiceObject(API.CLASSROOM, f'uid:{ownerId}')
       if self.tcroom is None:
         return
     if (self.announcementStates or self.materialStates or self.workStates) and self.copyMaterialsFiles:
-      _, tdrive = _getMain().buildGAPIServiceObject(API.DRIVE3, f'uid:{ownerId}')
+      _, tdrive = buildGAPIServiceObject(API.DRIVE3, f'uid:{ownerId}')
       if tdrive is None:
         return
 # Adds are done with domain admin
@@ -487,7 +539,7 @@ class CourseAttributes():
       _batchAddItemsToCourse(self.croom, newCourseId, i, count, addParticipants, Ent.TEACHER)
     if self.copyTopics:
       try:
-        newCourseTopics = _getMain().callGAPIpages(self.tcroom.courses().topics(), 'list', 'topic',
+        newCourseTopics = callGAPIpages(self.tcroom.courses().topics(), 'list', 'topic',
                                         throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.FAILED_PRECONDITION, GAPI.SERVICE_NOT_AVAILABLE],
                                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                         courseId=newCourseId, fields='nextPageToken,topic(topicId,name)',
@@ -496,29 +548,29 @@ class CourseAttributes():
         for topic in newCourseTopics:
           newTopicsByName[topic['name']] = topic['topicId']
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
         return
       except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.forbidden, GAPI.failedPrecondition, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, newCourseId], str(e), i, count)
       jcount = len(self.topicsById)
       j = 0
       for topicId in self.reversedTopicIdList:
         topicName = self.topicsById[topicId]
         j += 1
         if topicName in newTopicsByName:
-          _getMain().entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_TOPIC, topicName], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionNotPerformedWarning([Ent.COURSE, newCourseId, Ent.COURSE_TOPIC, topicName], Act.MODIFIER_FROM,
                                                                [Ent.COURSE, self.courseId], Msg.DUPLICATE, j, jcount)
           continue
         try:
-          result = _getMain().callGAPI(self.tcroom.courses().topics(), 'create',
+          result = callGAPI(self.tcroom.courses().topics(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.FAILED_PRECONDITION, GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body={'name': topicName}, fields='topicId')
           newTopicsByName[topicName] = result['topicId']
-          _getMain().entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_TOPIC, topicName], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_TOPIC, topicName], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId], j, jcount)
         except (GAPI.notFound, GAPI.failedPrecondition, GAPI.invalidArgument, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
-          _getMain().entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_TOPIC, topicName], str(e), j, jcount)
     if self.courseAnnouncements:
       jcount = len(self.courseAnnouncements)
@@ -533,16 +585,16 @@ class CourseAttributes():
         if self.copyMaterialsFiles:
           self.CopyMaterials(tdrive, newCourseId, body, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId, teacherFolderId)
         try:
-          result = _getMain().callGAPI(self.tcroom.courses().announcements(), 'create',
+          result = callGAPI(self.tcroom.courses().announcements(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
                                           GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.BACKEND_ERROR, GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
-          _getMain().entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, result['id']], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_ANNOUNCEMENT_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId], j, jcount)
         except (GAPI.notFound, GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
-          _getMain().entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_ANNOUNCEMENT, courseAnnouncementId], str(e), j, jcount)
     if self.courseMaterials:
       jcount = len(self.courseMaterials)
@@ -565,16 +617,16 @@ class CourseAttributes():
               if newTopicId:
                 body['topicId'] = newTopicId
         try:
-          result = _getMain().callGAPI(self.tcroom.courses().courseWorkMaterials(), 'create',
+          result = callGAPI(self.tcroom.courses().courseWorkMaterials(), 'create',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
                                           GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.BACKEND_ERROR, GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
-          _getMain().entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_MATERIAL_ID, result['id']], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_MATERIAL_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL, courseMaterialId], j, jcount)
         except (GAPI.notFound, GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
-          _getMain().entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_MATERIAL, courseMaterialId], str(e), j, jcount)
     if self.courseWorks:
       jcount = len(self.courseWorks)
@@ -600,24 +652,24 @@ class CourseAttributes():
           body.pop('dueDate', None)
           body.pop('dueTime', None)
         try:
-          result = _getMain().callGAPI(self.tcroom.courses().courseWork(), 'create',
+          result = callGAPI(self.tcroom.courses().courseWork(), 'create',
                             bailOnInternalError=True,
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FORBIDDEN,
                                           GAPI.BAD_REQUEST, GAPI.FAILED_PRECONDITION, GAPI.BACKEND_ERROR,
                                           GAPI.INTERNAL_ERROR, GAPI.INVALID_ARGUMENT, GAPI.SERVICE_NOT_AVAILABLE],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             courseId=newCourseId, body=body, fields='id')
-          _getMain().entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_WORK_ID, result['id']], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionPerformed([Ent.COURSE, newCourseId, Ent.COURSE_WORK_ID, result['id']], Act.MODIFIER_FROM,
                                                      [Ent.COURSE, self.courseId, Ent.COURSE_WORK, courseWorkId], j, jcount)
         except (GAPI.notFound, GAPI.badRequest, GAPI.failedPrecondition, GAPI.backendError, GAPI.internalError, GAPI.invalidArgument,
                 GAPI.permissionDenied, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
-          _getMain().entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
+          entityModifierItemValueListActionFailedWarning([Ent.COURSE, newCourseId], Act.MODIFIER_FROM,
                                                          [Ent.COURSE, self.courseId, Ent.COURSE_WORK, courseWorkId], str(e), j, jcount)
 
   def CopyFromCourse(self, newCourse, i=0, count=0):
     action = Act.Get()
     Act.Set(Act.COPY)
-    _getMain().entityPerformActionModifierItemValueList([Ent.COURSE, newCourse['id']], Act.MODIFIER_FROM, [Ent.COURSE, self.courseId], i, count)
+    entityPerformActionModifierItemValueList([Ent.COURSE, newCourse['id']], Act.MODIFIER_FROM, [Ent.COURSE, self.courseId], i, count)
     Ind.Increment()
     if not self.removeDueDate:
       self.currDateTime = arrow.utcnow()
@@ -644,24 +696,24 @@ class CourseAttributes():
 #	    [members none|all|students|teachers]]
 #	    [logdrivefileids [<Boolean>]]
 def doCreateCourse():
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
+  croom = buildGAPIObject(API.CLASSROOM)
   courseAttributes = CourseAttributes(croom, False)
   if not courseAttributes.GetAttributes():
     return
   try:
-    result = _getMain().callGAPI(croom.courses(), 'create',
+    result = callGAPI(croom.courses(), 'create',
                       throwReasons=[GAPI.ALREADY_EXISTS, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED,
                                     GAPI.FAILED_PRECONDITION, GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       body=courseAttributes.body, fields='id,name,ownerId,courseState,teacherFolder(id)')
-    _getMain().entityActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']])
+    entityActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']])
     if courseAttributes.courseId:
       courseAttributes.CopyFromCourse(result)
   except (GAPI.alreadyExists, GAPI.notFound, GAPI.permissionDenied, GAPI.failedPrecondition, GAPI.forbidden, GAPI.badRequest, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning([Ent.COURSE_NAME, courseAttributes.body['name'], Ent.TEACHER, courseAttributes.body['ownerId']], str(e))
+    entityActionFailedWarning([Ent.COURSE_NAME, courseAttributes.body['name'], Ent.TEACHER, courseAttributes.body['ownerId']], str(e))
 
 def _doUpdateCourses(entityList):
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
+  croom = buildGAPIObject(API.CLASSROOM)
   courseAttributes = CourseAttributes(croom, True)
   if not courseAttributes.GetAttributes():
     return
@@ -669,7 +721,7 @@ def _doUpdateCourses(entityList):
   count = len(entityList)
   for course in entityList:
     i += 1
-    courseId = _getMain().addCourseIdScope(course)
+    courseId = addCourseIdScope(course)
     body = courseAttributes.body.copy()
     newOwner = body.get('ownerId')
     modifier = Act.MODIFIER_WITH_COTEACHER_OWNER
@@ -678,29 +730,29 @@ def _doUpdateCourses(entityList):
       complete = True
       try:
         if body:
-          result = _getMain().callGAPI(croom.courses(), 'patch',
+          result = callGAPI(croom.courses(), 'patch',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION,
                                           GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT,
                                           GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             id=courseId, body=body, updateMask=','.join(list(body)), fields='id,name,ownerId,courseState,teacherFolder(id)')
         else:
-          result = _getMain().callGAPI(croom.courses(), 'get',
+          result = callGAPI(croom.courses(), 'get',
                             throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                             id=courseId, fields='id,name,ownerId,courseState,teacherFolder(id)')
         if courseAttributes.body:
           if not newOwner:
-            _getMain().entityActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']], i, count)
+            entityActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']], i, count)
           else:
-            _getMain().entityModifierNewValueActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']],
+            entityModifierNewValueActionPerformed([Ent.COURSE_NAME, result['name'], Ent.COURSE, result['id']],
                                                   modifier, newOwner, i, count)
         if courseAttributes.courseId:
           courseAttributes.CopyFromCourse(result, i, count)
       except (GAPI.notFound, GAPI.permissionDenied,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalidArgument,
               GAPI.internalError, GAPI.serviceNotAvailable) as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+        entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
       except GAPI.failedPrecondition as e:
         errMsg = str(e)
         if newOwner and '@UserAlreadyOwner Cannot transfer course to the user who is already the owner' in errMsg:
@@ -713,7 +765,7 @@ def _doUpdateCourses(entityList):
           action = Act.Get()
           Act.Set(Act.ADD)
           try:
-            _getMain().callGAPI(croom.courses().teachers(), 'create',
+            callGAPI(croom.courses().teachers(), 'create',
                      throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                    GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION,
                                    GAPI.QUOTA_EXCEEDED, GAPI.SERVICE_NOT_AVAILABLE],
@@ -723,16 +775,16 @@ def _doUpdateCourses(entityList):
             time.sleep(10)
             complete = False
           except (GAPI.notFound, GAPI.backendError, GAPI.forbidden):
-            _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId), Ent.TEACHER, newOwner], _getMain().getPhraseDNEorSNA(newOwner), i, count)
+            entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId), Ent.TEACHER, newOwner], getPhraseDNEorSNA(newOwner), i, count)
           except GAPI.alreadyExists:
-            _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId), Ent.TEACHER, newOwner], Msg.DUPLICATE, i, count)
+            entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId), Ent.TEACHER, newOwner], Msg.DUPLICATE, i, count)
           except GAPI.failedPrecondition:
-            _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId), Ent.TEACHER, newOwner], Msg.NOT_ALLOWED, i, count)
+            entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId), Ent.TEACHER, newOwner], Msg.NOT_ALLOWED, i, count)
           except (GAPI.quotaExceeded, GAPI.serviceNotAvailable) as ei:
-            _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId), Ent.TEACHER, newOwner], str(ei), i, count)
+            entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId), Ent.TEACHER, newOwner], str(ei), i, count)
           Act.Set(action)
         else:
-          _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+          entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
 
 # gam update courses <CourseEntity> <CourseAttribute>+
 #	 [copyfrom <CourseID>
@@ -751,7 +803,7 @@ def _doUpdateCourses(entityList):
 #	    [members none|all|students|teachers]]
 #	    [logdrivefileids [<Boolean>]]
 def doUpdateCourses():
-  _doUpdateCourses(_getMain().getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
+  _doUpdateCourses(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
 
 # gam update course <CourseID> <CourseAttribute>+
 #	 [copyfrom <CourseID>
@@ -769,47 +821,47 @@ def doUpdateCourses():
 #	    [markpublishedasdraft [<Boolean>]] [markdraftaspublished [<Boolean>]]
 #	    [members none|all|students|teachers]]
 def doUpdateCourse():
-  _doUpdateCourses(_getMain().getStringReturnInList(Cmd.OB_COURSE_ID))
+  _doUpdateCourses(getStringReturnInList(Cmd.OB_COURSE_ID))
 
 def _doDeleteCourses(entityList):
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
+  croom = buildGAPIObject(API.CLASSROOM)
   body = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'archive', 'archived'}:
       body['courseState'] = 'ARCHIVED'
       updateMask = 'courseState'
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   i = 0
   count = len(entityList)
   for course in entityList:
     i += 1
-    courseId = _getMain().addCourseIdScope(course)
+    courseId = addCourseIdScope(course)
     try:
       if body:
-        _getMain().callGAPI(croom.courses(), 'patch',
+        callGAPI(croom.courses(), 'patch',
                  throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION,
                                GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT,
                                GAPI.INTERNAL_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  id=courseId, body=body, updateMask=updateMask, fields='')
-      _getMain().callGAPI(croom.courses(), 'delete',
+      callGAPI(croom.courses(), 'delete',
                throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.FAILED_PRECONDITION, GAPI.INTERNAL_ERROR],
                id=courseId)
-      _getMain().entityActionPerformed([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], i, count)
+      entityActionPerformed([Ent.COURSE, removeCourseIdScope(courseId)], i, count)
     except (GAPI.notFound, GAPI.permissionDenied, GAPI.failedPrecondition,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalidArgument,
             GAPI.internalError, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+      entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
 
 # gam delete courses <CourseEntity> [archive|archived]
 def doDeleteCourses():
-  _doDeleteCourses(_getMain().getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
+  _doDeleteCourses(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
 
 # gam delete course <CourseID> [archive|archived]
 def doDeleteCourse():
-  _doDeleteCourses(_getMain().getStringReturnInList(Cmd.OB_COURSE_ID))
+  _doDeleteCourses(getStringReturnInList(Cmd.OB_COURSE_ID))
 
 COURSE_FIELDS_CHOICE_MAP = {
   'alternatelink': 'alternateLink',
@@ -878,15 +930,15 @@ def _getCourseShowProperties(myarg, courseShowProperties):
     courseShowProperties['ownerEmail'] = True
   elif myarg == 'owneremailmatchpattern':
     courseShowProperties['ownerEmail'] = True
-    courseShowProperties['ownerEmailMatchPattern'] = _getMain().getREPattern(re.IGNORECASE)
+    courseShowProperties['ownerEmailMatchPattern'] = getREPattern(re.IGNORECASE)
   elif myarg == 'ownername':
     courseShowProperties['ownerName'] = True
   elif myarg == 'show':
-    courseShowProperties['members'] = _getMain().getChoice(COURSE_MEMBER_ARGUMENTS)
+    courseShowProperties['members'] = getChoice(COURSE_MEMBER_ARGUMENTS)
   elif myarg == 'countsonly':
     courseShowProperties['countsOnly'] = True
   elif myarg == 'fields':
-    for field in _getMain()._getFieldsList():
+    for field in _getFieldsList():
       if field in {'alias', 'aliases'}:
         courseShowProperties['aliases'] = True
         courseShowProperties['aliasesInColumns'] = False
@@ -912,9 +964,9 @@ def _getCourseShowProperties(myarg, courseShowProperties):
       elif field in COURSE_FIELDS_CHOICE_MAP:
         courseShowProperties['fields'].append(COURSE_FIELDS_CHOICE_MAP[field])
       else:
-        _getMain().invalidChoiceExit(field, COURSE_FIELDS_CHOICE_MAP, True)
+        invalidChoiceExit(field, COURSE_FIELDS_CHOICE_MAP, True)
   elif myarg == 'skipfields':
-    for field in _getMain()._getFieldsList():
+    for field in _getFieldsList():
       if field in {'alias', 'aliases'}:
         courseShowProperties['aliases'] = False
       elif field == 'teachers':
@@ -931,7 +983,7 @@ def _getCourseShowProperties(myarg, courseShowProperties):
         if field != 'id':
           courseShowProperties['skips'].append(COURSE_FIELDS_CHOICE_MAP[field])
       else:
-        _getMain().invalidChoiceExit(field, COURSE_FIELDS_CHOICE_MAP, True)
+        invalidChoiceExit(field, COURSE_FIELDS_CHOICE_MAP, True)
   else:
     return False
   return True
@@ -949,14 +1001,14 @@ def _setCourseFields(courseShowProperties, pagesMode, getOwnerId=False):
 def _convertCourseUserIdToEmailName(croom, userId, emails, entityValueList, i, count):
   if userId not in emails:
     try:
-      result = _getMain().callGAPI(croom.userProfiles(), 'get',
+      result = callGAPI(croom.userProfiles(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.BAD_REQUEST, GAPI.FORBIDDEN, GAPI.SERVICE_NOT_AVAILABLE],
                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         userId=userId, fields='emailAddress,name(fullName)')
     except (GAPI.notFound, GAPI.permissionDenied, GAPI.badRequest, GAPI.forbidden, GAPI.serviceNotAvailable):
       result = {}
     if not result:
-      _getMain().entityDoesNotHaveItemWarning(entityValueList, i, count)
+      entityDoesNotHaveItemWarning(entityValueList, i, count)
     emails[userId] = (result.get('emailAddress', 'Unknown user'),
                       result.get('name', {}).get('fullName', 'Unknown user'))
   return emails[userId]
@@ -966,19 +1018,19 @@ def _getCourseOwnerSA(croom, course, useOwnerAccess):
     return croom
   courseOwnerId = course["ownerId"]
   if courseOwnerId not in GM.Globals[GM.CLASSROOM_OWNER_SA]:
-    _, GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId] = _getMain().buildGAPIServiceObject(API.CLASSROOM, f'uid:{courseOwnerId}')
+    _, GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId] = buildGAPIServiceObject(API.CLASSROOM, f'uid:{courseOwnerId}')
   return GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId]
 
 def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
   coursesInfo = {}
   for courseId in courseIds:
     ciCourseId = courseId
-    courseId = _getMain().addCourseIdScope(courseId)
+    courseId = addCourseIdScope(courseId)
     if addCIIdScope:
       ciCourseId = courseId
     if courseId not in coursesInfo:
       try:
-        course = _getMain().callGAPI(croom.courses(), 'get',
+        course = callGAPI(croom.courses(), 'get',
                           throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                         GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                           retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -987,9 +1039,9 @@ def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
         if ocroom is not None:
           coursesInfo[ciCourseId] = {'id': course['id'], 'name': course['name'], 'croom': ocroom}
       except GAPI.notFound:
-        _getMain().entityDoesNotExistWarning(Ent.COURSE, courseId)
+        entityDoesNotExistWarning(Ent.COURSE, courseId)
       except GAPI.serviceNotAvailable as e:
-        _getMain().entityActionFailedWarning([Ent.COURSE, courseId], str(e))
+        entityActionFailedWarning([Ent.COURSE, courseId], str(e))
       except (GAPI.forbidden, GAPI.permissionDenied) as e:
         ClientAPIAccessDeniedExit(str(e))
   return 0, len(coursesInfo), coursesInfo
@@ -1002,10 +1054,10 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
     pageMessage = None
   if courseShowProperties.get('aliases'):
     if showGettings:
-      _getMain().printGettingEntityItemForWhom(Ent.ALIAS, _getMain().formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], _getMain().currentCount(i, count)))
-      pageMessage = _getMain().getPageMessage()
+      printGettingEntityItemForWhom(Ent.ALIAS, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+      pageMessage = getPageMessage()
     try:
-      aliases = _getMain().callGAPIpages(croom.courses().aliases(), 'list', 'aliases',
+      aliases = callGAPIpages(croom.courses().aliases(), 'list', 'aliases',
                               pageMessage=pageMessage,
                               throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE, GAPI.NOT_IMPLEMENTED,
                                             GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
@@ -1018,10 +1070,10 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
   if courseShowProperties['members'] != 'none':
     if courseShowProperties['members'] != 'students':
       if showGettings:
-        _getMain().printGettingEntityItemForWhom(Ent.TEACHER, _getMain().formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], _getMain().currentCount(i, count)))
-        pageMessage = _getMain().getPageMessage()
+        printGettingEntityItemForWhom(Ent.TEACHER, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+        pageMessage = getPageMessage()
       try:
-        teachers = _getMain().callGAPIpages(ocroom.courses().teachers(), 'list', 'teachers',
+        teachers = callGAPIpages(ocroom.courses().teachers(), 'list', 'teachers',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
@@ -1033,10 +1085,10 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
         ClientAPIAccessDeniedExit(str(e))
     if courseShowProperties['members'] != 'teachers':
       if showGettings:
-        _getMain().printGettingEntityItemForWhom(Ent.STUDENT, _getMain().formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], _getMain().currentCount(i, count)))
-        pageMessage = _getMain().getPageMessage()
+        printGettingEntityItemForWhom(Ent.STUDENT, formatKeyValueList('', [Ent.Singular(Ent.COURSE), courseId], currentCount(i, count)))
+        pageMessage = getPageMessage()
       try:
-        students = _getMain().callGAPIpages(ocroom.courses().students(), 'list', 'students',
+        students = callGAPIpages(ocroom.courses().students(), 'list', 'students',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                                GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
@@ -1049,14 +1101,14 @@ def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teac
   return (aliases, teachers, students)
 
 def _doInfoCourses(courseIdList):
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
+  croom = buildGAPIObject(API.CLASSROOM)
   courseShowProperties = _initCourseShowProperties()
   courseShowProperties['ownerEmail'] = True
   ownerEmails = {}
   useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getCourseShowProperties(myarg, courseShowProperties):
       pass
     elif myarg in _getMain().OWNER_ACCESS_OPTIONS:
@@ -1077,7 +1129,7 @@ def _doInfoCourses(courseIdList):
   for courseId, courseInfo in coursesInfo.items():
     i += 1
     try:
-      course = _getMain().callGAPI(croom.courses(), 'get',
+      course = callGAPI(croom.courses(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.SERVICE_NOT_AVAILABLE],
                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                         id=courseId, fields=fields)
@@ -1103,50 +1155,50 @@ def _doInfoCourses(courseIdList):
               course.update({'students': list(students)})
             else:
               course.update({'students': len(students)})
-        _getMain().printLine(json.dumps(_getMain().cleanJSON(course, skipObjects=courseShowProperties['skips'],
+        printLine(json.dumps(cleanJSON(course, skipObjects=courseShowProperties['skips'],
                                        timeObjects=COURSE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
         continue
-      _getMain().printEntity([Ent.COURSE, course['id']], i, count)
+      printEntity([Ent.COURSE, course['id']], i, count)
       Ind.Increment()
-      _getMain().showJSON(None, course, courseShowProperties['skips'], COURSE_TIME_OBJECTS)
+      showJSON(None, course, courseShowProperties['skips'], COURSE_TIME_OBJECTS)
       if courseShowProperties['aliases']:
-        _getMain().printKeyValueList(['Aliases', len(aliases)])
+        printKeyValueList(['Aliases', len(aliases)])
         Ind.Increment()
         for alias in aliases:
-          _getMain().printKeyValueList([_getMain().removeCourseAliasScope(alias['alias'])])
+          printKeyValueList([removeCourseAliasScope(alias['alias'])])
         Ind.Decrement()
       if courseShowProperties['members'] != 'none':
-        _getMain().printKeyValueList(['Participants', None])
+        printKeyValueList(['Participants', None])
         Ind.Increment()
         if courseShowProperties['members'] != 'students':
           if teachers:
-            _getMain().printKeyValueList(['Teachers', len(teachers)])
+            printKeyValueList(['Teachers', len(teachers)])
             if not courseShowProperties['countsOnly']:
               Ind.Increment()
               for teacher in teachers:
                 if 'emailAddress' in teacher['profile']:
-                  _getMain().printKeyValueList([f'{teacher["profile"]["name"]["fullName"]} - {teacher["profile"]["emailAddress"]}'])
+                  printKeyValueList([f'{teacher["profile"]["name"]["fullName"]} - {teacher["profile"]["emailAddress"]}'])
                 else:
-                  _getMain().printKeyValueList([teacher['profile']['name']['fullName']])
+                  printKeyValueList([teacher['profile']['name']['fullName']])
               Ind.Decrement()
         if courseShowProperties['members'] != 'teachers':
           if students:
-            _getMain().printKeyValueList(['Students', len(students)])
+            printKeyValueList(['Students', len(students)])
             if not courseShowProperties['countsOnly']:
               Ind.Increment()
               for student in students:
                 if 'emailAddress' in student['profile']:
-                  _getMain().printKeyValueList([f'{student["profile"]["name"]["fullName"]} - {student["profile"]["emailAddress"]}'])
+                  printKeyValueList([f'{student["profile"]["name"]["fullName"]} - {student["profile"]["emailAddress"]}'])
                 else:
-                  _getMain().printKeyValueList([student['profile']['name']['fullName']])
+                  printKeyValueList([student['profile']['name']['fullName']])
               Ind.Decrement()
           Ind.Decrement()
         Ind.Decrement()
       Ind.Decrement()
     except GAPI.notFound:
-      _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], Msg.DOES_NOT_EXIST, i, count)
+      entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], Msg.DOES_NOT_EXIST, i, count)
     except GAPI.serviceNotAvailable as e:
-      _getMain().entityActionFailedWarning([Ent.COURSE, _getMain().removeCourseIdScope(courseId)], str(e), i, count)
+      entityActionFailedWarning([Ent.COURSE, removeCourseIdScope(courseId)], str(e), i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
@@ -1155,25 +1207,25 @@ def _doInfoCourses(courseIdList):
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 #	[formatjson]
 def doInfoCourses():
-  _doInfoCourses(_getMain().getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
+  _doInfoCourses(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
 
 # gam info course <CourseID> [owneraccess]
 #	[owneremail] [ownername] [alias|aliases] [show none|all|students|teachers] [countsonly]
 #	[fields <CourseFieldNameList>] [skipfields <CourseFieldNameList>]
 #	[formatjson]
 def doInfoCourse():
-  _doInfoCourses(_getMain().getStringReturnInList(Cmd.OB_COURSE_ID))
+  _doInfoCourses(getStringReturnInList(Cmd.OB_COURSE_ID))
 
 def _initCourseSelectionParameters():
   return {'courseIds': [], 'teacherId': None, 'studentId': None, 'courseStates': []}
 
 def _getCourseSelectionParameters(myarg, courseSelectionParameters):
   if myarg in {'course', 'courses', 'class', 'classes'}:
-    courseSelectionParameters['courseIds'].extend(_getMain().getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
+    courseSelectionParameters['courseIds'].extend(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True))
   elif myarg == 'teacher':
-    courseSelectionParameters['teacherId'] = _getMain().getEmailAddress()
+    courseSelectionParameters['teacherId'] = getEmailAddress()
   elif myarg == 'student':
-    courseSelectionParameters['studentId'] = _getMain().getEmailAddress()
+    courseSelectionParameters['studentId'] = getEmailAddress()
   elif myarg in {'state', 'states', 'status'}:
     _getCourseStates(Cmd.OB_COURSE_STATE_LIST, courseSelectionParameters['courseStates'])
   else:
@@ -1191,11 +1243,11 @@ def _initCourseItemFilter():
 
 def _getCourseItemFilter(myarg, courseItemFilter, courseFilterFields):
   if myarg == 'timefilter':
-    courseItemFilter['timefilter'] = _getMain().getChoice(courseFilterFields, mapChoice=True)
+    courseItemFilter['timefilter'] = getChoice(courseFilterFields, mapChoice=True)
   elif myarg in COURSE_START_ARGUMENTS:
-    courseItemFilter['startTime'], _, _ = _getMain().getTimeOrDeltaFromNow(True)
+    courseItemFilter['startTime'], _, _ = getTimeOrDeltaFromNow(True)
   elif myarg in COURSE_END_ARGUMENTS:
-    courseItemFilter['endTime'], _, _ = _getMain().getTimeOrDeltaFromNow(True)
+    courseItemFilter['endTime'], _, _ = getTimeOrDeltaFromNow(True)
   else:
     return False
   return True
@@ -1231,10 +1283,10 @@ def _gettingCoursesQuery(courseSelectionParameters):
 def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getOwnerId=False):
   if not courseSelectionParameters['courseIds']:
     fields = _setCourseFields(courseShowProperties, True, getOwnerId)
-    _getMain().printGettingAllAccountEntities(Ent.COURSE, _gettingCoursesQuery(courseSelectionParameters))
+    printGettingAllAccountEntities(Ent.COURSE, _gettingCoursesQuery(courseSelectionParameters))
     try:
-      return _getMain().callGAPIpages(croom.courses(), 'list', 'courses',
-                           pageMessage=_getMain().getPageMessage(),
+      return callGAPIpages(croom.courses(), 'list', 'courses',
+                           pageMessage=getPageMessage(),
                            throwReasons=GAPI.COURSE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.SERVICE_NOT_AVAILABLE],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                            teacherId=courseSelectionParameters['teacherId'],
@@ -1243,29 +1295,29 @@ def _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, getO
                            fields=fields, pageSize=GC.Values[GC.CLASSROOM_MAX_RESULTS])
     except (GAPI.invalid, GAPI.notFound):
       if (not courseSelectionParameters['studentId']) and courseSelectionParameters['teacherId']:
-        _getMain().entityUnknownWarning(Ent.TEACHER, courseSelectionParameters['teacherId'])
+        entityUnknownWarning(Ent.TEACHER, courseSelectionParameters['teacherId'])
       elif (not courseSelectionParameters['teacherId']) and courseSelectionParameters['studentId']:
-        _getMain().entityUnknownWarning(Ent.STUDENT, courseSelectionParameters['studentId'])
+        entityUnknownWarning(Ent.STUDENT, courseSelectionParameters['studentId'])
       elif courseSelectionParameters['studentId'] and courseSelectionParameters['teacherId']:
         entityOrEntityUnknownWarning(Ent.TEACHER, courseSelectionParameters['teacherId'], Ent.STUDENT, courseSelectionParameters['studentId'])
     except (GAPI.insufficientPermissions, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.badRequest, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.COURSE, None], str(e))
+      entityActionFailedWarning([Ent.COURSE, None], str(e))
     return None
   fields = _setCourseFields(courseShowProperties, False, getOwnerId)
   coursesInfo = []
   for courseId in courseSelectionParameters['courseIds']:
-    courseId = _getMain().addCourseIdScope(courseId)
+    courseId = addCourseIdScope(courseId)
     try:
-      info = _getMain().callGAPI(croom.courses(), 'get',
+      info = callGAPI(croom.courses(), 'get',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
                                     GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       id=courseId, fields=fields)
       coursesInfo.append(info)
     except GAPI.notFound:
-      _getMain().entityDoesNotExistWarning(Ent.COURSE, courseId)
+      entityDoesNotExistWarning(Ent.COURSE, courseId)
     except GAPI.serviceNotAvailable as e:
-      _getMain().entityActionFailedWarning([Ent.COURSE, courseId], str(e))
+      entityActionFailedWarning([Ent.COURSE, courseId], str(e))
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
   return coursesInfo
@@ -1310,9 +1362,9 @@ def doPrintCourses():
           rtitles['list'].append(title)
       j += 1
 
-  croom = _getMain().buildGAPIObject(API.CLASSROOM)
-  csvPF = _getMain().CSVPrintFile('id')
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  croom = buildGAPIObject(API.CLASSROOM)
+  csvPF = CSVPrintFile('id')
+  FJQC = FormatJSONQuoteChar(csvPF)
   courseSelectionParameters = _initCourseSelectionParameters()
   courseItemFilter = _initCourseItemFilter()
   courseShowProperties = _initCourseShowProperties()
@@ -1322,7 +1374,7 @@ def doPrintCourses():
   useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getCourseSelectionParameters(myarg, courseSelectionParameters):
@@ -1330,13 +1382,13 @@ def doPrintCourses():
     elif _getCourseItemFilter(myarg, courseItemFilter, COURSE_CU_FILTER_FIELDS_MAP):
       pass
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif _getCourseShowProperties(myarg, courseShowProperties):
       pass
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
     elif myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   applyCourseItemFilter = _setApplyCourseItemFilter(courseItemFilter, None)
@@ -1346,7 +1398,7 @@ def doPrintCourses():
   coursesInfo = _getCoursesInfo(croom, courseSelectionParameters, courseShowProperties, useOwnerAccess)
   if coursesInfo is None:
     if showItemCountOnly:
-      _getMain().writeStdout('0\n')
+      writeStdout('0\n')
     return
   if addCSVData:
     csvPF.AddTitles(sorted(addCSVData.keys()))
@@ -1413,13 +1465,13 @@ def doPrintCourses():
         _saveParticipants(course, teachers, 'teachers', ttitles)
       if courseShowProperties['members'] != 'teachers':
         _saveParticipants(course, students, 'students', stitles)
-    row = _getMain().flattenJSON(course, timeObjects=COURSE_TIME_OBJECTS, noLenObjects=COURSE_NOLEN_OBJECTS)
+    row = flattenJSON(course, timeObjects=COURSE_TIME_OBJECTS, noLenObjects=COURSE_NOLEN_OBJECTS)
     if addCSVData:
       row.update(addCSVData)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
-      row = {'id': courseId, 'JSON': json.dumps(_getMain().cleanJSON(course, timeObjects=COURSE_TIME_OBJECTS),
+      row = {'id': courseId, 'JSON': json.dumps(cleanJSON(course, timeObjects=COURSE_TIME_OBJECTS),
                                                 ensure_ascii=False, sort_keys=True)}
       if addCSVData:
         row.update(addCSVData)
@@ -1438,7 +1490,7 @@ def doPrintCourses():
             row['JSON-students'] = json.dumps(len(students))
       csvPF.WriteRowNoFilter(row)
   if showItemCountOnly:
-    _getMain().writeStdout(f'{itemCount}\n')
+    writeStdout(f'{itemCount}\n')
     return
   if not FJQC.formatJSON:
     if courseShowProperties['aliases']:

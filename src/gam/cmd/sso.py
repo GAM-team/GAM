@@ -13,6 +13,36 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    checkForExtraneousArguments,
+    getArgument,
+    getChoice,
+    getInteger,
+    getString,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityActionPerformedMessage,
+    entityPerformActionNumItems,
+    performActionNumItems,
+    printEntity,
+    printGettingAllAccountEntities,
+    printLine,
+)
+from gam.util.entity import convertGroupEmailToCloudID, getEntityList
+from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.fileio import readFile, setFilePath, writeFile
+from gam.util.orgunits import getOrgUnitId
+from gam.util.output import writeStderr, writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -32,7 +62,7 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def getCIOrgunitID(cd, orgunit):
-  ou_id = _getMain().getOrgUnitId(cd, orgunit)[1]
+  ou_id = getOrgUnitId(cd, orgunit)[1]
   if ou_id.startswith('id:'):
     ou_id = ou_id[3:]
   return f'orgUnits/{ou_id}'
@@ -42,7 +72,7 @@ def _getInboundSSOProfiles(ci, mode):
   profiles = []
   if mode in _getMain().INBOUNDSSO_ALL_SAML:
     try:
-      profiles.extend(_getMain().callGAPIpages(ci.inboundSamlSsoProfiles(), 'list', 'inboundSamlSsoProfiles',
+      profiles.extend(callGAPIpages(ci.inboundSamlSsoProfiles(), 'list', 'inboundSamlSsoProfiles',
                                     throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     bailOnInternalError=True,
@@ -50,10 +80,10 @@ def _getInboundSSOProfiles(ci, mode):
     except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
             GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, customer], str(e))
+      entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, customer], str(e))
   if mode in _getMain().INBOUNDSSO_ALL_OIDC:
     try:
-      profiles.extend(_getMain().callGAPIpages(ci.inboundOidcSsoProfiles(), 'list', 'inboundOidcSsoProfiles',
+      profiles.extend(callGAPIpages(ci.inboundOidcSsoProfiles(), 'list', 'inboundOidcSsoProfiles',
                                     throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
                                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                     bailOnInternalError=True,
@@ -61,7 +91,7 @@ def _getInboundSSOProfiles(ci, mode):
     except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
             GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, customer], str(e))
+      entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, customer], str(e))
   return profiles
 
 def _convertInboundSSOProfileDisplaynameToName(ci, mode, displayName='',
@@ -92,77 +122,77 @@ def _convertInboundSSOProfileDisplaynameToName(ci, mode, displayName='',
     errMsg = Msg.MULTIPLE_SSO_PROFILES_MATCH.format(displayName)
     for m in matches:
       errMsg += f'  {m["name"]}  {m["displayName"]}\n'
-  _getMain().entityActionFailedWarning([entityType, None], errMsg)
+  entityActionFailedWarning([entityType, None], errMsg)
   return None
 
 def _getInboundSSOProfileArguments(body, mode):
   returnNameOnly = False
   if mode == 'saml':
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'name':
-        body['displayName'] = _getMain().getString(Cmd.OB_STRING)
+        body['displayName'] = getString(Cmd.OB_STRING)
       elif myarg == 'entityid':
-        body.setdefault('idpConfig', {})['entityId'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('idpConfig', {})['entityId'] = getString(Cmd.OB_STRING)
       elif myarg == 'loginurl':
-        body.setdefault('idpConfig', {})['singleSignOnServiceUri'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('idpConfig', {})['singleSignOnServiceUri'] = getString(Cmd.OB_STRING)
       elif myarg == 'logouturl':
-        body.setdefault('idpConfig', {})['logoutRedirectUri'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('idpConfig', {})['logoutRedirectUri'] = getString(Cmd.OB_STRING)
       elif myarg == 'changepasswordurl':
-        body.setdefault('idpConfig', {})['changePasswordUri'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('idpConfig', {})['changePasswordUri'] = getString(Cmd.OB_STRING)
       elif myarg == 'returnnameonly':
         returnNameOnly = True
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   else:
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if myarg == 'name':
-        body['displayName'] = _getMain().getString(Cmd.OB_STRING)
+        body['displayName'] = getString(Cmd.OB_STRING)
       elif myarg == 'issueruri':
-        body.setdefault('idpConfig', {})['issuerUri'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('idpConfig', {})['issuerUri'] = getString(Cmd.OB_STRING)
       elif myarg == 'changepasswordurl':
-        body.setdefault('idpConfig', {})['changePasswordUri'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('idpConfig', {})['changePasswordUri'] = getString(Cmd.OB_STRING)
       elif myarg == 'clientid':
-        body.setdefault('rpConfig', {})['clientId'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('rpConfig', {})['clientId'] = getString(Cmd.OB_STRING)
       elif myarg == 'clientsecret':
-        body.setdefault('rpConfig', {})['clientSecret'] = _getMain().getString(Cmd.OB_STRING)
+        body.setdefault('rpConfig', {})['clientSecret'] = getString(Cmd.OB_STRING)
       elif myarg == 'returnnameonly':
         returnNameOnly = True
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
   return (returnNameOnly, body)
 
 def _showInboundSSOProfile(profile, FJQC, i=0, count=0):
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(profile), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(profile), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.INBOUND_SSO_PROFILE, profile['name']], i, count)
+  printEntity([Ent.INBOUND_SSO_PROFILE, profile['name']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, profile)
+  showJSON(None, profile)
   Ind.Decrement()
 
 def _processInboundSSOProfileResult(result, returnNameOnly, kvlist, function):
   if GC.Values[GC.DEBUG_LEVEL] > 0:
-    _getMain().writeStderr(f'inboundSSOProfileResult: {result}\n')
+    writeStderr(f'inboundSSOProfileResult: {result}\n')
   if result.get('done', False):
     if 'error' not in result:
       if 'response' in result:
         if not returnNameOnly:
           _showInboundSSOProfile(result['response'], None)
         else:
-          _getMain().writeStdout(f'{result["response"]["name"]}\n')
+          writeStdout(f'{result["response"]["name"]}\n')
       else:
-        _getMain().entityActionPerformed(kvlist)
+        entityActionPerformed(kvlist)
     else:
-      _getMain().entityActionFailedWarning(kvlist, result['error']['message'])
+      entityActionFailedWarning(kvlist, result['error']['message'])
   elif not returnNameOnly:
-    _getMain().entityActionPerformedMessage(kvlist, Msg.ACTION_IN_PROGRESS.format(f'{function} inboundssoprofile'))
+    entityActionPerformedMessage(kvlist, Msg.ACTION_IN_PROGRESS.format(f'{function} inboundssoprofile'))
   else:
-    _getMain().writeStdout('inProgress\n')
+    writeStdout('inProgress\n')
 
 def _getInboundSSOModeService(ci):
-  mode = _getMain().getChoice(_getMain().INBOUNDSSO_INPUT_MODE_CHOICE_MAP, defaultChoice='saml', mapChoice=True)
+  mode = getChoice(_getMain().INBOUNDSSO_INPUT_MODE_CHOICE_MAP, defaultChoice='saml', mapChoice=True)
   service = ci.inboundSamlSsoProfiles() if mode == 'saml' else ci.inboundOidcSsoProfiles()
   return (mode, service)
 
@@ -170,7 +200,7 @@ def _getInboundSSOModeService(ci):
 #	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
 #	[returnnameonly]
 def doCreateInboundSSOProfile():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   mode, service = _getInboundSSOModeService(ci)
   body = {'customer': _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID]),
           'displayName': 'SSO Profile'
@@ -178,7 +208,7 @@ def doCreateInboundSSOProfile():
   returnNameOnly, body = _getInboundSSOProfileArguments(body, mode)
   kvlist = [Ent.INBOUND_SSO_PROFILE, body['displayName']]
   try:
-    result = _getMain().callGAPI(service, 'create',
+    result = callGAPI(service, 'create',
                       throwReasons=GAPI.CISSO_CREATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
@@ -187,62 +217,62 @@ def doCreateInboundSSOProfile():
   except (GAPI.failedPrecondition, GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam update inboundssoprofile [saml|oidc] <SSOProfileItem>
 #	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
 #	[returnnameonly]
 def doUpdateInboundSSOProfile():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   mode, service = _getInboundSSOModeService(ci)
-  name = _convertInboundSSOProfileDisplaynameToName(ci, mode, _getMain().getString(Cmd.OB_STRING))
+  name = _convertInboundSSOProfileDisplaynameToName(ci, mode, getString(Cmd.OB_STRING))
   if not name:
     return
   returnNameOnly, body = _getInboundSSOProfileArguments({}, mode)
   kvlist = [Ent.INBOUND_SSO_PROFILE, name]
   try:
-    result = _getMain().callGAPI(service, 'patch',
+    result = callGAPI(service, 'patch',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name, updateMask=','.join(body.keys()), body=body)
     _processInboundSSOProfileResult(result, returnNameOnly, kvlist, 'update')
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam delete inboundssoprofile [saml|oidc] <SSOProfileItem>
 def doDeleteInboundSSOProfile():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   mode, service = _getInboundSSOModeService(ci)
-  name = _convertInboundSSOProfileDisplaynameToName(ci, mode, _getMain().getString(Cmd.OB_STRING))
+  name = _convertInboundSSOProfileDisplaynameToName(ci, mode, getString(Cmd.OB_STRING))
   if not name:
     return
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   kvlist = [Ent.INBOUND_SSO_PROFILE, name]
   try:
-    result = _getMain().callGAPI(service, 'delete',
+    result = callGAPI(service, 'delete',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name)
     _processInboundSSOProfileResult(result, True, kvlist, 'delete')
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 def _getInboundSSOProfileByName(ci, mode, name):
   notFound = False
   kvlist = [Ent.INBOUND_SSO_PROFILE, name]
   if mode in _getMain().INBOUNDSSO_ALL_SAML:
     try:
-      return _getMain().callGAPI(ci.inboundSamlSsoProfiles(), 'get',
+      return callGAPI(ci.inboundSamlSsoProfiles(), 'get',
                       throwReasons=GAPI.CISSO_GET_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
@@ -251,10 +281,10 @@ def _getInboundSSOProfileByName(ci, mode, name):
       notFound = True
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
             GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning(kvlist, str(e))
+      entityActionFailedWarning(kvlist, str(e))
   if mode in _getMain().INBOUNDSSO_ALL_OIDC:
     try:
-      return _getMain().callGAPI(ci.inboundOidcSsoProfiles(), 'get',
+      return callGAPI(ci.inboundOidcSsoProfiles(), 'get',
                       throwReasons=GAPI.CISSO_GET_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
@@ -263,17 +293,17 @@ def _getInboundSSOProfileByName(ci, mode, name):
       notFound = True
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
             GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning(kvlist, str(e))
+      entityActionFailedWarning(kvlist, str(e))
   if notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   return None
 
 # gam info inboundssoprofile [all|saml|oidc] <SSOProfileItem> [formatjson]
 def doInfoInboundSSOProfile():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  mode = _getMain().getChoice(_getMain().INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
-  name = _getMain().getString(Cmd.OB_STRING)
-  FJQC = _getMain().FormatJSONQuoteChar(formatJSONOnly=True)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  mode = getChoice(_getMain().INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
+  name = getString(Cmd.OB_STRING)
+  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   name = _convertInboundSSOProfileDisplaynameToName(ci, mode, name)
   if not name:
     return
@@ -287,25 +317,25 @@ def doInfoInboundSSOProfile():
 # gam print inboundssoprofile [all|saml|oidc] [todrive <ToDriveAttribute>*]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowInboundSSOProfiles():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
-  csvPF = _getMain().CSVPrintFile(['name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   cfilter = f'customer=="{customer}"'
-  mode = _getMain().getChoice(_getMain().INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
+  mode = getChoice(_getMain().INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF:
-    _getMain().printGettingAllAccountEntities(Ent.INBOUND_SSO_PROFILE, cfilter)
+    printGettingAllAccountEntities(Ent.INBOUND_SSO_PROFILE, cfilter)
   profiles = _getInboundSSOProfiles(ci, mode)
   if not csvPF:
     count = len(profiles)
     if not FJQC.formatJSON:
-      _getMain().performActionNumItems(count, Ent.INBOUND_SSO_PROFILE)
+      performActionNumItems(count, Ent.INBOUND_SSO_PROFILE)
     Ind.Increment()
     i = 0
     for profile in profiles:
@@ -314,18 +344,18 @@ def doPrintShowInboundSSOProfiles():
     Ind.Decrement()
   else:
     for profile in profiles:
-      row = _getMain().flattenJSON(profile)
+      row = flattenJSON(profile)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         csvPF.WriteRowNoFilter({'name': profile['name'],
-                                'JSON': json.dumps(_getMain().cleanJSON(profile), ensure_ascii=False, sort_keys=True)})
+                                'JSON': json.dumps(cleanJSON(profile), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Inbound SSO Profiles')
 
 def getInboundSSOProfileCredentials(ci, profile):
   try:
-    return _getMain().callGAPIpages(ci.inboundSamlSsoProfiles().idpCredentials(), 'list', 'idpCredentials',
+    return callGAPIpages(ci.inboundSamlSsoProfiles().idpCredentials(), 'list', 'idpCredentials',
                          throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          bailOnInternalError=True,
@@ -333,11 +363,11 @@ def getInboundSSOProfileCredentials(ci, profile):
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, profile], str(e))
+    entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, profile], str(e))
     return None
 
 def getInboundSSOCredentialsName():
-  name = _getMain().getString(Cmd.OB_STRING)
+  name = getString(Cmd.OB_STRING)
   if name.startswith('id:') or name.startswith('uid:'):
     name = name.split(':', 1)[1]
   return name
@@ -346,12 +376,12 @@ INBOUNDSSO_CREDENTIALS_TIME_OBJECTS = ['updateTime']
 
 def _showInboundSSOCredentials(credentials, FJQC, i=0, count=0):
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(credentials, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS),
+    printLine(json.dumps(cleanJSON(credentials, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS),
                          ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.INBOUND_SSO_CREDENTIALS, credentials['name']], i, count)
+  printEntity([Ent.INBOUND_SSO_CREDENTIALS, credentials['name']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, credentials, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS)
+  showJSON(None, credentials, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS)
   Ind.Decrement()
 
 def _processInboundSSOCredentialsResult(result, kvlist, function):
@@ -360,45 +390,45 @@ def _processInboundSSOCredentialsResult(result, kvlist, function):
       if 'response' in result:
         _showInboundSSOCredentials(result['response'], None)
       else:
-        _getMain().entityActionPerformed(kvlist)
+        entityActionPerformed(kvlist)
     else:
-      _getMain().entityActionFailedWarning(kvlist, result['error']['message'])
+      entityActionFailedWarning(kvlist, result['error']['message'])
   else:
-    _getMain().entityActionPerformedMessage(kvlist, Msg.ACTION_IN_PROGRESS.format(f'{function} inboundssocredentials'))
+    entityActionPerformedMessage(kvlist, Msg.ACTION_IN_PROGRESS.format(f'{function} inboundssocredentials'))
 
 # gam create inboundssocredentials profile <SSOProfileItem>
 #	(pemfile <FileName>)|(generatekey [keysize 1024|2048|4096]) [replaceolddest]
 def doCreateInboundSSOCredential():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   mode = 'saml'
   profile = None
   generateKey = replaceOldest = False
   keySize = 2048
   pemData = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'profile':
       profile = _convertInboundSSOProfileDisplaynameToName(ci, mode,
-                                                           _getMain().getString(Cmd.OB_STRING),
+                                                           getString(Cmd.OB_STRING),
                                                            Ent.INBOUND_SSO_CREDENTIALS)
       if not profile:
         return
     elif myarg == 'pemfile':
-      pemData = _getMain().readFile(_getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR))
+      pemData = readFile(setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR))
     elif myarg == 'generatekey':
       generateKey = True
     elif myarg == 'replaceoldest':
       replaceOldest = True
     elif myarg == 'keysize':
-      keySize=int(_getMain().getChoice([1024, 2048, 4096]))
+      keySize=int(getChoice([1024, 2048, 4096]))
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not profile:
-    _getMain().missingArgumentExit('profile')
+    missingArgumentExit('profile')
   if not pemData and not generateKey:
-    _getMain().missingArgumentExit('pemfile|generatekey')
+    missingArgumentExit('pemfile|generatekey')
   if pemData and generateKey:
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('pemfile', 'generatekey'))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('pemfile', 'generatekey'))
   if replaceOldest:
     credentials = getInboundSSOProfileCredentials(ci, profile)
     if credentials is None:
@@ -411,88 +441,88 @@ def doCreateInboundSSOCredential():
       doDeleteInboundSSOCredential(ci=ci, name=oldest_key['name'])
       Act.Set(action)
     else:
-      _getMain().writeStdout(Msg.NO_CREDENTIALS_REPLACEMENT.format(Ent.Singular(Ent.INBOUND_SSO_PROFILE), profile,
+      writeStdout(Msg.NO_CREDENTIALS_REPLACEMENT.format(Ent.Singular(Ent.INBOUND_SSO_PROFILE), profile,
                                                         count, Ent.Choose(Ent.INBOUND_SSO_CREDENTIALS, count)))
   if generateKey:
     privKey, pemData = _getMain()._generatePrivateKeyAndPublicCert('', '', 'GAM', keySize, b64enc_pub=False)
     timestamp = arrow.now(GC.Values[GC.TIMEZONE]).strftime('%Y%m%d-%I%M%S')
     priv_file = f'privatekey-{timestamp}.pem'
-    _getMain().writeFile(priv_file, privKey)
-    _getMain().writeStdout(Msg.WROTE_PRIVATE_KEY_DATA.format(priv_file))
+    writeFile(priv_file, privKey)
+    writeStdout(Msg.WROTE_PRIVATE_KEY_DATA.format(priv_file))
     pub_file = f'publiccert-{timestamp}.pem'
-    _getMain().writeFile(pub_file, pemData)
-    _getMain().writeStdout(Msg.WROTE_PUBLIC_CERTIFICATE.format(pub_file))
+    writeFile(pub_file, pemData)
+    writeStdout(Msg.WROTE_PUBLIC_CERTIFICATE.format(pub_file))
     kvlist = [Ent.INBOUND_SSO_CREDENTIALS, profile]
   try:
-    result = _getMain().callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'add',
+    result = callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'add',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       parent=profile, body={'pemData': pemData})
     _processInboundSSOCredentialsResult(result, kvlist, 'create')
   except GAPI.notFound as e:
-    _getMain().entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, profile], str(e))
+    entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, profile], str(e))
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam delete inboundssocredential <SSOCredentialsName>
 def doDeleteInboundSSOCredential(ci=None, name=None):
   if not ci:
-    ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+    ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   if not name:
     name = getInboundSSOCredentialsName()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   kvlist = [Ent.INBOUND_SSO_CREDENTIALS, name]
   try:
-    result = _getMain().callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'delete',
+    result = callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'delete',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name)
     _processInboundSSOCredentialsResult(result, kvlist, 'delete')
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam info inboundssocredential <SSOCredentialsName> [formatjson]
 def doInfoInboundSSOCredential():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   name = getInboundSSOCredentialsName()
-  FJQC = _getMain().FormatJSONQuoteChar(formatJSONOnly=True)
+  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   kvlist = [Ent.INBOUND_SSO_CREDENTIALS, name]
   try:
-    credentials = _getMain().callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'get',
+    credentials = callGAPI(ci.inboundSamlSsoProfiles().idpCredentials(), 'get',
                           throwReasons=GAPI.CISSO_GET_THROW_REASONS,
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           bailOnInternalError=True,
                           name=name)
     _showInboundSSOCredentials(credentials, FJQC)
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam show inboundssocredentials [profile|profiles <SSOProfileItemList>]
 #	[formatjson]
 # gam print inboundssocredentials [profile|profiles <SSOProfileItemList>]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowInboundSSOCredentials():
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  csvPF = _getMain().CSVPrintFile(['name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   mode = 'saml'
   profiles = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'profile', 'profiles'}:
       errors = 0
-      for profile in _getMain().getEntityList(Cmd.OB_STRING_LIST, shlexSplit=True):
+      for profile in getEntityList(Cmd.OB_STRING_LIST, shlexSplit=True):
         name = _convertInboundSSOProfileDisplaynameToName(ci, mode, profile, Ent.INBOUND_SSO_CREDENTIALS)
         if name:
           profiles.append(name)
@@ -514,7 +544,7 @@ def doPrintShowInboundSSOCredentials():
     if not csvPF:
       jcount = len(credentials)
       if not FJQC.formatJSON:
-        _getMain().entityPerformActionNumItems([Ent.INBOUND_SSO_PROFILE, profile], jcount, Ent.INBOUND_SSO_CREDENTIALS, i, count)
+        entityPerformActionNumItems([Ent.INBOUND_SSO_PROFILE, profile], jcount, Ent.INBOUND_SSO_CREDENTIALS, i, count)
       Ind.Increment()
       j = 0
       for credential in credentials:
@@ -523,12 +553,12 @@ def doPrintShowInboundSSOCredentials():
       Ind.Decrement()
     else:
       for credential in credentials:
-        row = _getMain().flattenJSON(credential, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS)
+        row = flattenJSON(credential, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS)
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
           csvPF.WriteRowNoFilter({'name': credential['name'],
-                                  'JSON': json.dumps(_getMain().cleanJSON(credential, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS),
+                                  'JSON': json.dumps(cleanJSON(credential, timeObjects=INBOUNDSSO_CREDENTIALS_TIME_OBJECTS),
                                                      ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Inbound SSO Credentials')
@@ -536,22 +566,22 @@ def doPrintShowInboundSSOCredentials():
 def _getInboundSSOAssignment(ci, name):
   kvlist = [Ent.INBOUND_SSO_ASSIGNMENT, name]
   try:
-    return _getMain().callGAPI(ci.inboundSsoAssignments(), 'get',
+    return callGAPI(ci.inboundSsoAssignments(), 'get',
                     throwReasons=GAPI.CISSO_GET_THROW_REASONS,
                     retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                     bailOnInternalError=True,
                     name=name)
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
   return None
 
 def _getInboundSSOAssignments(ci):
   customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
   try:
-    return _getMain().callGAPIpages(ci.inboundSsoAssignments(), 'list', 'inboundSsoAssignments',
+    return callGAPIpages(ci.inboundSsoAssignments(), 'list', 'inboundSsoAssignments',
                          throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          bailOnInternalError=True,
@@ -559,11 +589,11 @@ def _getInboundSSOAssignments(ci):
   except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
           GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning([Ent.INBOUND_SSO_ASSIGNMENT, customer], str(e))
+    entityActionFailedWarning([Ent.INBOUND_SSO_ASSIGNMENT, customer], str(e))
     return None
 
 def _getInboundSSOAssignmentName():
-  name = _getMain().getString(Cmd.OB_STRING)
+  name = getString(Cmd.OB_STRING)
   if name.startswith('id:') or name.startswith('uid:'):
     name = name.split(':', 1)[1]
   if not name.startswith('inboundSsoAssignments/'):
@@ -580,7 +610,7 @@ def _getInboundSSOAssignmentByTarget(ci, cd, target):
     targetType = 'targetOrgUnit'
   elif target.lower().startswith('group:'):
     targetType = 'targetGroup'
-    _, target, _ = _getMain().convertGroupEmailToCloudID(ci, target[6:])
+    _, target, _ = convertGroupEmailToCloudID(ci, target[6:])
   elif target.lower().startswith('orgunit:'):
     targetType = 'targetOrgUnit'
     target = getCIOrgunitID(cd, target[8:])
@@ -593,17 +623,17 @@ def _getInboundSSOAssignmentByTarget(ci, cd, target):
     for assignment in assignments:
       if targetType in assignment and assignment[targetType] == target:
         return assignment
-  _getMain().usageErrorExit(Msg.NO_SSO_PROFILE_ASSIGNED.format(targetType, target))
+  usageErrorExit(Msg.NO_SSO_PROFILE_ASSIGNED.format(targetType, target))
 
 def _getInboundSSOAssignmentArguments(ci, cd, body):
   mode = None
   rank = 0
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'rank':
-      rank = _getMain().getInteger(minVal=1)
+      rank = getInteger(minVal=1)
     elif myarg == 'mode':
-      body['ssoMode'] = _getMain().getChoice(_getMain().INBOUNDSSO_MODE_CHOICE_MAP, mapChoice=True)
+      body['ssoMode'] = getChoice(_getMain().INBOUNDSSO_MODE_CHOICE_MAP, mapChoice=True)
       if body['ssoMode'] == 'SAML_SSO':
         mode = 'saml'
         profile = 'inboundSamlSsoProfile'
@@ -612,7 +642,7 @@ def _getInboundSSOAssignmentArguments(ci, cd, body):
         profile = 'inboundOidcSsoProfile'
     elif mode and myarg == 'profile':
       name = _convertInboundSSOProfileDisplaynameToName(ci, mode,
-                                                        _getMain().getString(Cmd.OB_STRING),
+                                                        getString(Cmd.OB_STRING),
                                                         Ent.INBOUND_SSO_ASSIGNMENT)
       if not name:
         return None
@@ -620,20 +650,20 @@ def _getInboundSSOAssignmentArguments(ci, cd, body):
     elif myarg == 'neverredirect':
       body['signInBehavior'] = {'redirectCondition': 'NEVER'}
     elif myarg == 'group':
-      _, body['targetGroup'], _ = _getMain().convertGroupEmailToCloudID(ci, _getMain().getString(Cmd.OB_STRING))
+      _, body['targetGroup'], _ = convertGroupEmailToCloudID(ci, getString(Cmd.OB_STRING))
     elif myarg in {'ou', 'org', 'orgunit'}:
-      body['targetOrgUnit'] = getCIOrgunitID(cd, _getMain().getString(Cmd.OB_ORGUNIT_ITEM))
+      body['targetOrgUnit'] = getCIOrgunitID(cd, getString(Cmd.OB_ORGUNIT_ITEM))
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if 'ssoMode' not in body:
-    _getMain().missingArgumentExit('mode')
+    missingArgumentExit('mode')
   if mode and 'samlSsoInfo' not in body:
-    _getMain().missingArgumentExit('profile')
+    missingArgumentExit('profile')
   if 'targetGroup' in body:
     if 'targetOrgUnit' in body:
-      _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('group', 'ou|org|orgunit'))
+      usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('group', 'ou|org|orgunit'))
     if not rank:
-      _getMain().missingArgumentExit('rank')
+      missingArgumentExit('rank')
     body['rank'] = rank
   return body
 
@@ -645,12 +675,12 @@ def _updateInboundAssignmentTargetNames(ci, cd, assignment):
 
 def _showInboundSSOAssignment(assignment, FJQC, ci, cd, i=0, count=0):
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(assignment), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(assignment), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.INBOUND_SSO_ASSIGNMENT, assignment['name']], i, count)
+  printEntity([Ent.INBOUND_SSO_ASSIGNMENT, assignment['name']], i, count)
   _updateInboundAssignmentTargetNames(ci, cd, assignment)
   Ind.Increment()
-  _getMain().showJSON(None, assignment)
+  showJSON(None, assignment)
   Ind.Decrement()
 
 def _processInboundSSOAssignmentResult(result, kvlist, ci, cd, function):
@@ -659,26 +689,26 @@ def _processInboundSSOAssignmentResult(result, kvlist, ci, cd, function):
       if 'response' in result:
         _showInboundSSOAssignment(result['response'], None, ci, cd)
       else:
-        _getMain().entityActionPerformed(kvlist)
+        entityActionPerformed(kvlist)
     else:
-      _getMain().entityActionFailedWarning(kvlist, result['error']['message'])
+      entityActionFailedWarning(kvlist, result['error']['message'])
   else:
-    _getMain().entityActionPerformedMessage(kvlist, Msg.ACTION_IN_PROGRESS.format(f'{function} inboundssoassignment'))
+    entityActionPerformedMessage(kvlist, Msg.ACTION_IN_PROGRESS.format(f'{function} inboundssoassignment'))
 
 # gam create inboundssoassignment
 #	(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)
 #	(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)|(mode oidc_sso profile <SSOProfileName>}|(mode domain_wide_saml_if_enabled)
 #	[neverredirect]
 def doCreateInboundSSOAssignment():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  cd = buildGAPIObject(API.DIRECTORY)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   body = {'customer': _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])}
   body = _getInboundSSOAssignmentArguments(ci, cd, body)
   if not body:
     return
   kvlist = [Ent.INBOUND_SSO_ASSIGNMENT, body['customer']]
   try:
-    result = _getMain().callGAPI(ci.inboundSsoAssignments(), 'create',
+    result = callGAPI(ci.inboundSsoAssignments(), 'create',
                       throwReasons=GAPI.CISSO_CREATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
@@ -687,63 +717,63 @@ def doCreateInboundSSOAssignment():
   except (GAPI.failedPrecondition, GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam update inboundssoassignment <SSOAssignmentName>
 #	[(group <GroupItem> rank <Number>)|(ou|org|orgunit <OrgUnitItem>)]
 #	(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)|(mode oidc_sso profile <SSOProfileName>}|(mode domain_wide_saml_if_enabled)
 #	[neverredirect]
 def doUpdateInboundSSOAssignment():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  cd = buildGAPIObject(API.DIRECTORY)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   name = _getInboundSSOAssignmentName()
   body = _getInboundSSOAssignmentArguments(ci,cd, {})
   kvlist = [Ent.INBOUND_SSO_ASSIGNMENT, name]
   try:
-    result = _getMain().callGAPI(ci.inboundSsoAssignments(), 'patch',
+    result = callGAPI(ci.inboundSsoAssignments(), 'patch',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name, updateMask=','.join(list(body.keys())), body=body)
     _processInboundSSOAssignmentResult(result, kvlist, ci, cd, 'update')
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam delete inboundssoassignment <SSOAssignmentSelector>
 def doDeleteInboundSSOAssignment():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  target = _getMain().getString(Cmd.OB_STRING)
+  cd = buildGAPIObject(API.DIRECTORY)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  target = getString(Cmd.OB_STRING)
   assignment = _getInboundSSOAssignmentByTarget(ci, cd, target)
   if assignment is None:
     return
   name = assignment['name']
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   kvlist = [Ent.INBOUND_SSO_ASSIGNMENT, name]
   try:
-    result = _getMain().callGAPI(ci.inboundSsoAssignments(), 'delete',
+    result = callGAPI(ci.inboundSsoAssignments(), 'delete',
                       throwReasons=GAPI.CISSO_UPDATE_THROW_REASONS,
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                       bailOnInternalError=True,
                       name=name)
     _processInboundSSOAssignmentResult(result, kvlist, None, None, 'delete')
   except GAPI.notFound:
-    _getMain().entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
+    entityActionFailedWarning(kvlist, Msg.DOES_NOT_EXIST)
   except (GAPI.failedPrecondition, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.badRequest, GAPI.invalid, GAPI.invalidInput, GAPI.invalidArgument,
           GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
-    _getMain().entityActionFailedWarning(kvlist, str(e))
+    entityActionFailedWarning(kvlist, str(e))
 
 # gam info inboundssoassignment <SSOAssignmentSelector> [formatjson]
 def doInfoInboundSSOAssignment():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  target = _getMain().getString(Cmd.OB_STRING)
-  FJQC = _getMain().FormatJSONQuoteChar(formatJSONOnly=True)
+  cd = buildGAPIObject(API.DIRECTORY)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  target = getString(Cmd.OB_STRING)
+  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   assignment = _getInboundSSOAssignmentByTarget(ci, cd, target)
   if assignment is None:
     return
@@ -765,27 +795,27 @@ def doInfoInboundSSOAssignment():
 # gam print inboundssoassignments [todrive <ToDriveAttribute>*]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowInboundSSOAssignments():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  ci = _getMain().buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
+  cd = buildGAPIObject(API.DIRECTORY)
+  ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
-  csvPF = _getMain().CSVPrintFile(['name']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   cfilter = f'customer=="{customer}"'
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF:
-    _getMain().printGettingAllAccountEntities(Ent.INBOUND_SSO_ASSIGNMENT, cfilter)
+    printGettingAllAccountEntities(Ent.INBOUND_SSO_ASSIGNMENT, cfilter)
   assignments = _getInboundSSOAssignments(ci)
   if assignments is None:
     return
   if not csvPF:
     count = len(assignments)
     if not FJQC.formatJSON:
-      _getMain().performActionNumItems(count, Ent.INBOUND_SSO_ASSIGNMENT)
+      performActionNumItems(count, Ent.INBOUND_SSO_ASSIGNMENT)
     Ind.Increment()
     i = 0
     for assignment in assignments:
@@ -795,12 +825,12 @@ def doPrintShowInboundSSOAssignments():
   else:
     for assignment in assignments:
       _updateInboundAssignmentTargetNames(ci, cd, assignment)
-      row = _getMain().flattenJSON(assignment)
+      row = flattenJSON(assignment)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         csvPF.WriteRowNoFilter({'name': assignment['name'],
-                                'JSON': json.dumps(_getMain().cleanJSON(assignment), ensure_ascii=False, sort_keys=True)})
+                                'JSON': json.dumps(cleanJSON(assignment), ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Inbound SSO Assignments')
 

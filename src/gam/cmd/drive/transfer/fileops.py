@@ -27,6 +27,48 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems, callGAPIpages
+from gam.util.args import (
+    OrderBy,
+    UTF8,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getJSON,
+    getSheetEntity,
+    getSheetIdFromSheetEntity,
+    getString,
+    splitEmailAddress,
+)
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, showJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityActionPerformedMessage,
+    entityModifierNewValueActionFailedWarning,
+    entityModifierNewValueActionPerformed,
+    entityModifierNewValueItemValueListActionPerformed,
+    entityModifierNewValueKeyValueActionPerformed,
+    entityPerformActionNumItemsModifier,
+    getPageMessageForWhom,
+    invalidQuery,
+    printGettingAllEntityItemsForWhom,
+    printLine,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument, splitEmailAddressOrUID
+from gam.util.errors import invalidChoiceExit, unknownArgumentExit
+from gam.util.fileio import (
+    cleanFilename,
+    closeFile,
+    setFilePath,
+    uniqueFilename,
+    writeFile,
+)
+from gam.util.output import setSysExitRC, writeStderr
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -78,16 +120,16 @@ ORPHANS_COLLECTED_RC = 30
 def deleteDriveFile(users, function=None):
   fileIdEntity = getDriveFileEntity()
   if not function:
-    function = _getMain().getChoice(DELETE_DRIVEFILE_CHOICE_MAP, defaultChoice='trash', mapChoice=True)
-  if _getMain().checkArgumentPresent('shortcutandtarget'):
-    shortcutAndTarget = _getMain().getBoolean()
+    function = getChoice(DELETE_DRIVEFILE_CHOICE_MAP, defaultChoice='trash', mapChoice=True)
+  if checkArgumentPresent('shortcutandtarget'):
+    shortcutAndTarget = getBoolean()
   else:
     shortcutAndTarget = False
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   Act.Set(DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP[function])
   if function != 'delete':
     trash_body = {'trashed': function == 'trash'}
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DRIVE_FILE_OR_FOLDER)
@@ -102,29 +144,29 @@ def deleteDriveFile(users, function=None):
         if shortcutAndTarget:
           capability = DELETE_DRIVEFILE_FUNCTION_TO_CAPABILITY_MAP[function]
           fileInfo = (fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID)
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId, fields=f'name,mimeType,shortcutDetails,capabilities({capability})', supportsAllDrives=True)
           if result['mimeType'] == MIMETYPE_GA_SHORTCUT:
             if not result['capabilities'][capability]:
-              _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_SHORTCUT, result['name']],
+              entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_SHORTCUT, result['name']],
                                               Msg.SHORTCUT_TARGET_CAPABILITY_IS_FALSE.format('Shortcut', capability), j, jcount)
               continue
             fileInfoList.append((fileId, Ent.DRIVE_SHORTCUT, Ent.DRIVE_SHORTCUT_ID))
             fileId = result['shortcutDetails']['targetId']
             fileInfo = (fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID)
-            tresult = _getMain().callGAPI(drive.files(), 'get',
+            tresult = callGAPI(drive.files(), 'get',
                                throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                fileId=fileId, fields=f'name,capabilities({capability})', supportsAllDrives=True)
             if not tresult['capabilities'][capability]:
-              _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_SHORTCUT, result['name'], Ent.DRIVE_FILE_OR_FOLDER, tresult['name']],
+              entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_SHORTCUT, result['name'], Ent.DRIVE_FILE_OR_FOLDER, tresult['name']],
                                               Msg.SHORTCUT_TARGET_CAPABILITY_IS_FALSE.format('Target', capability), j, jcount)
               continue
         fileInfoList.append((fileId, Ent.DRIVE_FILE_OR_FOLDER, Ent.DRIVE_FILE_OR_FOLDER_ID))
         for fileInfo in fileInfoList:
           fileId = fileInfo[0]
           if function != 'delete':
-            result = _getMain().callGAPI(drive.files(), 'update',
+            result = callGAPI(drive.files(), 'update',
                               throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
                               fileId=fileId, body=trash_body, fields='name', supportsAllDrives=True)
             if result and 'name' in result:
@@ -132,15 +174,15 @@ def deleteDriveFile(users, function=None):
             else:
               fileName = fileId
           else:
-            _getMain().callGAPI(drive.files(), function,
+            callGAPI(drive.files(), function,
                      throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
                      fileId=fileId, supportsAllDrives=True)
             fileName = fileId
-          _getMain().entityActionPerformed([Ent.USER, user, fileInfo[1], fileName], j, jcount)
+          entityActionPerformed([Ent.USER, user, fileInfo[1], fileName], j, jcount)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.fileNeverWritable) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, fileInfo[2], fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, fileInfo[2], fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -267,7 +309,7 @@ HTTP_ERROR_PATTERN = re.compile(r'^.*returned "(.*)">$')
 def getDriveFile(users):
   def closeRemoveTargetFile(f):
     if f and not targetStdout:
-      _getMain().closeFile(f)
+      closeFile(f)
       os.remove(filename)
 
   fileIdEntity = getDriveFileEntity()
@@ -281,9 +323,9 @@ def getDriveFile(users):
   targetNamePattern = None
   acknowledgeAbuse = donotFollowShortcuts = overwrite = showProgress = suppressStdoutMsgs = targetStdout = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'format':
-      exportFormatChoices = _getMain().getString(Cmd.OB_FORMAT_LIST).replace(',', ' ').lower().split()
+      exportFormatChoices = getString(Cmd.OB_FORMAT_LIST).replace(',', ' ').lower().split()
       exportFormats = []
       for exportFormat in exportFormatChoices:
         if exportFormat in {'ms', 'microsoft', 'micro$oft'}:
@@ -293,32 +335,32 @@ def getDriveFile(users):
         elif exportFormat in DOCUMENT_FORMATS_MAP:
           exportFormats.extend(DOCUMENT_FORMATS_MAP[exportFormat])
         else:
-          _getMain().invalidChoiceExit(exportFormat, DOCUMENT_FORMATS_MAP, True)
+          invalidChoiceExit(exportFormat, DOCUMENT_FORMATS_MAP, True)
       defaultFormats = False
     elif myarg == 'targetfolder':
-      targetFolderPattern = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
-      targetNamePattern = _getMain().getString(Cmd.OB_FILE_NAME)
+      targetNamePattern = getString(Cmd.OB_FILE_NAME)
       targetStdout = targetNamePattern == '-'
       suppressStdoutMsgs = False if not targetStdout else GM.Globals[GM.STDOUT][GM.REDIRECT_STD]
     elif myarg == 'donotfollowshortcuts':
-      donotFollowShortcuts = _getMain().getBoolean()
+      donotFollowShortcuts = getBoolean()
     elif myarg == 'overwrite':
-      overwrite = _getMain().getBoolean()
+      overwrite = getBoolean()
     elif myarg == 'revision':
-      revisionId = _getMain().getString(Cmd.OB_DRIVE_FILE_REVISION_ID)
+      revisionId = getString(Cmd.OB_DRIVE_FILE_REVISION_ID)
     elif myarg in {'gsheet', 'csvsheet'}:
-      sheetEntity = _getMain().getSheetEntity(False)
+      sheetEntity = getSheetEntity(False)
     elif myarg == 'exportsheetaspdf':
-      exportSheetAsPDF = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      exportSheetAsPDF = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'nocache':
       pass
     elif myarg == 'showprogress':
-      showProgress = _getMain().getBoolean()
+      showProgress = getBoolean()
     elif myarg == 'acknowledgeabuse':
-      acknowledgeAbuse = _getMain().getBoolean()
+      acknowledgeAbuse = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if exportSheetAsPDF:
     exportFormatName = 'pdf'
     exportFormatChoices = [exportFormatName]
@@ -330,15 +372,15 @@ def getDriveFile(users):
       exportFormatName = exportFormats[0]['ext'][1:]
     exportFormatChoices = [exportFormatName]
     exportFormats = DOCUMENT_FORMATS_MAP[exportFormatName]
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DRIVE_FILE if not suppressStdoutMsgs else None)
     if jcount == 0:
       continue
-    _, userName, _ = _getMain().splitEmailAddressOrUID(user)
+    _, userName, _ = splitEmailAddressOrUID(user)
     if exportSheetAsPDF or sheetEntity:
-      _, sheet = _getMain().buildGAPIServiceObject(API.SHEETS, user, i, count)
+      _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
       if not sheet:
         continue
     targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
@@ -351,22 +393,22 @@ def getDriveFile(users):
       j += 1
       fileExtension = None
       try:
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=fileId, fields='name,fullFileExtension,mimeType,quotaBytesUsed,shortcutDetails', supportsAllDrives=True)
         mimeType = result['mimeType']
         if (mimeType == MIMETYPE_GA_SHORTCUT) and not donotFollowShortcuts:
           fileId = result['shortcutDetails']['targetId']
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId, fields='name,fullFileExtension,mimeType,size', supportsAllDrives=True)
           mimeType = result['mimeType']
         entityValueList = [Ent.USER, user, _getMain()._getEntityMimeType(result), result['name']]
         if mimeType in NON_DOWNLOADABLE_MIMETYPES:
-          _getMain().entityActionNotPerformedWarning(entityValueList, Msg.FORMAT_NOT_DOWNLOADABLE, j, jcount)
+          entityActionNotPerformedWarning(entityValueList, Msg.FORMAT_NOT_DOWNLOADABLE, j, jcount)
           continue
         if revisionId:
-          _getMain().callGAPI(drive.revisions(), 'get',
+          callGAPI(drive.revisions(), 'get',
                    throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.REVISION_NOT_FOUND],
                    fileId=fileId, revisionId=revisionId, fields='id')
         fileExtension = result.get('fullFileExtension')
@@ -383,7 +425,7 @@ def getDriveFile(users):
                 extension = exportFormat['ext']
               break
           else:
-            _getMain().entityActionNotPerformedWarning(entityValueList, Msg.FORMAT_NOT_AVAILABLE.format(','.join(exportFormatChoices)), j, jcount)
+            entityActionNotPerformedWarning(entityValueList, Msg.FORMAT_NOT_AVAILABLE.format(','.join(exportFormatChoices)), j, jcount)
             continue
         else:
           if 'quotaBytesUsed' in result:
@@ -399,7 +441,7 @@ def getDriveFile(users):
           if targetStdout:
             filename = 'stdout'
           else:
-            filename, _ = _getMain().uniqueFilename(targetFolder, targetName or _getMain().cleanFilename(result['name']), overwrite, extension)
+            filename, _ = uniqueFilename(targetFolder, targetName or cleanFilename(result['name']), overwrite, extension)
           spreadsheetUrl = None
           f = None
           try:
@@ -409,16 +451,16 @@ def getDriveFile(users):
                 if revisionId:
                   request.uri = f'{request.uri}&revision={revisionId}'
               else:
-                spreadsheet = _getMain().callGAPI(sheet.spreadsheets(), 'get',
+                spreadsheet = callGAPI(sheet.spreadsheets(), 'get',
                                        throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                        spreadsheetId=fileId, fields='spreadsheetUrl,sheets(properties(sheetId,title))')
 #                spreadsheetUrl = f'{re.sub("/edit.*$", "/export", spreadsheet["spreadsheetUrl"])}?exportFormat={exportFormatName}&format={exportFormatName}&id={fileId}'
                 spreadsheetUrl = f'{re.sub("/edit.*$", "/export", spreadsheet["spreadsheetUrl"])}?format={exportFormatName}&id={fileId}'
                 if sheetEntity:
                   entityValueList.extend([sheetEntity['sheetType'], sheetEntity['sheetValue']])
-                  sheetId = _getMain().getSheetIdFromSheetEntity(spreadsheet, sheetEntity)
+                  sheetId = getSheetIdFromSheetEntity(spreadsheet, sheetEntity)
                   if sheetId is None:
-                    _getMain().entityActionNotPerformedWarning(entityValueList, Msg.NOT_FOUND, j, jcount)
+                    entityActionNotPerformedWarning(entityValueList, Msg.NOT_FOUND, j, jcount)
                     break
                   spreadsheetUrl += f'&gid={sheetId}'
                 spreadsheetUrl += exportSheetAsPDF
@@ -438,7 +480,7 @@ def getDriveFile(users):
               while not done:
                 status, done = downloader.next_chunk()
                 if showProgress and not suppressStdoutMsgs and status.progress() < 1.0:
-                  _getMain().entityActionPerformedMessage(entityValueList, f'{status.progress():>7.2%}', j, jcount)
+                  entityActionPerformedMessage(entityValueList, f'{status.progress():>7.2%}', j, jcount)
             else:
               if GC.Values[GC.DEBUG_LEVEL] > 0:
                 sys.stderr.write(f'Debug: spreadsheetUrl: {spreadsheetUrl}\n')
@@ -448,41 +490,41 @@ def getDriveFile(users):
                 status, content = drive._http.request(uri=spreadsheetUrl, method='GET')
                 if status['status'] != '429':
                   break
-                _getMain().writeStderr(Msg.RETRYING_GOOGLE_SHEET_EXPORT_SLEEPING.format(retry, maxRetries, sleepTime))
+                writeStderr(Msg.RETRYING_GOOGLE_SHEET_EXPORT_SLEEPING.format(retry, maxRetries, sleepTime))
                 time.sleep(sleepTime)
               if status['status'] == '200':
                 f.write(content)
                 if targetStdout and content[-1] != '\n':
-                  f.write(bytes('\n', _getMain().UTF8))
+                  f.write(bytes('\n', UTF8))
               else:
-                _getMain().entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, f'HTTP Error: {status["status"]}', j, jcount)
+                entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, f'HTTP Error: {status["status"]}', j, jcount)
                 closeRemoveTargetFile(f)
                 break
             if not targetStdout:
-              _getMain().closeFile(f)
+              closeFile(f)
             if not suppressStdoutMsgs:
-              _getMain().entityModifierNewValueKeyValueActionPerformed(entityValueList, Act.MODIFIER_TO, filename, my_line[0], my_line[1], j, jcount)
+              entityModifierNewValueKeyValueActionPerformed(entityValueList, Act.MODIFIER_TO, filename, my_line[0], my_line[1], j, jcount)
             break
           except (IOError, httplib2.HttpLib2Error) as e:
-            _getMain().entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, str(e), j, jcount)
+            entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, str(e), j, jcount)
           except googleapiclient.http.HttpError as e:
             mg = HTTP_ERROR_PATTERN.match(str(e))
             if mg:
-              _getMain().entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, mg.group(1), j, jcount)
+              entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, mg.group(1), j, jcount)
             else:
-              _getMain().entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, str(e), j, jcount)
+              entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, str(e), j, jcount)
           closeRemoveTargetFile(f)
           break
       except GAPI.fileNotFound:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except GAPI.revisionNotFound:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId, Ent.DRIVE_FILE_REVISION, revisionId], Msg.DOES_NOT_EXIST, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId, Ent.DRIVE_FILE_REVISION, revisionId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied,
               GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.SPREADSHEET, fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -504,29 +546,29 @@ def getGoogleDocument(users):
   targetNamePattern = None
   donotFollowShortcuts = overwrite = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'viewmode':
-      suggestionsViewMode = _getMain().getChoice(SUGGESTIONS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
+      suggestionsViewMode = getChoice(SUGGESTIONS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'targetfolder':
-      targetFolderPattern = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
+      targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
-      targetNamePattern = _getMain().getString(Cmd.OB_FILE_NAME)
+      targetNamePattern = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'donotfollowshortcuts':
-      donotFollowShortcuts = _getMain().getBoolean()
+      donotFollowShortcuts = getBoolean()
     elif myarg == 'overwrite':
-      overwrite = _getMain().getBoolean()
+      overwrite = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, drive, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DOCUMENT)
     if jcount == 0:
       continue
-    _, docs = _getMain().buildGAPIServiceObject(API.DOCS, user, i, count)
+    _, docs = buildGAPIServiceObject(API.DOCS, user, i, count)
     if not docs:
       continue
-    _, userName, _ = _getMain().splitEmailAddressOrUID(user)
+    _, userName, _ = splitEmailAddressOrUID(user)
     targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
     if not os.path.isdir(targetFolder):
       os.makedirs(targetFolder)
@@ -536,31 +578,31 @@ def getGoogleDocument(users):
     for fileId in fileIdEntity['list']:
       j += 1
       try:
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=fileId, fields='name,mimeType,shortcutDetails', supportsAllDrives=True)
         mimeType = result['mimeType']
         if (mimeType == MIMETYPE_GA_SHORTCUT) and not donotFollowShortcuts:
           fileId = result['shortcutDetails']['targetId']
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId, fields='name,mimeType', supportsAllDrives=True)
           mimeType = result['mimeType']
         docName = result['name']
         if mimeType != MIMETYPE_GA_DOCUMENT:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE, docName],
+          entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE, docName],
                                           Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_DOCUMENT), j, jcount)
           continue
-        filename, _ = _getMain().uniqueFilename(targetFolder, targetName or _getMain().cleanFilename(docName), overwrite)
-        result = _getMain().callGAPI(docs.documents(), 'get',
+        filename, _ = uniqueFilename(targetFolder, targetName or cleanFilename(docName), overwrite)
+        result = callGAPI(docs.documents(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           documentId=fileId, suggestionsViewMode=suggestionsViewMode)
-        if _getMain().writeFile(filename, json.dumps(result, indent=2, sort_keys=True)+'\n', continueOnError=True):
-          _getMain().entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DOCUMENT, f'{docName}({fileId})'], Act.MODIFIER_TO, filename, j, jcount)
+        if writeFile(filename, json.dumps(result, indent=2, sort_keys=True)+'\n', continueOnError=True):
+          entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DOCUMENT, f'{docName}({fileId})'], Act.MODIFIER_TO, filename, j, jcount)
       except GAPI.fileNotFound:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -571,20 +613,20 @@ def getGoogleDocument(users):
 def updateGoogleDocument(users):
   fileIdEntity = getDriveFileEntity()
   body = {}
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'json':
-      body = _getMain().getJSON([])
+      body = getJSON([])
     else:
       FJQC.GetFormatJSON(myarg)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.DOCUMENT if not FJQC.formatJSON else None)
     if jcount == 0:
       continue
-    _, docs = _getMain().buildGAPIServiceObject(API.DOCS, user, i, count)
+    _, docs = buildGAPIServiceObject(API.DOCS, user, i, count)
     if not docs:
       continue
     Ind.Increment()
@@ -592,24 +634,24 @@ def updateGoogleDocument(users):
     for documentId in fileIdEntity['list']:
       j += 1
       try:
-        result = _getMain().callGAPI(docs.documents(), 'batchUpdate',
+        result = callGAPI(docs.documents(), 'batchUpdate',
                           throwReasons=GAPI.DOCS_ACCESS_THROW_REASONS,
                           documentId=documentId, body=body)
         if FJQC.formatJSON:
-          _getMain().printLine('{'+f'"User": "{user}", "documentId": "{documentId}", "JSON": {json.dumps(result, ensure_ascii=False, sort_keys=False)}'+'}')
+          printLine('{'+f'"User": "{user}", "documentId": "{documentId}", "JSON": {json.dumps(result, ensure_ascii=False, sort_keys=False)}'+'}')
           continue
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.DOCUMENT, documentId], j, jcount)
+        entityActionPerformed([Ent.USER, user, Ent.DOCUMENT, documentId], j, jcount)
         Ind.Increment()
         for field in ['replies', 'writeControl']:
           if field in result:
-            _getMain().showJSON(field, result[field])
+            showJSON(field, result[field])
         Ind.Decrement()
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.permissionDenied,
               GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
               GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, documentId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, documentId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 
@@ -619,7 +661,7 @@ def updateGoogleDocument(users):
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
 #	[preview] [todrive <ToDriveAttribute>*]
 def collectOrphans(users):
-  OBY = _getMain().OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
+  OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   csvPF = None
   targetParms = initDriveFileAttributes()
   targetUserFolderId = None
@@ -628,34 +670,34 @@ def collectOrphans(users):
   query = ME_IN_OWNERS_AND+'trashed = false'
   useShortcuts = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'orderby':
       OBY.GetChoice()
     elif myarg == 'targetuserfoldername':
-      targetUserFolderPattern = _getMain().getString(Cmd.OB_DRIVE_FOLDER_NAME)
+      targetUserFolderPattern = getString(Cmd.OB_DRIVE_FOLDER_NAME)
       targetUserFolderId = None
     elif myarg == 'targetuserfolderid':
-      targetUserFolderId = _getMain().getString(Cmd.OB_DRIVE_FOLDER_ID)
+      targetUserFolderId = getString(Cmd.OB_DRIVE_FOLDER_ID)
       targetUserFolderPattern = None
     elif myarg == 'useshortcuts':
-      useShortcuts = _getMain().getBoolean()
+      useShortcuts = getBoolean()
     elif myarg == 'preview':
-      csvPF = _getMain().CSVPrintFile(['Owner', 'type', 'id', 'name', 'action'])
+      csvPF = CSVPrintFile(['Owner', 'type', 'id', 'name', 'action'])
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
-      _getMain().unknownArgumentExit()
-  i, count, users = _getMain().getEntityArgument(users)
+      unknownArgumentExit()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
-    userName, _ = _getMain().splitEmailAddress(user)
+    userName, _ = splitEmailAddress(user)
     try:
-      _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, Ent.TypeName(Ent.USER, user), i, count, query=query)
-      feed = _getMain().callGAPIpages(drive.files(), 'list', 'files',
-                           pageMessage=_getMain().getPageMessageForWhom(),
+      printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, Ent.TypeName(Ent.USER, user), i, count, query=query)
+      feed = callGAPIpages(drive.files(), 'list', 'files',
+                           pageMessage=getPageMessageForWhom(),
                            throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                            retryReasons=[GAPI.UNKNOWN_ERROR],
                            q=query, orderBy=OBY.orderBy,
@@ -674,25 +716,25 @@ def collectOrphans(users):
         if not fileEntry.get('parents') and 'sharedWithMeTime' not in fileEntry:
           orphanDriveFiles.append(fileEntry)
       jcount = len(orphanDriveFiles)
-      _getMain().entityPerformActionNumItemsModifier([Ent.USER, user], jcount, Ent.DRIVE_ORPHAN_FILE_OR_FOLDER,
+      entityPerformActionNumItemsModifier([Ent.USER, user], jcount, Ent.DRIVE_ORPHAN_FILE_OR_FOLDER,
                                           f'{Act.MODIFIER_INTO} {Ent.Singular(Ent.DRIVE_FOLDER)}: {trgtUserFolderName}', i, count)
       if jcount == 0:
         continue
       if not csvPF:
         if 'parents' not in targetParentBody or not targetParentBody['parents']:
           try:
-            newParentId = _getMain().callGAPI(drive.files(), 'create',
+            newParentId = callGAPI(drive.files(), 'create',
                                    throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                                GAPI.UNKNOWN_ERROR, GAPI.STORAGE_QUOTA_EXCEEDED,
                                                                                GAPI. TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP],
                                    body={'name': trgtUserFolderName, 'mimeType': MIMETYPE_GA_FOLDER}, fields='id')['id']
           except (GAPI.forbidden, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
                   GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep) as e:
-            _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, trgtUserFolderName], str(e), i, count)
+            entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FOLDER, trgtUserFolderName], str(e), i, count)
             continue
         else:
           newParentId = targetParentBody['parents'][0]
-      _getMain().setSysExitRC(ORPHANS_COLLECTED_RC)
+      setSysExitRC(ORPHANS_COLLECTED_RC)
       Ind.Increment()
       j = 0
       for fileEntry in orphanDriveFiles:
@@ -709,18 +751,18 @@ def collectOrphans(users):
             csvPF.WriteRow({'Owner': user, 'type': Ent.Singular(fileType), 'id': fileId, 'name': fileName, 'action': 'changeParent'})
             continue
           try:
-            _getMain().callGAPI(drive.files(), 'update',
+            callGAPI(drive.files(), 'update',
                      bailOnInternalError=True,
                      throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                  GAPI.INTERNAL_ERROR, GAPI.INSUFFICIENT_PARENT_PERMISSIONS],
                      retryReasons=[GAPI.FILE_NOT_FOUND],
                      fileId=fileId, body={}, addParents=newParentId, fields='')
-            _getMain().entityModifierNewValueItemValueListActionPerformed([Ent.USER, user, fileType, fileName],
+            entityModifierNewValueItemValueListActionPerformed([Ent.USER, user, fileType, fileName],
                                                                Act.MODIFIER_INTO, None, [Ent.DRIVE_FOLDER, trgtUserFolderName], j, jcount)
           except (GAPI.badRequest, GAPI.fileNotFound, GAPI.internalError, GAPI.insufficientParentPermissions,) as e:
-            _getMain().entityActionFailedWarning([Ent.USER, user, fileType, fileName], str(e), j, jcount)
+            entityActionFailedWarning([Ent.USER, user, fileType, fileName], str(e), j, jcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
         else:
           if csvPF:
@@ -728,41 +770,41 @@ def collectOrphans(users):
             continue
           try:
             # Check for existing shortcut, do not duplicate
-            files = _getMain().callGAPIitems(drive.files(), 'list', 'files',
+            files = callGAPIitems(drive.files(), 'list', 'files',
                                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
                                   q=f"'me' in owners and name = '{escapeDriveFileName(fileName)}' and mimeType = '{MIMETYPE_GA_SHORTCUT}' and '{newParentId}' in parents and trashed = false",
                                   fields='files(id,shortcutDetails(targetId))')
             existingShortcut = False
             for f_file in files:
               if f_file['shortcutDetails']['targetId'] == fileId:
-                _getMain().entityActionNotPerformedWarning([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, f"{fileName}({f_file['id']})"],
+                entityActionNotPerformedWarning([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, f"{fileName}({f_file['id']})"],
                                                 Msg.ALREADY_EXISTS_IN_TARGET_FOLDER.format(Ent.Singular(Ent.DRIVE_FOLDER), trgtUserFolderName), j, jcount)
                 existingShortcut = True
                 break
             if existingShortcut:
               continue
             body = {'name': fileName, 'mimeType': MIMETYPE_GA_SHORTCUT, 'parents': [newParentId], 'shortcutDetails': {'targetId': fileId}}
-            result = _getMain().callGAPI(drive.files(), 'create',
+            result = callGAPI(drive.files(), 'create',
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                           GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR,
                                                                           GAPI.STORAGE_QUOTA_EXCEEDED, GAPI.TEAMDRIVE_FILE_LIMIT_EXCEEDED, GAPI.TEAMDRIVE_HIERARCHY_TOO_DEEP,
                                                                           GAPI.SHORTCUT_TARGET_INVALID],
                               body=body, fields='id,name', supportsAllDrives=True)
-            _getMain().entityModifierNewValueItemValueListActionPerformed([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, f'{result["name"]}({result["id"]})'],
+            entityModifierNewValueItemValueListActionPerformed([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, f'{result["name"]}({result["id"]})'],
                                                                Act.MODIFIER_INTO, None, [Ent.DRIVE_FOLDER, trgtUserFolderName], j, jcount)
 
           except GAPI.invalidQuery:
-            _getMain().entityActionFailedWarning([Ent.USER, user, fileType, fileName], _getMain().invalidQuery(query), j, jcount)
+            entityActionFailedWarning([Ent.USER, user, fileType, fileName], invalidQuery(query), j, jcount)
           except (GAPI.forbidden, GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.invalid, GAPI.badRequest,
                   GAPI.fileNotFound, GAPI.unknownError, GAPI.storageQuotaExceeded, GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
                   GAPI.shortcutTargetInvalid) as e:
-            _getMain().entityActionFailedWarning([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, body['name']], str(e), j, jcount)
+            entityActionFailedWarning([Ent.USER, user, fileType, fileName, Ent.DRIVE_FILE_SHORTCUT, body['name']], str(e), j, jcount)
           except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-            _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+            userDriveServiceNotEnabledWarning(user, str(e), i, count)
             break
       Ind.Decrement()
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('Orphans to Collect')
 

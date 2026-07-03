@@ -13,6 +13,42 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    getArgument,
+    getBoolean,
+    getJSON,
+    getString,
+    makeOrgUnitPathAbsolute,
+    makeOrgUnitPathRelative,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    getPageMessage,
+    getPageMessageForWhom,
+    performActionNumItems,
+    printEntity,
+    printGettingAllAccountEntities,
+    printGettingAllEntityItemsForWhom,
+    printKeyValueList,
+    printLine,
+)
+from gam.util.entity import convertEntityToList, convertOrgUnitIDtoPath, getEntitiesFromCSVFile, getEntitiesFromFile
+from gam.util.errors import missingArgumentExit, unknownArgumentExit
+from gam.util.orgunits import getOrgUnitId
+from gam.util.output import writeStdout
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -36,9 +72,9 @@ def isolatePrinterID(name):
   return name.split('/')[-1]
 
 def _getPrinterID():
-  cd = _getMain().buildGAPIObject(API.PRINTERS)
+  cd = buildGAPIObject(API.PRINTERS)
   customer = _getMain()._getCustomersCustomerIdWithC()
-  printerId = _getMain().getString(Cmd.OB_PRINTER_ID)
+  printerId = getString(Cmd.OB_PRINTER_ID)
   pattern = re.compile(rf'^{customer}/chrome/printers/(.+)$')
   mg = pattern.match(printerId)
   if mg:
@@ -46,14 +82,14 @@ def _getPrinterID():
   return (f'{customer}/chrome/printers/{printerId}', printerId, cd)
 
 def _getPrinterEntity():
-  cd = _getMain().buildGAPIObject(API.PRINTERS)
+  cd = buildGAPIObject(API.PRINTERS)
   customer = _getMain()._getCustomersCustomerIdWithC()
-  printerId = _getMain().getString(Cmd.OB_PRINTER_ID)
+  printerId = getString(Cmd.OB_PRINTER_ID)
   entitySelector = printerId.lower()
   if entitySelector == Cmd.ENTITY_SELECTOR_FILE:
-    printerIds = _getMain().getEntitiesFromFile(False)
+    printerIds = getEntitiesFromFile(False)
   elif entitySelector == Cmd.ENTITY_SELECTOR_CSVFILE:
-    printerIds = _getMain().getEntitiesFromCSVFile(False)
+    printerIds = getEntitiesFromCSVFile(False)
   else:
     printerIds = printerId.replace(',', ' ').split()
   pattern = re.compile(rf'^{customer}/chrome/printers/(.+)$')
@@ -72,28 +108,28 @@ def _getPrinterAttributes(cd, jsonDeleteFields):
   returnIdOnly = False
   showDetails = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'description':
-      body['description'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      body['description'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'displayname':
-      body['displayName'] = _getMain().getString(Cmd.OB_STRING)
+      body['displayName'] = getString(Cmd.OB_STRING)
     elif myarg == 'makeandmodel':
-      body['makeAndModel'] = _getMain().getString(Cmd.OB_STRING)
+      body['makeAndModel'] = getString(Cmd.OB_STRING)
     elif myarg in {'ou', 'org', 'orgunit', 'orgunitid'}:
-      _, body['orgUnitId'] = _getMain().getOrgUnitId(cd)
+      _, body['orgUnitId'] = getOrgUnitId(cd)
       body['orgUnitId'] = body['orgUnitId'][3:]
     elif myarg == 'uri':
-      body['uri'] = _getMain().getString(Cmd.OB_STRING)
+      body['uri'] = getString(Cmd.OB_STRING)
     elif myarg in {'driverless', 'usedriverlessconfig'}:
-      body['useDriverlessConfig'] = _getMain().getBoolean()
+      body['useDriverlessConfig'] = getBoolean()
     elif myarg == 'nodetails':
       showDetails = False
     elif myarg == 'returnidonly':
       returnIdOnly = True
     elif myarg == 'json':
-      body.update(_getMain().getJSON(jsonDeleteFields))
+      body.update(getJSON(jsonDeleteFields))
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if body.get('makeAndModel'):
     body.pop('useDriverlessConfig', None)
   return (body, showDetails, returnIdOnly)
@@ -123,44 +159,44 @@ def _checkPrinterInheritance(cd, printer, orgUnitId, showInherited):
     elif orgUnitId is not None and printer['orgUnitId'] != orgUnitId:
       printer['inherited'] = True
       printer['parentOrgUnitId'] = printer['orgUnitId']
-      printer['parentOrgUnitPath'] = _getMain().convertOrgUnitIDtoPath(cd, f'id:{printer["parentOrgUnitId"]}')
+      printer['parentOrgUnitPath'] = convertOrgUnitIDtoPath(cd, f'id:{printer["parentOrgUnitId"]}')
       printer['orgUnitId'] = orgUnitId
     else:
       printer['inherited'] = False
       printer['parentOrgUnitId'] = printer['parentOrgUnitPath'] = ''
-    printer['orgUnitPath'] = _getMain().convertOrgUnitIDtoPath(cd, f'id:{printer["orgUnitId"]}')
+    printer['orgUnitPath'] = convertOrgUnitIDtoPath(cd, f'id:{printer["orgUnitId"]}')
   return True
 
 def _showPrinter(cd, printer, FJQC, orgUnitId=None, showInherited=False, i=0, count=0):
   if not _checkPrinterInheritance(cd, printer, orgUnitId, showInherited):
     return False
   if FJQC is not None and FJQC.formatJSON:
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(printer, timeObjects=PRINTER_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(printer, timeObjects=PRINTER_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([Ent.PRINTER, printer['id']], i, count)
+  printEntity([Ent.PRINTER, printer['id']], i, count)
   Ind.Increment()
-  _getMain().showJSON(None, printer, timeObjects=PRINTER_TIME_OBJECTS)
+  showJSON(None, printer, timeObjects=PRINTER_TIME_OBJECTS)
   Ind.Decrement()
 
 # gam create printer <PrinterAttribute>+ [nodetails|returnidonly]
 def doCreatePrinter():
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   parent = _getMain()._getCustomersCustomerIdWithC()
   body, showDetails, returnIdOnly = _getPrinterAttributes(cd, CREATE_PRINTER_JSON_SKIP_FIELDS)
   if not body.get('orgUnitId'):
-    _getMain().missingArgumentExit('orgunit')
+    missingArgumentExit('orgunit')
   try:
-    printer = _getMain().callGAPI(cd.customers().chrome().printers(), 'create',
+    printer = callGAPI(cd.customers().chrome().printers(), 'create',
                        throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                        parent=parent, body=body)
     if returnIdOnly:
-      _getMain().writeStdout(f"{printer['id']}\n")
+      writeStdout(f"{printer['id']}\n")
       return
-    _getMain().entityActionPerformed([Ent.PRINTER, printer['id']])
+    entityActionPerformed([Ent.PRINTER, printer['id']])
     if showDetails:
       _showPrinter(cd, printer, None)
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.PRINTER, None], str(e))
+    entityActionFailedWarning([Ent.PRINTER, None], str(e))
 
 # gam update printer <PrinterID> <PrinterAttribute>+ [nodetails|returnidonly]
 def doUpdatePrinter():
@@ -169,17 +205,17 @@ def doUpdatePrinter():
   updateMask = ','.join(list(body.keys()))
   # note clearMask seems unnecessary. Updating field to '' clears it.
   try:
-    printer = _getMain().callGAPI(cd.customers().chrome().printers(), 'patch',
+    printer = callGAPI(cd.customers().chrome().printers(), 'patch',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                        name=name, updateMask=updateMask, body=body)
     if returnIdOnly:
-      _getMain().writeStdout(f"{printer['id']}\n")
+      writeStdout(f"{printer['id']}\n")
       return
-    _getMain().entityActionPerformed([Ent.PRINTER, printerId])
+    entityActionPerformed([Ent.PRINTER, printerId])
     if showDetails:
       _showPrinter(cd, printer, None)
   except (GAPI.notFound, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.PRINTER, printerId], str(e))
+    entityActionFailedWarning([Ent.PRINTER, printerId], str(e))
 
 # gam delete printer
 #	<PrinterIDList>|
@@ -191,38 +227,38 @@ def doDeletePrinter():
   batch_size = 50
   for chunk in range(0, len(printerIds), batch_size):
     body = {'printerIds': printerIds[chunk:chunk + batch_size]}
-    result = _getMain().callGAPI(cd.customers().chrome().printers(), 'batchDeletePrinters',
+    result = callGAPI(cd.customers().chrome().printers(), 'batchDeletePrinters',
                       parent=parent, body=body)
     for printerId in result.get('printerIds', []):
-      _getMain().entityActionPerformed([Ent.PRINTER, printerId])
+      entityActionPerformed([Ent.PRINTER, printerId])
     for failure in result.get('failedPrinters', []):
       if 'printerIds' in failure:
-        _getMain().entityActionFailedWarning([Ent.PRINTER, failure['printerIds']], failure.get('errorMessage', 'Unknown printer'))
+        entityActionFailedWarning([Ent.PRINTER, failure['printerIds']], failure.get('errorMessage', 'Unknown printer'))
       else:
-        _getMain().entityActionFailedWarning([Ent.PRINTER, failure['printer']['id']], failure['errorMessage'])
+        entityActionFailedWarning([Ent.PRINTER, failure['printer']['id']], failure['errorMessage'])
 
 # gam info printer <PrinterID>
 #	[fields <PrinterFieldNameList>] [formatjson]
 def doInfoPrinter():
   name, printerId, cd = _getPrinterID()
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   fieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
-    if _getMain().getFieldsList(myarg, PRINTER_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
+    myarg = getArgument()
+    if getFieldsList(myarg, PRINTER_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     else:
       FJQC.GetFormatJSON(myarg)
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
   try:
-    printer = _getMain().callGAPI(cd.customers().chrome().printers(), 'get',
+    printer = callGAPI(cd.customers().chrome().printers(), 'get',
                        throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.PERMISSION_DENIED],
                        name=name, fields=fields)
     _showPrinter(cd, printer, FJQC)
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(Ent.PRINTER, f'{printerId}')
+    entityUnknownWarning(Ent.PRINTER, f'{printerId}')
   except (GAPI.invalid, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.DEVICE, f'{printerId}'], str(e))
+    entityActionFailedWarning([Ent.DEVICE, f'{printerId}'], str(e))
 
 ORGUNIT_ENTITIES_MAP = {
   'org': Cmd.ENTITY_OU,
@@ -253,54 +289,54 @@ def doPrintShowPrinters():
   def _printPrinter(printer):
     if not _checkPrinterInheritance(cd, printer, orgUnitId, showInherited):
       return False
-    row = _getMain().flattenJSON(printer, timeObjects=PRINTER_TIME_OBJECTS)
+    row = flattenJSON(printer, timeObjects=PRINTER_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'id': printer['id'],
-                              'JSON': json.dumps(_getMain().cleanJSON(printer, timeObjects=PRINTER_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(printer, timeObjects=PRINTER_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   parent = _getMain()._getCustomersCustomerIdWithC()
-  csvPF = _getMain().CSVPrintFile(['id']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['id']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   ous = [None]
   directlyInOU = True
   pfilter = None
   showInherited = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in ORGUNIT_ENTITIES_MAP:
       myarg = ORGUNIT_ENTITIES_MAP[myarg]
-      ous = _getMain().convertEntityToList(_getMain().getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
+      ous = convertEntityToList(getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
       directlyInOU = myarg in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS}
-    elif _getMain().getFieldsList(myarg, PRINTER_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
+    elif getFieldsList(myarg, PRINTER_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     elif myarg == 'filter':
-      pfilter = _getMain().getString(Cmd.OB_STRING)
+      pfilter = getString(Cmd.OB_STRING)
     elif myarg == 'showinherited':
-      showInherited = _getMain().getBoolean()
+      showInherited = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if fieldsList and (not directlyInOU or showInherited):
     fieldsList.append('orgUnitId')
-  fields = _getMain().getItemFieldsFromFieldsList('printers', fieldsList)
+  fields = getItemFieldsFromFieldsList('printers', fieldsList)
   for ou in ous:
     if ou is not None:
-      ou = _getMain().makeOrgUnitPathAbsolute(ou)
-      _, orgUnitId = _getMain().getOrgUnitId(cd, ou)
+      ou = makeOrgUnitPathAbsolute(ou)
+      _, orgUnitId = getOrgUnitId(cd, ou)
       ouList = [(ou, orgUnitId[3:])]
     else:
       ouList = [('/', None)]
     if not directlyInOU:
       try:
-        orgs = _getMain().callGAPI(cd.orgunits(), 'list',
+        orgs = callGAPI(cd.orgunits(), 'list',
                         throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
-                        customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=_getMain().makeOrgUnitPathRelative(ou),
+                        customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=makeOrgUnitPathRelative(ou),
                         type='all', fields='organizationUnits(orgUnitPath,orgUnitId)')
       except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError, GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
         checkEntityDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, ou)
@@ -311,23 +347,23 @@ def doPrintShowPrinters():
       orgUnitId = subou[1]
       if orgUnitId is not None:
         oneQualifier = Msg.DIRECTLY_IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT))
-        _getMain().printGettingAllEntityItemsForWhom(Ent.PRINTER, orgUnitPath, qualifier=oneQualifier, entityType=Ent.ORGANIZATIONAL_UNIT)
-        pageMessage = _getMain().getPageMessageForWhom()
+        printGettingAllEntityItemsForWhom(Ent.PRINTER, orgUnitPath, qualifier=oneQualifier, entityType=Ent.ORGANIZATIONAL_UNIT)
+        pageMessage = getPageMessageForWhom()
       else:
-        _getMain().printGettingAllAccountEntities(Ent.PRINTER, pfilter)
-        pageMessage = _getMain().getPageMessage()
+        printGettingAllAccountEntities(Ent.PRINTER, pfilter)
+        pageMessage = getPageMessage()
       try:
-        printers = _getMain().callGAPIpages(cd.customers().chrome().printers(), 'list', 'printers',
+        printers = callGAPIpages(cd.customers().chrome().printers(), 'list', 'printers',
                                  pageMessage=pageMessage,
                                  throwReasons=[GAPI.INVALID, GAPI.PERMISSION_DENIED],
                                  parent=parent, orgUnitId=orgUnitId, filter=pfilter, fields=fields)
       except (GAPI.invalid, GAPI.permissionDenied) as e:
-        _getMain().entityActionFailedWarning([Ent.PRINTER, None], str(e))
+        entityActionFailedWarning([Ent.PRINTER, None], str(e))
         return
       if not csvPF:
         jcount = len(printers)
         if not FJQC.formatJSON:
-          _getMain().performActionNumItems(jcount, Ent.PRINTER)
+          performActionNumItems(jcount, Ent.PRINTER)
         Ind.Increment()
         j = 0
         for printer in printers:
@@ -349,52 +385,52 @@ def doPrintShowPrinters():
 def doPrintShowPrinterModels():
   def _showPrinterModel(model, FJQC, i, count):
     if FJQC.formatJSON:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON(model), ensure_ascii=False, sort_keys=True))
+      printLine(json.dumps(cleanJSON(model), ensure_ascii=False, sort_keys=True))
       return
-    _getMain().printEntity([Ent.PRINTER_MODEL, model['manufacturer']], i, count)
+    printEntity([Ent.PRINTER_MODEL, model['manufacturer']], i, count)
     Ind.Increment()
     for field in ['displayName', 'makeAndModel']:
-      _getMain().printKeyValueList([field, model[field]])
+      printKeyValueList([field, model[field]])
     Ind.Decrement()
 
   def _printPrinterModel(model):
-    row = _getMain().flattenJSON(model)
+    row = flattenJSON(model)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
-      csvPF.WriteRowNoFilter({'JSON': json.dumps(_getMain().cleanJSON(model),
+      csvPF.WriteRowNoFilter({'JSON': json.dumps(cleanJSON(model),
                                                  ensure_ascii=False, sort_keys=True)})
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cd = buildGAPIObject(API.DIRECTORY)
   parent = _getMain()._getCustomersCustomerIdWithC()
-  csvPF = _getMain().CSVPrintFile() if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile() if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   pfilter = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'filter':
-      pfilter = _getMain().getString(Cmd.OB_STRING)
+      pfilter = getString(Cmd.OB_STRING)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not FJQC.formatJSON:
     csvPF.SetTitles(['manufacturer', 'displayName', 'makeAndModel'])
     csvPF.SetSortAllTitles()
-  _getMain().printGettingAllAccountEntities(Ent.PRINTER_MODEL, pfilter)
-  pageMessage = _getMain().getPageMessage()
+  printGettingAllAccountEntities(Ent.PRINTER_MODEL, pfilter)
+  pageMessage = getPageMessage()
   try:
-    models = _getMain().callGAPIpages(cd.customers().chrome().printers(), 'listPrinterModels', 'printerModels',
+    models = callGAPIpages(cd.customers().chrome().printers(), 'listPrinterModels', 'printerModels',
                            throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                            pageMessage=pageMessage,
                            parent=parent, pageSize=10000, filter=pfilter)
   except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    _getMain().entityActionFailedWarning([Ent.PRINTER_MODEL, None], str(e))
+    entityActionFailedWarning([Ent.PRINTER_MODEL, None], str(e))
     return
   if not csvPF:
     jcount = len(models)
     if not FJQC.formatJSON:
-      _getMain().performActionNumItems(jcount, Ent.PRINTER_MODEL)
+      performActionNumItems(jcount, Ent.PRINTER_MODEL)
     Ind.Increment()
     j = 0
     for model in models:

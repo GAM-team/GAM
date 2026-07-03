@@ -19,6 +19,51 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import (
+    _getAdminEmail,
+    buildGAPIObject,
+    buildGAPIServiceObject,
+    callGAPI,
+    callGAPIitems,
+    callGAPIpages,
+    yieldGAPIpages,
+)
+from gam.util.args import (
+    StartEndTime,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    formatFileSize,
+    getArgument,
+    getCharacter,
+    getChoice,
+    getInteger,
+    getString,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    cleanJSON,
+    flattenJSON,
+    getFieldsList,
+)
+from gam.util.display import (
+    emptyQuery,
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
+    invalidQuery,
+    printGettingAllEntityItemsForWhom,
+    printGettingEntityItemForWhom,
+    printGotEntityItemsForWhom,
+    printKeyValueList,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.errors import invalidChoiceExit, unknownArgumentExit
+from gam.util.fileio import UNKNOWN, closeFile
+from gam.util.gdoc import openCSVFileReader
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -53,16 +98,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def printDriveActivity(users):
   def _getUserInfo(userId):
@@ -71,13 +106,13 @@ def printDriveActivity(users):
     entry = userInfo.get(userId)
     if entry is None:
       try:
-        result = _getMain().callGAPI(cd.users(), 'get',
+        result = callGAPI(cd.users(), 'get',
                           throwReasons=GAPI.USER_GET_THROW_REASONS+[GAPI.INVALID_INPUT],
                           userKey=userId, fields='primaryEmail,name.fullName')
         entry = (result['primaryEmail'], result['name']['fullName'])
       except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
               GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.invalidInput):
-        entry = (f'uid:{userId}', _getMain().UNKNOWN)
+        entry = (f'uid:{userId}', UNKNOWN)
       userInfo[userId] = entry
     return entry
 
@@ -97,8 +132,8 @@ def printDriveActivity(users):
           v['personName'] = entry[1]
           break
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  startEndTime = _getMain().StartEndTime()
+  cd = buildGAPIObject(API.DIRECTORY)
+  startEndTime = StartEndTime()
   baseFileList = []
   query = ''
   activityFilter = ''
@@ -106,54 +141,54 @@ def printDriveActivity(users):
   strategy = 'none'
   negativeAction = stripCRsFromName = False
   maxActivities = 0
-  _getMain().checkArgumentPresent(['v2'])
-  csvPF = _getMain().CSVPrintFile([f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name',
+  checkArgumentPresent(['v2'])
+  csvPF = CSVPrintFile([f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name',
                         f'user{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}emailAddress',
                         f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}id',
                         f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}name',
                         f'target{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}mimeType',
                         'eventTime'],
                        'sortall')
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  FJQC = FormatJSONQuoteChar(csvPF)
   userInfo = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'fileid':
-      baseFileList.append({'id': _getMain().getString(Cmd.OB_DRIVE_FILE_ID), 'mimeType': MIMETYPE_GA_DOCUMENT})
+      baseFileList.append({'id': getString(Cmd.OB_DRIVE_FILE_ID), 'mimeType': MIMETYPE_GA_DOCUMENT})
     elif myarg == 'folderid':
-      baseFileList.append({'id': _getMain().getString(Cmd.OB_DRIVE_FOLDER_ID), 'mimeType': MIMETYPE_GA_FOLDER})
+      baseFileList.append({'id': getString(Cmd.OB_DRIVE_FOLDER_ID), 'mimeType': MIMETYPE_GA_FOLDER})
     elif myarg == 'drivefilename':
       query = f"mimeType != '{MIMETYPE_GA_FOLDER}' and name = '{getEscapedDriveFileName()}'"
     elif myarg == 'drivefoldername':
       query = f"mimeType = '{MIMETYPE_GA_FOLDER}' and name = '{getEscapedDriveFileName()}'"
     elif myarg == 'query':
-      query = _mapDrive2QueryToDrive3(_getMain().getString(Cmd.OB_QUERY))
+      query = _mapDrive2QueryToDrive3(getString(Cmd.OB_QUERY))
     elif myarg in {'start', 'starttime', 'end', 'endtime', 'yesterday', 'today', 'range', 'thismonth', 'previousmonths'}:
       startEndTime.Get(myarg)
     elif myarg in {'action', 'actions'}:
-      negativeAction = _getMain().checkArgumentPresent('not')
-      for action in _getMain()._getFieldsList():
+      negativeAction = checkArgumentPresent('not')
+      for action in _getFieldsList():
         if action in DRIVE_ACTIVITY_ACTION_MAP:
           mappedAction = DRIVE_ACTIVITY_ACTION_MAP[action]
           if mappedAction:
             actions.add(mappedAction)
         else:
-          _getMain().invalidChoiceExit(action, DRIVE_ACTIVITY_ACTION_MAP, True)
+          invalidChoiceExit(action, DRIVE_ACTIVITY_ACTION_MAP, True)
     elif myarg in {'allevents', 'combinedevents', 'singleevents'}:
       pass
     elif myarg in {'consolidationstrategy', 'groupingstrategy'}:
-      strategy = _getMain().getChoice(CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP, mapChoice=True)
+      strategy = getChoice(CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP, mapChoice=True)
     elif myarg == 'idmapfile':
-      f, csvFile, _ = _getMain().openCSVFileReader(_getMain().getString(Cmd.OB_FILE_NAME))
+      f, csvFile, _ = openCSVFileReader(getString(Cmd.OB_FILE_NAME))
       for row in csvFile:
-        userInfo[row['id']] = (row['primaryEmail'], row.get('name.fullName', _getMain().UNKNOWN))
-      _getMain().closeFile(f)
+        userInfo[row['id']] = (row['primaryEmail'], row.get('name.fullName', UNKNOWN))
+      closeFile(f)
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif myarg == 'maxactivities':
-      maxActivities = _getMain().getInteger(minVal=0)
+      maxActivities = getInteger(minVal=0)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if not baseFileList and not query:
@@ -170,37 +205,37 @@ def printDriveActivity(users):
     if activityFilter:
       activityFilter += ' AND '
     activityFilter += f'{"-" if negativeAction else ""}detail.action_detail_case:({" ".join(actions)})'
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, activity = _getMain().buildGAPIServiceObject(API.DRIVEACTIVITY, user, i, count)
+    user, activity = buildGAPIServiceObject(API.DRIVEACTIVITY, user, i, count)
     if not activity:
       continue
-    _, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    _, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
     fileList = baseFileList[:]
     if query:
       if GC.Values[GC.SHOW_GETTINGS]:
-        _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=query)
+        printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=query)
       try:
-        fileList.extend(_getMain().callGAPIpages(drive.files(), 'list', 'files',
-                                      pageMessage=_getMain().getPageMessageForWhom(),
+        fileList.extend(callGAPIpages(drive.files(), 'list', 'files',
+                                      pageMessage=getPageMessageForWhom(),
                                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                                   GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND],
                                       retryReasons=[GAPI.UNKNOWN_ERROR],
                                       q=query, fields='nextPageToken,files(id,mimeType)', pageSize=GC.Values[GC.DRIVE_MAX_RESULTS]))
         if not fileList:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], _getMain().emptyQuery(query, Ent.DRIVE_FILE_OR_FOLDER), i, count)
+          entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], emptyQuery(query, Ent.DRIVE_FILE_OR_FOLDER), i, count)
           continue
       except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], _getMain().invalidQuery(query), i, count)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], invalidQuery(query), i, count)
         break
       except GAPI.fileNotFound:
-        _getMain().printGotEntityItemsForWhom(0)
+        printGotEntityItemsForWhom(0)
         continue
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     for f_file in fileList:
       fileId = f_file['id']
@@ -210,8 +245,8 @@ def printDriveActivity(users):
       else:
         drive_key = 'ancestorName'
       qualifier = f' for {Ent.Singular(entityType)}: {fileId}'
-      _getMain().printGettingAllEntityItemsForWhom(Ent.ACTIVITY, user, i, count, qualifier=qualifier)
-      pageMessage = _getMain().getPageMessageForWhom()
+      printGettingAllEntityItemsForWhom(Ent.ACTIVITY, user, i, count, qualifier=qualifier)
+      pageMessage = getPageMessageForWhom()
       body = {
         'consolidationStrategy': {strategy: {}},
         'pageSize': GC.Values[GC.ACTIVITY_MAX_RESULTS],
@@ -220,7 +255,7 @@ def printDriveActivity(users):
         'filter': activityFilter}
       numActivities = 0
       try:
-        feed = _getMain().yieldGAPIpages(activity.activity(), 'query', 'activities',
+        feed = yieldGAPIpages(activity.activity(), 'query', 'activities',
                               pageMessage=pageMessage, maxItems=maxActivities,
                               throwReasons=GAPI.ACTIVITY_THROW_REASONS,
                               fields='nextPageToken,activities', body=body, pageArgsInBody=True)
@@ -261,22 +296,22 @@ def printDriveActivity(users):
             if not FJQC.formatJSON:
               activityEvent.pop('timestamp', None)
               activityEvent.pop('timeRange', None)
-              _getMain().flattenJSON(activityEvent, flattened=eventRow)
+              flattenJSON(activityEvent, flattened=eventRow)
               csvPF.WriteRowTitles(eventRow)
             else:
               checkRow = eventRow.copy()
-              _getMain().flattenJSON(activityEvent, flattened=checkRow)
+              flattenJSON(activityEvent, flattened=checkRow)
               if csvPF.CheckRowTitles(checkRow):
-                eventRow['JSON'] = json.dumps(_getMain().cleanJSON(activityEvent), ensure_ascii=False, sort_keys=True)
+                eventRow['JSON'] = json.dumps(cleanJSON(activityEvent), ensure_ascii=False, sort_keys=True)
                 csvPF.WriteRowNoFilter(eventRow)
             numActivities += 1
             if maxActivities and numActivities >= maxActivities:
               break
       except GAPI.badRequest as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, entityType, fileId], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user, entityType, fileId], str(e), i, count)
         continue
       except GAPI.serviceNotAvailable as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
   csvPF.writeCSVfile('Drive Activity')
 
@@ -322,10 +357,10 @@ DRIVESETTINGS_USAGE_BYTES_FIELDS = {
 def _showSharedDriveThemeSettings(themes):
   Ind.Increment()
   for theme in themes:
-    _getMain().printKeyValueList(['id', theme['id']])
+    printKeyValueList(['id', theme['id']])
     Ind.Increment()
-    _getMain().printKeyValueList(['backgroundImageLink', theme['backgroundImageLink']])
-    _getMain().printKeyValueList(['colorRgb', theme['colorRgb']])
+    printKeyValueList(['backgroundImageLink', theme['backgroundImageLink']])
+    printKeyValueList(['colorRgb', theme['colorRgb']])
     Ind.Decrement()
   Ind.Decrement()
 
@@ -338,18 +373,18 @@ def _showSharedDriveThemeSettings(themes):
 def printShowDriveSettings(users):
   def _showFormats(title):
     if title in fieldsList and title in feed:
-      _getMain().printKeyValueList([title, None])
+      printKeyValueList([title, None])
       Ind.Increment()
       for item, value in sorted(feed[title].items()):
-        _getMain().printKeyValueList([item, delimiter.join(value)])
+        printKeyValueList([item, delimiter.join(value)])
       Ind.Decrement()
 
   def _showSetting(title):
     if title in fieldsList and title in feed:
       if not isinstance(feed[title], list):
-        _getMain().printKeyValueList([title, feed[title]])
+        printKeyValueList([title, feed[title]])
       else:
-        _getMain().printKeyValueList([title, delimiter.join(feed[title])])
+        printKeyValueList([title, delimiter.join(feed[title])])
 
   def _addFormats(row, title):
     if title in fieldsList and title in feed:
@@ -367,36 +402,36 @@ def printShowDriveSettings(users):
       else:
         row[title] = delimiter.join(feed[title])
 
-  csvPF = _getMain().CSVPrintFile(['email'], ['email']+DRIVESETTINGS_SCALAR_FIELDS) if Act.csvFormat() else None
+  csvPF = CSVPrintFile(['email'], ['email']+DRIVESETTINGS_SCALAR_FIELDS) if Act.csvFormat() else None
   fieldsList = []
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   showUsageBytes = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'delimiter':
-      delimiter = _getMain().getCharacter()
+      delimiter = getCharacter()
     elif myarg == 'allfields':
       fieldsList.extend(DRIVESETTINGS_FIELDS_CHOICE_MAP.values())
-    elif _getMain().getFieldsList(myarg, DRIVESETTINGS_FIELDS_CHOICE_MAP, fieldsList):
+    elif getFieldsList(myarg, DRIVESETTINGS_FIELDS_CHOICE_MAP, fieldsList):
       pass
     elif myarg == 'showusagebytes':
       showUsageBytes = True
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not fieldsList:
     fieldsList = DRIVESETTINGS_SCALAR_FIELDS[:]
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.DRIVE_SETTINGS, user, i, count)
+      printGettingEntityItemForWhom(Ent.DRIVE_SETTINGS, user, i, count)
     try:
-      feed = _getMain().callGAPI(drive.about(), 'get',
+      feed = callGAPI(drive.about(), 'get',
                       throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                       fields='*')
       feed['name'] = feed['user']['displayName']
@@ -408,37 +443,37 @@ def printShowDriveSettings(users):
         feed['limit'] = 'UNLIMITED'
       for setting in ['usage', 'usageInDrive', 'usageInDriveTrash']:
         uval = int(feed['storageQuota'].get(setting, '0'))
-        feed[setting] = _getMain().formatFileSize(uval)
+        feed[setting] = formatFileSize(uval)
         if showUsageBytes:
           feed[DRIVESETTINGS_USAGE_BYTES_FIELDS[setting]] = uval
       if 'rootFolderId' in fieldsList:
-        feed['rootFolderId'] = _getMain().callGAPI(drive.files(), 'get',
+        feed['rootFolderId'] = callGAPI(drive.files(), 'get',
                                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                         fileId=ROOT, fields='id')['id']
       if 'largestChangeId' in fieldsList:
-        feed['largestChangeId'] = _getMain().callGAPI(drive.changes(), 'getStartPageToken',
+        feed['largestChangeId'] = callGAPI(drive.changes(), 'getStartPageToken',
                                            throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                            fields='startPageToken')['startPageToken']
       if not csvPF:
-        _getMain().entityPerformActionNumItems([Ent.USER, user], 1, Ent.DRIVE_SETTINGS, i, count)
+        entityPerformActionNumItems([Ent.USER, user], 1, Ent.DRIVE_SETTINGS, i, count)
         Ind.Increment()
         for setting in DRIVESETTINGS_SCALAR_FIELDS:
           _showSetting(setting)
         if showUsageBytes:
           for title, setting in DRIVESETTINGS_USAGE_BYTES_FIELDS.items():
             if title in fieldsList and setting in feed:
-              _getMain().printKeyValueList([setting, feed[setting]])
+              printKeyValueList([setting, feed[setting]])
         _showSetting('folderColorPalette')
         _showFormats('exportFormats')
         _showFormats('importFormats')
         if 'maxImportSizes' in fieldsList and 'maxImportSizes' in fieldsList:
-          _getMain().printKeyValueList(['maxImportSizes', None])
+          printKeyValueList(['maxImportSizes', None])
           Ind.Increment()
           for setting, value in feed['maxImportSizes'].items():
-            _getMain().printKeyValueList([setting, _getMain().formatFileSize(int(value))])
+            printKeyValueList([setting, formatFileSize(int(value))])
           Ind.Decrement()
         if 'driveThemes' in fieldsList and 'driveThemes' in feed:
-          _getMain().printKeyValueList(['driveThemes', None])
+          printKeyValueList(['driveThemes', None])
           _showSharedDriveThemeSettings(feed['driveThemes'])
         Ind.Decrement()
       else:
@@ -457,7 +492,7 @@ def printShowDriveSettings(users):
           row['maxImportSizes'] = jcount
           j = 0
           for setting, value in feed['maxImportSizes'].items():
-            row[f'maxImportSizes{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{setting}'] = _getMain().formatFileSize(int(value))
+            row[f'maxImportSizes{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{j}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{setting}'] = formatFileSize(int(value))
             j += 1
         if 'driveThemes' in fieldsList and 'driveThemes' in feed:
           jcount = len(feed['driveThemes'])
@@ -470,29 +505,29 @@ def printShowDriveSettings(users):
             j += 1
         csvPF.WriteRowTitles(row)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
   if csvPF:
     csvPF.writeCSVfile('User Drive Settings')
 
 # gam <UserTypeEntity> show shareddrivethemes
 def showSharedDriveThemes(users):
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
     try:
-      themes = _getMain().callGAPIitems(drive.about(), 'get', 'driveThemes',
+      themes = callGAPIitems(drive.about(), 'get', 'driveThemes',
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                              fields='driveThemes')
       jcount = len(themes)
-      _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE_THEME, i, count)
+      entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE_THEME, i, count)
       _showSharedDriveThemeSettings(themes)
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def doShowSharedDriveThemes():
-  showSharedDriveThemes([_getMain()._getAdminEmail()])
+  showSharedDriveThemes([_getAdminEmail()])
 

@@ -22,6 +22,43 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages, getHttpObj
+from gam.util.args import (
+    LANGUAGE_CODES_MAP,
+    checkArgumentPresent,
+    formatLocalSecondsTimestamp,
+    getBoolean,
+    getChoice,
+    getColor,
+    getLanguageCode,
+    getREPatternSubstitution,
+    getString,
+    getStringReturnInList,
+    getStringWithCRsNLs,
+    getTimeOrDeltaFromNow,
+    mapQueryRelativeTimes,
+)
+from gam.util.display import (
+    emptyQuery,
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
+    invalidQuery,
+    printGettingAllEntityItemsForWhom,
+    printGotEntityItemsForWhom,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import convertUIDtoEmailAddress, getEntitySelection, getEntitySelector
+from gam.util.errors import (
+    deprecatedArgument,
+    entityActionFailedExit,
+    invalidChoiceExit,
+    unknownArgumentExit,
+    usageErrorExit,
+)
+from gam.util.fileio import FILE_ERROR_RC, fileErrorMessage, setFilePath
+from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -73,10 +110,10 @@ def doDriveSearch(drive, user, i, count, query=None, parentQuery=False, emptyQue
   if query == 'allitems':
     query = None
   if GC.Values[GC.SHOW_GETTINGS]:
-    _getMain().printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=query)
+    printGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, i, count, query=query)
   try:
-    files = _getMain().callGAPIpages(drive.files(), 'list', 'files',
-                          pageMessage=_getMain().getPageMessageForWhom(),
+    files = callGAPIpages(drive.files(), 'list', 'files',
+                          pageMessage=getPageMessageForWhom(),
                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                       GAPI.BAD_REQUEST, GAPI.FILE_NOT_FOUND,
                                                                       GAPI.NOT_FOUND, GAPI.TEAMDRIVE_MEMBERSHIP_REQUIRED],
@@ -86,26 +123,26 @@ def doDriveSearch(drive, user, i, count, query=None, parentQuery=False, emptyQue
       return [f_file['id'] for f_file in files if not sharedDriveOnly or f_file.get('driveId')]
     if emptyQueryOK:
       return []
-    _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None],
-                                    _getMain().emptyQuery(query, Ent.DRIVE_FILE_OR_FOLDER if not parentQuery else Ent.DRIVE_PARENT_FOLDER), i, count)
+    entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None],
+                                    emptyQuery(query, Ent.DRIVE_FILE_OR_FOLDER if not parentQuery else Ent.DRIVE_PARENT_FOLDER), i, count)
   except (GAPI.invalidQuery, GAPI.invalid, GAPI.badRequest):
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], _getMain().invalidQuery(query), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER, None], invalidQuery(query), i, count)
   except GAPI.fileNotFound:
-    _getMain().printGotEntityItemsForWhom(0)
+    printGotEntityItemsForWhom(0)
     if emptyQueryOK:
       return []
   except (GAPI.notFound, GAPI.teamDriveMembershipRequired) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, kwargs['driveId']], str(e), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_ID, kwargs['driveId']], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   return None
 
 def doSharedDriveSearch(drive, user, i, count, query, useDomainAdminAccess):
   if GC.Values[GC.SHOW_GETTINGS]:
-    _getMain().printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, user, i, count, query=query)
+    printGettingAllEntityItemsForWhom(Ent.SHAREDDRIVE, user, i, count, query=query)
   try:
-    files = _getMain().callGAPIpages(drive.drives(), 'list', 'drives',
-                          pageMessage=_getMain().getPageMessageForWhom(),
+    files = callGAPIpages(drive.drives(), 'list', 'drives',
+                          pageMessage=getPageMessageForWhom(),
                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                       GAPI.QUERY_REQUIRES_ADMIN_CREDENTIALS,
                                                                       GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE,
@@ -114,13 +151,13 @@ def doSharedDriveSearch(drive, user, i, count, query, useDomainAdminAccess):
                           fields='nextPageToken,drives(id)', pageSize=100)
     if files:
       return [f_file['id'] for f_file in files]
-    _getMain().entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], _getMain().emptyQuery(query, Ent.SHAREDDRIVE), i, count)
+    entityActionNotPerformedWarning([Ent.USER, user, Ent.DRIVE_FILE, None], emptyQuery(query, Ent.SHAREDDRIVE), i, count)
   except (GAPI.invalidQuery, GAPI.invalid):
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], _getMain().invalidQuery(query), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], invalidQuery(query), i, count)
   except (GAPI.queryRequiresAdminCredentials, GAPI.noListTeamDrivesAdministratorPrivilege, GAPI.insufficientAdministratorPrivileges) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE, None], str(e), i, count)
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-    _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+    userDriveServiceNotEnabledWarning(user, str(e), i, count)
   return None
 
 def _getFileIdFromURL(fileId):
@@ -172,7 +209,7 @@ TITLE_QUERY_PATTERN = re.compile(r'title((?: *!?=)|(?: +contains))', flags=re.IG
 def _mapDrive2QueryToDrive3(query):
   if query:
     query = TITLE_QUERY_PATTERN.sub(r'name\1', query).replace('modifiedDate', 'modifiedTime').replace('lastViewedByMeDate', 'viewedByMeTime')
-    query = _getMain().mapQueryRelativeTimes(query, ['modifiedTime', 'viewedByMeTime'])
+    query = mapQueryRelativeTimes(query, ['modifiedTime', 'viewedByMeTime'])
   return query
 
 def escapeDriveFileName(filename):
@@ -189,10 +226,10 @@ def escapeDriveFileName(filename):
   return encfilename
 
 def getEscapedDriveFileName():
-  return escapeDriveFileName(_getMain().getString(Cmd.OB_DRIVE_FILE_NAME))
+  return escapeDriveFileName(getString(Cmd.OB_DRIVE_FILE_NAME))
 
 def getEscapedDriveFolderName():
-  return escapeDriveFileName(_getMain().getString(Cmd.OB_DRIVE_FOLDER_NAME))
+  return escapeDriveFileName(getString(Cmd.OB_DRIVE_FOLDER_NAME))
 
 def initDriveFileEntity():
   return {'list': [], 'shareddrivename': None, 'shareddriveadminquery': None, 'shareddrivefilequery': None,
@@ -276,23 +313,23 @@ def getDriveFileEntity(queryShortcutsOK=True, DLP=None):
     return True
 
   fileIdEntity = initDriveFileEntity()
-  entitySelector = _getMain().getEntitySelector()
+  entitySelector = getEntitySelector()
   if entitySelector:
-    entityList = _getMain().getEntitySelection(entitySelector, False)
+    entityList = getEntitySelection(entitySelector, False)
     if isinstance(entityList, dict):
       fileIdEntity['dict'] = entityList
     else:
       cleanFileIDsList(fileIdEntity, entityList)
     return fileIdEntity
   fileIdEntity['location'] = Cmd.Location()
-  myarg = _getMain().getString(Cmd.OB_DRIVE_FILE_ID, checkBlank=True)
+  myarg = getString(Cmd.OB_DRIVE_FILE_ID, checkBlank=True)
   mycmd = myarg.lower().replace('_', '').replace('-', '')
   if mycmd == 'id':
-    cleanFileIDsList(fileIdEntity, _getMain().getStringReturnInList(Cmd.OB_DRIVE_FILE_ID))
+    cleanFileIDsList(fileIdEntity, getStringReturnInList(Cmd.OB_DRIVE_FILE_ID))
   elif mycmd == 'ids':
-    cleanFileIDsList(fileIdEntity, _getMain().getString(Cmd.OB_DRIVE_FILE_ID).replace(',', ' ').split())
+    cleanFileIDsList(fileIdEntity, getString(Cmd.OB_DRIVE_FILE_ID).replace(',', ' ').split())
   elif mycmd == 'query':
-    fileIdEntity['query'] = _mapDrive2QueryToDrive3(_getMain().getString(Cmd.OB_QUERY))
+    fileIdEntity['query'] = _mapDrive2QueryToDrive3(getString(Cmd.OB_QUERY))
     fileIdEntity['nonDomainAdminAccess'] = True
   elif queryShortcutsOK and mycmd in QUERY_SHORTCUTS_MAP:
     fileIdEntity['query'] = QUERY_SHORTCUTS_MAP[mycmd]
@@ -315,23 +352,23 @@ def getDriveFileEntity(queryShortcutsOK=True, DLP=None):
                                    'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
     while True:
       if mycmd in {'teamdriveid', 'shareddriveid'}:
-        fileIdEntity['shareddrive']['driveId'] = _getMain().getString(Cmd.OB_SHAREDDRIVE_ID).strip()
+        fileIdEntity['shareddrive']['driveId'] = getString(Cmd.OB_SHAREDDRIVE_ID).strip()
       elif mycmd in {'teamdrive', 'shareddrive'}:
-        fileIdEntity['shareddrivename'] = _getMain().getString(Cmd.OB_SHAREDDRIVE_NAME)
+        fileIdEntity['shareddrivename'] = getString(Cmd.OB_SHAREDDRIVE_NAME)
       elif mycmd in {'teamdriveadminquery', 'shareddriveadminquery'}:
-        fileIdEntity['shareddriveadminquery'] = _getMain().getString(Cmd.OB_QUERY)
+        fileIdEntity['shareddriveadminquery'] = getString(Cmd.OB_QUERY)
       elif mycmd in {'teamdrivefilename', 'shareddrivefilename'}:
         fileIdEntity['shareddrivefilequery'] = WITH_ANY_FILE_NAME.format(getEscapedDriveFileName())
       elif mycmd in {'teamdrivequery', 'shareddrivequery'}:
-        fileIdEntity['shareddrivefilequery'] = _mapDrive2QueryToDrive3(_getMain().getString(Cmd.OB_QUERY))
+        fileIdEntity['shareddrivefilequery'] = _mapDrive2QueryToDrive3(getString(Cmd.OB_QUERY))
       elif queryShortcutsOK and mycmd in SHAREDDRIVE_QUERY_SHORTCUTS_MAP:
         fileIdEntity['shareddrivefilequery'] = SHAREDDRIVE_QUERY_SHORTCUTS_MAP[mycmd]
       elif (mycmd.find(':') > 0) and _getTDKeywordColonValue(myarg):
         pass
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
       if Cmd.ArgumentsRemaining():
-        myarg = _getMain().getString(Cmd.OB_STRING)
+        myarg = getString(Cmd.OB_STRING)
         mycmd = myarg.lower().replace('_', '').replace('-', '')
         if (mycmd.startswith('teamdriveparent') or mycmd.startswith('shareddriveparent') or
             ((not (mycmd.startswith('teamdrive') or mycmd.startswith('shareddrive'))) and
@@ -363,27 +400,27 @@ def getDriveFileEntitySharedDriveOnly():
     return True
 
   fileIdEntity = initDriveFileEntity()
-  myarg = _getMain().getString(Cmd.OB_DRIVE_FILE_ID, checkBlank=True)
+  myarg = getString(Cmd.OB_DRIVE_FILE_ID, checkBlank=True)
   mycmd = myarg.lower().replace('_', '').replace('-', '')
   if mycmd.startswith('teamdrive') or mycmd.startswith('shareddrive'):
     fileIdEntity['shareddrive'] = {'driveId': None,
                                  'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
     if mycmd in {'teamdriveid', 'shareddriveid'}:
-      fileIdEntity['shareddrive']['driveId'] = _getMain().getString(Cmd.OB_SHAREDDRIVE_ID)
+      fileIdEntity['shareddrive']['driveId'] = getString(Cmd.OB_SHAREDDRIVE_ID)
     elif mycmd in {'teamdrive', 'shareddrive'}:
-      fileIdEntity['shareddrivename'] = _getMain().getString(Cmd.OB_SHAREDDRIVE_NAME)
+      fileIdEntity['shareddrivename'] = getString(Cmd.OB_SHAREDDRIVE_NAME)
     elif mycmd in {'teamdriveadminquery', 'shareddriveadminquery'}:
-      fileIdEntity['shareddriveadminquery'] = _getMain().getString(Cmd.OB_QUERY)
+      fileIdEntity['shareddriveadminquery'] = getString(Cmd.OB_QUERY)
     elif (mycmd.find(':') > 0) and _getTDKeywordColonValue(myarg):
       pass
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
     if not fileIdEntity['shareddrive'].get('driveId'):
       fileIdEntity['shareddrive']['corpora'] = CORPORA_ALL_DRIVES
   elif (mycmd.find(':') > 0) and _getTDKeywordColonValue(myarg):
     pass
   else:
-    _getMain().unknownArgumentExit()
+    unknownArgumentExit()
   return fileIdEntity
 
 def getSharedDriveEntity():
@@ -399,14 +436,14 @@ def getSharedDriveEntity():
     return True
 
   fileIdEntity = initDriveFileEntity()
-  myarg = _getMain().getString(Cmd.OB_DRIVE_FILE_ID, checkBlank=True)
+  myarg = getString(Cmd.OB_DRIVE_FILE_ID, checkBlank=True)
   mycmd = myarg.lower().replace('_', '').replace('-', '')
   fileIdEntity['shareddrive'] = {'driveId': None,
                                'corpora': 'drive', 'includeItemsFromAllDrives': True, 'supportsAllDrives': True}
   if mycmd in {'teamdriveid', 'shareddriveid'}:
-    fileIdEntity['shareddrive']['driveId'] = _getMain().getString(Cmd.OB_SHAREDDRIVE_ID)
+    fileIdEntity['shareddrive']['driveId'] = getString(Cmd.OB_SHAREDDRIVE_ID)
   elif mycmd in {'teamdrive', 'shareddrive', 'name'}:
-    fileIdEntity['shareddrivename'] = _getMain().getString(Cmd.OB_SHAREDDRIVE_NAME)
+    fileIdEntity['shareddrivename'] = getString(Cmd.OB_SHAREDDRIVE_NAME)
   elif (mycmd.find(':') > 0) and _getTDKeywordColonValue(myarg):
     pass
   else:
@@ -419,7 +456,7 @@ def _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity, useDomainAd
       name = fileIdEntity['shareddrivename']
     else:
       name = fileIdEntity['shareddrivename'].replace("'", "\\'")
-    tdlist = _getMain().callGAPIpages(drive.drives(), 'list', 'drives',
+    tdlist = callGAPIpages(drive.drives(), 'list', 'drives',
                            throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
                                                                        GAPI.QUERY_REQUIRES_ADMIN_CREDENTIALS,
                                                                        GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE,
@@ -432,28 +469,28 @@ def _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity, useDomainAd
       fileIdEntity['shareddrivename'] = fileIdEntity['shareddrivename'].replace("\\'", "'")
     if not tdlist:
       name = fileIdEntity['shareddrivename'].lower()
-      feed = _getMain().callGAPIpages(drive.drives(), 'list', 'drives',
+      feed = callGAPIpages(drive.drives(), 'list', 'drives',
                            throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.NO_LIST_TEAMDRIVES_ADMINISTRATOR_PRIVILEGE,
                                                                        GAPI.INSUFFICIENT_ADMINISTRATOR_PRIVILEGES],
                            useDomainAdminAccess=useDomainAdminAccess,
                            fields='nextPageToken,drives(id,name)', pageSize=100)
       tdlist = [td for td in feed if td['name'].lower() == name]
   except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']], Msg.DOES_NOT_EXIST, i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']], Msg.DOES_NOT_EXIST, i, count)
     return False
   except (GAPI.invalidQuery, GAPI.invalid, GAPI.queryRequiresAdminCredentials,
           GAPI.noListTeamDrivesAdministratorPrivilege, GAPI.insufficientAdministratorPrivileges,
           GAPI.fileNotFound) as e:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']], str(e), i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']], str(e), i, count)
     return False
   jcount = len(tdlist)
   if jcount == 1:
     fileIdEntity['shareddrive']['driveId'] = tdlist[0]['id']
     return True
   if jcount == 0:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']], Msg.DOES_NOT_EXIST, i, count)
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']], Msg.DOES_NOT_EXIST, i, count)
   else:
-    _getMain().entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']],
+    entityActionFailedWarning([Ent.USER, user, Ent.SHAREDDRIVE_NAME, fileIdEntity['shareddrivename']],
                               Msg.MULTIPLE_ENTITIES_FOUND.format(Ent.Plural(Ent.SHAREDDRIVE_ID), jcount,
                                                                  ','.join([td['id'] for td in tdlist])), i, count)
   return False
@@ -462,7 +499,7 @@ def _getSharedDriveNameFromId(drive, sharedDriveId, useDomainAdminAccess=False):
   sharedDriveName = GM.Globals[GM.MAP_SHAREDDRIVE_ID_TO_NAME].get(sharedDriveId)
   if not sharedDriveName:
     try:
-      sharedDriveName = _getMain().callGAPI(drive.drives(), 'get',
+      sharedDriveName = callGAPI(drive.drives(), 'get',
                                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND, GAPI.NOT_FOUND],
                                  useDomainAdminAccess=useDomainAdminAccess,
                                  driveId=sharedDriveId, fields='name')['name']
@@ -473,7 +510,7 @@ def _getSharedDriveNameFromId(drive, sharedDriveId, useDomainAdminAccess=False):
 
 def _getDriveFileNameFromId(drive, fileId, combineTitleId=True, useDomainAdminAccess=False):
   try:
-    result = _getMain().callGAPI(drive.files(), 'get',
+    result = callGAPI(drive.files(), 'get',
                       throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS,
                       fileId=fileId, fields='name,mimeType,driveId', supportsAllDrives=True)
     if result:
@@ -486,7 +523,7 @@ def _getDriveFileNameFromId(drive, fileId, combineTitleId=True, useDomainAdminAc
   except GAPI.fileNotFound:
     if useDomainAdminAccess:
       try:
-        result = _getMain().callGAPI(drive.drives(), 'get',
+        result = callGAPI(drive.drives(), 'get',
                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND, GAPI.NOT_FOUND],
                           useDomainAdminAccess=useDomainAdminAccess,
                           driveId=fileId, fields='name')
@@ -511,31 +548,31 @@ def _simpleFileIdEntityList(fileIdEntityList):
 def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType=None, orderBy=None, useDomainAdminAccess=False):
   def _identifyRoot():
     try:
-      rootFolderId = _getMain().callGAPI(drive.files(), 'get',
+      rootFolderId = callGAPI(drive.files(), 'get',
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                               fileId=ROOT, fields='id')['id']
       for j in fileIdEntity[ROOT]:
         fileIdEntity['list'][j] = rootFolderId
       return True
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return False
 
   if fileIdEntity['dict']:
     cleanFileIDsList(fileIdEntity, fileIdEntity['dict'][user])
   if not drive:
-    user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       return (user, None, 0)
   else:
-    user = _getMain().convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user)
   if fileIdEntity['list'] and _simpleFileIdEntityList(fileIdEntity['list']):
     l = len(fileIdEntity['list'])
     if ROOT in fileIdEntity['list'] and fileIdEntity[ROOT]:
       if not _identifyRoot():
         return (user, None, 0)
     if entityType:
-      _getMain().entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
+      entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
     return (user, drive, l)
   if fileIdEntity['shareddrivename'] and 'driveId' not in fileIdEntity:
     if not _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity, useDomainAdminAccess):
@@ -550,19 +587,19 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
   if fileIdEntity['query']:
     fileIdEntity['list'] = doDriveSearch(drive, user, i, count, query=fileIdEntity['query'], orderBy=orderBy)
     if fileIdEntity['list'] is None:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
   elif fileIdEntity['shareddriveadminquery']:
     fileIdEntity['list'] = doSharedDriveSearch(drive, user, i, count, fileIdEntity['shareddriveadminquery'], useDomainAdminAccess)
     if fileIdEntity['list'] is None:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
   elif fileIdEntity['shareddrivefilequery']:
     if not fileIdEntity['shareddrive'].get('driveId'):
       fileIdEntity['shareddrive']['corpora'] = CORPORA_ALL_DRIVES
     fileIdEntity['list'] = doDriveSearch(drive, user, i, count, query=fileIdEntity['shareddrivefilequery'], orderBy=orderBy, sharedDriveOnly=True, **fileIdEntity['shareddrive'])
     if fileIdEntity['list'] is None or not fileIdEntity['list']:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
     fileIdEntity['shareddrive'].pop('driveId', None)
     fileIdEntity['shareddrive'].pop('corpora', None)
@@ -571,9 +608,9 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
       return (user, None, 0)
   l = len(fileIdEntity['list'])
   if l == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
   if entityType:
-    _getMain().entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
+    entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
   return (user, drive, l)
 
 # Disc File Access paramaters
@@ -617,27 +654,27 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
   if parameters[DFA_PARENTID]:
     body.setdefault('parents', [])
     try:
-      result = _getMain().callGAPI(drive.files(), 'get',
+      result = callGAPI(drive.files(), 'get',
                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND],
                         fileId=parameters[DFA_PARENTID], fields='id,name,mimeType,driveId', supportsAllDrives=True)
       if result['mimeType'] != MIMETYPE_GA_FOLDER:
-        _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
+        entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
                                         f'parentid: {parameters[DFA_PARENTID]}, {Msg.NOT_AN_ENTITY.format((Ent.Singular(Ent.DRIVE_FOLDER)))}', i, count)
         return False
       body['parents'].append(result['id'])
       if result.get('driveId'):
         _setSearchArgs(result['driveId'])
     except GAPI.fileNotFound as e:
-      _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
+      entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
                                       f'parentid: {parameters[DFA_PARENTID]}, {str(e)}', i, count)
       return False
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return False
   if parameters[DFA_PARENTQUERY]:
     parents = doDriveSearch(drive, user, i, count, query=parameters[DFA_PARENTQUERY], parentQuery=True, emptyQueryOK=emptyQueryOK)
     if parents is None:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return False
     body.setdefault('parents', [])
     for parent in parents:
@@ -646,32 +683,32 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
     try:
       if not parameters[DFA_SHAREDDRIVE_PARENTQUERY]:
         body.setdefault('parents', [])
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND],
                           fileId=parameters[DFA_SHAREDDRIVE_PARENTID], fields='id,mimeType,driveId', supportsAllDrives=True)
         if result['mimeType'] != MIMETYPE_GA_FOLDER:
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
+          entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
                                           f'shareddriveparentid: {parameters[DFA_SHAREDDRIVE_PARENTID]}, {Msg.NOT_AN_ENTITY.format(Ent.Singular(Ent.DRIVE_FOLDER))}', i, count)
           return False
         if not result.get('driveId'):
-          _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
+          entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
                                           f'shareddriveparentid: {parameters[DFA_SHAREDDRIVE_PARENTID]}, {Msg.NOT_AN_ENTITY.format(Ent.Singular(Ent.SHAREDDRIVE_FOLDER))}', i, count)
           return False
         body['parents'].append(result['id'])
         _setSearchArgs(result['driveId'])
       else:
-        result = _getMain().callGAPI(drive.drives(), 'get',
+        result = callGAPI(drive.drives(), 'get',
                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND, GAPI.NOT_FOUND],
                           driveId=parameters[DFA_SHAREDDRIVE_PARENTID], fields='id')
         parameters[DFA_KWARGS]['corpora'] = 'drive'
         parameters[DFA_KWARGS]['driveId'] = result['id']
         _setSearchArgs(result['id'])
     except (GAPI.fileNotFound, GAPI.notFound) as e:
-      _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
+      entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
                                       f'shareddriveparentid: {parameters[DFA_SHAREDDRIVE_PARENTID]}, {str(e)}', i, count)
       return False
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-      _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+      userDriveServiceNotEnabledWarning(user, str(e), i, count)
       return False
   if parameters[DFA_SHAREDDRIVE_PARENT]:
     tempIdEntity = {'shareddrivename': parameters[DFA_SHAREDDRIVE_PARENT], 'shareddrive': {}}
@@ -688,7 +725,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
     parents = doDriveSearch(drive, user, i, count, query=parameters[DFA_SHAREDDRIVE_PARENTQUERY], parentQuery=True, emptyQueryOK=emptyQueryOK,
                             sharedDriveOnly=True, **parameters[DFA_KWARGS])
     if parents is None:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return False
     body.setdefault('parents', [])
     for parent in parents:
@@ -697,7 +734,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
     body['parents'] = [ROOT]
   numParents = len(body.get('parents', []))
   if numParents > 1:
-    _getMain().entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
+    entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
                                     Msg.MULTIPLE_PARENTS_SPECIFIED.format(numParents), i, count)
     return False
   return True
@@ -707,14 +744,14 @@ def _getDriveFileAddRemoveParentInfo(user, i, count, parameters, drive):
   for query in parameters[DFA_ADD_PARENT_NAMES]:
     parents = doDriveSearch(drive, user, i, count, query=query, parentQuery=True)
     if parents is None:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return (False, None, None)
     addParents.extend(parents)
   removeParents = parameters[DFA_REMOVE_PARENT_IDS][:]
   for query in parameters[DFA_REMOVE_PARENT_NAMES]:
     parents = doDriveSearch(drive, user, i, count, query=query, parentQuery=True)
     if parents is None:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return (False, None, None)
     removeParents.extend(parents)
   return (True, addParents, removeParents)
@@ -723,29 +760,29 @@ def _validateUserGetSharedDriveFileIDs(user, i, count, fileIdEntity, drive=None,
   if fileIdEntity['dict']:
     cleanFileIDsList(fileIdEntity, fileIdEntity['dict'][user])
   if not drive:
-    user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+    user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       return (user, None, 0)
   else:
-    user = _getMain().convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user)
   if fileIdEntity.get('shareddrivename') and not _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity):
     return (user, None, 0)
   if fileIdEntity['shareddrivefilequery']:
     fileIdEntity['list'] = doDriveSearch(drive, user, i, count, query=fileIdEntity['shareddrivefilequery'], sharedDriveOnly=True, **fileIdEntity['shareddrive'])
     if fileIdEntity['list'] is None or not fileIdEntity['list']:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
     fileIdEntity['shareddrive'].pop('driveId', None)
     fileIdEntity['shareddrive'].pop('corpora', None)
   l = len(fileIdEntity['list'])
   if l == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
   if entityType:
-    _getMain().entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
+    entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
   return (user, drive, l)
 
 def _validateUserSharedDrive(user, i, count, fileIdEntity, useDomainAdminAccess=False):
-  user, drive = _getMain().buildGAPIServiceObject(API.DRIVE3, user, i, count)
+  user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
   if not drive:
     return (user, None)
   if fileIdEntity.get('shareddrivename'):
@@ -801,10 +838,10 @@ def validateMimeType(mimeType):
     mediaType, subType = mimeType.split('/', 1)
     if mediaType in MIMETYPE_TYPES and subType:
       return mimeType
-  _getMain().invalidChoiceExit(mimeType, list(MIMETYPE_CHOICE_MAP)+[f'({formatChoiceList(MIMETYPE_TYPES)})/mediatype'], True)
+  invalidChoiceExit(mimeType, list(MIMETYPE_CHOICE_MAP)+[f'({formatChoiceList(MIMETYPE_TYPES)})/mediatype'], True)
 
 def getMimeType():
-  return validateMimeType(_getMain().getString(Cmd.OB_MIMETYPE).lower())
+  return validateMimeType(getString(Cmd.OB_MIMETYPE).lower())
 
 class MimeTypeCheck():
 
@@ -814,15 +851,15 @@ class MimeTypeCheck():
     self.category = set()
 
   def Get(self):
-    if _getMain().checkArgumentPresent('category'):
-      for mimeType in _getMain().getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
+    if checkArgumentPresent('category'):
+      for mimeType in getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
         if mimeType in MIMETYPE_TYPES:
           self.category.add(mimeType)
         else:
-          _getMain().invalidChoiceExit(mimeType, MIMETYPE_TYPES, True)
+          invalidChoiceExit(mimeType, MIMETYPE_TYPES, True)
       return
-    self.reverse = _getMain().checkArgumentPresent('not')
-    for mimeType in _getMain().getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
+    self.reverse = checkArgumentPresent('not')
+    for mimeType in getString(Cmd.OB_MIMETYPE_LIST).lower().replace(',', ' ').split():
       self.mimeTypes.add(validateMimeType(mimeType))
 
   def AddMimeTypeToQuery(self, query):
@@ -899,42 +936,42 @@ DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP = {
   }
 
 def getDriveFileProperty(visibility=None):
-  key = _getMain().getString(Cmd.OB_PROPERTY_KEY)
-  value = _getMain().getString(Cmd.OB_PROPERTY_VALUE, minLen=0) or None
+  key = getString(Cmd.OB_PROPERTY_KEY)
+  value = getString(Cmd.OB_PROPERTY_VALUE, minLen=0) or None
   if visibility is None:
     if Cmd.PeekArgumentPresent(list(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP.keys())):
-      visibility = _getMain().getChoice(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP, mapChoice=True)
+      visibility = getChoice(DRIVEFILE_PROPERTY_VISIBILITY_CHOICE_MAP, mapChoice=True)
     else:
       visibility = 'properties'
   return {'key': key, 'value': value, 'visibility': visibility}
 
 def getDriveFileParentAttribute(myarg, parameters):
   if myarg == 'parentid':
-    parameters[DFA_PARENTID] = _getMain().getString(Cmd.OB_DRIVE_FOLDER_ID)
+    parameters[DFA_PARENTID] = getString(Cmd.OB_DRIVE_FOLDER_ID)
   elif myarg == 'parentname':
     parameters[DFA_PARENTQUERY] = _getMain().MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
   elif myarg in {'anyownerparentname', 'sharedparentname'}:
     parameters[DFA_PARENTQUERY] = _getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
   elif myarg in {'teamdriveparent', 'shareddriveparent'}:
-    parameters[DFA_SHAREDDRIVE_PARENT] = _getMain().getString(Cmd.OB_SHAREDDRIVE_NAME)
+    parameters[DFA_SHAREDDRIVE_PARENT] = getString(Cmd.OB_SHAREDDRIVE_NAME)
   elif myarg in {'teamdriveparentid', 'shareddriveparentid'}:
-    parameters[DFA_SHAREDDRIVE_PARENTID] = _getMain().getString(Cmd.OB_DRIVE_FOLDER_ID)
+    parameters[DFA_SHAREDDRIVE_PARENTID] = getString(Cmd.OB_DRIVE_FOLDER_ID)
   elif myarg in {'teamdriveparentname', 'shareddriveparentname'}:
     parameters[DFA_SHAREDDRIVE_PARENTQUERY] = _getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
     parameters[DFA_KWARGS]['corpora'] = CORPORA_ALL_DRIVES
     parameters[DFA_KWARGS]['includeItemsFromAllDrives'] = True
     parameters[DFA_KWARGS]['supportsAllDrives'] = True
   elif myarg == 'enforcesingleparent':
-    _getMain().deprecatedArgument(myarg)
+    deprecatedArgument(myarg)
   else:
     return False
   return True
 
 def getDriveFileAddRemoveParentAttribute(myarg, parameters):
   if myarg in {'addparent', 'addparents'}:
-    parameters[DFA_ADD_PARENT_IDS].extend(_getMain().getString(Cmd.OB_DRIVE_FOLDER_ID_LIST).replace(',', ' ').split())
+    parameters[DFA_ADD_PARENT_IDS].extend(getString(Cmd.OB_DRIVE_FOLDER_ID_LIST).replace(',', ' ').split())
   elif myarg in {'removeparent', 'removeparents'}:
-    parameters[DFA_REMOVE_PARENT_IDS].extend(_getMain().getString(Cmd.OB_DRIVE_FOLDER_ID_LIST).replace(',', ' ').split())
+    parameters[DFA_REMOVE_PARENT_IDS].extend(getString(Cmd.OB_DRIVE_FOLDER_ID_LIST).replace(',', ' ').split())
   elif myarg == 'addparentname':
     parameters[DFA_ADD_PARENT_NAMES].append(_getMain().MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
   elif myarg == 'removeparentname':
@@ -944,7 +981,7 @@ def getDriveFileAddRemoveParentAttribute(myarg, parameters):
   elif myarg in {'removeanyownerparentname', 'removesharedparentname'}:
     parameters[DFA_REMOVE_PARENT_NAMES].append(_getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
   elif myarg == 'enforcesingleparent':
-    _getMain().deprecatedArgument(myarg)
+    deprecatedArgument(myarg)
   else:
     return False
   return True
@@ -956,52 +993,52 @@ def _getDriveFileDownloadRestrictions(myarg, body):
   if subField.startswith('itemdownloadrestriction.'):
     _, subField = subField.split('.', 1)
   if subField == 'itemdownloadrestriction':
-    subField = _getMain().getChoice(DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP)
+    subField = getChoice(DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP)
   if subField in DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP:
     body.setdefault('downloadRestrictions', {'itemDownloadRestriction': {}})
-    body['downloadRestrictions']['itemDownloadRestriction'][DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP[subField]] = _getMain().getBoolean()
+    body['downloadRestrictions']['itemDownloadRestriction'][DRIVE_FILE_ITEM_DOWNLOAD_RESTRICTION_CHOICE_MAP[subField]] = getBoolean()
     return True
   return False
 
 def getDriveFileCopyAttribute(myarg, body, parameters):
   if myarg == 'ignoredefaultvisibility':
-    parameters[DFA_IGNORE_DEFAULT_VISIBILITY] = _getMain().getBoolean()
+    parameters[DFA_IGNORE_DEFAULT_VISIBILITY] = getBoolean()
   elif myarg in {'keeprevisionforever', 'pinned'}:
-    parameters[DFA_KEEP_REVISION_FOREVER] = _getMain().getBoolean()
+    parameters[DFA_KEEP_REVISION_FOREVER] = getBoolean()
   elif myarg == 'ocrlanguage':
-    parameters[DFA_OCRLANGUAGE] = _getMain().getLanguageCode(_getMain().LANGUAGE_CODES_MAP)
+    parameters[DFA_OCRLANGUAGE] = getLanguageCode(LANGUAGE_CODES_MAP)
   elif myarg == 'description':
-    body['description'] = _getMain().getStringWithCRsNLs()
+    body['description'] = getStringWithCRsNLs()
   elif myarg == 'mimetype':
     body['mimeType'] = getMimeType()
   elif myarg in {'lastviewedbyme', 'lastviewedbyuser', 'lastviewedbymedate', 'lastviewedbymetime'}:
-    body['viewedByMeTime'] = _getMain().getTimeOrDeltaFromNow()
+    body['viewedByMeTime'] = getTimeOrDeltaFromNow()
   elif myarg in {'modifieddate', 'modifiedtime'}:
-    body['modifiedTime'] = _getMain().getTimeOrDeltaFromNow()
+    body['modifiedTime'] = getTimeOrDeltaFromNow()
   elif myarg == 'viewerscancopycontent':
-    body['copyRequiresWriterPermission'] = not _getMain().getBoolean()
+    body['copyRequiresWriterPermission'] = not getBoolean()
   elif myarg in {'copyrequireswriterpermission', 'restrict', 'restricted'}:
-    body['copyRequiresWriterPermission'] = _getMain().getBoolean()
+    body['copyRequiresWriterPermission'] = getBoolean()
   elif myarg == 'writerscanshare':
-    body['writersCanShare'] = _getMain().getBoolean()
+    body['writersCanShare'] = getBoolean()
   elif myarg == 'writerscantshare':
-    body['writersCanShare'] = not _getMain().getBoolean()
+    body['writersCanShare'] = not getBoolean()
   elif myarg == 'contentrestrictions':
     while Cmd.PeekArgumentPresent(list(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP.keys())):
       body.setdefault('contentRestrictions', [{}])
-      restriction = _getMain().getChoice(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP, mapChoice=True)
-      body['contentRestrictions'][0][restriction] = _getMain().getBoolean()
+      restriction = getChoice(DRIVE_FILE_CONTENT_RESTRICTIONS_CHOICE_MAP, mapChoice=True)
+      body['contentRestrictions'][0][restriction] = getBoolean()
       if restriction == 'readOnly':
-        if _getMain().checkArgumentPresent(['reason']):
+        if checkArgumentPresent(['reason']):
           if body['contentRestrictions'][0][restriction]:
-            body['contentRestrictions'][0]['reason'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+            body['contentRestrictions'][0]['reason'] = getString(Cmd.OB_STRING, minLen=0)
           else:
             Cmd.Backup()
-            _getMain().usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
+            usageErrorExit(Msg.REASON_ONLY_VALID_WITH_CONTENTRESTRICTIONS_READONLY_TRUE)
   elif _getDriveFileDownloadRestrictions(myarg, body):
     pass
   elif myarg == 'inheritedpermissionsdisabled':
-    body['inheritedPermissionsDisabled'] = _getMain().getBoolean()
+    body['inheritedPermissionsDisabled'] = getBoolean()
   elif myarg == 'property':
     driveprop = getDriveFileProperty()
     body.setdefault(driveprop['visibility'], {})
@@ -1021,14 +1058,14 @@ def getDriveFileCopyAttribute(myarg, body, parameters):
 def getDriveFileAttribute(myarg, body, parameters, updateCmd):
   if myarg == 'localfile':
     parameters[DFA_URL] = None
-    parameters[DFA_LOCALFILEPATH] = _getMain().setFilePath(_getMain().getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
+    parameters[DFA_LOCALFILEPATH] = setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
     if parameters[DFA_LOCALFILEPATH] != '-':
       try:
         f = open(parameters[DFA_LOCALFILEPATH], 'rb')
         f.close()
         # See http://stackoverflow.com/a/39501288/1709587 for explanation.
         mtime = os.path.getmtime(parameters[DFA_LOCALFILEPATH])
-        parameters[DFA_MODIFIED_TIME] = _getMain().formatLocalSecondsTimestamp(mtime)
+        parameters[DFA_MODIFIED_TIME] = formatLocalSecondsTimestamp(mtime)
         if not updateCmd:
           if platform.system() == 'Windows':
             ctime = os.path.getctime(parameters[DFA_LOCALFILEPATH])
@@ -1040,10 +1077,10 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
               # We're probably on Linux. No easy way to get creation dates here,
               # so we'll settle for when its content was last modified.
               ctime = stat.st_mtime
-          parameters[DFA_CREATED_TIME] = _getMain().formatLocalSecondsTimestamp(ctime)
+          parameters[DFA_CREATED_TIME] = formatLocalSecondsTimestamp(ctime)
       except IOError as e:
         Cmd.Backup()
-        _getMain().usageErrorExit(f'{parameters[DFA_LOCALFILEPATH]}: {str(e)}')
+        usageErrorExit(f'{parameters[DFA_LOCALFILEPATH]}: {str(e)}')
       parameters[DFA_LOCALFILENAME] = os.path.basename(parameters[DFA_LOCALFILEPATH])
       if not updateCmd:
         body.setdefault('name', parameters[DFA_LOCALFILENAME])
@@ -1057,43 +1094,43 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
     parameters[DFA_LOCALMIMETYPE] = body['mimeType']
   elif myarg == 'url':
     parameters[DFA_LOCALFILEPATH] = None
-    parameters[DFA_URL] = _getMain().getString(Cmd.OB_URL)
+    parameters[DFA_URL] = getString(Cmd.OB_URL)
   elif myarg =='stripnameprefix':
-    parameters[DFA_STRIPNAMEPREFIX] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+    parameters[DFA_STRIPNAMEPREFIX] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'replacefilename':
-    parameters[DFA_REPLACEFILENAME].append(_getMain().getREPatternSubstitution(re.IGNORECASE))
+    parameters[DFA_REPLACEFILENAME].append(getREPatternSubstitution(re.IGNORECASE))
   elif myarg in {'convert', 'ocr'}:
-    _getMain().deprecatedArgument(myarg)
-    _getMain().stderrWarningMsg(Msg.USE_MIMETYPE_TO_SPECIFY_GOOGLE_FORMAT)
+    deprecatedArgument(myarg)
+    stderrWarningMsg(Msg.USE_MIMETYPE_TO_SPECIFY_GOOGLE_FORMAT)
   elif myarg in DRIVE_LABEL_CHOICE_MAP:
     myarg = DRIVE_LABEL_CHOICE_MAP[myarg]
-    body[myarg] = _getMain().getBoolean()
+    body[myarg] = getBoolean()
   elif not updateCmd and myarg in {'createddate', 'createdtime'}:
-    body['createdTime'] = _getMain().getTimeOrDeltaFromNow()
+    body['createdTime'] = getTimeOrDeltaFromNow()
   elif myarg == 'preservefiletimes':
-    parameters[DFA_PRESERVE_FILE_TIMES] = _getMain().getBoolean()
+    parameters[DFA_PRESERVE_FILE_TIMES] = getBoolean()
   elif myarg == 'shortcut':
     body['mimeType'] = MIMETYPE_GA_SHORTCUT
-    body['shortcutDetails'] = {'targetId': _getMain().getString(Cmd.OB_DRIVE_FOLDER_ID)}
+    body['shortcutDetails'] = {'targetId': getString(Cmd.OB_DRIVE_FOLDER_ID)}
   elif getDriveFileParentAttribute(myarg, parameters):
     pass
   elif myarg == 'foldercolorrgb':
-    body['folderColorRgb'] = _getMain().getColor()
+    body['folderColorRgb'] = getColor()
   elif myarg == 'usecontentasindexabletext':
-    parameters[DFA_USE_CONTENT_AS_INDEXABLE_TEXT] = _getMain().getBoolean()
+    parameters[DFA_USE_CONTENT_AS_INDEXABLE_TEXT] = getBoolean()
   elif myarg == 'indexabletext':
     body.setdefault('contentHints', {})
-    body['contentHints']['indexableText'] = _getMain().getString(Cmd.OB_STRING)
+    body['contentHints']['indexableText'] = getString(Cmd.OB_STRING)
   elif myarg == 'securityupdate':
-    body['linkShareMetadata'] = {'securityUpdateEnabled': _getMain().getBoolean(), 'securityUpdateEligible': True}
+    body['linkShareMetadata'] = {'securityUpdateEnabled': getBoolean(), 'securityUpdateEligible': True}
   elif myarg == 'timestamp':
-    parameters[DFA_TIMESTAMP] = _getMain().getBoolean()
+    parameters[DFA_TIMESTAMP] = getBoolean()
   elif myarg == 'timeformat':
-    parameters[DFA_TIMEFORMAT] = _getMain().getString(Cmd.OB_DATETIME_FORMAT, minLen=0)
+    parameters[DFA_TIMEFORMAT] = getString(Cmd.OB_DATETIME_FORMAT, minLen=0)
   elif getDriveFileCopyAttribute(myarg, body, parameters):
     pass
   else:
-    _getMain().unknownArgumentExit()
+    unknownArgumentExit()
 
 def setPreservedFileTimes(body, parameters, updateCmd):
   body['modifiedTime'] = parameters[DFA_MODIFIED_TIME]
@@ -1103,13 +1140,13 @@ def setPreservedFileTimes(body, parameters, updateCmd):
 def getMediaBody(parameters):
   if parameters[DFA_URL]:
     try:
-      status, c = _getMain().getHttpObj(timeout=10).request(parameters[DFA_URL])
+      status, c = getHttpObj(timeout=10).request(parameters[DFA_URL])
       if status['status'] != '200':
-        _getMain().entityActionFailedExit([Ent.URL, parameters[DFA_URL]], Msg.URL_ERROR.format(status['status']))
+        entityActionFailedExit([Ent.URL, parameters[DFA_URL]], Msg.URL_ERROR.format(status['status']))
       parameters[DFA_LOCALMIMETYPE] = status['content-type']
       return googleapiclient.http.MediaIoBaseUpload(io.BytesIO(c), mimetype=status['content-type'], resumable=True)
     except (IOError, httplib2.error.ServerNotFoundError) as e:
-      _getMain().systemErrorExit(_getMain().FILE_ERROR_RC, _getMain().fileErrorMessage(parameters[DFA_URL], str(e), entityType=Ent.URL))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(parameters[DFA_URL], str(e), entityType=Ent.URL))
   else:
     try:
       if parameters[DFA_LOCALFILEPATH] != '-':
@@ -1120,7 +1157,7 @@ def getMediaBody(parameters):
         media_body = None
       return media_body
     except IOError as e:
-      _getMain().systemErrorExit(_getMain().FILE_ERROR_RC, _getMain().fileErrorMessage(parameters[DFA_LOCALFILEPATH], str(e)))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(parameters[DFA_LOCALFILEPATH], str(e)))
 
 DRIVE_ACTIVITY_ACTION_MAP = {
   'comment': 'COMMENT',

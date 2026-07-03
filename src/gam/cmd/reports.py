@@ -15,6 +15,54 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import accessErrorExit, entityUnknownWarning
+from gam.util.api import _getAdminEmail, buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    DELTA_DATE_FORMAT_REQUIRED,
+    DELTA_DATE_PATTERN,
+    ISOformatTimeStamp,
+    PLUS_MINUS,
+    StartEndTime,
+    TODAY_NOW,
+    YYYYMMDDTHHMMSSZ_FORMAT,
+    YYYYMMDD_FORMAT,
+    YYYYMMDD_FORMAT_REQUIRED,
+    escapeCRsNLs,
+    formatLocalTime,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getDelta,
+    getEmailAddress,
+    getInteger,
+    getNumberRangeList,
+    getString,
+    getTimeOrDeltaFromNow,
+    normalizeEmailAddressOrUID,
+    orgUnitPathQuery,
+    todaysDate,
+)
+from gam.util.csv_pf import CSVPrintFile, flattenJSON, getTodriveOnly
+from gam.util.display import (
+    BAD_REQUEST_RC,
+    getPageMessage,
+    getPageMessageForWhom,
+    printEntity,
+    printGettingAllEntityItemsForWhom,
+    printGettingEntityItemForWhom,
+)
+from gam.util.entity import getEntityToModify
+from gam.util.errors import invalidArgumentExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.fileio import UNKNOWN
+from gam.util.orgunits import getOrgUnitId
+from gam.util.output import (
+    printErrorMessage,
+    printWarningMessage,
+    setSysExitRC,
+    stderrWarningMsg,
+    systemErrorExit,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -35,24 +83,24 @@ def __getattr__(name):
 
 def doWhatIs():
   def _showPrimaryType(entityType, email):
-    _getMain().printEntity([entityType, email])
+    printEntity([entityType, email])
 
   def _showAliasType(entityType, email, primaryEntityType, primaryEmail):
-    _getMain().printEntity([entityType, email, primaryEntityType, primaryEmail])
+    printEntity([entityType, email, primaryEntityType, primaryEmail])
 
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  email = _getMain().getEmailAddress()
+  cd = buildGAPIObject(API.DIRECTORY)
+  email = getEmailAddress()
   showInfo = invitableCheck = True
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'noinfo':
       showInfo = False
     elif myarg == 'noinvitablecheck':
       invitableCheck = False
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   try:
-    result = _getMain().callGAPI(cd.users(), 'get',
+    result = callGAPI(cd.users(), 'get',
                       throwReasons=GAPI.USER_GET_THROW_REASONS,
                       userKey=email, fields='id,primaryEmail')
     if (result['primaryEmail'].lower() == email) or (result['id'] == email):
@@ -60,23 +108,23 @@ def doWhatIs():
         _getMain().infoUsers(entityList=[email])
       else:
         _showPrimaryType(Ent.USER, email)
-      _getMain().setSysExitRC(_getMain().ENTITY_IS_A_USER_RC)
+      setSysExitRC(_getMain().ENTITY_IS_A_USER_RC)
     else:
       if showInfo:
         _getMain().infoAliases(entityList=[email])
       else:
         _showAliasType(Ent.USER_ALIAS, email, Ent.USER, result['primaryEmail'])
-      _getMain().setSysExitRC(_getMain().ENTITY_IS_A_USER_ALIAS_RC)
+      setSysExitRC(_getMain().ENTITY_IS_A_USER_ALIAS_RC)
     return
   except (GAPI.userNotFound, GAPI.badRequest):
     pass
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.backendError, GAPI.systemError):
-    _getMain().entityUnknownWarning(Ent.EMAIL, email)
-    _getMain().setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
+    entityUnknownWarning(Ent.EMAIL, email)
+    setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
     return
   try:
-    result = _getMain().callGAPI(cd.groups(), 'get',
+    result = callGAPI(cd.groups(), 'get',
                       throwReasons=GAPI.GROUP_GET_THROW_REASONS,
                       groupKey=email, fields='id,email')
     if (result['email'].lower() == email) or (result['id'] == email):
@@ -84,19 +132,19 @@ def doWhatIs():
         _getMain().infoGroups([email])
       else:
         _showPrimaryType(Ent.GROUP, email)
-      _getMain().setSysExitRC(_getMain().ENTITY_IS_A_GROUP_RC)
+      setSysExitRC(_getMain().ENTITY_IS_A_GROUP_RC)
     else:
       if showInfo:
         _getMain().infoAliases(entityList=[email])
       else:
         _showAliasType(Ent.GROUP_ALIAS, email, Ent.GROUP, result['email'])
-      _getMain().setSysExitRC(_getMain().ENTITY_IS_A_GROUP_ALIAS_RC)
+      setSysExitRC(_getMain().ENTITY_IS_A_GROUP_ALIAS_RC)
     return
   except (GAPI.groupNotFound, GAPI.forbidden):
     pass
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.badRequest):
-    _getMain().entityUnknownWarning(Ent.EMAIL, email)
-    _getMain().setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
+    entityUnknownWarning(Ent.EMAIL, email)
+    setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
     return
   if not invitableCheck:
     isInvitableUser = False
@@ -109,10 +157,10 @@ def doWhatIs():
       _getMain().infoCIUserInvitations(name, user, ci, None)
     else:
       _showPrimaryType(Ent.USER_INVITATION, email)
-    _getMain().setSysExitRC(_getMain().ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC)
+    setSysExitRC(_getMain().ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC)
   else:
-    _getMain().entityUnknownWarning(Ent.EMAIL, email)
-    _getMain().setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
+    entityUnknownWarning(Ent.EMAIL, email)
+    setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
 
 def _adjustTryDate(errMsg, numDateChanges, limitDateChanges, prevTryDate):
   match_date = re.match('Data for dates later than (.*) is not yet available. Please check back later', errMsg)
@@ -125,10 +173,10 @@ def _adjustTryDate(errMsg, numDateChanges, limitDateChanges, prevTryDate):
     else:
       match_date = re.match('End date greater than LastReportedDate.', errMsg)
       if match_date:
-        tryDateTime = arrow.Arrow.strptime(prevTryDate, _getMain().YYYYMMDD_FORMAT).shift(days=-1)
-        tryDate = tryDateTime.strftime(_getMain().YYYYMMDD_FORMAT)
+        tryDateTime = arrow.Arrow.strptime(prevTryDate, YYYYMMDD_FORMAT).shift(days=-1)
+        tryDate = tryDateTime.strftime(YYYYMMDD_FORMAT)
   if (not match_date) or (numDateChanges > limitDateChanges >= 0):
-    _getMain().printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, errMsg)
+    printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, errMsg)
     return None
   return tryDate
 
@@ -140,14 +188,14 @@ def _checkDataRequiredServices(result, tryDate, dataRequiredServices, parameterS
   usageReports = result.get('usageReports', [])
   # move to day before if we don't have at least one usageReport with parameters
   if not usageReports or not usageReports[0].get('parameters', []):
-    tryDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT).shift(days=-1)
-    return (0, tryDateTime.strftime(_getMain().YYYYMMDD_FORMAT), None)
+    tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
+    return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
   for warning in dataWarnings:
     if warning['code'] == 'PARTIAL_DATA_AVAILABLE':
       for app in warning['data']:
         if app['key'] == 'application' and app['value'] != 'docs' and app['value'] in dataRequiredServices:
-          tryDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT).shift(days=-1)
-          return (0, tryDateTime.strftime(_getMain().YYYYMMDD_FORMAT), None)
+          tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
+          return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
     elif warning['code'] == 'DATA_NOT_AVAILABLE':
       for app in warning['data']:
         if app['key'] == 'application' and app['value'] != 'docs' and app['value'] in dataRequiredServices:
@@ -163,12 +211,12 @@ def _checkDataRequiredServices(result, tryDate, dataRequiredServices, parameterS
         if not requiredServices:
           break
     else:
-      tryDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT).shift(days=-1)
-      return (0, tryDateTime.strftime(_getMain().YYYYMMDD_FORMAT), None)
+      tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
+      return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
   if checkUserEmail:
     if 'entity' not in usageReports[0] or 'userEmail' not in usageReports[0]['entity']:
-      tryDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT).shift(days=-1)
-      return (0, tryDateTime.strftime(_getMain().YYYYMMDD_FORMAT), None)
+      tryDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT).shift(days=-1)
+      return (0, tryDateTime.strftime(YYYYMMDD_FORMAT), None)
   return (1, tryDate, usageReports)
 
 CUSTOMER_REPORT_SERVICES = {
@@ -202,10 +250,10 @@ CUSTOMER_USER_CHOICES = {'customer', 'user'}
 
 # gam report usageparameters customer|user [todrive <ToDriveAttribute>*]
 def doReportUsageParameters():
-  report = _getMain().getChoice(CUSTOMER_USER_CHOICES)
-  csvPF = _getMain().CSVPrintFile(['parameter'], 'sortall')
-  _getMain().getTodriveOnly(csvPF)
-  rep = _getMain().buildGAPIObject(API.REPORTS)
+  report = getChoice(CUSTOMER_USER_CHOICES)
+  csvPF = CSVPrintFile(['parameter'], 'sortall')
+  getTodriveOnly(csvPF)
+  rep = buildGAPIObject(API.REPORTS)
   if report == 'customer':
     service = rep.customerUsageReports()
     dataRequiredServices = CUSTOMER_REPORT_SERVICES
@@ -213,20 +261,20 @@ def doReportUsageParameters():
   else: # 'user'
     service = rep.userUsageReport()
     dataRequiredServices = USER_REPORT_SERVICES
-    kwargs = {'userKey': _getMain()._getAdminEmail()}
+    kwargs = {'userKey': _getAdminEmail()}
   customerId = GC.Values[GC.CUSTOMER_ID]
   if customerId == GC.MY_CUSTOMER:
     customerId = None
-  tryDate = _getMain().todaysDate().strftime(_getMain().YYYYMMDD_FORMAT)
+  tryDate = todaysDate().strftime(YYYYMMDD_FORMAT)
   allParameters = set()
   while True:
     try:
-      result = _getMain().callGAPI(service, 'get',
+      result = callGAPI(service, 'get',
                         throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST],
                         date=tryDate, customerId=customerId, fields='warnings,usageReports(parameters(name))', **kwargs)
       fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate, dataRequiredServices)
       if fullData < 0:
-        _getMain().printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_USAGE_PARAMETERS_DATA_AVAILABLE)
+        printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_USAGE_PARAMETERS_DATA_AVAILABLE)
         return
       if usageReports:
         for parameter in usageReports[0]['parameters']:
@@ -236,7 +284,7 @@ def doReportUsageParameters():
       if fullData == 1:
         break
     except GAPI.badRequest:
-      _getMain().printErrorMessage(_getMain().BAD_REQUEST_RC, Msg.BAD_REQUEST)
+      printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
       return
     except GAPI.invalid as e:
       tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
@@ -249,17 +297,17 @@ def doReportUsageParameters():
 def getUserOrgUnits(cd, orgUnit, orgUnitId):
   try:
     if orgUnit == orgUnitId:
-      orgUnit = _getMain().callGAPI(cd.orgunits(), 'get',
+      orgUnit = callGAPI(cd.orgunits(), 'get',
                          throwReasons=GAPI.ORGUNIT_GET_THROW_REASONS,
                          customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=orgUnit, fields='orgUnitPath')['orgUnitPath']
-    _getMain().printGettingAllEntityItemsForWhom(Ent.USER, orgUnit, qualifier=Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT)),
+    printGettingAllEntityItemsForWhom(Ent.USER, orgUnit, qualifier=Msg.IN_THE.format(Ent.Singular(Ent.ORGANIZATIONAL_UNIT)),
                                       entityType=Ent.ORGANIZATIONAL_UNIT)
-    result = _getMain().callGAPIpages(cd.users(), 'list', 'users',
-                           pageMessage=_getMain().getPageMessageForWhom(),
+    result = callGAPIpages(cd.users(), 'list', 'users',
+                           pageMessage=getPageMessageForWhom(),
                            throwReasons=[GAPI.INVALID_ORGUNIT, GAPI.ORGUNIT_NOT_FOUND,
                                          GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                           customer=GC.Values[GC.CUSTOMER_ID], query=_getMain().orgUnitPathQuery(orgUnit, None, None), orderBy='email',
+                           customer=GC.Values[GC.CUSTOMER_ID], query=orgUnitPathQuery(orgUnit, None, None), orderBy='email',
                            fields='nextPageToken,users(primaryEmail,orgUnitPath)', maxResults=GC.Values[GC.USER_MAX_RESULTS])
     userOrgUnits = {}
     for user in result:
@@ -302,23 +350,23 @@ def doReportUsage():
     return selectorChoices
 
   def validateYYYYMMDD(argstr):
-    if argstr in _getMain().TODAY_NOW or argstr[0] in _getMain().PLUS_MINUS:
+    if argstr in TODAY_NOW or argstr[0] in PLUS_MINUS:
       if argstr == 'NOW':
         argstr = 'TODAY'
-      deltaDate = _getMain().getDelta(argstr, _getMain().DELTA_DATE_PATTERN)
+      deltaDate = getDelta(argstr, DELTA_DATE_PATTERN)
       if deltaDate is None:
         Cmd.Backup()
-        _getMain().invalidArgumentExit(_getMain().DELTA_DATE_FORMAT_REQUIRED)
+        invalidArgumentExit(DELTA_DATE_FORMAT_REQUIRED)
       return deltaDate
     try:
-      argDate = arrow.Arrow.strptime(argstr, _getMain().YYYYMMDD_FORMAT)
+      argDate = arrow.Arrow.strptime(argstr, YYYYMMDD_FORMAT)
       return arrow.Arrow(argDate.year, argDate.month, argDate.day, tzinfo=GC.Values[GC.TIMEZONE])
     except ValueError:
       Cmd.Backup()
-      _getMain().invalidArgumentExit(_getMain().YYYYMMDD_FORMAT_REQUIRED)
+      invalidArgumentExit(YYYYMMDD_FORMAT_REQUIRED)
 
-  report = _getMain().getChoice(CUSTOMER_USER_CHOICES)
-  rep = _getMain().buildGAPIObject(API.REPORTS)
+  report = getChoice(CUSTOMER_USER_CHOICES)
+  rep = buildGAPIObject(API.REPORTS)
   titles = ['date']
   if report == 'customer':
     fullDataServices = CUSTOMER_REPORT_SERVICES
@@ -331,7 +379,7 @@ def doReportUsage():
     service = rep.userUsageReport()
     kwargs = [{'userKey': 'all'}]
     titles.append('user')
-  csvPF = _getMain().CSVPrintFile()
+  csvPF = CSVPrintFile()
   customerId = GC.Values[GC.CUSTOMER_ID]
   if customerId == GC.MY_CUSTOMER:
     customerId = None
@@ -340,36 +388,36 @@ def doReportUsage():
   userKey = 'all'
   cd = orgUnit = orgUnitId = None
   userOrgUnits = {}
-  startEndTime = _getMain().StartEndTime('startdate', 'enddate', 'date')
+  startEndTime = StartEndTime('startdate', 'enddate', 'date')
   skipDayNumbers = []
   skipDates = set()
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'start', 'startdate', 'end', 'enddate', 'range', 'thismonth', 'previousmonths'}:
       startEndTime.Get(myarg)
     elif userReports and myarg in {'ou', 'org', 'orgunit'}:
       if cd is None:
-        cd = _getMain().buildGAPIObject(API.DIRECTORY)
-      orgUnit, orgUnitId = _getMain().getOrgUnitId(cd)
+        cd = buildGAPIObject(API.DIRECTORY)
+      orgUnit, orgUnitId = getOrgUnitId(cd)
       select = False
     elif userReports and myarg == 'showorgunit':
       showOrgUnit = True
     elif myarg in {'fields', 'parameters'}:
-      for field in _getMain().getString(Cmd.OB_STRING).replace(',', ' ').split():
+      for field in getString(Cmd.OB_STRING).replace(',', ' ').split():
         if ':' in field:
           repsvc, _ = field.split(':', 1)
           if repsvc in fullDataServices:
             parameters.add(field)
           else:
-            _getMain().invalidChoiceExit(repsvc, fullDataServices, True)
+            invalidChoiceExit(repsvc, fullDataServices, True)
         else:
           Cmd.Backup()
-          _getMain().invalidArgumentExit('service:parameter')
+          invalidArgumentExit('service:parameter')
     elif myarg == 'skipdates':
-      for skip in _getMain().getString(Cmd.OB_STRING).upper().split(','):
+      for skip in getString(Cmd.OB_STRING).upper().split(','):
         if skip.find(':') == -1:
           skipDates.add(validateYYYYMMDD(skip))
         else:
@@ -378,45 +426,45 @@ def doReportUsage():
           skipEndDate = validateYYYYMMDD(skipEnd)
           if skipEndDate < skipStartDate:
             Cmd.Backup()
-            _getMain().usageErrorExit(Msg.INVALID_DATE_TIME_RANGE.format(myarg, skipEnd, myarg, skipStart))
+            usageErrorExit(Msg.INVALID_DATE_TIME_RANGE.format(myarg, skipEnd, myarg, skipStart))
           while skipStartDate <= skipEndDate:
             skipDates.add(skipStartDate)
             skipStartDate = skipStartDate.shift(days=1)
     elif myarg == 'skipdaysofweek':
-      skipdaynames = _getMain().getString(Cmd.OB_STRING).lower().split(',')
+      skipdaynames = getString(Cmd.OB_STRING).lower().split(',')
       dow = [d.lower() for d in _getMain().DAYS_OF_WEEK]
       skipDayNumbers = [dow.index(d) for d in skipdaynames if d in dow]
     elif userReports and myarg == 'user':
-      userKey = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+      userKey = getString(Cmd.OB_EMAIL_ADDRESS)
       orgUnit = orgUnitId = None
       select = False
     elif userReports and (myarg == 'select' or myarg in usageEntitySelectors()):
       if myarg != 'select':
         Cmd.Backup()
-      _, users = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      _, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       orgUnit = orgUnitId = None
       select = True
     elif myarg == 'convertmbtogb':
       convertMbToGb = True
     elif myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if startEndTime.endDateTime is None:
-    startEndTime.endDateTime = _getMain().todaysDate()
+    startEndTime.endDateTime = todaysDate()
   if startEndTime.startDateTime is None:
     startEndTime.startDateTime = startEndTime.endDateTime.shift(days=-30)
   startDateTime = startEndTime.startDateTime
-  startDate = startDateTime.strftime(_getMain().YYYYMMDD_FORMAT)
+  startDate = startDateTime.strftime(YYYYMMDD_FORMAT)
   endDateTime = startEndTime.endDateTime
-  endDate = endDateTime.strftime(_getMain().YYYYMMDD_FORMAT)
+  endDate = endDateTime.strftime(YYYYMMDD_FORMAT)
   startUseDate = endUseDate = None
   if not orgUnitId:
     showOrgUnit = False
   if userReports:
     if select:
       Ent.SetGetting(Ent.REPORT)
-      kwargs = [{'userKey': _getMain().normalizeEmailAddressOrUID(user)} for user in users]
+      kwargs = [{'userKey': normalizeEmailAddressOrUID(user)} for user in users]
     elif userKey == 'all':
       if orgUnitId:
         kwargs[0]['orgUnitID'] = orgUnitId
@@ -424,11 +472,11 @@ def doReportUsage():
         forWhom = f'users in orgUnit {orgUnit}'
       else:
         forWhom = 'all users'
-      _getMain().printGettingEntityItemForWhom(Ent.REPORT, forWhom)
+      printGettingEntityItemForWhom(Ent.REPORT, forWhom)
     else:
       Ent.SetGetting(Ent.REPORT)
-      kwargs = [{'userKey': _getMain().normalizeEmailAddressOrUID(userKey)}]
-      _getMain().printGettingEntityItemForWhom(Ent.REPORT, kwargs[0]['userKey'])
+      kwargs = [{'userKey': normalizeEmailAddressOrUID(userKey)}]
+      printGettingEntityItemForWhom(Ent.REPORT, kwargs[0]['userKey'])
     if showOrgUnit:
       titles.append('orgUnitPath')
   else:
@@ -442,17 +490,17 @@ def doReportUsage():
     if startDateTime.weekday() in skipDayNumbers or startDateTime in skipDates:
       startDateTime = startDateTime.shift(days=1)
       continue
-    useDate = startDateTime.strftime(_getMain().YYYYMMDD_FORMAT)
+    useDate = startDateTime.strftime(YYYYMMDD_FORMAT)
     startDateTime = startDateTime.shift(days=1)
     try:
       for kwarg in kwargs:
         if userReports:
           if not select and userKey == 'all':
-            pageMessage = _getMain().getPageMessageForWhom(forWhom, showDate=useDate)
+            pageMessage = getPageMessageForWhom(forWhom, showDate=useDate)
           else:
-            pageMessage = _getMain().getPageMessageForWhom(kwarg['userKey'], showDate=useDate)
+            pageMessage = getPageMessageForWhom(kwarg['userKey'], showDate=useDate)
         try:
-          usage = _getMain().callGAPIpages(service, 'get', 'usageReports',
+          usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
                                 throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -466,9 +514,9 @@ def doReportUsage():
             if 'userEmail' in entity['entity']:
               row['user'] = entity['entity']['userEmail']
               if showOrgUnit:
-                row['orgUnitPath'] = userOrgUnits.get(row['user'], _getMain().UNKNOWN)
+                row['orgUnitPath'] = userOrgUnits.get(row['user'], UNKNOWN)
             else:
-              row['user'] = _getMain().UNKNOWN
+              row['user'] = UNKNOWN
           if addCSVData:
             row.update(addCSVData)
           for item in entity.get('parameters', []):
@@ -490,7 +538,7 @@ def doReportUsage():
                       name = convertReportMBtoGB(name, item)
                     row[name] = item[ptype]
                   else:
-                    row[name] = _getMain().formatLocalTime(item[ptype])
+                    row[name] = formatLocalTime(item[ptype])
                   break
               else:
                 row[name] = ''
@@ -499,12 +547,12 @@ def doReportUsage():
           endUseDate = useDate
           csvPF.WriteRowTitles(row)
     except GAPI.invalid as e:
-      _getMain().stderrWarningMsg(str(e))
+      stderrWarningMsg(str(e))
       break
     except GAPI.invalidInput as e:
-      _getMain().systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
     except GAPI.forbidden as e:
-      _getMain().accessErrorExit(None, str(e))
+      accessErrorExit(None, str(e))
   if startUseDate:
     reportName = f'{report.capitalize()} Usage Report - {startUseDate}:{endUseDate}'
   else:
@@ -657,9 +705,9 @@ def doReport():
       if 'userEmail' in user_report['entity']:
         row['email'] = user_report['entity']['userEmail']
         if showOrgUnit:
-          row['orgUnitPath'] = userOrgUnits.get(row['email'], _getMain().UNKNOWN)
+          row['orgUnitPath'] = userOrgUnits.get(row['email'], UNKNOWN)
       else:
-        row['email'] = _getMain().UNKNOWN
+        row['email'] = UNKNOWN
       if addCSVData:
         row.update(addCSVData)
       for item in user_report.get('parameters', []):
@@ -673,7 +721,7 @@ def doReport():
           mg = DISABLED_REASON_TIME_PATTERN.match(item['stringValue'])
           if mg:
             try:
-              disabledTime = _getMain().formatLocalTime(arrow.Arrow.strptime(mg.group(1), '%Y/%m/%d-%H:%M:%S').replace(tzinfo='UTC').strftime(_getMain().YYYYMMDDTHHMMSSZ_FORMAT))
+              disabledTime = formatLocalTime(arrow.Arrow.strptime(mg.group(1), '%Y/%m/%d-%H:%M:%S').replace(tzinfo='UTC').strftime(YYYYMMDDTHHMMSSZ_FORMAT))
               row['accounts:disabled_time'] = disabledTime
               csvPF.AddTitles('accounts:disabled_time')
             except ValueError:
@@ -686,7 +734,7 @@ def doReport():
             if ptype != 'datetimeValue':
               row[name] = item[ptype]
             else:
-              row[name] = _getMain().formatLocalTime(item[ptype])
+              row[name] = formatLocalTime(item[ptype])
             break
         else:
           row[name] = ''
@@ -770,7 +818,7 @@ def doReport():
           if ptype != 'datetimeValue':
             row[name] = item[ptype]
           else:
-            row[name] = _getMain().formatLocalTime(item[ptype])
+            row[name] = formatLocalTime(item[ptype])
           break
       else:
         if 'msgValue' in item:
@@ -778,7 +826,7 @@ def doReport():
             if noAuthorizedApps:
               continue
             for app in item['msgValue']:
-              appName = f'App: {_getMain().escapeCRsNLs(app["client_name"])}'
+              appName = f'App: {escapeCRsNLs(app["client_name"])}'
               for key in ['num_users', 'client_id']:
                 title = f'{appName}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'
                 csvPF.AddTitles(title)
@@ -837,7 +885,7 @@ def doReport():
               name = convertReportMBtoGB(name, item)
             row.update({'name': name, 'value': item[ptype]})
           else:
-            row.update({'name': name, 'value': _getMain().formatLocalTime(item[ptype])})
+            row.update({'name': name, 'value': formatLocalTime(item[ptype])})
           csvPF.WriteRow(row)
           break
       else:
@@ -851,7 +899,7 @@ def doReport():
                 app.update(addCSVData)
               for an_item in subitem:
                 if an_item == 'client_name':
-                  app['name'] = f'App: {_getMain().escapeCRsNLs(subitem[an_item])}'
+                  app['name'] = f'App: {escapeCRsNLs(subitem[an_item])}'
                 elif an_item == 'num_users':
                   app['value'] = f'{subitem[an_item]} users'
                 elif an_item == 'client_id':
@@ -900,12 +948,12 @@ def doReport():
 
   def _getActivitiesFilters(myarg):
     if myarg in REPORT_ACTIVITIES_FILTER_MAP:
-      kwargs[REPORT_ACTIVITIES_FILTER_MAP[myarg]] = _getMain().getString(Cmd.OB_STRING)
+      kwargs[REPORT_ACTIVITIES_FILTER_MAP[myarg]] = getString(Cmd.OB_STRING)
       return True
     return False
 
   # dynamically extend our choices with other reports Google dynamically adds
-  rep = _getMain().buildGAPIObject(API.REPORTS)
+  rep = buildGAPIObject(API.REPORTS)
   dyn_choices = rep._rootDesc \
           .get('resources', {}) \
           .get('activities', {}) \
@@ -918,7 +966,7 @@ def doReport():
     if dyn_choice.replace('_', '') not in REPORT_CHOICE_MAP and \
        dyn_choice not in REPORT_CHOICE_MAP.values():
       REPORT_CHOICE_MAP[dyn_choice.replace('_', '')] = dyn_choice
-  report = _getMain().getChoice(REPORT_CHOICE_MAP, choiceAliases=REPORT_ALIASES_CHOICE_MAP, mapChoice=True)
+  report = getChoice(REPORT_CHOICE_MAP, choiceAliases=REPORT_ALIASES_CHOICE_MAP, mapChoice=True)
   if report == 'usage':
     doReportUsage()
     return
@@ -928,14 +976,14 @@ def doReport():
   customerId = GC.Values[GC.CUSTOMER_ID]
   if customerId == GC.MY_CUSTOMER:
     customerId = None
-  csvPF = _getMain().CSVPrintFile()
+  csvPF = CSVPrintFile()
   filters = actorIpAddress = orgUnit = orgUnitId = None
   showOrgUnit = False
   parameters = set()
   parameterServices = set()
   eventCounts = {}
   eventNames = []
-  startEndTime = _getMain().StartEndTime('start', 'end')
+  startEndTime = StartEndTime('start', 'end')
   filterTimes = {}
   maxActivities = maxEvents = 0
   maxResults = 1000
@@ -968,7 +1016,7 @@ def doReport():
     includeServices = set()
   kwargs = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg in {'range', 'thismonth', 'previousmonths'}:
@@ -976,8 +1024,8 @@ def doReport():
       userCustomerRange = True
     elif myarg in {'ou', 'org', 'orgunit'}:
       if cd is None:
-        cd = _getMain().buildGAPIObject(API.DIRECTORY)
-      orgUnit, orgUnitId = _getMain().getOrgUnitId(cd)
+        cd = buildGAPIObject(API.DIRECTORY)
+      orgUnit, orgUnitId = getOrgUnitId(cd)
       select = False
     elif myarg == 'showorgunit':
       showOrgUnit = True
@@ -989,11 +1037,11 @@ def doReport():
       if myarg == 'nodatechange':
         limitDateChanges = 0
       else:
-        limitDateChanges = _getMain().getInteger(minVal=-1)
+        limitDateChanges = getInteger(minVal=-1)
       if (limitDateChanges == 0) and (startEndTime.startDateTime is not None) and (startEndTime.endDateTime == startEndTime.startDateTime):
         userCustomerRange = True
     elif usageReports and myarg in {'fields', 'parameters'}:
-      for field in _getMain().getString(Cmd.OB_STRING).replace(',', ' ').split():
+      for field in getString(Cmd.OB_STRING).replace(',', ' ').split():
         if ':' in field:
           repsvc, _ = field.split(':', 1)
           if repsvc in fullDataServices:
@@ -1001,45 +1049,45 @@ def doReport():
             parameterServices.add(repsvc)
             includeServices.add(repsvc)
           else:
-            _getMain().invalidChoiceExit(repsvc, fullDataServices, True)
+            invalidChoiceExit(repsvc, fullDataServices, True)
         else:
           Cmd.Backup()
-          _getMain().invalidArgumentExit('service:parameter')
+          invalidArgumentExit('service:parameter')
     elif usageReports and myarg == 'fulldatarequired':
-      fdr = _getMain().getString(Cmd.OB_SERVICE_NAME_LIST, minLen=0).lower()
+      fdr = getString(Cmd.OB_SERVICE_NAME_LIST, minLen=0).lower()
       if fdr:
         if fdr != 'all':
           for repsvc in fdr.replace(',', ' ').split():
             if repsvc in fullDataServices:
               dataRequiredServices.add(repsvc)
             else:
-              _getMain().invalidChoiceExit(repsvc, fullDataServices, True)
+              invalidChoiceExit(repsvc, fullDataServices, True)
         else:
           dataRequiredServices = fullDataServices
     elif usageReports and myarg in {'service', 'services'}:
-      for repsvc in _getMain().getString(Cmd.OB_SERVICE_NAME_LIST).lower().replace(',', ' ').split():
+      for repsvc in getString(Cmd.OB_SERVICE_NAME_LIST).lower().replace(',', ' ').split():
         if repsvc in fullDataServices:
           parameterServices.add(repsvc)
           includeServices.add(repsvc)
         else:
-          _getMain().invalidChoiceExit(repsvc, fullDataServices, True)
+          invalidChoiceExit(repsvc, fullDataServices, True)
     elif usageReports and myarg == 'convertmbtogb':
       convertMbToGb = True
     elif customerReports and myarg == 'noauthorizedapps':
       noAuthorizedApps = True
     elif activityReports and myarg == 'maxactivities':
-      maxActivities = _getMain().getInteger(minVal=0)
+      maxActivities = getInteger(minVal=0)
     elif activityReports and myarg == 'maxevents':
-      maxEvents = _getMain().getInteger(minVal=0)
+      maxEvents = getInteger(minVal=0)
     elif activityReports and myarg in {'start', 'starttime', 'end', 'endtime', 'yesterday', 'today'}:
       startEndTime.Get(myarg)
     elif activityReports and myarg in {'event', 'events'}:
-      for event in _getMain().getString(Cmd.OB_EVENT_NAME_LIST).replace(',', ' ').split():
+      for event in getString(Cmd.OB_EVENT_NAME_LIST).replace(',', ' ').split():
         event = event.lower() if report not in REPORT_ACTIVITIES_UPPERCASE_EVENTS else event.upper()
         if event not in eventNames:
           eventNames.append(event)
     elif activityReports and myarg == 'ip':
-      actorIpAddress = _getMain().getString(Cmd.OB_STRING)
+      actorIpAddress = getString(Cmd.OB_STRING)
     elif activityReports and myarg == 'notimesort':
       sortAllTimes = False
     elif activityReports and myarg == 'countsonly':
@@ -1053,41 +1101,41 @@ def doReport():
     elif activityReports and _getActivitiesFilters(myarg):
       pass
     elif activityReports and (report == 'gmail')  and myarg == 'gmaileventtypes':
-      gmailEventTypes = set(_getMain().getNumberRangeList())
+      gmailEventTypes = set(getNumberRangeList())
     elif activityReports and myarg == 'userisactor':
       mapAdminUsersToFilter = False
     elif activityReports and myarg == 'includesensitivedata':
       kwargs['includeSensitiveData'] = True
     elif myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif activityReports and myarg == 'shownoactivities':
       showNoActivities = True
     elif not customerReports and myarg.startswith('filtertime'):
-      filterTimes[myarg] = _getMain().getTimeOrDeltaFromNow()
+      filterTimes[myarg] = getTimeOrDeltaFromNow()
     elif not customerReports and myarg in {'filter', 'filters'}:
-      filters = _getMain().getString(Cmd.OB_STRING)
+      filters = getString(Cmd.OB_STRING)
     elif not customerReports and myarg == 'maxresults':
-      maxResults = _getMain().getInteger(minVal=1, maxVal=1000)
+      maxResults = getInteger(minVal=1, maxVal=1000)
     elif not customerReports and myarg == 'user':
-      userKey = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+      userKey = getString(Cmd.OB_EMAIL_ADDRESS)
       orgUnit = orgUnitId = None
       select = False
     elif not customerReports and myarg == 'select':
-      _, users = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      _, users = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
       orgUnit = orgUnitId = None
       select = True
     elif userReports and myarg == 'aggregatebydate':
-      aggregateByDate = _getMain().getBoolean()
+      aggregateByDate = getBoolean()
     elif userReports and myarg == 'aggregatebyuser':
-      aggregateByUser = _getMain().getBoolean()
+      aggregateByUser = getBoolean()
     elif userReports and myarg == 'allverifyuser':
-      allVerifyUser = _getMain().getEmailAddress()
+      allVerifyUser = getEmailAddress()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if aggregateByDate and aggregateByUser:
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('aggregateByDate', 'aggregateByUser'))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('aggregateByDate', 'aggregateByUser'))
   if countsOnly and countsByDate and countsSummary:
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('bydate', 'summary'))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('bydate', 'summary'))
   parameters = ','.join(parameters) if parameters else None
   if usageReports and not includeServices:
     includeServices = set(fullDataServices)
@@ -1098,7 +1146,7 @@ def doReport():
     showOrgUnit = False
   if userReports:
     if startEndTime.startDateTime is None:
-      startEndTime.startDateTime = startEndTime.endDateTime = _getMain().todaysDate()
+      startEndTime.startDateTime = startEndTime.endDateTime = todaysDate()
     if select:
       normalizeUsers = True
       orgUnitId = None
@@ -1110,11 +1158,11 @@ def doReport():
         forWhom = f'users in orgUnit {orgUnit}'
       else:
         forWhom = 'all users'
-      _getMain().printGettingEntityItemForWhom(Ent.REPORT, forWhom)
+      printGettingEntityItemForWhom(Ent.REPORT, forWhom)
       users = ['all']
     else:
       Ent.SetGetting(Ent.REPORT)
-      users = [_getMain().normalizeEmailAddressOrUID(userKey)]
+      users = [normalizeEmailAddressOrUID(userKey)]
       orgUnitId = None
     if aggregateByDate:
       titles = ['date']
@@ -1131,9 +1179,9 @@ def doReport():
     for user in users:
       i += 1
       if normalizeUsers:
-        user = _getMain().normalizeEmailAddressOrUID(user)
+        user = normalizeEmailAddressOrUID(user)
       if user != 'all':
-        _getMain().printGettingEntityItemForWhom(Ent.REPORT, user, i, count)
+        printGettingEntityItemForWhom(Ent.REPORT, user, i, count)
         verifyUser = user
       else:
         verifyUser = allVerifyUser
@@ -1142,10 +1190,10 @@ def doReport():
       lastDate = None
       numDateChanges = 0
       while startDateTime <= endDateTime:
-        tryDate = startDateTime.strftime(_getMain().YYYYMMDD_FORMAT)
+        tryDate = startDateTime.strftime(YYYYMMDD_FORMAT)
         try:
           if not userCustomerRange:
-            result = _getMain().callGAPI(service, 'get',
+            result = callGAPI(service, 'get',
                               throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                               userKey=verifyUser, date=tryDate, customerId=customerId,
                               orgUnitID=orgUnitId, parameters=parameters,
@@ -1154,20 +1202,20 @@ def doReport():
             fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                          dataRequiredServices, parameterServices, True)
             if fullData < 0:
-              _getMain().printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
+              printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
               break
             numDateChanges += 1
             if fullData == 0:
               if numDateChanges > limitDateChanges >= 0:
                 break
-              startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT)
+              startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
               continue
           if not select and userKey == 'all':
-            pageMessage = _getMain().getPageMessageForWhom(forWhom, showDate=tryDate)
+            pageMessage = getPageMessageForWhom(forWhom, showDate=tryDate)
           else:
-            pageMessage = _getMain().getPageMessageForWhom(user, showDate=tryDate)
+            pageMessage = getPageMessageForWhom(user, showDate=tryDate)
           prevTryDate = tryDate
-          usage = _getMain().callGAPIpages(service, 'get', 'usageReports',
+          usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
                                 throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1189,19 +1237,19 @@ def doReport():
           tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
           if not tryDate:
             break
-          startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT)
+          startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
           continue
         except GAPI.invalidInput as e:
-          _getMain().systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+          systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
         except GAPI.badRequest:
           if user != 'all':
-            _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+            entityUnknownWarning(Ent.USER, user, i, count)
           else:
-            _getMain().printErrorMessage(_getMain().BAD_REQUEST_RC, Msg.BAD_REQUEST)
+            printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
             exitUserLoop = True
           break
         except GAPI.forbidden as e:
-          _getMain().accessErrorExit(None, str(e))
+          accessErrorExit(None, str(e))
         startDateTime = startDateTime.shift(days=1)
       if exitUserLoop:
         break
@@ -1225,7 +1273,7 @@ def doReport():
       for email, events in eventCounts.items():
         row = {'email': email}
         if showOrgUnit:
-          row['orgUnitPath'] = userOrgUnits.get(email, _getMain().UNKNOWN)
+          row['orgUnitPath'] = userOrgUnits.get(email, UNKNOWN)
         if addCSVData:
           row.update(addCSVData)
         if 'accounts:used_quota_in_percentage' in events:
@@ -1242,7 +1290,7 @@ def doReport():
       csvPF.writeCSVfile(f'User Reports - {tryDate}')
   elif customerReports:
     if startEndTime.startDateTime is None:
-      startEndTime.startDateTime = startEndTime.endDateTime = _getMain().todaysDate()
+      startEndTime.startDateTime = startEndTime.endDateTime = todaysDate()
     csvPF.SetTitles('date')
     if addCSVData:
       csvPF.AddTitles(sorted(addCSVData.keys()))
@@ -1254,24 +1302,24 @@ def doReport():
     lastDate = None
     numDateChanges = 0
     while startDateTime <= endDateTime:
-      tryDate = startDateTime.strftime(_getMain().YYYYMMDD_FORMAT)
+      tryDate = startDateTime.strftime(YYYYMMDD_FORMAT)
       try:
         if not userCustomerRange:
-          result = _getMain().callGAPI(service, 'get',
+          result = callGAPI(service, 'get',
                             throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
                             date=tryDate, customerId=customerId, parameters=parameters, fields='warnings,usageReports')
           fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                        dataRequiredServices, parameterServices)
           if fullData < 0:
-            _getMain().printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
+            printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
             break
           numDateChanges += 1
           if fullData == 0:
             if numDateChanges > limitDateChanges >= 0:
               break
-            startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT)
+            startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
             continue
-        usage = _getMain().callGAPIpages(service, 'get', 'usageReports',
+        usage = callGAPIpages(service, 'get', 'usageReports',
                               throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.FORBIDDEN],
                               date=tryDate, customerId=customerId, parameters=parameters)
         if not userCustomerRange or (startEndTime.startDateTime == startEndTime.endDateTime):
@@ -1287,12 +1335,12 @@ def doReport():
         tryDate = _adjustTryDate(str(e), numDateChanges, limitDateChanges, tryDate)
         if not tryDate:
           break
-        startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, _getMain().YYYYMMDD_FORMAT)
+        startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
         continue
       except GAPI.invalidInput as e:
-        _getMain().systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+        systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
       except GAPI.forbidden as e:
-        _getMain().accessErrorExit(None, str(e))
+        accessErrorExit(None, str(e))
       startDateTime = startDateTime.shift(days=1)
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
   else: # activityReports
@@ -1301,22 +1349,22 @@ def doReport():
       csvPF.AddTitles(sorted(addCSVData.keys()))
     csvPF.SetSortAllTitles()
     if select:
-      pageMessage = _getMain().getPageMessage()
+      pageMessage = getPageMessage()
       normalizeUsers = True
       orgUnitId = None
     elif userKey == 'all':
       if orgUnitId:
         if showOrgUnit:
           userOrgUnits = getUserOrgUnits(cd, orgUnit, orgUnitId)
-        _getMain().printGettingAllEntityItemsForWhom(Ent.ACTIVITY, f'users in orgUnit {orgUnit}', query=filters)
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, f'users in orgUnit {orgUnit}', query=filters)
       else:
-        _getMain().printGettingAllEntityItemsForWhom(Ent.ACTIVITY, 'all users', query=filters)
-      pageMessage = _getMain().getPageMessage()
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, 'all users', query=filters)
+      pageMessage = getPageMessage()
       users = ['all']
     else:
       Ent.SetGetting(Ent.ACTIVITY)
-      pageMessage = _getMain().getPageMessage()
-      users = [_getMain().normalizeEmailAddressOrUID(userKey)]
+      pageMessage = getPageMessage()
+      users = [normalizeEmailAddressOrUID(userKey)]
       orgUnitId = None
     zeroEventCounts = {}
     if not eventNames:
@@ -1330,13 +1378,13 @@ def doReport():
     if report == 'gmail':
       if startEndTime.startTime is None:
         if startEndTime.endTime is None:
-          startEndTime.endDateTime = _getMain().todaysDate()
-          startEndTime.endTime = _getMain().ISOformatTimeStamp(startEndTime.endDateTime)
+          startEndTime.endDateTime = todaysDate()
+          startEndTime.endTime = ISOformatTimeStamp(startEndTime.endDateTime)
         startEndTime.startDateTime = startEndTime.endDateTime.shift(days=-30)
-        startEndTime.startTime = _getMain().ISOformatTimeStamp(startEndTime.startDateTime)
+        startEndTime.startTime = ISOformatTimeStamp(startEndTime.startDateTime)
       elif startEndTime.endTime is None:
         startEndTime.endDateTime = startEndTime.startDateTime.shift(days=30)
-        startEndTime.endTime = _getMain().ISOformatTimeStamp(startEndTime.endDateTime)
+        startEndTime.endTime = ISOformatTimeStamp(startEndTime.endDateTime)
 # admin uses userKey for who executed the command, map user to filter EMAIL_USER==user
 # unless userisactor was specified
     elif report == 'admin':
@@ -1361,17 +1409,17 @@ def doReport():
     for user in users:
       i += 1
       if normalizeUsers:
-        user = _getMain().normalizeEmailAddressOrUID(user)
+        user = normalizeEmailAddressOrUID(user)
       pfilters = filters
       if select or user != 'all':
         puser = user
         if mapUsersToFilter:
           pfilters = filters.replace('#user#', user)
           user = 'all'
-        _getMain().printGettingAllEntityItemsForWhom(Ent.ACTIVITY, puser, i, count, query=pfilters)
+        printGettingAllEntityItemsForWhom(Ent.ACTIVITY, puser, i, count, query=pfilters)
       for eventName in eventNames:
         try:
-          feed = _getMain().callGAPIpages(service, 'list', 'items',
+          feed = callGAPIpages(service, 'list', 'items',
                                pageMessage=pageMessage, maxItems=maxActivities,
                                throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.AUTH_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
@@ -1381,34 +1429,34 @@ def doReport():
                                eventName=eventName, filters=pfilters, maxResults=maxResults, **kwargs)
         except GAPI.badRequest:
           if user != 'all':
-            _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+            entityUnknownWarning(Ent.USER, user, i, count)
             continue
-          _getMain().printErrorMessage(_getMain().BAD_REQUEST_RC, Msg.BAD_REQUEST)
+          printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
           break
         except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
-          _getMain().systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+          systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
         except GAPI.authError:
-          _getMain().accessErrorExit(None)
+          accessErrorExit(None)
         for activity in feed:
           events = activity.pop('events')
           actor = activity['actor'].get('email')
           if not actor:
-            actor = 'id:'+activity['actor'].get('profileId', _getMain().UNKNOWN)
+            actor = 'id:'+activity['actor'].get('profileId', UNKNOWN)
           if showOrgUnit:
-            activity['actor']['orgUnitPath'] = userOrgUnits.get(actor, _getMain().UNKNOWN)
+            activity['actor']['orgUnitPath'] = userOrgUnits.get(actor, UNKNOWN)
           if countsOnly and countsByDate:
-            eventTime = activity.get('id', {}).get('time', _getMain().UNKNOWN)
-            if eventTime != _getMain().UNKNOWN:
+            eventTime = activity.get('id', {}).get('time', UNKNOWN)
+            if eventTime != UNKNOWN:
               try:
                 eventTime = arrow.get(eventTime)
               except (arrow.parser.ParserError, OverflowError):
-                eventTime = _getMain().UNKNOWN
-            if eventTime != _getMain().UNKNOWN:
-              eventDate = eventTime.strftime(_getMain().YYYYMMDD_FORMAT)
+                eventTime = UNKNOWN
+            if eventTime != UNKNOWN:
+              eventDate = eventTime.strftime(YYYYMMDD_FORMAT)
             else:
-              eventDate = _getMain().UNKNOWN
+              eventDate = UNKNOWN
           if not countsOnly or eventRowFilter:
-            activity_row = _getMain().flattenJSON(activity, timeObjects=REPORT_ACTIVITIES_TIME_OBJECTS)
+            activity_row = flattenJSON(activity, timeObjects=REPORT_ACTIVITIES_TIME_OBJECTS)
             purge_parameters = True
             numEvents = 0
             for event in events:
@@ -1438,7 +1486,7 @@ def doReport():
                     if val is not None:
                       val = int(val)
                       if val >= 62135683200:
-                        event[item['name']] = _getMain().ISOformatTimeStamp(arrow.Arrow.fromtimestamp(val-62135683200, GC.Values[GC.TIMEZONE]))
+                        event[item['name']] = ISOformatTimeStamp(arrow.Arrow.fromtimestamp(val-62135683200, GC.Values[GC.TIMEZONE]))
                       else:
                         event[item['name']] = val
                   else:
@@ -1461,7 +1509,7 @@ def doReport():
                   purge_parameters = False
               if purge_parameters:
                 event.pop('parameters', None)
-              row = _getMain().flattenJSON(event)
+              row = flattenJSON(event)
               row.update(activity_row)
               if not countsOnly:
                 if addCSVData:

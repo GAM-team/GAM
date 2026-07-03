@@ -19,23 +19,41 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems
+from gam.util.args import (
+    ONE_KILO_10_BYTES,
+    ONE_MEGA_10_BYTES,
+    checkForExtraneousArguments,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getEmailAddress,
+    getJSON,
+    getMaxMessageBytes,
+    getString,
+)
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, cleanJSON
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityPerformActionNumItems,
+    printEntitiesCount,
+    printEntity,
+    printEntityKVList,
+    printGettingEntityItemForWhom,
+    printKeyValueList,
+    printLine,
+    userGmailServiceNotEnabledWarning,
+)
+from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUserObjectEntity
+from gam.util.errors import missingChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import ERROR
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 ONE_KILO_10_BYTES = 1000
 ONE_MEGA_10_BYTES = 1000 * 1000
@@ -82,41 +100,41 @@ def _showFilter(userFilter, j, jcount, labels, FJQC=None):
   if FJQC is not None and FJQC.formatJSON:
     if labels['labels']:
       _mapFilterLabelIdsToNames(userFilter, labels)
-    _getMain().printLine(json.dumps(_getMain().cleanJSON(userFilter), ensure_ascii=False, sort_keys=False))
+    printLine(json.dumps(cleanJSON(userFilter), ensure_ascii=False, sort_keys=False))
     return
-  _getMain().printEntity([Ent.FILTER, userFilter['id']], j, jcount)
+  printEntity([Ent.FILTER, userFilter['id']], j, jcount)
   Ind.Increment()
-  _getMain().printEntitiesCount(Ent.CRITERIA, None)
+  printEntitiesCount(Ent.CRITERIA, None)
   Ind.Increment()
   if 'criteria' in userFilter:
     for item in sorted(userFilter['criteria']):
       if item in {'hasAttachment', 'excludeChats'}:
-        _getMain().printKeyValueList([item])
+        printKeyValueList([item])
       elif item == 'size':
-        _getMain().printKeyValueList([f'{item} {userFilter["criteria"]["sizeComparison"]} {formatMaxMessageBytes(userFilter["criteria"][item], ONE_KILO_10_BYTES, ONE_MEGA_10_BYTES)}'])
+        printKeyValueList([f'{item} {userFilter["criteria"]["sizeComparison"]} {formatMaxMessageBytes(userFilter["criteria"][item], ONE_KILO_10_BYTES, ONE_MEGA_10_BYTES)}'])
       elif item == 'sizeComparison':
         pass
       else:
-        _getMain().printKeyValueList([f'{item} "{userFilter["criteria"][item]}"'])
+        printKeyValueList([f'{item} "{userFilter["criteria"][item]}"'])
   else:
-    _getMain().printKeyValueList([_getMain().ERROR, Msg.NO_FILTER_CRITERIA.format(Ent.Singular(Ent.FILTER))])
+    printKeyValueList([ERROR, Msg.NO_FILTER_CRITERIA.format(Ent.Singular(Ent.FILTER))])
   Ind.Decrement()
-  _getMain().printEntitiesCount(Ent.ACTION, None)
+  printEntitiesCount(Ent.ACTION, None)
   Ind.Increment()
   if 'action' in userFilter:
     for labelId in sorted(userFilter['action'].get('addLabelIds', [])):
       if labelId in FILTER_ADD_LABEL_TO_ARGUMENT_MAP:
-        _getMain().printKeyValueList([FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]])
+        printKeyValueList([FILTER_ADD_LABEL_TO_ARGUMENT_MAP[labelId]])
       else:
-        _getMain().printKeyValueList([f'label "{_getLabelName(labels, labelId)}"'])
+        printKeyValueList([f'label "{_getLabelName(labels, labelId)}"'])
     for labelId in sorted(userFilter['action'].get('removeLabelIds', [])):
       if labelId in FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP:
-        _getMain().printKeyValueList([FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]])
+        printKeyValueList([FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP[labelId]])
     Ind.Decrement()
     if userFilter['action'].get('forward'):
-      _getMain().printEntity([Ent.FORWARDING_ADDRESS, userFilter['action']['forward']])
+      printEntity([Ent.FORWARDING_ADDRESS, userFilter['action']['forward']])
   else:
-    _getMain().printKeyValueList([_getMain().ERROR, Msg.NO_FILTER_ACTIONS.format(Ent.Singular(Ent.FILTER))])
+    printKeyValueList([ERROR, Msg.NO_FILTER_ACTIONS.format(Ent.Singular(Ent.FILTER))])
     Ind.Decrement()
   Ind.Decrement()
 #
@@ -164,16 +182,16 @@ def createFilter(users):
   jsonData = None
   categorySpecified = labelSpecified = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if jsonData is None and myarg in FILTER_CRITERIA_CHOICE_MAP:
       myarg = FILTER_CRITERIA_CHOICE_MAP[myarg]
       if myarg in {'from', 'to', 'subject', 'query', 'negatedQuery'}:
-        body['criteria'][myarg] = _getMain().getString(Cmd.OB_STRING)
+        body['criteria'][myarg] = getString(Cmd.OB_STRING)
       elif myarg in {'hasAttachment', 'excludeChats'}:
         body['criteria'][myarg] = True
       elif myarg == 'size':
-        body['criteria']['sizeComparison'] = _getMain().getChoice(['larger', 'smaller'])
-        body['criteria'][myarg] = _getMain().getMaxMessageBytes(_getMain().ONE_KILO_10_BYTES, _getMain().ONE_MEGA_10_BYTES)
+        body['criteria']['sizeComparison'] = getChoice(['larger', 'smaller'])
+        body['criteria'][myarg] = getMaxMessageBytes(ONE_KILO_10_BYTES, ONE_MEGA_10_BYTES)
     elif jsonData is None and myarg in FILTER_ACTION_CHOICES:
       if myarg in FILTER_ADD_LABEL_ACTIONS:
         myarg = FILTER_ACTION_LABEL_MAP[myarg]
@@ -186,9 +204,9 @@ def createFilter(users):
         if (myarg == 'IMPORTANT') and (myarg in body['action']['addLabelIds']):
           body['action']['addLabelIds'].remove(myarg)
       elif myarg == 'forward':
-        body['action']['forward'] = _getMain().getEmailAddress(noUid=True)
+        body['action']['forward'] = getEmailAddress(noUid=True)
       elif myarg == 'label':
-        label = _getMain().getString(Cmd.OB_LABEL_NAME)
+        label = getString(Cmd.OB_LABEL_NAME)
         labelUpper = label.upper()
         if labelUpper not in GMAIL_SYSTEM_LABELS:
           if labelUpper not in GMAIL_CATEGORY_LABELS:
@@ -197,48 +215,48 @@ def createFilter(users):
               labelSpecified = True
             else:
               Cmd.Backup()
-              _getMain().usageErrorExit(Msg.FILTER_CAN_ONLY_CONTAIN_ONE_USER_LABEL)
+              usageErrorExit(Msg.FILTER_CAN_ONLY_CONTAIN_ONE_USER_LABEL)
           elif not categorySpecified:
             body['action']['addLabelIds'].append(labelUpper)
             categorySpecified = True
           else:
             Cmd.Backup()
-            _getMain().usageErrorExit(Msg.FILTER_CAN_ONLY_CONTAIN_ONE_CATEGORY_LABEL)
+            usageErrorExit(Msg.FILTER_CAN_ONLY_CONTAIN_ONE_CATEGORY_LABEL)
         else:
           body['action']['addLabelIds'].append(labelUpper)
           if (labelUpper == 'IMPORTANT') and (labelUpper in body['action']['removeLabelIds']):
             body['action']['removeLabelIds'].remove(labelUpper)
       elif myarg == 'category':
         if not categorySpecified:
-          body['action']['addLabelIds'].append(_getMain().getChoice(FILTER_CATEGORY_CHOICE_MAP, mapChoice=True))
+          body['action']['addLabelIds'].append(getChoice(FILTER_CATEGORY_CHOICE_MAP, mapChoice=True))
           categorySpecified = True
         else:
           Cmd.Backup()
-          _getMain().usageErrorExit(Msg.FILTER_CAN_ONLY_CONTAIN_ONE_CATEGORY_LABEL)
+          usageErrorExit(Msg.FILTER_CAN_ONLY_CONTAIN_ONE_CATEGORY_LABEL)
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     elif myarg == 'json':
-      jsonData = _getMain().getJSON([])
+      jsonData = getJSON([])
       body['criteria'] = jsonData['criteria']
       body['action'] = jsonData['action']
     elif myarg == 'buildpath':
-      buildPath = _getMain().getBoolean()
+      buildPath = getBoolean()
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if not body['criteria']:
-    _getMain().missingChoiceExit(FILTER_CRITERIA_CHOICE_MAP)
+    missingChoiceExit(FILTER_CRITERIA_CHOICE_MAP)
   if not body['action'].get('addLabelIds') and not body['action'].get('removeLabelIds') and 'forward' not in body['action']:
-    _getMain().missingChoiceExit(FILTER_ACTION_CHOICES)
+    missingChoiceExit(FILTER_ACTION_CHOICES)
   addLabelIndicies = {}
   for field in ['addLabelIds', 'removeLabelIds']:
     for i, labelId in enumerate(body['action'].get(field, [])):
       if labelId not in GMAIL_SYSTEM_LABELS and labelId not in GMAIL_CATEGORY_LABELS:
         addLabelIndicies.setdefault(labelId, {})
         addLabelIndicies[labelId][field] = i
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if addLabelIndicies:
@@ -260,10 +278,10 @@ def createFilter(users):
           lbody = {'name': addLabelName}
           if not buildPath:
             try:
-              result = _getMain().callGAPI(gmail.users().labels(), 'create',
+              result = callGAPI(gmail.users().labels(), 'create',
                                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.PERMISSION_DENIED],
                                 userId='me', body=lbody, fields='id')
-              _getMain().entityActionPerformed([Ent.USER, user, Ent.LABEL, addLabelName], l, lcount)
+              entityActionPerformed([Ent.USER, user, Ent.LABEL, addLabelName], l, lcount)
               addLabelId = result['id']
               labels['labels'].append({'id': result['id'], 'name': addLabelName})
               retries = 0
@@ -276,30 +294,30 @@ def createFilter(users):
             labels = _getUserGmailLabels(gmail, user, i, count, 'labels(id,name, type)')
             labelSet = _getLabelSet(labels)
         if retries:
-          _getMain().entityActionFailedWarning([Ent.USER, user, Ent.LABEL, addLabelName], Msg.DUPLICATE, i, count)
+          entityActionFailedWarning([Ent.USER, user, Ent.LABEL, addLabelName], Msg.DUPLICATE, i, count)
           continue
         for field in ['addLabelIds', 'removeLabelIds']:
           if field in addLabelData:
             body['action'][field][addLabelData[field]] = addLabelId
-      result = _getMain().callGAPI(gmail.users().settings().filters(), 'create',
+      result = callGAPI(gmail.users().settings().filters(), 'create',
                         throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
                                                                GAPI.FAILED_PRECONDITION, GAPI.PERMISSION_DENIED],
                         userId='me', body=body, fields='id')
       if result:
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.FILTER, result['id']], i, count)
+        entityActionPerformed([Ent.USER, user, Ent.FILTER, result['id']], i, count)
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition, GAPI.permissionDenied) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FILTER, ''], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user, Ent.FILTER, ''], str(e), i, count)
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
 
 # gam <UserTypeEntity> delete filter <FilterIDEntity>
 def deleteFilters(users):
-  filterIdEntity = _getMain().getUserObjectEntity(Cmd.OB_FILTER_ID_ENTITY, Ent.FILTER)
-  _getMain().checkForExtraneousArguments()
-  i, count, users = _getMain().getEntityArgument(users)
+  filterIdEntity = getUserObjectEntity(Cmd.OB_FILTER_ID_ENTITY, Ent.FILTER)
+  checkForExtraneousArguments()
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, filterIds, jcount = _getMain()._validateUserGetObjectList(user, i, count, filterIdEntity)
+    user, gmail, filterIds, jcount = _validateUserGetObjectList(user, i, count, filterIdEntity)
     if jcount == 0:
       continue
     Ind.Increment()
@@ -307,32 +325,32 @@ def deleteFilters(users):
     for filterId in filterIds:
       j += 1
       try:
-        _getMain().callGAPI(gmail.users().settings().filters(), 'delete',
+        callGAPI(gmail.users().settings().filters(), 'delete',
                  throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
                  userId='me', id=filterId)
-        _getMain().entityActionPerformed([Ent.USER, user, Ent.FILTER, filterId], j, jcount)
+        entityActionPerformed([Ent.USER, user, Ent.FILTER, filterId], j, jcount)
       except (GAPI.notFound, GAPI.permissionDenied) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
 # gam <UserTypeEntity> info filters <FilterIDEntity> [labelidsonly] [formatjson]
 def infoFilters(users):
   labelIdsOnly = False
-  filterIdEntity = _getMain().getUserObjectEntity(Cmd.OB_FILTER_ID_ENTITY, Ent.FILTER)
-  FJQC = _getMain().FormatJSONQuoteChar()
+  filterIdEntity = getUserObjectEntity(Cmd.OB_FILTER_ID_ENTITY, Ent.FILTER)
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'labelidsonly':
       labelIdsOnly = True
     else:
       FJQC.GetFormatJSON(myarg)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail, filterIds, jcount = _getMain()._validateUserGetObjectList(user, i, count, filterIdEntity,
+    user, gmail, filterIds, jcount = _validateUserGetObjectList(user, i, count, filterIdEntity,
                                                                 showAction=FJQC is None or not FJQC.formatJSON)
     if jcount == 0:
       continue
@@ -347,20 +365,20 @@ def infoFilters(users):
     for filterId in filterIds:
       j += 1
       try:
-        result = _getMain().callGAPI(gmail.users().settings().filters(), 'get',
+        result = callGAPI(gmail.users().settings().filters(), 'get',
                           throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND],
                           userId='me', id=filterId)
         if not FJQC.formatJSON:
-          _getMain().printEntityKVList([Ent.USER, user],
+          printEntityKVList([Ent.USER, user],
                             [Ent.Singular(Ent.FILTER), result['id']],
                             i, count)
         Ind.Increment()
         _showFilter(result, j, jcount, labels, FJQC)
         Ind.Decrement()
       except GAPI.notFound as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.FILTER, filterId], str(e), j, jcount)
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 
@@ -369,10 +387,10 @@ def infoFilters(users):
 # gam <UserTypeEntity> show filters [labelidsonly] [formatjson]
 def printShowFilters(users):
   labelIdsOnly = False
-  csvPF = _getMain().CSVPrintFile(['User', 'id']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['User', 'id']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'labelidsonly':
@@ -381,10 +399,10 @@ def printShowFilters(users):
       FJQC.GetFormatJSONQuoteChar(myarg)
   if csvPF:
     csvPF.SetFormatJSON(False)
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     if not labelIdsOnly:
@@ -394,15 +412,15 @@ def printShowFilters(users):
     else:
       labels = {'labels': []}
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.FILTER, user, i, count)
+      printGettingEntityItemForWhom(Ent.FILTER, user, i, count)
     try:
-      results = _getMain().callGAPIitems(gmail.users().settings().filters(), 'list', 'filter',
+      results = callGAPIitems(gmail.users().settings().filters(), 'list', 'filter',
                               throwReasons=GAPI.GMAIL_THROW_REASONS,
                               userId='me')
       if not csvPF:
         jcount = len(results)
         if not FJQC.formatJSON:
-          _getMain().entityPerformActionNumItems([Ent.USER, user], jcount, Ent.FILTER, i, count)
+          entityPerformActionNumItems([Ent.USER, user], jcount, Ent.FILTER, i, count)
         Ind.Increment()
         j = 0
         for userFilter in results:
@@ -420,7 +438,7 @@ def printShowFilters(users):
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
   if csvPF:
     csvPF.SetFormatJSON(False)
     csvPF.SetSortTitles(['User', 'id', 'from', 'to', 'subject', 'query', 'negatedQuery', 'hasAttachment', 'excludeChats', 'size', 'forward',

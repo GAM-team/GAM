@@ -16,6 +16,85 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
+from gam.util.api import (
+    buildGAPIObject,
+    buildGAPIServiceObject,
+    callGAPI,
+    callGAPIpages,
+    checkGAPIError,
+)
+from gam.util.args import (
+    CALENDAR_EVENT_COLOR_MAP,
+    YYYYMMDD_FORMAT,
+    checkArgumentPresent,
+    checkForExtraneousArguments,
+    getAddCSVData,
+    getArgument,
+    getBoolean,
+    getCalendarReminder,
+    getChoice,
+    getChoiceAndValue,
+    getEmailAddress,
+    getEventID,
+    getEventTime,
+    getHTTPError,
+    getInteger,
+    getJSON,
+    getREPattern,
+    getREPatternSubstitution,
+    getString,
+    getStringWithCRsNLs,
+    getTimeOrDeltaFromNow,
+    getYYYYMMDD,
+    normalizeEmailAddressOrUID,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    _getFieldsList,
+    addFieldToFieldsList,
+    batchRequestID,
+    cleanJSON,
+    flattenJSON,
+    getFieldsFromFieldsList,
+    getFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionNotPerformedWarning,
+    entityActionPerformed,
+    entityModifierNewValueActionPerformed,
+    entityNumEntitiesActionNotPerformedWarning,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    printEntity,
+    printGettingEntityItemForWhom,
+    printKeyValueList,
+    printKeyValueListWithCount,
+    printKeyValueWithCRsNLs,
+    printLine,
+    userCalServiceNotEnabledWarning,
+)
+from gam.util.entity import (
+    convertEntityToList,
+    convertUIDtoEmailAddress,
+    getEntityList,
+    getEntitySelection,
+    getEntitySelector,
+    getEntityToModify,
+    getNormalizedEmailAddressEntity,
+)
+from gam.util.errors import (
+    entityDoesNotExistExit,
+    invalidArgumentExit,
+    invalidChoiceExit,
+    missingArgumentExit,
+    unknownArgumentExit,
+)
+from gam.util.fileio import UNKNOWN
+from gam.util.output import executeBatch, setSysExitRC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -36,42 +115,42 @@ def __getattr__(name):
 
 def normalizeCalendarId(calId, user):
   if not user or calId.lower() != 'primary':
-    return _getMain().convertUIDtoEmailAddress(calId, emailTypes=['user', 'resource'])
+    return convertUIDtoEmailAddress(calId, emailTypes=['user', 'resource'])
   return user
 
 def checkCalendarExists(cal, calId, i, count, showMessage=False):
   if not cal:
-    cal = _getMain().buildGAPIObject(API.CALENDAR)
+    cal = buildGAPIObject(API.CALENDAR)
   try:
-    return _getMain().callGAPI(cal.calendars(), 'get',
+    return callGAPI(cal.calendars(), 'get',
                     throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
                     calendarId=calId, fields='id')['id']
   except GAPI.notFound as e:
     if showMessage:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e))
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e))
     return None
   except GAPI.notACalendarUser:
     if showMessage:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
     return None
 
 def validateCalendar(calId, i=0, count=0, noClientAccess=False):
   cal = None
   if not calId.endswith('.calendar.google.com'):
-    calId, cal = _getMain().buildGAPIServiceObject(API.CALENDAR, calId, i, count, displayError=noClientAccess)
+    calId, cal = buildGAPIServiceObject(API.CALENDAR, calId, i, count, displayError=noClientAccess)
   if not cal:
     if noClientAccess:
       return (calId, None)
-    cal = _getMain().buildGAPIObject(API.CALENDAR)
+    cal = buildGAPIObject(API.CALENDAR)
   try:
-    _getMain().callGAPI(cal.calendars(), 'get',
+    callGAPI(cal.calendars(), 'get',
              throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
              calendarId=calId, fields='')
     return (calId, cal)
   except GAPI.notFound as e:
-    _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+    entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
   except GAPI.notACalendarUser:
-    _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+    userCalServiceNotEnabledWarning(calId, i, count)
   return (calId, None)
 
 def getNormalizedCalIdCal(cal, calId, user, i=0, count=0):
@@ -94,22 +173,22 @@ CALENDAR_ACL_ROLES_MAP = {
 ACL_SCOPE_CHOICES = ['default', 'user', 'group', 'domain'] # default must be first element
 
 def getACLScope():
-  scopeType, scopeValue = _getMain().getChoiceAndValue(Cmd.OB_ACL_SCOPE, ACL_SCOPE_CHOICES[1:], ':')
+  scopeType, scopeValue = getChoiceAndValue(Cmd.OB_ACL_SCOPE, ACL_SCOPE_CHOICES[1:], ':')
   if scopeType:
     if scopeType != 'domain':
-      scopeValue = _getMain().normalizeEmailAddressOrUID(scopeValue, noUid=True)
+      scopeValue = normalizeEmailAddressOrUID(scopeValue, noUid=True)
     else:
       scopeValue = scopeValue.lower()
     return (scopeType, scopeValue)
-  scopeType = _getMain().getChoice(ACL_SCOPE_CHOICES, defaultChoice='user')
+  scopeType = getChoice(ACL_SCOPE_CHOICES, defaultChoice='user')
   if scopeType == 'domain':
-    entity = _getMain().getString(Cmd.OB_DOMAIN_NAME, optional=True)
+    entity = getString(Cmd.OB_DOMAIN_NAME, optional=True)
     if entity:
       scopeValue = entity.lower()
     else:
       scopeValue = GC.Values[GC.DOMAIN]
   elif scopeType != 'default':
-    scopeValue = _getMain().getEmailAddress(noUid=True)
+    scopeValue = getEmailAddress(noUid=True)
   else:
     scopeValue = None
   return (scopeType, scopeValue)
@@ -121,27 +200,27 @@ def getCalendarACLScope():
   return {'list': [scopeType], 'dict': None}
 
 def getCalendarSiteACLScopeEntity():
-  ACLScopeEntity = {'list': _getMain().getEntityList(Cmd.OB_ACL_SCOPE_ENTITY), 'dict': None}
+  ACLScopeEntity = {'list': getEntityList(Cmd.OB_ACL_SCOPE_ENTITY), 'dict': None}
   if isinstance(ACLScopeEntity['list'], dict):
     ACLScopeEntity['dict'] = ACLScopeEntity['list']
   return ACLScopeEntity
 
 def getCalendarACLSendNotifications():
-  return _getMain().getBoolean() if _getMain().checkArgumentPresent('sendnotifications') else True
+  return getBoolean() if checkArgumentPresent('sendnotifications') else True
 
 def getCalendarCreateUpdateACLsOptions(getScopeEntity):
-  role = _getMain().getChoice(CALENDAR_ACL_ROLES_MAP, mapChoice=True)
+  role = getChoice(CALENDAR_ACL_ROLES_MAP, mapChoice=True)
   ACLScopeEntity = getCalendarSiteACLScopeEntity() if getScopeEntity else getCalendarACLScope()
   sendNotifications = getCalendarACLSendNotifications()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   return (role, ACLScopeEntity, sendNotifications)
 
 def getCalendarDeleteACLsOptions(getScopeEntity):
   rolesMap = CALENDAR_ACL_ROLES_MAP.copy()
   rolesMap['id'] = 'id'
-  role = _getMain().getChoice(rolesMap, defaultChoice=None, mapChoice=True)
+  role = getChoice(rolesMap, defaultChoice=None, mapChoice=True)
   ACLScopeEntity = getCalendarSiteACLScopeEntity() if getScopeEntity else getCalendarACLScope()
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   return (role, ACLScopeEntity)
 
 def _normalizeCalIdGetRuleIds(origUser, user, origCal, calId, j, jcount, ACLScopeEntity, showAction=True):
@@ -160,9 +239,9 @@ def _normalizeCalIdGetRuleIds(origUser, user, origCal, calId, j, jcount, ACLScop
     return (calId, cal, None, 0)
   kcount = len(ruleIds)
   if kcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
   if showAction:
-    _getMain().entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.CALENDAR_ACL, j, jcount)
+    entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.CALENDAR_ACL, j, jcount)
   return (calId, cal, ruleIds, kcount)
 
 def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount, role, ruleId, sendNotifications):
@@ -174,24 +253,24 @@ def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount,
   else: # elif function == 'delete':
     kwargs = {'ruleId': ruleId}
   try:
-    _getMain().callGAPI(cal.acl(), function,
+    callGAPI(cal.acl(), function,
              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER, GAPI.INVALID_SCOPE_VALUE,
                            GAPI.ILLEGAL_ACCESS_ROLE_FOR_DEFAULT, GAPI.CANNOT_CHANGE_OWN_ACL,
                            GAPI.CANNOT_CHANGE_OWNER_ACL, GAPI.CANNOT_MODIFY_ACL_OF_CALENDAR_OWNER,
                            GAPI.FORBIDDEN, GAPI.AUTH_ERROR, GAPI.CONDITION_NOT_MET],
              calendarId=calId, **kwargs)
-    _getMain().entityActionPerformed([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], k, kcount)
+    entityActionPerformed([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], k, kcount)
   except GAPI.notFound as e:
     if not checkCalendarExists(cal, calId, j, jcount):
-      _getMain().entityUnknownWarning(entityType, calId, j, jcount)
+      entityUnknownWarning(entityType, calId, j, jcount)
       result = False
     else:
-      _getMain().entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], str(e), k, kcount)
+      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], str(e), k, kcount)
   except (GAPI.invalid, GAPI.invalidParameter, GAPI.invalidScopeValue,
           GAPI.illegalAccessRoleForDefault, GAPI.cannotChangeOwnAcl,
           GAPI.cannotChangeOwnerAcl, GAPI.cannotModifyAclOfCalendarOwner,
           GAPI.forbidden, GAPI.authError, GAPI.conditionNotMet) as e:
-    _getMain().entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], str(e), k, kcount)
+    entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], str(e), k, kcount)
   return result
 
 def _createCalendarACLs(cal, entityType, calId, j, jcount, role, ruleIds, kcount, sendNotifications):
@@ -266,16 +345,16 @@ def _showCalendarACL(user, entityType, calId, acl, k, kcount, FJQC):
   if FJQC.formatJSON:
     if entityType == Ent.CALENDAR:
       if user:
-        _getMain().printLine(json.dumps(_getMain().cleanJSON({'primaryEmail': user, 'calendarId': calId, 'acl': acl}),
+        printLine(json.dumps(cleanJSON({'primaryEmail': user, 'calendarId': calId, 'acl': acl}),
                              ensure_ascii=False, sort_keys=True))
       else:
-        _getMain().printLine(json.dumps(_getMain().cleanJSON({'calendarId': calId, 'acl': acl}),
+        printLine(json.dumps(cleanJSON({'calendarId': calId, 'acl': acl}),
                              ensure_ascii=False, sort_keys=True))
     else:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON({'resourceId': user, 'resourceEmail': calId, 'acl': acl}),
+      printLine(json.dumps(cleanJSON({'resourceId': user, 'resourceEmail': calId, 'acl': acl}),
                            ensure_ascii=False, sort_keys=True))
   else:
-    _getMain().printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(acl), k, kcount)
+    printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(acl), k, kcount)
 
 def _infoCalendarACLs(cal, user, entityType, calId, j, jcount, ruleIds, kcount, FJQC):
   Ind.Increment()
@@ -284,17 +363,17 @@ def _infoCalendarACLs(cal, user, entityType, calId, j, jcount, ruleIds, kcount, 
     k += 1
     ruleId = _getMain().normalizeRuleId(ruleId)
     try:
-      result = _getMain().callGAPI(cal.acl(), 'get',
+      result = callGAPI(cal.acl(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_SCOPE_VALUE, GAPI.FORBIDDEN, GAPI.AUTH_ERROR],
                         calendarId=calId, ruleId=ruleId, fields='id,role,scope')
       _showCalendarACL(user, entityType, calId, result, k, kcount, FJQC)
     except (GAPI.notFound, GAPI.invalid) as e:
       if not checkCalendarExists(cal, calId, j, jcount):
-        _getMain().entityUnknownWarning(entityType, calId, j, jcount)
+        entityUnknownWarning(entityType, calId, j, jcount)
         break
-      _getMain().entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, None)], str(e), k, kcount)
+      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, None)], str(e), k, kcount)
     except (GAPI.invalidScopeValue, GAPI.forbidden, GAPI.authError) as e:
-      _getMain().entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, None)], str(e), k, kcount)
+      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, None)], str(e), k, kcount)
   Ind.Decrement()
 
 def _doInfoCalendarACLs(origUser, user, origCal, calIds, count, ACLScopeEntity, FJQC):
@@ -307,7 +386,7 @@ def _doInfoCalendarACLs(origUser, user, origCal, calIds, count, ACLScopeEntity, 
     _infoCalendarACLs(cal, user, Ent.CALENDAR, calId, i, count, ruleIds, jcount, FJQC)
 
 def _getCalendarInfoACLOptions():
-  return _getMain().FormatJSONQuoteChar(formatJSONOnly=True)
+  return FormatJSONQuoteChar(formatJSONOnly=True)
 
 # gam calendars <CalendarEntity> info acl|acls <CalendarACLScopeEntity>
 #	[formatjson]
@@ -318,26 +397,26 @@ def doCalendarsInfoACLs(calIds):
 
 def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, noSelfOwner, addCSVData):
   if csvPF:
-    _getMain().printGettingEntityItemForWhom(Ent.CALENDAR_ACL, calId, i, count)
+    printGettingEntityItemForWhom(Ent.CALENDAR_ACL, calId, i, count)
   try:
-    acls = _getMain().callGAPIpages(cal.acl(), 'list', 'items',
+    acls = callGAPIpages(cal.acl(), 'list', 'items',
                          throwReasons=[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.AUTH_ERROR],
                          calendarId=calId, fields='nextPageToken,items(id,role,scope)')
   except (GAPI.forbidden, GAPI.authError) as e:
-    _getMain().entityActionFailedWarning([entityType, calId], str(e), i, count)
+    entityActionFailedWarning([entityType, calId], str(e), i, count)
     return
   except GAPI.notFound:
-    _getMain().entityUnknownWarning(entityType, calId, i, count)
+    entityUnknownWarning(entityType, calId, i, count)
     return
   jcount = len(acls)
   if jcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
   if not csvPF:
     if not FJQC.formatJSON:
       if not noSelfOwner:
-        _getMain().entityPerformActionNumItems([entityType, calId], jcount, Ent.CALENDAR_ACL, i, count)
+        entityPerformActionNumItems([entityType, calId], jcount, Ent.CALENDAR_ACL, i, count)
       else:
-        _getMain().entityPerformActionModifierNumItems([entityType, calId], Msg.MAXIMUM_OF, jcount, Ent.CALENDAR_ACL, i, count)
+        entityPerformActionModifierNumItems([entityType, calId], Msg.MAXIMUM_OF, jcount, Ent.CALENDAR_ACL, i, count)
     Ind.Increment()
     j = 0
     for rule in acls:
@@ -357,12 +436,12 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
             row['primaryEmail'] = user
           if addCSVData:
             row.update(addCSVData)
-          _getMain().flattenJSON(rule, flattened=row)
+          flattenJSON(rule, flattened=row)
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
             row = {'calendarId': calId,
-                   'JSON': json.dumps(_getMain().cleanJSON(rule), ensure_ascii=False, sort_keys=False)}
+                   'JSON': json.dumps(cleanJSON(rule), ensure_ascii=False, sort_keys=False)}
             if user:
               row['primaryEmail'] = user
             if addCSVData:
@@ -377,29 +456,29 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
         row = {'resourceId': user, 'resourceEmail': calId}
         if addCSVData:
           row.update(addCSVData)
-        _getMain().flattenJSON(rule, flattened=row)
+        flattenJSON(rule, flattened=row)
         if not FJQC.formatJSON:
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
           row = {'resourceId': user, 'resourceEmail': calId,
-                 'JSON': json.dumps(_getMain().cleanJSON(rule), ensure_ascii=False, sort_keys=False)}
+                 'JSON': json.dumps(cleanJSON(rule), ensure_ascii=False, sort_keys=False)}
           if addCSVData:
             row.update(addCSVData)
           csvPF.WriteRowNoFilter(row)
 
 def _getCalendarPrintShowACLOptions(titles):
-  csvPF = _getMain().CSVPrintFile(titles, 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(titles, 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   noSelfOwner = False
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'noselfowner':
       noSelfOwner = True
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   if csvPF:
@@ -471,11 +550,11 @@ EVENT_TYPE_ENTITY_MAP = {
 
 def _getEventTypes():
   typesList = []
-  for field in _getMain()._getFieldsList():
+  for field in _getFieldsList():
     if field in EVENT_TYPES_CHOICE_MAP:
-      _getMain().addFieldToFieldsList(field, EVENT_TYPES_CHOICE_MAP, typesList)
+      addFieldToFieldsList(field, EVENT_TYPES_CHOICE_MAP, typesList)
     else:
-      _getMain().invalidChoiceExit(field, EVENT_TYPES_CHOICE_MAP, True)
+      invalidChoiceExit(field, EVENT_TYPES_CHOICE_MAP, True)
 #  return ','.join(typesList)
   return typesList
 
@@ -541,14 +620,14 @@ def _getCalendarListEventsProperty(myarg, attributes, kwargs):
   if attrType == GC.TYPE_BOOLEAN:
     kwargs[attrName] = True
   elif attrType == GC.TYPE_STRING:
-    kwargs[attrName] = _getMain().getString(Cmd.OB_STRING)
+    kwargs[attrName] = getString(Cmd.OB_STRING)
   elif attrType == GC.TYPE_CHOICE:
-    kwargs[attrName] = _getMain().getChoice(attribute['choices'], mapChoice=True)
+    kwargs[attrName] = getChoice(attribute['choices'], mapChoice=True)
   elif attrType == GC.TYPE_DATETIME:
-    kwargs[attrName] = _getMain().getTimeOrDeltaFromNow()
+    kwargs[attrName] = getTimeOrDeltaFromNow()
   elif attrType ==  GC.TYPE_INTEGER:
     minVal, maxVal = attribute[GC.VAR_LIMITS]
-    kwargs[attrName] = _getMain().getInteger(minVal=minVal, maxVal=maxVal)
+    kwargs[attrName] = getInteger(minVal=minVal, maxVal=maxVal)
   else: # elif attrType == GC.TYPE_CHOICE_LIST:
     if attrName == 'eventTypes':
       kwargs[attrName] = _getEventTypes()
@@ -565,40 +644,40 @@ def initCalendarEventEntity():
 def getCalendarEventEntity():
   calendarEventEntity = initCalendarEventEntity()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg in {'event', 'events'}:
-      entitySelector = _getMain().getEntitySelector()
+      entitySelector = getEntitySelector()
       if entitySelector:
-        entityList = _getMain().getEntitySelection(entitySelector, False)
+        entityList = getEntitySelection(entitySelector, False)
         if isinstance(entityList, dict):
           calendarEventEntity['dict'] = entityList
         else:
           calendarEventEntity['list'] = entityList
       else:
-        calendarEventEntity['list'].extend(_getMain().convertEntityToList(_getMain().getString(Cmd.OB_EVENT_ID)))
+        calendarEventEntity['list'].extend(convertEntityToList(getString(Cmd.OB_EVENT_ID)))
     elif myarg in {'id', 'eventid'}:
-      calendarEventEntity['list'].append(_getMain().getString(Cmd.OB_EVENT_ID))
+      calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
     elif myarg in {'q', 'query', 'eventquery'}:
-      calendarEventEntity['queries'].append(_getMain().getString(Cmd.OB_QUERY))
+      calendarEventEntity['queries'].append(getString(Cmd.OB_QUERY))
     elif myarg == 'matchfield':
-      matchField = _getMain().getChoice(LIST_EVENTS_MATCH_FIELDS, mapChoice=True)
+      matchField = getChoice(LIST_EVENTS_MATCH_FIELDS, mapChoice=True)
       if matchField[0] == 'organizer' and matchField[1] == 'self':
-        calendarEventEntity['matches'].append((matchField, _getMain().getBoolean()))
+        calendarEventEntity['matches'].append((matchField, getBoolean()))
       elif matchField[0] != 'attendees' or matchField[1] == 'match':
-        calendarEventEntity['matches'].append((matchField, _getMain().getREPattern(re.IGNORECASE)))
+        calendarEventEntity['matches'].append((matchField, getREPattern(re.IGNORECASE)))
       elif matchField[0] == 'attendees' and matchField[1] in {'onlydomainlist', 'domainlist', 'notdomainlist'}:
-        calendarEventEntity['matches'].append((matchField, set(_getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())))
+        calendarEventEntity['matches'].append((matchField, set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())))
       elif matchField[1] == 'email':
-        calendarEventEntity['matches'].append((matchField, _getMain().getNormalizedEmailAddressEntity()))
+        calendarEventEntity['matches'].append((matchField, getNormalizedEmailAddressEntity()))
       elif matchField[1] == 'organizer':
-        calendarEventEntity['matches'].append((matchField, _getMain().getBoolean(defaultValue=None), _getMain().getNormalizedEmailAddressEntity()))
+        calendarEventEntity['matches'].append((matchField, getBoolean(defaultValue=None), getNormalizedEmailAddressEntity()))
       else: #status
         calendarEventEntity['matches'].append((matchField,
-                                               _getMain().getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=False, mapChoice=True),
-                                               _getMain().getChoice(CALENDAR_ATTENDEE_STATUS_CHOICE_MAP, defaultChoice='needsAction', mapChoice=True),
-                                               _getMain().getNormalizedEmailAddressEntity()))
+                                               getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=False, mapChoice=True),
+                                               getChoice(CALENDAR_ATTENDEE_STATUS_CHOICE_MAP, defaultChoice='needsAction', mapChoice=True),
+                                               getNormalizedEmailAddressEntity()))
     elif myarg == 'maxinstances':
-      calendarEventEntity['maxinstances'] = _getMain().getInteger(minVal=-1)
+      calendarEventEntity['maxinstances'] = getInteger(minVal=-1)
     elif _getCalendarListEventsProperty(myarg, LIST_EVENTS_SELECT_PROPERTIES, calendarEventEntity['kwargs']):
       pass
     else:
@@ -610,11 +689,11 @@ CALENDAR_EVENT_SENDUPDATES_CHOICE_MAP = {'all': 'all', 'externalonly': 'external
 
 def _getCalendarSendUpdates(myarg, parameters):
   if myarg == 'sendnotifications':
-    parameters['sendUpdates'] = 'all' if _getMain().getBoolean() else 'none'
+    parameters['sendUpdates'] = 'all' if getBoolean() else 'none'
   elif myarg == 'notifyattendees':
     parameters['sendUpdates'] = 'all'
   elif myarg == 'sendupdates':
-    parameters['sendUpdates'] = _getMain().getChoice(CALENDAR_EVENT_SENDUPDATES_CHOICE_MAP, mapChoice=True)
+    parameters['sendUpdates'] = getChoice(CALENDAR_EVENT_SENDUPDATES_CHOICE_MAP, mapChoice=True)
   else:
     return False
   return True
@@ -624,7 +703,7 @@ def _getCalendarEventReminders(myarg, body):
     body['reminders'] = {'overrides': [], 'useDefault': False}
   elif myarg == 'reminder':
     body.setdefault('reminders', {'overrides': [], 'useDefault': False})
-    body['reminders']['overrides'].append(_getMain().getCalendarReminder())
+    body['reminders']['overrides'].append(getCalendarReminder())
   else:
     return False
   return True
@@ -684,55 +763,55 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
 
   cd = None
   if function == 'insert' and myarg in {'id', 'eventid'}:
-    body['id'] = _getMain().getEventID()
+    body['id'] = getEventID()
   elif function == 'import' and myarg == 'icaluid':
-    body['iCalUID'] = _getMain().getString(Cmd.OB_ICALUID)
+    body['iCalUID'] = getString(Cmd.OB_ICALUID)
   elif myarg == 'description':
-    body['description'] = _getMain().getStringWithCRsNLs()
+    body['description'] = getStringWithCRsNLs()
   elif function == 'update' and myarg == 'replacedescription':
-    parameters['replaceDescription'].append(_getMain().getREPatternSubstitution(re.IGNORECASE))
+    parameters['replaceDescription'].append(getREPatternSubstitution(re.IGNORECASE))
   elif myarg == 'location':
-    body['location'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+    body['location'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'source':
-    body['source'] = {'title': _getMain().getString(Cmd.OB_STRING), 'url': _getMain().getString(Cmd.OB_URL)}
+    body['source'] = {'title': getString(Cmd.OB_STRING), 'url': getString(Cmd.OB_URL)}
   elif myarg == 'summary':
-    body['summary'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+    body['summary'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg in  {'start', 'starttime'}:
-    body['start'] = _getMain().getEventTime()
+    body['start'] = getEventTime()
   elif myarg in {'originalstart', 'originalstarttime'}:
-    body['originalStart'] = _getMain().getEventTime()
+    body['originalStart'] = getEventTime()
   elif myarg in {'end', 'endtime'}:
-    body['end'] = _getMain().getEventTime()
+    body['end'] = getEventTime()
   elif myarg == 'allday':
-    body['start'] = body['end'] = {'date': _getMain().getYYYYMMDD()}
+    body['start'] = body['end'] = {'date': getYYYYMMDD()}
   elif myarg == 'range':
-    body['start'] = {'date': _getMain().getYYYYMMDD()}
-    body['end'] = {'date': _getMain().getYYYYMMDD()}
+    body['start'] = {'date': getYYYYMMDD()}
+    body['end'] = {'date': getYYYYMMDD()}
   elif myarg == 'timerange':
-    body['start'] = {'dateTime': _getMain().getTimeOrDeltaFromNow()}
-    body['end'] = {'dateTime': _getMain().getTimeOrDeltaFromNow()}
+    body['start'] = {'dateTime': getTimeOrDeltaFromNow()}
+    body['end'] = {'dateTime': getTimeOrDeltaFromNow()}
   elif myarg == 'birthday':
     body['eventType'] = EVENT_TYPE_BIRTHDAY
     body['visibility'] = 'private'
     body['transparency'] = 'transparent'
-    bday = _getMain().getYYYYMMDD(returnDateTime=True)
-    body['start'] = body['end'] = {'date': bday.strftime(_getMain().YYYYMMDD_FORMAT)}
+    bday = getYYYYMMDD(returnDateTime=True)
+    body['start'] = body['end'] = {'date': bday.strftime(YYYYMMDD_FORMAT)}
     if bday.month != 2 or bday.day != 29:
       body['recurrence'] = ['RRULE:FREQ=YEARLY']
     else:
       body['recurrence'] = ['RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1']
   elif myarg == 'attachment':
     body.setdefault('attachments', [])
-    body['attachments'].append({'title': _getMain().getString(Cmd.OB_STRING), 'fileUrl': _getMain().getString(Cmd.OB_URL)})
+    body['attachments'].append({'title': getString(Cmd.OB_STRING), 'fileUrl': getString(Cmd.OB_URL)})
   elif function == 'update' and myarg == 'clearattachments':
     body['attachments'] = []
   elif myarg in {'hangoutsmeet', 'googlemeet'}:
     body['conferenceData'] = {'createRequest': {'conferenceSolutionKey': {'type': 'hangoutsMeet'}, 'requestId': f'{str(uuid.uuid4())}'}}
   elif myarg == 'conferencedata':
-    _getMain().checkArgumentPresent(['meet'], True)
-    epLabel = _getMain().getString(Cmd.OB_MEET_ID)
+    checkArgumentPresent(['meet'], True)
+    epLabel = getString(Cmd.OB_MEET_ID)
     if not _getMain().GOOGLE_MEETID_PATTERN.match(epLabel):
-      _getMain().invalidArgumentExit(_getMain().GOOGLE_MEETID_FORMAT_REQUIRED)
+      invalidArgumentExit(_getMain().GOOGLE_MEETID_FORMAT_REQUIRED)
     body['conferenceData'] = {"conferenceId": epLabel,
 	                      "conferenceSolution": {"key": {"type": "hangoutsMeet"}},
 	                      "entryPoints": [{"entryPointType": "video", "label": f'meet.google.com/{epLabel}',
@@ -741,32 +820,32 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     body['conferenceData'] = None
   elif myarg == 'recurrence':
     body.setdefault('recurrence', [])
-    body['recurrence'].append(_getMain().getString(Cmd.OB_RECURRENCE))
+    body['recurrence'].append(getString(Cmd.OB_RECURRENCE))
   elif myarg == 'timezone':
-    parameters['timeZone'] = _getMain().getString(Cmd.OB_STRING)
+    parameters['timeZone'] = getString(Cmd.OB_STRING)
   elif function == 'update' and myarg == 'replacemode':
     parameters['replaceMode'] = True
   elif function == 'update' and myarg == 'clearattendees':
     parameters['clearAttendees'] = True
   elif function == 'update' and myarg == 'removeattendee':
-    parameters['removeAttendees'].add(_getMain().getEmailAddress(noUid=True))
+    parameters['removeAttendees'].add(getEmailAddress(noUid=True))
   elif function == 'update' and myarg == 'selectremoveattendees':
-    _, attendeeList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+    _, attendeeList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
     for attendee in attendeeList:
-      parameters['removeAttendees'].add(_getMain().normalizeEmailAddressOrUID(attendee, noUid=True))
+      parameters['removeAttendees'].add(normalizeEmailAddressOrUID(attendee, noUid=True))
   elif myarg == 'attendee':
-    parameters['attendees'].append({'email': _getMain().getEmailAddress(noUid=True)})
+    parameters['attendees'].append({'email': getEmailAddress(noUid=True)})
   elif myarg == 'optionalattendee':
-    parameters['attendees'].append({'email': _getMain().getEmailAddress(noUid=True), 'optional': True})
+    parameters['attendees'].append({'email': getEmailAddress(noUid=True), 'optional': True})
   elif myarg in {'attendeestatus', 'selectattendees'}:
-    optional = _getMain().getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=None, mapChoice=True)
-    responseStatus = _getMain().getChoice(CALENDAR_ATTENDEE_STATUS_CHOICE_MAP, defaultChoice=None, mapChoice=True)
+    optional = getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=None, mapChoice=True)
+    responseStatus = getChoice(CALENDAR_ATTENDEE_STATUS_CHOICE_MAP, defaultChoice=None, mapChoice=True)
     if myarg == 'attendeestatus':
-      attendeeList = [_getMain().getEmailAddress(noUid=True)]
+      attendeeList = [getEmailAddress(noUid=True)]
     else:
-      _, attendeeList = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+      _, attendeeList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
     for attendee in attendeeList:
-      addAttendee = {'email': _getMain().normalizeEmailAddressOrUID(attendee, noUid=True)}
+      addAttendee = {'email': normalizeEmailAddressOrUID(attendee, noUid=True)}
       if optional is not None:
         addAttendee['optional'] = optional
       if responseStatus is not None:
@@ -776,15 +855,15 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     parameters['clearResources'] = True
   elif myarg == 'resource':
     if cd is None:
-      cd = _getMain().buildGAPIObject(API.DIRECTORY)
-    parameters['attendees'].append({'email': _validateResourceId(cd, _getMain().getString(Cmd.OB_RESOURCE_ID), 0, 0, True),
+      cd = buildGAPIObject(API.DIRECTORY)
+    parameters['attendees'].append({'email': _validateResourceId(cd, getString(Cmd.OB_RESOURCE_ID), 0, 0, True),
                                     'responseStatus': 'accepted', 'resource': True})
   elif myarg == 'removeresource':
     if cd is None:
-      cd = _getMain().buildGAPIObject(API.DIRECTORY)
-    parameters['removeAttendees'].add(_validateResourceId(cd, _getMain().getString(Cmd.OB_RESOURCE_ID), 0, 0, True))
+      cd = buildGAPIObject(API.DIRECTORY)
+    parameters['removeAttendees'].add(_validateResourceId(cd, getString(Cmd.OB_RESOURCE_ID), 0, 0, True))
   elif myarg == 'json':
-    jsonData = _getMain().getJSON(EVENT_JSON_CLEAR_FIELDS)
+    jsonData = getJSON(EVENT_JSON_CLEAR_FIELDS)
     if function == 'insert':
       body.update(jsonData)
       clearJSONfields(body, EVENT_JSON_INSERT_CLEAR_FIELDS)
@@ -804,7 +883,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
         'status' in body['conferenceData']['createRequest']):
       body['conferenceData']['createRequest']['status'].pop('statusCode', None)
   elif myarg == 'jsonattendees':
-    jsonData = _getMain().getJSON([])
+    jsonData = getJSON([])
     if 'event' in jsonData and 'attendees' in jsonData['event']:
       parameters['attendees'].extend(jsonData['event']['attendees'])
     elif 'attendees' in jsonData:
@@ -813,59 +892,59 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif function != 'import' and _getCalendarSendUpdates(myarg, parameters):
     pass
   elif myarg == 'anyonecanaddself':
-    body['anyoneCanAddSelf'] = _getMain().getBoolean()
+    body['anyoneCanAddSelf'] = getBoolean()
   elif myarg == 'guestscaninviteothers':
-    body['guestsCanInviteOthers'] = _getMain().getBoolean()
+    body['guestsCanInviteOthers'] = getBoolean()
   elif myarg == 'guestscantinviteothers':
     body['guestsCanInviteOthers'] = False
   elif myarg == 'guestscanmodify':
-    body['guestsCanModify'] = _getMain().getBoolean()
+    body['guestsCanModify'] = getBoolean()
   elif myarg == 'guestscanseeotherguests':
-    body['guestsCanSeeOtherGuests'] = _getMain().getBoolean()
+    body['guestsCanSeeOtherGuests'] = getBoolean()
   elif myarg == 'guestscantseeotherguests':
     body['guestsCanSeeOtherGuests'] = False
   elif myarg == 'status':
-    body['status'] = _getMain().getChoice(CALENDAR_EVENT_STATUS_CHOICES)
+    body['status'] = getChoice(CALENDAR_EVENT_STATUS_CHOICES)
   elif myarg == 'tentative':
     body['status'] = 'tentative'
   elif myarg == 'transparency':
-    body['transparency'] = _getMain().getChoice(CALENDAR_EVENT_TRANSPARENCY_CHOICES)
+    body['transparency'] = getChoice(CALENDAR_EVENT_TRANSPARENCY_CHOICES)
   elif myarg == 'available':
     body['transparency'] = 'transparent'
   elif myarg == 'visibility':
-    body['visibility'] = _getMain().getChoice(CALENDAR_EVENT_VISIBILITY_CHOICES)
+    body['visibility'] = getChoice(CALENDAR_EVENT_VISIBILITY_CHOICES)
   elif myarg in {'color', 'colour'}:
-    body['colorId'] = _getMain().getChoice(_getMain().CALENDAR_EVENT_COLOR_MAP, mapChoice=True)
+    body['colorId'] = getChoice(CALENDAR_EVENT_COLOR_MAP, mapChoice=True)
   elif myarg in {'colorindex', 'colorid', 'colourindex', 'colourid'}:
-    body['colorId'] = _getMain().getInteger(CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
+    body['colorId'] = getInteger(CALENDAR_EVENT_MIN_COLOR_INDEX, CALENDAR_EVENT_MAX_COLOR_INDEX)
   elif _getCalendarEventReminders(myarg, body):
     pass
   elif myarg == 'sequence':
-    body['sequence'] = _getMain().getInteger(minVal=0)
+    body['sequence'] = getInteger(minVal=0)
   elif myarg == 'privateproperty':
     body.setdefault('extendedProperties', {})
     body['extendedProperties'].setdefault('private', {})
-    key = _getMain().getString(Cmd.OB_PROPERTY_KEY)
-    body['extendedProperties']['private'][key] = _getMain().getString(Cmd.OB_PROPERTY_VALUE, minLen=0)
+    key = getString(Cmd.OB_PROPERTY_KEY)
+    body['extendedProperties']['private'][key] = getString(Cmd.OB_PROPERTY_VALUE, minLen=0)
   elif myarg == 'sharedproperty':
     body.setdefault('extendedProperties', {})
     body['extendedProperties'].setdefault('shared', {})
-    key = _getMain().getString(Cmd.OB_PROPERTY_KEY)
-    body['extendedProperties']['shared'][key] = _getMain().getString(Cmd.OB_PROPERTY_VALUE, minLen=0)
+    key = getString(Cmd.OB_PROPERTY_KEY)
+    body['extendedProperties']['shared'][key] = getString(Cmd.OB_PROPERTY_VALUE, minLen=0)
   elif function == 'update' and myarg == 'clearprivateproperty':
     body.setdefault('extendedProperties', {})
     body['extendedProperties'].setdefault('private', {})
-    body['extendedProperties']['private'][_getMain().getString(Cmd.OB_PROPERTY_KEY)] = None
+    body['extendedProperties']['private'][getString(Cmd.OB_PROPERTY_KEY)] = None
   elif function == 'update' and myarg == 'clearsharedproperty':
     body.setdefault('extendedProperties', {})
     body['extendedProperties'].setdefault('shared', {})
-    body['extendedProperties']['shared'][_getMain().getString(Cmd.OB_PROPERTY_KEY)] = None
+    body['extendedProperties']['shared'][getString(Cmd.OB_PROPERTY_KEY)] = None
   elif function == 'import' and myarg in {'organizername', 'organisername'}:
     body.setdefault('organizer', {})
-    body['organizer']['displayName'] = _getMain().getString(Cmd.OB_NAME)
+    body['organizer']['displayName'] = getString(Cmd.OB_NAME)
   elif function == 'import' and myarg in {'organizeremail', 'organiseremail'}:
     body.setdefault('organizer', {})
-    body['organizer']['email'] = _getMain().getEmailAddress(noUid=True)
+    body['organizer']['email'] = getEmailAddress(noUid=True)
   else:
     return False
   return True
@@ -968,7 +1047,7 @@ def _validateCalendarGetEventIDs(origUser, user, origCal, calId, j, jcount, cale
       if len(calendarEventEntity['queries']) <= 1:
         if len(calendarEventEntity['queries']) == 1:
           calendarEventEntity['kwargs']['q'] = calendarEventEntity['queries'][0]
-        events = _getMain().callGAPIpages(cal.events(), 'list', 'items',
+        events = callGAPIpages(cal.events(), 'list', 'items',
                                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                                calendarId=calId, fields=f'nextPageToken,items({fields})',
                                maxResults=GC.Values[GC.EVENT_MAX_RESULTS], **calendarEventEntity['kwargs'])
@@ -981,7 +1060,7 @@ def _validateCalendarGetEventIDs(origUser, user, origCal, calId, j, jcount, cale
       else:
         for query in calendarEventEntity['queries']:
           calendarEventEntity['kwargs']['q'] = query
-          events = _getMain().callGAPIpages(cal.events(), 'list', 'items',
+          events = callGAPIpages(cal.events(), 'list', 'items',
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                                  calendarId=calId, fields=f'nextPageToken,items({fields})',
                                  maxResults=GC.Values[GC.EVENT_MAX_RESULTS], **calendarEventEntity['kwargs'])
@@ -996,28 +1075,28 @@ def _validateCalendarGetEventIDs(origUser, user, origCal, calId, j, jcount, cale
                 eventIdsSet.add(eventId)
       kcount = len(calEventIds)
       if kcount == 0:
-        _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.CALENDAR, calId], Ent.EVENT, kcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.EVENT)), j, jcount)
-        _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        entityNumEntitiesActionNotPerformedWarning([Ent.CALENDAR, calId], Ent.EVENT, kcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.EVENT)), j, jcount)
+        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
         return (calId, cal, None, 0)
     except GAPI.notFound:
-      _getMain().entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
+      entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
       return (calId, cal, None, 0)
     except (GAPI.forbidden, GAPI.invalid) as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
       return (calId, cal, None, 0)
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, j, jcount)
+      userCalServiceNotEnabledWarning(calId, j, jcount)
       return (calId, cal, None, 0)
   else:
     kcount = len(calEventIds)
   if kcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
   if not doIt:
     if showAction:
-      _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.CALENDAR, calId], Ent.EVENT, kcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, j, jcount)
+      entityNumEntitiesActionNotPerformedWarning([Ent.CALENDAR, calId], Ent.EVENT, kcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, j, jcount)
     return (calId, cal, None, 0)
   if showAction:
-    _getMain().entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.EVENT, j, jcount)
+    entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.EVENT, j, jcount)
   return (calId, cal, calEventIds, kcount)
 
 def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calendarEventEntity,
@@ -1037,14 +1116,14 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
     return (calId, cal, [], 0)
   eventIdsSet = set()
   eventsList = []
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
-  ifields = _getMain().getItemFieldsFromFieldsList('items', fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
+  ifields = getItemFieldsFromFieldsList('items', fieldsList)
   try:
     if not calEventIds:
       if len(calendarEventEntity['queries']) <= 1:
         if len(calendarEventEntity['queries']) == 1:
           calendarEventEntity['kwargs']['q'] = calendarEventEntity['queries'][0]
-        events = _getMain().callGAPIpages(cal.events(), 'list', 'items',
+        events = callGAPIpages(cal.events(), 'list', 'items',
                                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                                calendarId=calId, fields=ifields,
                                maxResults=GC.Values[GC.EVENT_MAX_RESULTS], **calendarEventEntity['kwargs'])
@@ -1057,7 +1136,7 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
       else:
         for query in calendarEventEntity['queries']:
           calendarEventEntity['kwargs']['q'] = query
-          events = _getMain().callGAPIpages(cal.events(), 'list', 'items',
+          events = callGAPIpages(cal.events(), 'list', 'items',
                                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                                  calendarId=calId, fields=ifields,
                                  maxResults=GC.Values[GC.EVENT_MAX_RESULTS], **calendarEventEntity['kwargs'])
@@ -1075,25 +1154,25 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
       for eventId in calEventIds:
         k += 1
         if eventId not in eventIdsSet:
-          eventsList.append(_getMain().callGAPI(cal.events(), 'get',
+          eventsList.append(callGAPI(cal.events(), 'get',
                                      throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN],
                                      calendarId=calId, eventId=eventId, fields=fields))
           eventIdsSet.add(eventId)
     kcount = len(eventsList)
     if showAction:
-      _getMain().entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.EVENT, j, jcount)
+      entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.EVENT, j, jcount)
     if kcount == 0:
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
     return (calId, cal, eventsList, kcount)
   except (GAPI.notFound, GAPI.deleted) as e:
     if not checkCalendarExists(cal, calId, j, jcount):
-      _getMain().entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
+      entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
     else:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+      entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
   except (GAPI.forbidden, GAPI.invalid) as e:
-    _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
+    entityActionFailedWarning([Ent.CALENDAR, calId], str(e), j, jcount)
   except GAPI.notACalendarUser:
-    _getMain().userCalServiceNotEnabledWarning(calId, j, jcount)
+    userCalServiceNotEnabledWarning(calId, j, jcount)
   return (calId, cal, [], 0)
 
 def _getCalendarCreateImportUpdateEventOptions(function, entityType):
@@ -1103,7 +1182,7 @@ def _getCalendarCreateImportUpdateEventOptions(function, entityType):
                 'replaceDescription': [], 'sendUpdates': 'none',
                 'csvPF': None, 'FJQC': FormatJSONQuoteChar(None), 'showDayOfWeek': False}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'csv':
       parameters['csvPF'] = CSVPrintFile(['primaryEmail', 'calendarId', 'id'] if entityType == Ent.USER else ['calendarId', 'id'], 'sortall', indexedTitles=EVENT_INDEXED_TITLES)
       parameters['FJQC'].SetCsvPF(parameters['csvPF'])
@@ -1122,14 +1201,14 @@ def _setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
     timeZone = parameters.get('timeZone')
     if not timeZone:
       try:
-        timeZone = _getMain().callGAPI(cal.calendars(), 'get',
+        timeZone = callGAPI(cal.calendars(), 'get',
                             throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                             calendarId=calId, fields='timeZone')['timeZone']
       except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
-        _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+        entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
         return False
       except GAPI.notACalendarUser:
-        _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+        userCalServiceNotEnabledWarning(calId, i, count)
         return False
     if 'start' in body:
       body['start']['timeZone'] = timeZone
@@ -1142,7 +1221,7 @@ def _getEventDaysOfWeek(event):
     if attr in event:
       if 'date' in event[attr]:
         try:
-          dateTime = arrow.Arrow.strptime(event[attr]['date'], _getMain().YYYYMMDD_FORMAT)
+          dateTime = arrow.Arrow.strptime(event[attr]['date'], YYYYMMDD_FORMAT)
           event[attr]['dayOfWeek'] = _getMain().DAYS_OF_WEEK[dateTime.weekday()]
         except ValueError:
           pass
@@ -1165,26 +1244,26 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
       continue
     if not _setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
       continue
-    event = {'id': body.get('id', _getMain().UNKNOWN)}
+    event = {'id': body.get('id', UNKNOWN)}
     if function == 'import' and body.get('status', '') == 'cancelled':
-      _getMain().entityActionNotPerformedWarning([Ent.CALENDAR, calId, Ent.EVENT, body.get('iCalUID', event['id'])], Msg.EVENT_IS_CANCELED, count)
+      entityActionNotPerformedWarning([Ent.CALENDAR, calId, Ent.EVENT, body.get('iCalUID', event['id'])], Msg.EVENT_IS_CANCELED, count)
       continue
     try:
       if function == 'insert':
-        event = _getMain().callGAPI(cal.events(), 'insert',
+        event = callGAPI(cal.events(), 'insert',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN,
                                                                    GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST],
                          calendarId=calId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True, body=body, fields=fields)
       else:
-        event = _getMain().callGAPI(cal.events(), 'import_',
+        event = callGAPI(cal.events(), 'import_',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN,
                                                                    GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST,
                                                                    GAPI.PARTICIPANT_IS_NEITHER_ORGANIZER_NOR_ATTENDEE],
                          calendarId=calId, conferenceDataVersion=1, supportsAttachments=True, body=body, fields=fields)
       if parameters['csvPF'] is None:
-        _getMain().entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, event['id']], i, count)
+        entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, event['id']], i, count)
       else:
         if parameters['showDayOfWeek']:
           _getEventDaysOfWeek(event)
@@ -1192,14 +1271,14 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
     except (GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
             GAPI.requiredAccessLevel, GAPI.participantIsNeitherOrganizerNorAttendee,
             GAPI.malformedWorkingLocationEvent, GAPI.badRequest) as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
     except GAPI.duplicate as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
     except GAPI.forbidden as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
       break
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
       break
   if parameters['csvPF']:
     parameters['csvPF'].writeCSVfile('Calendar Created Events')
@@ -1248,7 +1327,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
       j += 1
       try:
         if updateFieldList:
-          event = _getMain().callGAPI(cal.events(), 'get',
+          event = callGAPI(cal.events(), 'get',
                            throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR],
                            retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.BACKEND_ERROR],
                            calendarId=calId, eventId=eventId, fields=updateFields)
@@ -1279,7 +1358,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
               body['attendees'] = [attendee for attendee in body['attendees'] if attendee['email'].lower() not in parameters['removeAttendees']]
             if parameters['clearResources']:
               body['attendees'] = [attendee for attendee in body['attendees'] if not attendee['email'].lower().endswith('@resource.calendar.google.com')]
-        event = _getMain().callGAPI(cal.events(), 'patch',
+        event = callGAPI(cal.events(), 'patch',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                                                    GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE,
@@ -1288,22 +1367,22 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
                          calendarId=calId, eventId=eventId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True,
                          body=body, fields=pfields)
         if parameters['csvPF'] is None:
-          _getMain().entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
+          entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
         else:
           if parameters['showDayOfWeek']:
             _getEventDaysOfWeek(event)
           _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'], {}, False)
       except (GAPI.notFound, GAPI.deleted) as e:
         if not checkCalendarExists(cal, calId, j, jcount):
-          _getMain().entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
+          entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
           break
-        _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except (GAPI.forbidden, GAPI.backendError, GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
               GAPI.requiredAccessLevel, GAPI.cannotChangeOrganizerOfInstance, GAPI.malformedWorkingLocationEvent,
               GAPI.eventTypeRestriction, GAPI.badRequest) as e:
-        _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except GAPI.notACalendarUser:
-        _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
   if parameters['csvPF']:
@@ -1322,35 +1401,35 @@ def doCalendarsUpdateEvents(calIds):
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def doCalendarsUpdateEventsOld(calIds):
   calendarEventEntity = initCalendarEventEntity()
-  calendarEventEntity['list'].append(_getMain().getString(Cmd.OB_EVENT_ID))
+  calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
   body, parameters = _getCalendarCreateImportUpdateEventOptions('update', Ent.CALENDAR)
   _updateCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity, body, parameters)
 
 def _getCalendarDeleteEventOptions(calendarEventEntity=None):
   parameters = {'sendUpdates': 'none', 'doIt': False, 'batch_size': 0}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getCalendarSendUpdates(myarg, parameters):
       pass
     elif calendarEventEntity and myarg in {'id', 'eventid'}:
-      calendarEventEntity['list'].append(_getMain().getString(Cmd.OB_EVENT_ID))
+      calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
     elif myarg == 'doit':
       parameters['doIt'] = True
     elif myarg == 'batchsize':
-      parameters['batch_size'] = _getMain().getInteger(minVal=0, maxVal=1000)
+      parameters['batch_size'] = getInteger(minVal=0, maxVal=1000)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return parameters
 
 def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEntity, parameters):
   def _callbackDeleteEvents(request_id, _, exception):
     ri = request_id.splitlines()
     if exception is None:
-      _getMain().entityActionPerformed([Ent.CALENDAR, ri[RI_ENTITY], Ent.EVENT, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      entityActionPerformed([Ent.CALENDAR, ri[RI_ENTITY], Ent.EVENT, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
     else:
-      http_status, reason, message = _getMain().checkGAPIError(exception)
-      errMsg = _getMain().getHTTPError({}, http_status, reason, message)
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, ri[RI_ENTITY], Ent.EVENT, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+      http_status, reason, message = checkGAPIError(exception)
+      errMsg = getHTTPError({}, http_status, reason, message)
+      entityActionFailedWarning([Ent.CALENDAR, ri[RI_ENTITY], Ent.EVENT, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   i = 0
   for calId in calIds:
@@ -1364,20 +1443,20 @@ def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
       for eventId in calEventIds:
         j += 1
         try:
-          _getMain().callGAPI(cal.events(), 'delete',
+          callGAPI(cal.events(), 'delete',
                    throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
                                                              GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL],
                    calendarId=calId, eventId=eventId, sendUpdates=parameters['sendUpdates'])
-          _getMain().entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
+          entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
         except (GAPI.notFound, GAPI.deleted) as e:
           if not checkCalendarExists(cal, calId, i, count):
-            _getMain().entityUnknownWarning(Ent.CALENDAR, calId, i, count)
+            entityUnknownWarning(Ent.CALENDAR, calId, i, count)
             break
-          _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
         except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
-          _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+          entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
         except GAPI.notACalendarUser:
-          _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+          userCalServiceNotEnabledWarning(calId, i, count)
           break
     else:
       svcargs = dict([('calendarId', calId), ('eventId', None), ('sendUpdates', parameters['sendUpdates'])]+GM.Globals[GM.EXTRA_ARGS_LIST])
@@ -1389,10 +1468,10 @@ def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
         j += 1
         svcparms = svcargs.copy()
         svcparms['eventId'] = eventId
-        dbatch.add(method(**svcparms), request_id=_getMain().batchRequestID(calId, i, count, j, jcount, svcparms['eventId']))
+        dbatch.add(method(**svcparms), request_id=batchRequestID(calId, i, count, j, jcount, svcparms['eventId']))
         bcount += 1
         if bcount >= parameters['batch_size']:
-          _getMain().executeBatch(dbatch)
+          executeBatch(dbatch)
           dbatch = cal.new_batch_http_request(callback=_callbackDeleteEvents)
           bcount = 0
       if bcount > 0:
@@ -1417,15 +1496,15 @@ def _getCalendarMoveEventsOptions(calendarEventEntity=None):
   parameters = {'sendUpdates': 'none'}
   newCalId = None
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getCalendarSendUpdates(myarg, parameters):
       pass
     elif calendarEventEntity and myarg in {'id', 'eventid'}:
-      calendarEventEntity['list'].append(_getMain().getString(Cmd.OB_EVENT_ID))
+      calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
     elif calendarEventEntity and myarg == 'destination':
-      newCalId = _getMain().convertUIDtoEmailAddress(_getMain().getString(Cmd.OB_CALENDAR_ITEM))
+      newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return (parameters, newCalId)
 
 def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEntity, newCalId, parameters):
@@ -1444,33 +1523,33 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
       kvListEvent = kvList+[Ent.EVENT, eventId]
       kvListEventNewCal = kvListEvent+[Ent.CALENDAR, newCalId]
       try:
-        _getMain().callGAPI(cal.events(), 'move',
+        callGAPI(cal.events(), 'move',
                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL,
                                                            GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.EVENT_TYPE_RESTRICTION,
                                                            GAPI.CANNOT_CHANGE_ORGANIZER, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE],
                  calendarId=calId, eventId=eventId, destination=newCalId, sendUpdates=parameters['sendUpdates'], fields='')
-        _getMain().entityModifierNewValueActionPerformed(kvListEvent, Act.MODIFIER_TO, f'{Ent.Singular(Ent.CALENDAR)}: {newCalId}', j, jcount)
+        entityModifierNewValueActionPerformed(kvListEvent, Act.MODIFIER_TO, f'{Ent.Singular(Ent.CALENDAR)}: {newCalId}', j, jcount)
       except GAPI.notFound as e:
         if not checkCalendarExists(cal, calId, i, count):
-          _getMain().entityUnknownWarning(Ent.CALENDAR, calId, i, count)
+          entityUnknownWarning(Ent.CALENDAR, calId, i, count)
           break
-        _getMain().entityActionFailedWarning(kvListEventNewCal, Ent.TypeNameMessage(Ent.EVENT, eventId, str(e)), j, jcount)
+        entityActionFailedWarning(kvListEventNewCal, Ent.TypeNameMessage(Ent.EVENT, eventId, str(e)), j, jcount)
       except GAPI.requiredAccessLevel:
 # Correct "You need to have reader access to this calendar." to "Writer access required to both calendars."
-        _getMain().entityActionFailedWarning(kvListEventNewCal, Msg.WRITER_ACCESS_REQUIRED_TO_BOTH_CALENDARS, j, jcount)
+        entityActionFailedWarning(kvListEventNewCal, Msg.WRITER_ACCESS_REQUIRED_TO_BOTH_CALENDARS, j, jcount)
       except (GAPI.forbidden, GAPI.invalid, GAPI.badRequest, GAPI.eventTypeRestriction,
               GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance) as e:
-        _getMain().entityActionFailedWarning(kvListEventNewCal, str(e), j, jcount)
+        entityActionFailedWarning(kvListEventNewCal, str(e), j, jcount)
       except GAPI.notACalendarUser:
-        _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
 
 # gam calendars <CalendarEntity> move events <EventEntity> to|destination <CalendarItem> [<EventNotificationAttribute>]
 def doCalendarsMoveEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
-  _getMain().checkArgumentPresent(['to', 'destination'])
-  newCalId = _getMain().convertUIDtoEmailAddress(_getMain().getString(Cmd.OB_CALENDAR_ITEM))
+  checkArgumentPresent(['to', 'destination'])
+  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
   parameters, _ = _getCalendarMoveEventsOptions()
   if not checkCalendarExists(None, newCalId, 0, 0, True):
     return
@@ -1497,11 +1576,11 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
     if not cal:
       continue
     try:
-      purgeCalId = _getMain().callGAPI(cal.calendars(), 'insert',
+      purgeCalId = callGAPI(cal.calendars(), 'insert',
                             throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.FORBIDDEN],
                             body=body, fields='id')['id']
       Act.Set(Act.CREATE)
-      _getMain().entityActionPerformed(entityValueList)
+      entityActionPerformed(entityValueList)
       Ind.Increment()
       if not emptyTrash:
         Act.Set(Act.DELETE)
@@ -1511,15 +1590,15 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
       _moveCalendarEvents(origUser, user, cal, [calId], count, calendarEventEntity, purgeCalId, parameters)
       calendarEventEntity['kwargs'].pop('showDeleted')
       Ind.Decrement()
-      _getMain().callGAPI(cal.calendars(), 'delete',
+      callGAPI(cal.calendars(), 'delete',
                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                calendarId=purgeCalId)
       Act.Set(Act.REMOVE)
-      _getMain().entityActionPerformed(entityValueList)
+      entityActionPerformed(entityValueList)
     except (GAPI.notFound, GAPI.forbidden) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, body['summary']], str(e))
+      entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, body['summary']], str(e))
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
 
 # gam calendars <CalendarEntity> purge event <EventEntity>
 #	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
@@ -1536,22 +1615,22 @@ def _wipeCalendarEvents(user, origCal, calIds, count):
     if not cal:
       continue
     try:
-      _getMain().callGAPI(cal.calendars(), 'clear',
+      callGAPI(cal.calendars(), 'clear',
                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID,
                                                          GAPI.REQUIRED_ACCESS_LEVEL, GAPI.SERVICE_NOT_AVAILABLE],
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                calendarId=calId)
-      _getMain().entityActionPerformed([Ent.CALENDAR, calId], i, count)
+      entityActionPerformed([Ent.CALENDAR, calId], i, count)
     except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel, GAPI.serviceNotAvailable) as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
 
 # gam calendars <CalendarEntity> wipe events
 # gam calendar <CalendarEntity> wipe
 def doCalendarsWipeEvents(calIds):
-  _getMain().checkArgumentPresent([Cmd.ARG_EVENT, Cmd.ARG_EVENTS])
-  _getMain().checkForExtraneousArguments()
+  checkArgumentPresent([Cmd.ARG_EVENT, Cmd.ARG_EVENTS])
+  checkForExtraneousArguments()
   _wipeCalendarEvents(None, None, calIds, len(calIds))
 
 def _emptyCalendarTrash(user, origCal, calIds, count):
@@ -1564,22 +1643,22 @@ def _emptyCalendarTrash(user, origCal, calIds, count):
     Act.Set(Act.PURGE)
     calendarEventEntity = initCalendarEventEntity()
     try:
-      events = _getMain().callGAPIpages(cal.events(), 'list', 'items',
+      events = callGAPIpages(cal.events(), 'list', 'items',
                              throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                              calendarId=calId, showDeleted=True, fields='nextPageToken,items(id,status,organizer(self),recurringEventId)',
                              maxResults=GC.Values[GC.EVENT_MAX_RESULTS])
     except (GAPI.notFound, GAPI.forbidden) as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
       continue
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
       continue
     for event in events:
       if event['status'] == 'cancelled' and event.get('organizer', {}).get('self', user is None) and not event.get('recurringEventId', ''):
         calendarEventEntity['list'].append(event['id'])
     jcount = len(calendarEventEntity['list'])
     if not user:
-      _getMain().entityPerformActionNumItems([Ent.CALENDAR, calId], jcount, Ent.TRASHED_EVENT, i, count)
+      entityPerformActionNumItems([Ent.CALENDAR, calId], jcount, Ent.TRASHED_EVENT, i, count)
       Ind.Increment()
     if jcount > 0:
       _purgeCalendarEvents(user, user, cal, [calId], 1, calendarEventEntity, {'sendUpdates': 'none', 'doIt': True, 'batch_size': 0}, True)
@@ -1588,7 +1667,7 @@ def _emptyCalendarTrash(user, origCal, calIds, count):
 
 # gam calendars <CalendarEntity> empty calendartrash
 def doCalendarsEmptyTrash(calIds):
-  _getMain().checkForExtraneousArguments()
+  checkForExtraneousArguments()
   Act.Set(Act.PURGE)
   _emptyCalendarTrash(None, None, calIds, len(calIds))
 
@@ -1603,23 +1682,23 @@ EVENT_TIME_OBJECTS = {'created', 'updated'}
 def _showCalendarEvent(primaryEmail, calId, eventEntityType, event, k, kcount, FJQC):
   if FJQC.formatJSON:
     if primaryEmail:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON({'primaryEmail': primaryEmail, 'calendarId': calId, 'event': event},
+      printLine(json.dumps(cleanJSON({'primaryEmail': primaryEmail, 'calendarId': calId, 'event': event},
                                      timeObjects=EVENT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     else:
-      _getMain().printLine(json.dumps(_getMain().cleanJSON({'calendarId': calId, 'event': event},
+      printLine(json.dumps(cleanJSON({'calendarId': calId, 'event': event},
                                      timeObjects=EVENT_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
-  _getMain().printEntity([eventEntityType, event['id']], k, kcount)
+  printEntity([eventEntityType, event['id']], k, kcount)
   skipObjects = {'id'}
   Ind.Increment()
   for field in EVENT_SHOW_ORDER:
     if field in event:
       if field != 'description':
-        _getMain().showJSON(field, event[field], skipObjects, EVENT_TIME_OBJECTS)
+        showJSON(field, event[field], skipObjects, EVENT_TIME_OBJECTS)
       else:
-        _getMain().printKeyValueWithCRsNLs(field, event[field])
+        printKeyValueWithCRsNLs(field, event[field])
       skipObjects.add(field)
-  _getMain().showJSON(None, event, skipObjects)
+  showJSON(None, event, skipObjects)
   Ind.Decrement()
 
 def _printCalendarEvent(user, calId, event, csvPF, FJQC, addCSVData, attendeesList=False):
@@ -1631,12 +1710,12 @@ def _printCalendarEvent(user, calId, event, csvPF, FJQC, addCSVData, attendeesLi
   if attendeesList:
     attendees = event.pop('attendees', [])
     row['attendeesList'] = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER].join([attendee['email'] for attendee in attendees])
-  _getMain().flattenJSON(event, flattened=row, timeObjects=EVENT_TIME_OBJECTS)
+  flattenJSON(event, flattened=row, timeObjects=EVENT_TIME_OBJECTS)
   if not FJQC.formatJSON:
     csvPF.WriteRowTitles(row)
   elif csvPF.CheckRowTitles(row):
     row = {'calendarId': calId, 'id': event['id'],
-           'JSON': json.dumps(_getMain().cleanJSON(event, timeObjects=EVENT_TIME_OBJECTS),
+           'JSON': json.dumps(cleanJSON(event, timeObjects=EVENT_TIME_OBJECTS),
                               ensure_ascii=False, sort_keys=False)}
     if user:
       row['primaryEmail'] = user
@@ -1648,7 +1727,7 @@ def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEve
   for calId in calIds:
     i += 1
     if csvPF:
-      _getMain().printGettingEntityItemForWhom(Ent.EVENT, calId, i, count)
+      printGettingEntityItemForWhom(Ent.EVENT, calId, i, count)
     calId, _, events, jcount = _validateCalendarGetEvents(origUser, user, origCal, calId, i, count, calendarEventEntity,
                                                           fieldsList, not csvPF and not FJQC.formatJSON and not calendarEventEntity['countsOnly'])
     if not csvPF:
@@ -1662,7 +1741,7 @@ def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEve
           _showCalendarEvent(user, calId, Ent.EVENT, event, j, jcount, FJQC)
         Ind.Decrement()
       else:
-        _getMain().printKeyValueList([Ent.Singular(Ent.CALENDAR), calId, Ent.Choose(Ent.EVENT, jcount), jcount])
+        printKeyValueList([Ent.Singular(Ent.CALENDAR), calId, Ent.Choose(Ent.EVENT, jcount), jcount])
     else:
       if not calendarEventEntity['countsOnly']:
         if events:
@@ -1681,7 +1760,7 @@ def _printShowCalendarEvents(origUser, user, origCal, calIds, count, calendarEve
             row = {'calendarId': calId, 'id': event['id']}
             if user:
               row['primaryEmail'] = user
-            _getMain().flattenJSON(event, flattened=row, timeObjects=EVENT_TIME_OBJECTS)
+            flattenJSON(event, flattened=row, timeObjects=EVENT_TIME_OBJECTS)
             if csvPF.CheckRowTitles(row):
               jcount += 1
         row = {'calendarId': calId}
@@ -1819,21 +1898,21 @@ EVENT_SUBFIELDS_CHOICE_MAP = {
 def _getEventFields(fieldsList):
   if not fieldsList:
     fieldsList.append('id')
-  for field in _getMain()._getFieldsList():
+  for field in _getFieldsList():
     if field.find('.') == -1:
       if field in EVENT_FIELDS_CHOICE_MAP:
-        _getMain().addFieldToFieldsList(field, EVENT_FIELDS_CHOICE_MAP, fieldsList)
+        addFieldToFieldsList(field, EVENT_FIELDS_CHOICE_MAP, fieldsList)
       else:
-        _getMain().invalidChoiceExit(field, EVENT_FIELDS_CHOICE_MAP, True)
+        invalidChoiceExit(field, EVENT_FIELDS_CHOICE_MAP, True)
     else:
       field, subField = field.split('.', 1)
       if field in EVENT_SUBFIELDS_CHOICE_MAP:
         if subField in EVENT_SUBFIELDS_CHOICE_MAP[field]:
           fieldsList.append(f'{EVENT_FIELDS_CHOICE_MAP[field]}.{EVENT_SUBFIELDS_CHOICE_MAP[field][subField]}')
         else:
-          _getMain().invalidChoiceExit(subField, list(EVENT_SUBFIELDS_CHOICE_MAP[field]), True)
+          invalidChoiceExit(subField, list(EVENT_SUBFIELDS_CHOICE_MAP[field]), True)
       else:
-        _getMain().invalidChoiceExit(field, list(EVENT_SUBFIELDS_CHOICE_MAP), True)
+        invalidChoiceExit(field, list(EVENT_SUBFIELDS_CHOICE_MAP), True)
 
 def _addEventEntitySelectFields(calendarEventEntity, fieldsList):
   if fieldsList:
@@ -1842,10 +1921,10 @@ def _addEventEntitySelectFields(calendarEventEntity, fieldsList):
       fieldsList.append('recurrence')
 
 def _getCalendarInfoEventOptions(calendarEventEntity):
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   fieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'fields':
       _getEventFields(fieldsList)
     elif myarg == 'showdayofweek':
@@ -1856,8 +1935,8 @@ def _getCalendarInfoEventOptions(calendarEventEntity):
   return (FJQC, fieldsList)
 
 def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEntity, FJQC, fieldsList):
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
-  ifields = _getMain().getItemFieldsFromFieldsList('items', fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
+  ifields = getItemFieldsFromFieldsList('items', fieldsList)
   i = 0
   for calId in calIds:
     i += 1
@@ -1869,7 +1948,7 @@ def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
     for eventId in calEventIds:
       j += 1
       try:
-        event = _getMain().callGAPI(cal.events(), 'get',
+        event = callGAPI(cal.events(), 'get',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN],
                          calendarId=calId, eventId=eventId, fields=fields)
         if calendarEventEntity['maxinstances'] == -1 or 'recurrence' not in event:
@@ -1877,13 +1956,13 @@ def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
             _getEventDaysOfWeek(event)
           _showCalendarEvent(user, calId, Ent.EVENT, event, j, jcount, FJQC)
         else:
-          instances = _getMain().callGAPIpages(cal.events(), 'instances', 'items',
+          instances = callGAPIpages(cal.events(), 'instances', 'items',
                                     throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN],
                                     calendarId=calId, eventId=eventId, fields=ifields,
                                     maxItems=calendarEventEntity['maxinstances'], maxResults=GC.Values[GC.EVENT_MAX_RESULTS])
           lcount = len(instances)
           if not FJQC.formatJSON:
-            _getMain().entityPerformActionNumItems([Ent.EVENT, event['id']], lcount, Ent.INSTANCE, j, jcount)
+            entityPerformActionNumItems([Ent.EVENT, event['id']], lcount, Ent.INSTANCE, j, jcount)
           Ind.Increment()
           l = 0
           for instance in instances:
@@ -1894,14 +1973,14 @@ def _infoCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
           Ind.Decrement()
       except (GAPI.notFound, GAPI.deleted) as e:
         if not checkCalendarExists(cal, calId, i, count):
-          _getMain().entityUnknownWarning(Ent.CALENDAR, calId, i, count)
+          entityUnknownWarning(Ent.CALENDAR, calId, i, count)
           break
-        _getMain().entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except (GAPI.forbidden) as e:
-        _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+        entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
         break
       except GAPI.notACalendarUser:
-        _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+        userCalServiceNotEnabledWarning(calId, i, count)
         break
     Ind.Decrement()
 
@@ -1916,14 +1995,14 @@ def doCalendarsInfoEvents(calIds):
 EVENT_INDEXED_TITLES = ['attendees', 'attachments', 'recurrence']
 
 def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
-  csvPF = _getMain().CSVPrintFile(['primaryEmail', 'calendarId', 'id'] if entityType == Ent.USER else ['calendarId', 'id'], 'sortall', indexedTitles=EVENT_INDEXED_TITLES) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['primaryEmail', 'calendarId', 'id'] if entityType == Ent.USER else ['calendarId', 'id'], 'sortall', indexedTitles=EVENT_INDEXED_TITLES) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   addCSVData = {}
   addCSVDataLoc = 2 if entityType == Ent.USER else 1
   attendeesList = False
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif _getCalendarListEventsDisplayProperty(myarg, calendarEventEntity):
@@ -1931,7 +2010,7 @@ def _getCalendarPrintShowEventOptions(calendarEventEntity, entityType):
     elif myarg == 'fields':
       _getEventFields(fieldsList)
     elif csvPF and myarg == 'addcsvdata':
-      _getMain().getAddCSVData(addCSVData)
+      getAddCSVData(addCSVData)
     elif myarg == 'countsonly':
       calendarEventEntity['countsOnly'] = True
     elif myarg == 'showdayofweek':
@@ -1987,15 +2066,15 @@ def doCalendarsPrintShowEvents(calIds):
 #	[autoacceptinvitations [<Boolean>]]
 def _getCalendarSetting(myarg, body):
   if myarg == 'description':
-    body['description'] = _getMain().getStringWithCRsNLs()
+    body['description'] = getStringWithCRsNLs()
   elif myarg == 'location':
-    body['location'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+    body['location'] = getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'summary':
-    body['summary'] = _getMain().getString(Cmd.OB_STRING)
+    body['summary'] = getString(Cmd.OB_STRING)
   elif myarg == 'timezone':
-    body['timeZone'] = _getMain().getString(Cmd.OB_STRING)
+    body['timeZone'] = getString(Cmd.OB_STRING)
   elif myarg == 'autoacceptinvitations':
-    body['autoAcceptInvitations'] = _getMain().getBoolean()
+    body['autoAcceptInvitations'] = getBoolean()
   else:
     return False
   return True
@@ -2003,13 +2082,13 @@ def _getCalendarSetting(myarg, body):
 def getCalendarSettings(summaryRequired=False):
   body = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if _getCalendarSetting(myarg, body):
       pass
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if summaryRequired and not body.get('summary', None):
-    _getMain().missingArgumentExit('summary <String>')
+    missingArgumentExit('summary <String>')
   return body
 
 # gam calendars <CalendarEntity> modify <CalendarSettings>
@@ -2023,35 +2102,35 @@ def doCalendarsModifySettings(calIds):
     if not cal:
       continue
     try:
-      _getMain().callGAPI(cal.calendars(), 'patch',
+      callGAPI(cal.calendars(), 'patch',
                throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
                calendarId=calId, body=body)
-      _getMain().entityActionPerformed([Ent.CALENDAR, calId], i, count)
+      entityActionPerformed([Ent.CALENDAR, calId], i, count)
     except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
 
 def _showCalendarSettings(calendar, j, jcount):
-  _getMain().printEntity([Ent.CALENDAR, calendar['id']], j, jcount)
+  printEntity([Ent.CALENDAR, calendar['id']], j, jcount)
   Ind.Increment()
   if 'dataOwner' in calendar:
-    _getMain().printKeyValueList(['Owner', calendar['dataOwner']])
+    printKeyValueList(['Owner', calendar['dataOwner']])
   if 'summaryOverride' in calendar or 'summary' in calendar:
-    _getMain().printKeyValueList(['Summary', calendar.get('summaryOverride', calendar.get('summary', ''))])
+    printKeyValueList(['Summary', calendar.get('summaryOverride', calendar.get('summary', ''))])
   if 'description' in calendar:
-    _getMain().printKeyValueWithCRsNLs('Description', calendar['description'])
+    printKeyValueWithCRsNLs('Description', calendar['description'])
   if 'location' in calendar:
-    _getMain().printKeyValueList(['Location', calendar['location']])
+    printKeyValueList(['Location', calendar['location']])
   if 'timeZone' in calendar:
-    _getMain().printKeyValueList(['Timezone', calendar['timeZone']])
+    printKeyValueList(['Timezone', calendar['timeZone']])
   if 'conferenceProperties' in calendar:
-    _getMain().printKeyValueList(['ConferenceProperties', None])
+    printKeyValueList(['ConferenceProperties', None])
     Ind.Increment()
-    _getMain().printKeyValueList(['AllowedConferenceSolutionTypes', ','.join(calendar.get('conferenceProperties', {}).get('allowedConferenceSolutionTypes', []))])
+    printKeyValueList(['AllowedConferenceSolutionTypes', ','.join(calendar.get('conferenceProperties', {}).get('allowedConferenceSolutionTypes', []))])
     Ind.Decrement()
   if 'autoAcceptInvitations' in calendar:
-    _getMain().printKeyValueList(['AutoAcceptInvitations', calendar['autoAcceptInvitations']])
+    printKeyValueList(['AutoAcceptInvitations', calendar['autoAcceptInvitations']])
   Ind.Decrement()
 
 CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
@@ -2072,18 +2151,18 @@ CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
 #	[fields <CalendarSettingsFieldList>]
 #	[formatjson]
 def doCalendarsPrintShowSettings(calIds):
-  csvPF = _getMain().CSVPrintFile(['calendarId'], 'sortall') if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['calendarId'], 'sortall') if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif _getMain().getFieldsList(myarg, CALENDAR_SETTINGS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
+    elif getFieldsList(myarg, CALENDAR_SETTINGS_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  fields = _getMain().getFieldsFromFieldsList(fieldsList)
+  fields = getFieldsFromFieldsList(fieldsList)
   count = len(calIds)
   i = 0
   for calId in calIds:
@@ -2092,37 +2171,37 @@ def doCalendarsPrintShowSettings(calIds):
     if not cal:
       continue
     try:
-      calendar = _getMain().callGAPI(cal.calendars(), 'get',
+      calendar = callGAPI(cal.calendars(), 'get',
                           throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN],
                           calendarId=calId, fields=fields)
       if not csvPF:
         if not FJQC.formatJSON:
           _showCalendarSettings(calendar, i, count)
         else:
-          _getMain().printLine(json.dumps(_getMain().cleanJSON(calendar), ensure_ascii=False, sort_keys=True))
+          printLine(json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True))
       else:
-        row = _getMain().flattenJSON(calendar)
+        row = flattenJSON(calendar)
         if not FJQC.formatJSON:
           row['calendarId'] = row.pop('id')
           csvPF.WriteRowTitles(row)
         elif csvPF.CheckRowTitles(row):
-          csvPF.WriteRowNoFilter({'calendarId': calId, 'JSON': json.dumps(_getMain().cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
+          csvPF.WriteRowNoFilter({'calendarId': calId, 'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
     except (GAPI.notFound, GAPI.forbidden) as e:
-      _getMain().entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
+      entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
     except GAPI.notACalendarUser:
-      _getMain().userCalServiceNotEnabledWarning(calId, i, count)
+      userCalServiceNotEnabledWarning(calId, i, count)
   if csvPF:
     csvPF.writeCSVfile('Calendar Settings')
 
 def _validateResourceId(cd, resourceId, i, count, exitOnNotFound):
   try:
-    return _getMain().callGAPI(cd.resources().calendars(), 'get',
+    return callGAPI(cd.resources().calendars(), 'get',
                     throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
                     customer=GC.Values[GC.CUSTOMER_ID], calendarResourceId=resourceId, fields='resourceEmail')['resourceEmail']
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
     if exitOnNotFound:
-      _getMain().entityDoesNotExistExit(Ent.RESOURCE_CALENDAR, resourceId, i, count)
-    _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      entityDoesNotExistExit(Ent.RESOURCE_CALENDAR, resourceId, i, count)
+    checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
     return None
 
 def _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, showAction=True):
@@ -2135,16 +2214,16 @@ def _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, sho
     ruleIds = ACLScopeEntity['list']
   jcount = len(ruleIds)
   if showAction:
-    _getMain().entityPerformActionNumItems([Ent.RESOURCE_CALENDAR, resourceId], jcount, Ent.CALENDAR_ACL, i, count)
+    entityPerformActionNumItems([Ent.RESOURCE_CALENDAR, resourceId], jcount, Ent.CALENDAR_ACL, i, count)
   if jcount == 0:
-    _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
   return (calId, ruleIds, jcount)
 
 # gam resource <ResourceID> create calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 # gam resources <ResourceEntity> create calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def doResourceCreateCalendarACLs(entityList):
-  cal = _getMain().buildGAPIObject(API.CALENDAR)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   i = 0
   count = len(entityList)
@@ -2156,8 +2235,8 @@ def doResourceCreateCalendarACLs(entityList):
     _createCalendarACLs(cal, Ent.RESOURCE_CALENDAR, calId, i, count, role, ruleIds, jcount, sendNotifications)
 
 def _resourceUpdateDeleteCalendarACLs(entityList, function, ACLScopeEntity, role, sendNotifications):
-  cal = _getMain().buildGAPIObject(API.CALENDAR)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   i = 0
   count = len(entityList)
   for resourceId in entityList:
@@ -2184,8 +2263,8 @@ def doResourceDeleteCalendarACLs(entityList):
 # gam resources <ResourceEntity> info calendaracls <CalendarACLScopeEntity>
 #	[formatjson]
 def doResourceInfoCalendarACLs(entityList):
-  cal = _getMain().buildGAPIObject(API.CALENDAR)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   ACLScopeEntity = getCalendarSiteACLScopeEntity()
   FJQC = _getCalendarInfoACLOptions()
   i = 0
@@ -2210,8 +2289,8 @@ def doResourceInfoCalendarACLs(entityList):
 #	[noselfowner]
 #	[formatjson]
 def doResourcePrintShowCalendarACLs(entityList):
-  cal = _getMain().buildGAPIObject(API.CALENDAR)
-  cd = _getMain().buildGAPIObject(API.DIRECTORY)
+  cal = buildGAPIObject(API.CALENDAR)
+  cd = buildGAPIObject(API.DIRECTORY)
   csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['resourceId', 'resourceEmail'])
   i = 0
   count = len(entityList)

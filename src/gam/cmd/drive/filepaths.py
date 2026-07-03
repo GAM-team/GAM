@@ -69,6 +69,34 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from gam.cmd.drive.core import DRIVE_LABEL_CHOICE_MAP  # cross-module ref
+from gam.util.api import callGAPI, callGAPIitems, callGAPIpages
+from gam.util.args import (
+    OrderBy,
+    getArgument,
+    getBoolean,
+    getCharacter,
+    getChoice,
+    splitEmailAddress,
+)
+from gam.util.csv_pf import (
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    addFieldToFieldsList,
+    cleanJSON,
+    getFieldsFromFieldsList,
+    getItemFieldsFromFieldsList,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    printEntity,
+    printKeyValueList,
+    printLine,
+    userDriveServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.errors import invalidChoiceExit
+from gam.util.output import writeStdout
 
 def initFilePathInfo(delimiter):
   return {'ids': {}, 'allPaths': {}, 'localPaths': None, 'delimiter': delimiter}
@@ -93,7 +121,7 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
         parentEntry = fileTree[parentId] = {'info': {'id': parentId, 'name': parentId, 'mimeType': MIMETYPE_GA_FOLDER}, 'children': []}
       if parentEntry['info']['name'] == parentEntry['info']['id'] and parentEntry['info']['id'] not in {ORPHANS, SHARED_WITHME, SHARED_DRIVES}:
         try:
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=parentId, fields='name,parents,mimeType,driveId', supportsAllDrives=True)
           parentEntry['info']['name'] = _getParentName(result)
@@ -104,7 +132,7 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
       parents = parentEntry['info'].get('parents', [])
     else:
       try:
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=parentId, fields='name,parents,mimeType,driveId', supportsAllDrives=True)
         filePathInfo['ids'][parentId] = _getParentName(result)
@@ -193,7 +221,7 @@ def _mapDriveUser(field):
 def _mapDrivePermissionNames(permission):
   emailAddress = permission.get('emailAddress')
   if emailAddress:
-    _, permission['domain'] = _getMain().splitEmailAddress(emailAddress)
+    _, permission['domain'] = splitEmailAddress(emailAddress)
 
 def _mapDriveInfo(f_file, parentsSubFields, showParentsIdsAsList):
   if 'parents' in f_file:
@@ -224,7 +252,7 @@ def _mapDriveInfo(f_file, parentsSubFields, showParentsIdsAsList):
   for permission in f_file.get('permissions', []):
     emailAddress = permission.get('emailAddress')
     if emailAddress:
-      _, permission['domain'] = _getMain().splitEmailAddress(emailAddress)
+      _, permission['domain'] = splitEmailAddress(emailAddress)
 
 DRIVEFILE_BASIC_PERMISSION_FIELDS = [
   'displayName', 'id', 'emailAddress', 'domain', 'role', 'type',
@@ -486,7 +514,7 @@ FILEPATH_FIELDS = ','.join(FILEPATH_FIELDS_TITLES)
 DRIVE_TIME_OBJECTS = {'createdTime', 'viewedByMeTime', 'modifiedByMeTime', 'modifiedTime', 'restrictionTime', 'sharedWithMeTime', 'trashedTime'}
 
 def _getIncludeLabels(includeLabels):
-  labelIds = _getMain().getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
+  labelIds = getEntityList(Cmd.OB_CLASSIFICATION_LABEL_ID, shlexSplit=True)
   for labelId in labelIds:
     includeLabels.add(normalizeDriveLabelID(labelId))
 
@@ -498,12 +526,12 @@ def _finalizeIncludeLabels(includeLabels):
 DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES = ['published']
 
 def _getIncludePermissionsForView(includePermissionsForView):
-  ipfwList = _getMain().getEntityList(Cmd.OB_STRING_LIST)
+  ipfwList = getEntityList(Cmd.OB_STRING_LIST)
   for ipfw in ipfwList:
     if ipfw in DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES:
       includePermissionsForView.add(ipfw)
     else:
-      _getMain().invalidChoiceExit(ipfw, DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES, True)
+      invalidChoiceExit(ipfw, DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES, True)
 
 def _finalizeIncludePermissionsForView(includePermissionsForView):
   if includePermissionsForView:
@@ -526,15 +554,15 @@ def _getDriveFieldSubField(field, fieldsList, parentsSubFields):
       else:
         fieldsList.append(DRIVE_SUBFIELDS_CHOICE_MAP[field][subField])
     else:
-      _getMain().invalidChoiceExit(subField, list(DRIVE_SUBFIELDS_CHOICE_MAP[field]), True)
+      invalidChoiceExit(subField, list(DRIVE_SUBFIELDS_CHOICE_MAP[field]), True)
   else:
-    _getMain().invalidChoiceExit(field, list(DRIVE_SUBFIELDS_CHOICE_MAP), True)
+    invalidChoiceExit(field, list(DRIVE_SUBFIELDS_CHOICE_MAP), True)
 
 class DriveFileFields():
   def __init__(self):
     self.showSharedDriveNames = False
     self.allFields = False
-    self.OBY = _getMain().OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
+    self.OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
     self.fieldsList = []
     self.includeLabels = set()
     self.includePermissionsForView = set()
@@ -548,26 +576,26 @@ class DriveFileFields():
       self.fieldsList = []
       self.allFields = True
     elif myarg in DRIVE_LABEL_CHOICE_MAP:
-      _getMain().addFieldToFieldsList(myarg, DRIVE_LABEL_CHOICE_MAP, self.fieldsList)
+      addFieldToFieldsList(myarg, DRIVE_LABEL_CHOICE_MAP, self.fieldsList)
     elif myarg in DRIVE_FIELDS_CHOICE_MAP:
-      _getMain().addFieldToFieldsList(myarg, DRIVE_FIELDS_CHOICE_MAP, self.fieldsList)
+      addFieldToFieldsList(myarg, DRIVE_FIELDS_CHOICE_MAP, self.fieldsList)
       if myarg == 'parents':
         self.SetAllParentsSubFields()
       elif myarg in {'drivename', 'shareddrivename', 'teamdrivename'}:
         self.showSharedDriveNames = True
     elif myarg == 'fields':
-      for field in _getMain()._getFieldsList():
+      for field in _getFieldsList():
         if field in DRIVE_LABEL_CHOICE_MAP:
-          _getMain().addFieldToFieldsList(field, DRIVE_LABEL_CHOICE_MAP, self.fieldsList)
+          addFieldToFieldsList(field, DRIVE_LABEL_CHOICE_MAP, self.fieldsList)
         elif field.find('.') == -1:
           if field in DRIVE_FIELDS_CHOICE_MAP:
-            _getMain().addFieldToFieldsList(field, DRIVE_FIELDS_CHOICE_MAP, self.fieldsList)
+            addFieldToFieldsList(field, DRIVE_FIELDS_CHOICE_MAP, self.fieldsList)
             if field == 'parents':
               self.SetAllParentsSubFields()
             elif field in {'drivename', 'shareddrivename', 'teamdrivename'}:
               self.showSharedDriveNames = True
           else:
-            _getMain().invalidChoiceExit(field, list(DRIVE_FIELDS_CHOICE_MAP)+list(DRIVE_LABEL_CHOICE_MAP), True)
+            invalidChoiceExit(field, list(DRIVE_FIELDS_CHOICE_MAP)+list(DRIVE_LABEL_CHOICE_MAP), True)
         else:
           _getDriveFieldSubField(field, self.fieldsList, self.parentsSubFields)
     elif myarg == 'includelabels':
@@ -616,7 +644,7 @@ def _setGetPermissionsForMyDriveSharedDrives(fieldsList, permissionsFieldsList):
     if 'permissionDetails' in permissionsFieldsList:
       getPermissionDetailsForMyDrive = True
     getPermissionsForSharedDrives = True
-    permissionsFields = _getMain().getItemFieldsFromFieldsList('permissions', permissionsFieldsList, True)
+    permissionsFields = getItemFieldsFromFieldsList('permissions', permissionsFieldsList, True)
   return (getPermissionDetailsForMyDrive, getPermissionsForSharedDrives, permissionsFields)
 
 # Do file permissions have to be gotten by API call?
@@ -683,32 +711,32 @@ def showFileInfo(users):
   skipObjects = set()
   fileIdEntity = getDriveFileEntity()
   DFF = DriveFileFields()
-  FJQC = _getMain().FormatJSONQuoteChar()
+  FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'filepath':
       filepath = True
     elif myarg == 'fullpath':
       filepath = fullpath = True
     elif myarg == 'folderpathonly':
-      folderPathOnly = _getMain().getBoolean()
+      folderPathOnly = getBoolean()
     elif myarg == 'parentpathonly':
-      parentPathOnly = _getMain().getBoolean()
+      parentPathOnly = getBoolean()
     elif myarg == 'pathdelimiter':
-      pathDelimiter = _getMain().getCharacter()
+      pathDelimiter = getCharacter()
     elif myarg == 'showparentsidsaslist':
       showParentsIdsAsList = True
       simpleLists.append('parentsIds')
     elif myarg == 'stripcrsfromname':
       stripCRsFromName = True
     elif myarg == 'showlabels':
-      showLabels = _getMain().getChoice(SHOWLABELS_CHOICES)
+      showLabels = getChoice(SHOWLABELS_CHOICES)
     elif myarg == 'showshareddrivepermissions':
       permissionsFieldsList = DRIVEFILE_BASIC_PERMISSION_FIELDS.copy()
     elif myarg == 'returnidonly':
       returnIdOnly = True
     elif myarg == 'followshortcuts':
-      followShortcuts = _getMain().getBoolean()
+      followShortcuts = getBoolean()
     elif DFF.ProcessArgument(myarg):
       pass
     else:
@@ -718,7 +746,7 @@ def showFileInfo(users):
     _setSelectionFields()
     if followShortcuts:
       DFF.fieldsList.extend(['mimeType', 'shortcutDetails'])
-    fields = _getMain().getFieldsFromFieldsList(DFF.fieldsList)
+    fields = getFieldsFromFieldsList(DFF.fieldsList)
     showNoParents = 'parents' in DFF.fieldsList
   else:
     fields = '*'
@@ -728,7 +756,7 @@ def showFileInfo(users):
   includeLabels = _finalizeIncludeLabels(DFF.includeLabels)
   includePermissionsForView = _finalizeIncludePermissionsForView(DFF.includePermissionsForView)
   pathFields = FILEPATH_FIELDS
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
     if returnIdOnly:
@@ -740,15 +768,15 @@ def showFileInfo(users):
       continue
     if returnIdOnly:
       for fileId in fileIdEntity['list']:
-        _getMain().writeStdout(f'{fileId}\n')
+        writeStdout(f'{fileId}\n')
       continue
     if not showParentsIdsAsList and DFF.parentsSubFields['isRoot']:
       try:
-        DFF.parentsSubFields['rootFolderId'] = _getMain().callGAPI(drive.files(), 'get',
+        DFF.parentsSubFields['rootFolderId'] = callGAPI(drive.files(), 'get',
                                                         throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                                         fileId=ROOT, fields='id')['id']
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         continue
     if filepath:
       filePathInfo = initFilePathInfo(pathDelimiter)
@@ -763,13 +791,13 @@ def showFileInfo(users):
     for fileId in fileIdEntity['list']:
       j += 1
       try:
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID],
                           fileId=fileId, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
                           fields=fields, supportsAllDrives=True)
         if followShortcuts and result['mimeType'] == MIMETYPE_GA_SHORTCUT:
           fileId = result['shortcutDetails']['targetId']
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID],
                             fileId=fileId, includeLabels=includeLabels, includePermissionsForView=includePermissionsForView,
                             fields=fields, supportsAllDrives=True)
@@ -785,7 +813,7 @@ def showFileInfo(users):
           result.setdefault('parents', [])
         if getPermissionsForSharedDrives and driveId and 'permissions' not in result:
           try:
-            result['permissions'] = _getMain().callGAPIpages(drive.permissions(), 'list', 'permissions',
+            result['permissions'] = callGAPIpages(drive.permissions(), 'list', 'permissions',
                                                   throwReasons=GAPI.DRIVE3_GET_ACL_REASONS,
                                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                                   fileId=fileId, fields=permissionsFields, supportsAllDrives=True)
@@ -793,16 +821,16 @@ def showFileInfo(users):
               permission.pop('teamDrivePermissionDetails', None)
           except (GAPI.insufficientAdministratorPrivileges, GAPI.insufficientFilePermissions) as e:
             if fields != '*':
-              _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
+              entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
               continue
         if showLabels is not None:
-          labels = _getMain().callGAPIitems(drive.files(), 'listLabels', 'labels',
+          labels = callGAPIitems(drive.files(), 'listLabels', 'labels',
                                  throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                  retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.UNKNOWN_ERROR],
                                  fileId=fileId)
           _formatFileDriveLabels(showLabels, labels, result, False, ' ')
         if not FJQC.formatJSON:
-          _getMain().printEntity([_getMain()._getEntityMimeType(result), f'{result["name"]} ({fileId})'], j, jcount)
+          printEntity([_getMain()._getEntityMimeType(result), f'{result["name"]} ({fileId})'], j, jcount)
           Ind.Increment()
         if filepath:
           if fullpath:
@@ -812,10 +840,10 @@ def showFileInfo(users):
             _, paths, _ = getFilePaths(drive, fileTree, result, filePathInfo, addParentsToTree=True,
                                        fullpath=fullpath, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
             kcount = len(paths)
-            _getMain().printKeyValueList(['paths', kcount])
+            printKeyValueList(['paths', kcount])
             Ind.Increment()
             for path in sorted(paths):
-              _getMain().printKeyValueList(['path', path])
+              printKeyValueList(['path', path])
             Ind.Decrement()
           else:
             addFilePathsToInfo(drive, fileTree, result, filePathInfo,
@@ -825,20 +853,20 @@ def showFileInfo(users):
           fpparents = result['parents'][:]
         _mapDriveInfo(result, DFF.parentsSubFields, showParentsIdsAsList)
         if not FJQC.formatJSON:
-          _getMain().showJSON(None, result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS, simpleLists=simpleLists,
+          showJSON(None, result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS, simpleLists=simpleLists,
                    dictObjectsKey={'owners': 'displayName', 'fields': 'id', 'labels': 'id', 'user': 'emailAddress', 'parents': 'id',
                                    'permissions': 'displayName', 'permissionDetails': 'inherited'})
           Ind.Decrement()
         else:
-          _getMain().printLine(json.dumps(_getMain().cleanJSON(result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+          printLine(json.dumps(cleanJSON(result, skipObjects=skipObjects, timeObjects=DRIVE_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
         if fullpath:
           # Restore simple parents list
           fileTree[fileId]['info']['parents'] = fpparents[:]
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.invalid) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_OR_FOLDER_ID, fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        _getMain().userDriveServiceNotEnabledWarning(user, str(e), i, count)
+        userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
 

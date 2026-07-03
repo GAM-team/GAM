@@ -14,6 +14,52 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.access import entityUnknownWarning
+from gam.util.api import (
+    _getAdminEmail,
+    buildGAPIObject,
+    buildGAPIServiceObject,
+    callGAPI,
+    callGAPIpages,
+)
+from gam.util.args import (
+    FALSE,
+    SORF_MSG_FILE_ARGUMENTS,
+    TRUE,
+    TRUE_FALSE,
+    UTF8,
+    checkArgumentPresent,
+    getArgument,
+    getBoolean,
+    getCharSet,
+    getDateOrDeltaFromNow,
+    getEmailAddress,
+    getFilename,
+    getREPatternSubstitution,
+    getString,
+    getStringOrFile,
+    getTimeOrDeltaFromNow,
+    normalizeEmailAddressOrUID,
+    splitEmailAddress,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityNumEntitiesActionNotPerformedWarning,
+    entityPerformActionModifierNumItems,
+    getPageMessageForWhom,
+    printGettingAllEntityItemsForWhom,
+    userGmailServiceNotEnabledWarning,
+)
+from gam.util.email import send_email
+from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify, getNormalizedEmailAddressEntity
+from gam.util.errors import (
+    invalidArgumentExit,
+    invalidChoiceExit,
+    missingArgumentExit,
+    unknownArgumentExit,
+    usageErrorExit,
+)
+from gam.util.output import ERROR, setSysExitRC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -209,14 +255,14 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
   if myarg == 'replace':
     trregex = None
   elif myarg == 'replaceregex':
-    trregex = _getMain().getREPatternSubstitution(re.IGNORECASE)
+    trregex = getREPatternSubstitution(re.IGNORECASE)
   else:
     return False
-  matchTag = _getMain().getString(Cmd.OB_TAG)
-  matchReplacement = _getMain().getString(Cmd.OB_STRING, minLen=0)
+  matchTag = getString(Cmd.OB_TAG)
+  matchReplacement = getString(Cmd.OB_STRING, minLen=0)
   if matchReplacement.startswith('field:'):
     if not allowSubs:
-      _getMain().usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
+      usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
     tagReplacements['subs'] = True
     field = matchReplacement[6:].strip().lower()
     if field.find('.') != -1:
@@ -230,28 +276,28 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
         matchvalue = args[3]
         if matchfield == 'primary':
           matchvalue = matchvalue.lower()
-          if matchvalue == _getMain().TRUE:
+          if matchvalue == TRUE:
             matchvalue = True
-          elif matchvalue == _getMain().FALSE:
+          elif matchvalue == FALSE:
             matchvalue = ''
           else:
-            _getMain().invalidChoiceExit(matchvalue, _getMain().TRUE_FALSE, True)
+            invalidChoiceExit(matchvalue, TRUE_FALSE, True)
       else:
         Cmd.Backup()
-        _getMain().usageErrorExit(Msg.INVALID_TAG_SPECIFICATION)
+        usageErrorExit(Msg.INVALID_TAG_SPECIFICATION)
     elif field == 'photourl':
       subfield = matchfield = matchvalue = ''
     else:
       field = ''
     if not field or field not in TAG_FIELD_SUBFIELD_CHOICE_MAP:
-      _getMain().invalidChoiceExit(field, TAG_FIELD_SUBFIELD_CHOICE_MAP, True)
+      invalidChoiceExit(field, TAG_FIELD_SUBFIELD_CHOICE_MAP, True)
     field, subfieldsChoiceMap = TAG_FIELD_SUBFIELD_CHOICE_MAP[field]
     if subfield not in subfieldsChoiceMap:
-      _getMain().invalidChoiceExit(subfield, subfieldsChoiceMap, True)
+      invalidChoiceExit(subfield, subfieldsChoiceMap, True)
     subfield = subfieldsChoiceMap[subfield]
     if matchfield:
       if matchfield not in subfieldsChoiceMap:
-        _getMain().invalidChoiceExit(matchfield, subfieldsChoiceMap, True)
+        invalidChoiceExit(matchfield, subfieldsChoiceMap, True)
       matchfield = subfieldsChoiceMap[matchfield]
     tagReplacements['fieldsSet'].add(field)
     tagReplacements['fields'] = ','.join(tagReplacements['fieldsSet'])
@@ -262,7 +308,7 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
       _getMain()._makeBuildingIdNameMap()
   elif matchReplacement.startswith('schema:'):
     if not allowSubs:
-      _getMain().usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
+      usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
     tagReplacements['subs'] = True
     matchReplacement = matchReplacement[7:].strip()
     if matchReplacement.find('.') != -1:
@@ -270,7 +316,7 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
     else:
       schemaName = ''
     if not schemaName or not schemaField:
-      _getMain().invalidArgumentExit(Cmd.OB_SCHEMA_NAME_FIELD_NAME)
+      invalidArgumentExit(Cmd.OB_SCHEMA_NAME_FIELD_NAME)
     tagReplacements['fieldsSet'].add('customSchemas')
     tagReplacements['fields'] = ','.join(tagReplacements['fieldsSet'])
     tagReplacements['schemasSet'].add(schemaName)
@@ -280,7 +326,7 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
   elif ((matchReplacement.find('#') >= 0) and
         (matchReplacement.find('#user#') >= 0) or (matchReplacement.find('#email#') >= 0) or (matchReplacement.find('#username#') >= 0)):
     if not allowSubs:
-      _getMain().usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
+      usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)
     tagReplacements['subs'] = True
     tagReplacements['tags'][matchTag] = {'template': matchReplacement, 'value': '',
                                          'trregex': trregex}
@@ -295,17 +341,17 @@ def _getTagReplacementFieldValues(user, i, count, tagReplacements, results=None)
   if results is None:
     if tagReplacements['fields'] and tagReplacements['fields'] != 'primaryEmail':
       if not tagReplacements['cd']:
-        tagReplacements['cd'] = _getMain().buildGAPIObject(API.DIRECTORY)
+        tagReplacements['cd'] = buildGAPIObject(API.DIRECTORY)
       try:
-        results = _getMain().callGAPI(tagReplacements['cd'].users(), 'get',
+        results = callGAPI(tagReplacements['cd'].users(), 'get',
                            throwReasons=GAPI.USER_GET_THROW_REASONS,
                            userKey=user, projection='custom', customFieldMask=tagReplacements['customFieldMask'], fields=tagReplacements['fields'])
       except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest, GAPI.backendError, GAPI.systemError):
-        _getMain().entityUnknownWarning(Ent.USER, user, i, count)
+        entityUnknownWarning(Ent.USER, user, i, count)
         return
     else:
       results = {'primaryEmail': user}
-  userName, domain = _getMain().splitEmailAddress(user)
+  userName, domain = splitEmailAddress(user)
   for tag in tagReplacements['tags'].values():
     if tag.get('field'):
       field = tag['field']
@@ -569,7 +615,7 @@ def _processTagReplacements(tagReplacements, message):
       else:
         pos = end
     else:
-# Replace invalid RT tags with _getMain().ERROR(RT)
+# Replace invalid RT tags with ERROR(RT)
       message = re.sub(match.group(0), f'ERROR({tag})', message)
       pos = start+1
 # Process case changes
@@ -591,7 +637,7 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
     else:
       notify[field] = notify[field].replace('#password#', notify['password'].replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
 
-  userName, domain = _getMain().splitEmailAddress(body['primaryEmail'])
+  userName, domain = splitEmailAddress(body['primaryEmail'])
   notify = basenotify.copy()
   if not notify['subject']:
     notify['subject'] = Msg.CREATE_USER_NOTIFY_SUBJECT if createMessage else Msg.UPDATE_USER_PASSWORD_CHANGE_NOTIFY_SUBJECT
@@ -614,14 +660,14 @@ def sendCreateUpdateUserNotification(body, basenotify, tagReplacements, i=0, cou
   msgReplyTo = notify.get('replyto', None)
   mailBox = notify.get('mailbox', None)
   for recipient in notify['recipients']:
-    _getMain().send_email(notify['subject'], notify['message'], recipient, i, count,
+    send_email(notify['subject'], notify['message'], recipient, i, count,
                msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'], mailBox=mailBox)
 
 def getRecipients():
-  if _getMain().checkArgumentPresent('select'):
-    _, recipients = _getMain().getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
-    return [_getMain().normalizeEmailAddressOrUID(emailAddress, noUid=True, noLower=True) for emailAddress in recipients]
-  return _getMain().getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True)
+  if checkArgumentPresent('select'):
+    _, recipients = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
+    return [normalizeEmailAddressOrUID(emailAddress, noUid=True, noLower=True) for emailAddress in recipients]
+  return getNormalizedEmailAddressEntity(shlexSplit=True, noLower=True)
 
 # gam sendemail [recipient|to] <RecipientEntity>
 #	[from <EmailAddress>] [mailbox <EmailAddress>] [replyto <EmailAddress>]
@@ -658,23 +704,23 @@ def getRecipients():
 #	[threadid <String>]
 def doSendEmail(users=None):
   body = {}
-  notify = {'subject': '', 'message': '', 'html': False, 'charset': _getMain().UTF8, 'password': ''}
-  msgFroms = [_getMain()._getAdminEmail()]
+  notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
+  msgFroms = [_getAdminEmail()]
   count = 1
   if users is None:
-    _getMain().checkArgumentPresent({'recipient', 'recipients', 'to'})
+    checkArgumentPresent({'recipient', 'recipients', 'to'})
     recipients = getRecipients()
   else:
-    _, count, entityList = _getMain().getEntityArgument(users)
-    if _getMain().checkArgumentPresent({'recipient', 'recipients', 'to'}):
-      msgFroms = [_getMain().normalizeEmailAddressOrUID(entity) for entity in entityList]
+    _, count, entityList = getEntityArgument(users)
+    if checkArgumentPresent({'recipient', 'recipients', 'to'}):
+      msgFroms = [normalizeEmailAddressOrUID(entity) for entity in entityList]
       recipients = getRecipients()
-    elif _getMain().checkArgumentPresent({'from'}):
-      recipients = [_getMain().normalizeEmailAddressOrUID(entity) for entity in entityList]
-      msgFroms = [_getMain().getString(Cmd.OB_EMAIL_ADDRESS)]
+    elif checkArgumentPresent({'from'}):
+      recipients = [normalizeEmailAddressOrUID(entity) for entity in entityList]
+      msgFroms = [getString(Cmd.OB_EMAIL_ADDRESS)]
       count = 1
     else:
-      _getMain().missingArgumentExit('recipient|to|from')
+      missingArgumentExit('recipient|to|from')
   msgHeaders = {}
   ccRecipients = []
   bccRecipients = []
@@ -686,55 +732,55 @@ def doSendEmail(users=None):
   attachments = []
   embeddedImages = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if users is None and myarg == 'from':
-      msgFroms = [_getMain().getString(Cmd.OB_EMAIL_ADDRESS)]
+      msgFroms = [getString(Cmd.OB_EMAIL_ADDRESS)]
       count = 1
     elif myarg == 'replyto':
-      msgReplyTo = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+      msgReplyTo = getString(Cmd.OB_EMAIL_ADDRESS)
     elif myarg == 'subject':
-      notify['subject'] = _getMain().getString(Cmd.OB_STRING)
-    elif myarg in _getMain().SORF_MSG_FILE_ARGUMENTS:
-      notify['message'], notify['charset'], notify['html'] = _getMain().getStringOrFile(myarg)
+      notify['subject'] = getString(Cmd.OB_STRING)
+    elif myarg in SORF_MSG_FILE_ARGUMENTS:
+      notify['message'], notify['charset'], notify['html'] = getStringOrFile(myarg)
     elif myarg == 'cc':
       ccRecipients = getRecipients()
     elif myarg == 'bcc':
       bccRecipients = getRecipients()
     elif myarg == 'mailbox':
-      mailBox = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+      mailBox = getString(Cmd.OB_EMAIL_ADDRESS)
     elif myarg == 'singlemessage':
       singleMessage = True
     elif myarg == 'html':
-      notify['html'] = _getMain().getBoolean()
+      notify['html'] = getBoolean()
     elif myarg == 'newuser':
-      body['primaryEmail'] = _getMain().getEmailAddress()
+      body['primaryEmail'] = getEmailAddress()
     elif myarg in {'firstname', 'givenname'}:
       body.setdefault('name', {})
-      body['name']['givenName'] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=60)
+      body['name']['givenName'] = getString(Cmd.OB_STRING, minLen=0, maxLen=60)
     elif myarg in {'lastname', 'familyname'}:
       body.setdefault('name', {})
-      body['name']['familyName'] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=60)
+      body['name']['familyName'] = getString(Cmd.OB_STRING, minLen=0, maxLen=60)
     elif myarg in {'password', 'notifypassword'}:
-      body['password'] = notify['password'] = _getMain().getString(Cmd.OB_PASSWORD, maxLen=100)
+      body['password'] = notify['password'] = getString(Cmd.OB_PASSWORD, maxLen=100)
     elif _getTagReplacement(myarg, tagReplacements, False):
       pass
     elif myarg == 'attach':
-      attachments.append((_getMain().getFilename(), _getMain().getCharSet()))
+      attachments.append((getFilename(), getCharSet()))
     elif myarg == 'embedimage':
-      embeddedImages.append((_getMain().getFilename(), _getMain().getString(Cmd.OB_STRING)))
+      embeddedImages.append((getFilename(), getString(Cmd.OB_STRING)))
     elif myarg in _getMain().SMTP_HEADERS_MAP:
       if myarg in _getMain().SMTP_DATE_HEADERS:
-        msgDate, _, _ = _getMain().getTimeOrDeltaFromNow(True)
+        msgDate, _, _ = getTimeOrDeltaFromNow(True)
         msgHeaders[_getMain().SMTP_HEADERS_MAP[myarg]] = formatdate(time.mktime(msgDate.timetuple()) + msgDate.microsecond/1E6, True)
       else:
-        msgHeaders[_getMain().SMTP_HEADERS_MAP[myarg]] = _getMain().getString(Cmd.OB_STRING)
+        msgHeaders[_getMain().SMTP_HEADERS_MAP[myarg]] = getString(Cmd.OB_STRING)
     elif myarg == 'header':
-      header = _getMain().getString(Cmd.OB_STRING, minLen=1)
-      msgHeaders[_getMain().SMTP_HEADERS_MAP.get(header.lower(), header)] = _getMain().getString(Cmd.OB_STRING)
+      header = getString(Cmd.OB_STRING, minLen=1)
+      msgHeaders[_getMain().SMTP_HEADERS_MAP.get(header.lower(), header)] = getString(Cmd.OB_STRING)
     elif myarg == 'threadid':
-      threadId = _getMain().getString(Cmd.OB_STRING)
+      threadId = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   notify['message'] = notify['message'].replace('\r', '').replace('\\n', '\n')
   if tagReplacements['tags']:
     notify['message'] = _processTagReplacements(tagReplacements, notify['message'])
@@ -746,7 +792,7 @@ def doSendEmail(users=None):
       notify['recipients'] = recipients
       sendCreateUpdateUserNotification(body, notify, tagReplacements, msgFrom=msgFroms[0])
     else:
-      _getMain().usageErrorExit(Msg.NEWUSER_REQUIREMENTS, True)
+      usageErrorExit(Msg.NEWUSER_REQUIREMENTS, True)
     return
   if ccRecipients or bccRecipients:
     singleMessage = True
@@ -754,20 +800,20 @@ def doSendEmail(users=None):
   for msgFrom in msgFroms:
     i += 1
     if singleMessage:
-      _getMain().entityPerformActionModifierNumItems([Ent.USER, msgFrom],
+      entityPerformActionModifierNumItems([Ent.USER, msgFrom],
                                           Act.MODIFIER_TO, jcount+len(ccRecipients)+len(bccRecipients), Ent.RECIPIENT, i, count)
-      _getMain().send_email(notify['subject'], notify['message'], ','.join(recipients), i, count,
+      send_email(notify['subject'], notify['message'], ','.join(recipients), i, count,
                  msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
                  attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders,
                  ccRecipients=','.join(ccRecipients), bccRecipients=','.join(bccRecipients),
                  mailBox=mailBox, threadId=threadId)
     else:
-      _getMain().entityPerformActionModifierNumItems([Ent.USER, msgFrom], Act.MODIFIER_TO, jcount, Ent.RECIPIENT, i, count)
+      entityPerformActionModifierNumItems([Ent.USER, msgFrom], Act.MODIFIER_TO, jcount, Ent.RECIPIENT, i, count)
       Ind.Increment()
       j = 0
       for recipient in recipients:
         j += 1
-        _getMain().send_email(notify['subject'], notify['message'], recipient, j, jcount,
+        send_email(notify['subject'], notify['message'], recipient, j, jcount,
                    msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
                    attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, mailBox=mailBox, threadId=threadId)
       Ind.Decrement()
@@ -786,7 +832,7 @@ def doSendReply(users):
         return _getMain()._decodeHeader(header['value'])
     return ''
 
-  notify = {'subject': '', 'message': '', 'html': False, 'charset': _getMain().UTF8}
+  notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8}
   query = ''
   queryTimes = {}
   messageIds = []
@@ -795,99 +841,99 @@ def doSendReply(users):
   attachments = []
   embeddedImages = []
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'query':
       selectLocation = Cmd.Location()
       if query:
         query += ' '
-      query += f'({_getMain().getString(Cmd.OB_QUERY)})'
+      query += f'({getString(Cmd.OB_QUERY)})'
     elif myarg.startswith('querytime'):
-      queryTimes[myarg] = _getMain().getDateOrDeltaFromNow().replace('-', '/')
+      queryTimes[myarg] = getDateOrDeltaFromNow().replace('-', '/')
     elif myarg in {'or', 'and'}:
       if query:
         query += f' {myarg.upper()}'
     elif myarg == 'ids':
       selectLocation = Cmd.Location()
-      messageIds = _getMain().getEntityList(Cmd.OB_MESSAGE_ID)
+      messageIds = getEntityList(Cmd.OB_MESSAGE_ID)
     elif myarg == 'subject':
-      notify['subject'] = _getMain().getString(Cmd.OB_STRING)
-    elif myarg in _getMain().SORF_MSG_FILE_ARGUMENTS:
-      notify['message'], notify['charset'], notify['html'] = _getMain().getStringOrFile(myarg)
+      notify['subject'] = getString(Cmd.OB_STRING)
+    elif myarg in SORF_MSG_FILE_ARGUMENTS:
+      notify['message'], notify['charset'], notify['html'] = getStringOrFile(myarg)
     elif myarg == 'replyto':
-      msgReplyTo = _getMain().getString(Cmd.OB_EMAIL_ADDRESS)
+      msgReplyTo = getString(Cmd.OB_EMAIL_ADDRESS)
     elif myarg == 'html':
-      notify['html'] = _getMain().getBoolean()
+      notify['html'] = getBoolean()
     elif myarg == 'attach':
-      attachments.append((_getMain().getFilename(), _getMain().getCharSet()))
+      attachments.append((getFilename(), getCharSet()))
     elif myarg == 'embedimage':
-      embeddedImages.append((_getMain().getFilename(), _getMain().getString(Cmd.OB_STRING)))
+      embeddedImages.append((getFilename(), getString(Cmd.OB_STRING)))
     elif myarg in _getMain().SMTP_HEADERS_MAP:
       if myarg in _getMain().SMTP_DATE_HEADERS:
-        msgDate, _, _ = _getMain().getTimeOrDeltaFromNow(True)
+        msgDate, _, _ = getTimeOrDeltaFromNow(True)
         msgHeaders[_getMain().SMTP_HEADERS_MAP[myarg]] = formatdate(time.mktime(msgDate.timetuple()) + msgDate.microsecond/1E6, True)
       else:
-        msgHeaders[_getMain().SMTP_HEADERS_MAP[myarg]] = _getMain().getString(Cmd.OB_STRING)
+        msgHeaders[_getMain().SMTP_HEADERS_MAP[myarg]] = getString(Cmd.OB_STRING)
     elif myarg == 'header':
-      header = _getMain().getString(Cmd.OB_STRING, minLen=1)
-      msgHeaders[_getMain().SMTP_HEADERS_MAP.get(header.lower(), header)] = _getMain().getString(Cmd.OB_STRING)
+      header = getString(Cmd.OB_STRING, minLen=1)
+      msgHeaders[_getMain().SMTP_HEADERS_MAP.get(header.lower(), header)] = getString(Cmd.OB_STRING)
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   if query and messageIds:
     Cmd.SetLocation(selectLocation-1)
-    _getMain().usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('query <QueryGmail>', 'ids <MessageIDEntity>'))
+    usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('query <QueryGmail>', 'ids <MessageIDEntity>'))
   notify['message'] = notify['message'].replace('\r', '').replace('\\n', '\n')
-  i, count, users = _getMain().getEntityArgument(users)
+  i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, gmail = _getMain().buildGAPIServiceObject(API.GMAIL, user, i, count)
+    user, gmail = buildGAPIServiceObject(API.GMAIL, user, i, count)
     if not gmail:
       continue
     try:
       if query:
-        _getMain().printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count, query=query)
-        listResult = _getMain().callGAPIpages(gmail.users().messages(), 'list', 'messages',
-                                   pageMessage=_getMain().getPageMessageForWhom(),
+        printGettingAllEntityItemsForWhom(Ent.MESSAGE, user, i, count, query=query)
+        listResult = callGAPIpages(gmail.users().messages(), 'list', 'messages',
+                                   pageMessage=getPageMessageForWhom(),
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
                                    userId='me', q=query, fields='nextPageToken,messages(id)',
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
         messageIds = [message['id'] for message in listResult]
     except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-      _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       continue
     except GAPI.serviceNotAvailable:
-      _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+      userGmailServiceNotEnabledWarning(user, i, count)
       continue
     jcount = len(messageIds)
     if jcount == 0:
-      _getMain().entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], Ent.MESSAGE, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.MESSAGE)), i, count)
-      _getMain().setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], Ent.MESSAGE, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.MESSAGE)), i, count)
+      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
       continue
-    _getMain().entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_TO, jcount, Ent.RECIPIENT, i, count)
+    entityPerformActionModifierNumItems([Ent.USER, user], Act.MODIFIER_TO, jcount, Ent.RECIPIENT, i, count)
     Ind.Increment()
     j = 0
     for messageId in messageIds:
       j += 1
       try:
-        messageInfo = _getMain().callGAPI(gmail.users().messages(), 'get',
+        messageInfo = callGAPI(gmail.users().messages(), 'get',
                                throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
                                userId='me', id=messageId, fields='id,threadId,payload(headers)')
         threadId = messageInfo['threadId']
         msgHeaders['References'] = msgHeaders['In-Reply-To'] = _getHeaderValue('Message-ID')
         msgSubject = notify['subject'] if notify['subject'] else f"Re: {_getHeaderValue('Subject')}"
         recipient = _getHeaderValue('From')
-        _getMain().send_email(msgSubject, notify['message'], recipient, j, jcount,
+        send_email(msgSubject, notify['message'], recipient, j, jcount,
                    msgFrom=user, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
                    attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, threadId=threadId,
                    action=Act.SENDREPLY)
       except GAPI.notFound:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], Msg.DOES_NOT_EXIST, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], Msg.DOES_NOT_EXIST, j, jcount)
       except GAPI.invalidMessageId:
-        _getMain().entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], Msg.INVALID_MESSAGE_ID, j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.MESSAGE, messageId], Msg.INVALID_MESSAGE_ID, j, jcount)
       except (GAPI.failedPrecondition, GAPI.permissionDenied, GAPI.invalid, GAPI.invalidArgument) as e:
-        _getMain().entityActionFailedWarning([Ent.USER, user], str(e), i, count)
+        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
         break
       except GAPI.serviceNotAvailable:
-        _getMain().userGmailServiceNotEnabledWarning(user, i, count)
+        userGmailServiceNotEnabledWarning(user, i, count)
         break
     Ind.Decrement()
 

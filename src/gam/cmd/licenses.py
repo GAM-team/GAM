@@ -22,6 +22,11 @@ def _getMain():
   return sys.modules['gam']
 
 from gamlib import glskus as SKU
+from gam.util.api import buildGAPIObject, callGAPIpages
+from gam.util.args import getArgument, getGoogleProductList, getGoogleSKUList, getInteger
+from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList
+from gam.util.display import entityActionNotPerformedWarning, getPageMessageForWhom, printEntityKVList
+from gam.util.errors import unknownArgumentExit
 
 def __getattr__(name):
   """Fall back to gam module for any undefined names."""
@@ -32,24 +37,24 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
-  lic = _getMain().buildGAPIObject(API.LICENSING)
+  lic = buildGAPIObject(API.LICENSING)
   _getMain().setTrueCustomerId()
   customerId = _getMain()._getCustomerId()
-  csvPF = _getMain().CSVPrintFile()
+  csvPF = CSVPrintFile()
   products = []
   feed = []
   licenseCounts = []
   maxResults = GC.Values[GC.LICENSE_MAX_RESULTS]
   if not returnFields:
     while Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+      myarg = getArgument()
       if not returnCounts and myarg == 'todrive':
         csvPF.GetTodriveParameters()
       elif myarg in {'products', 'product'}:
-        products = _getMain().getGoogleProductList()
+        products = getGoogleProductList()
         skus = []
       elif myarg in {'skus', 'sku'}:
-        skus = _getMain().getGoogleSKUList()
+        skus = getGoogleSKUList()
         products = []
       elif myarg == 'allskus':
         skus = SKU.getAllSKUs()
@@ -60,23 +65,23 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
       elif myarg == 'countsonly':
         countsOnly = True
       elif myarg == 'maxresults':
-        maxResults = _getMain().getInteger(minVal=10, maxVal=1000)
+        maxResults = getInteger(minVal=10, maxVal=1000)
       else:
-        _getMain().unknownArgumentExit()
+        unknownArgumentExit()
     if not skus and not products and GM.Globals[GM.LICENSE_SKUS]:
       skus = GM.Globals[GM.LICENSE_SKUS]
     if not countsOnly:
-      fields = _getMain().getItemFieldsFromFieldsList('items', ['productId', 'skuId', 'userId'])
+      fields = getItemFieldsFromFieldsList('items', ['productId', 'skuId', 'userId'])
       csvPF.SetTitles(['userId', 'productId', 'productDisplay', 'skuId', 'skuDisplay'])
     else:
-      fields = _getMain().getItemFieldsFromFieldsList('items', ['userId'])
+      fields = getItemFieldsFromFieldsList('items', ['userId'])
       if not returnCounts:
         if skus:
           csvPF.SetTitles(['productId', 'productDisplay', 'skuId', 'skuDisplay', 'licenses'])
         else:
           csvPF.SetTitles(['productId', 'productDisplay', 'licenses'])
   else:
-    fields = _getMain().getItemFieldsFromFieldsList('items', returnFields)
+    fields = getItemFieldsFromFieldsList('items', returnFields)
   if skus:
     for sku in skus:
       Ent.SetGetting(Ent.LICENSE)
@@ -85,8 +90,8 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
       productDisplay = SKU.formatProductIdDisplayName(productId)
       skuIdDisplay = SKU.formatSKUIdDisplayName(skuId)
       try:
-        feed += _getMain().callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items',
-                              pageMessage=_getMain().getPageMessageForWhom(forWhom=skuIdDisplay),
+        feed += callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items',
+                              pageMessage=getPageMessageForWhom(forWhom=skuIdDisplay),
                               throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                               customerId=customerId, productId=productId, skuId=skuId,
                               maxResults=maxResults, fields=fields)
@@ -94,7 +99,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
           licenseCounts.append([Ent.PRODUCT, productId, Ent.SKU, [skuId, skuIdDisplay][returnCounts], Ent.LICENSE, len(feed)])
           feed = []
       except (GAPI.invalid, GAPI.forbidden, GAPI.invalidArgument) as e:
-        _getMain().entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay, Ent.SKU, skuIdDisplay], str(e))
+        entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay, Ent.SKU, skuIdDisplay], str(e))
   else:
     suppressErrorMsg = False
     if not products:
@@ -104,8 +109,8 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
       Ent.SetGetting(Ent.LICENSE)
       productDisplay = SKU.formatProductIdDisplayName(productId)
       try:
-        feed += _getMain().callGAPIpages(lic.licenseAssignments(), 'listForProduct', 'items',
-                              pageMessage=_getMain().getPageMessageForWhom(forWhom=productDisplay),
+        feed += callGAPIpages(lic.licenseAssignments(), 'listForProduct', 'items',
+                              pageMessage=getPageMessageForWhom(forWhom=productDisplay),
                               throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
                               customerId=customerId, productId=productId,
                               maxResults=maxResults, fields=fields)
@@ -114,7 +119,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
           feed = []
       except (GAPI.invalid, GAPI.forbidden, GAPI.invalidArgument) as e:
         if not suppressErrorMsg:
-          _getMain().entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay], str(e))
+          entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay], str(e))
   if countsOnly:
     if returnCounts:
       return licenseCounts
@@ -158,7 +163,7 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
 def doShowLicenses():
   licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
   for u_license in licenseCounts:
-    _getMain().printEntityKVList(u_license[:-2], [Ent.Plural(u_license[-2]), u_license[-1]])
+    printEntityKVList(u_license[:-2], [Ent.Plural(u_license[-2]), u_license[-1]])
 
 # gam delete alert <AlertID>
 # gam undelete alert <AlertID>

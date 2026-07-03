@@ -13,6 +13,32 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages
+from gam.util.args import (
+    AND_OR_CONJUNCTION_MAP,
+    checkForExtraneousArguments,
+    getArgument,
+    getBoolean,
+    getChoice,
+    getJSON,
+    getString,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    cleanJSON,
+    flattenJSON,
+    showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityActionPerformed,
+    performActionNumItems,
+    printEntity,
+    printLine,
+)
+from gam.util.errors import expectedArgumentExit, invalidChoiceExit, unknownArgumentExit
+from gam.util.output import systemErrorExit
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -33,11 +59,11 @@ def __getattr__(name):
 
 def CAARoleErrorExit(caa):
   sa_email = caa._http.credentials.signer_email
-  _getMain().systemErrorExit(_getMain().NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC,
+  systemErrorExit(_getMain().NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC,
                   f'Please grant service account {sa_email} the Access Context Manager Editor role in your GCP organization.')
 
 def buildCAAServiceObject():
-  _, caa = _getMain().buildGAPIServiceObject(API.ACCESSCONTEXTMANAGER, None)
+  _, caa = buildGAPIServiceObject(API.ACCESSCONTEXTMANAGER, None)
   return caa
 
 def getAccessPolicy(caa=None):
@@ -47,19 +73,19 @@ def getAccessPolicy(caa=None):
   if not parent:
     CAARoleErrorExit(caa)
   try:
-    aps = _getMain().callGAPIpages(caa.accessPolicies(), 'list', 'accessPolicies',
+    aps = callGAPIpages(caa.accessPolicies(), 'list', 'accessPolicies',
                         throwReasons=[GAPI.PERMISSION_DENIED],
                         parent=parent, fields='nextPageToken,accessPolicies(name,title)')
   except GAPI.permissionDenied:
     CAARoleErrorExit(caa)
   if not aps:
-    _getMain().systemErrorExit(_getMain().ACCESS_POLICY_ERROR_RC, 'You don\'t seem to have any access policies. That is odd.')
+    systemErrorExit(_getMain().ACCESS_POLICY_ERROR_RC, 'You don\'t seem to have any access policies. That is odd.')
   elif len(aps) == 1:
     return aps[0]['name']
   for ap in aps:
     if ap.get('title') == 'Access policy created in Cloud Identity Console':
       return ap['name']
-  _getMain().systemErrorExit(_getMain().ACCESS_POLICY_ERROR_RC, 'Could not find a org level access policy. That is odd.')
+  systemErrorExit(_getMain().ACCESS_POLICY_ERROR_RC, 'Could not find a org level access policy. That is odd.')
 
 def normalizeCAALevelName(caa, name):
   if name.startswith('accessPolicies/'):
@@ -79,7 +105,7 @@ CAA_OS_TYPE_MAP = {
 
 def CAABuildOsConstraints():
   consts_obj = []
-  for constraint in _getMain().getString(Cmd.OB_STRING).split(','):
+  for constraint in getString(Cmd.OB_STRING).split(','):
     new_const = {}
     if ':' in constraint:
       osType, new_const['minimumVersion'] = constraint.split(':')
@@ -87,7 +113,7 @@ def CAABuildOsConstraints():
       osType = constraint
     osType = osType.lower().replace('_', '')
     if osType not in CAA_OS_TYPE_MAP:
-      _getMain().invalidChoiceExit(osType, CAA_OS_TYPE_MAP, True)
+      invalidChoiceExit(osType, CAA_OS_TYPE_MAP, True)
     if osType != 'verifieddesktopchromeos':
       new_const['osType'] = CAA_OS_TYPE_MAP[osType]
     else:
@@ -111,31 +137,31 @@ CAA_ALLOWED_ENCRYPTIION_STATUS_MAP = {
 def CAABuildDevicePolicy():
   device_policy = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'requirescreenlock':
-      device_policy['requireScreenLock'] = _getMain().getBoolean()
+      device_policy['requireScreenLock'] = getBoolean()
     elif myarg == 'allowedencryptionstatuses':
       device_policy['allowedEncryptionStatuses'] = []
-      for status in _getMain().getString(Cmd.OB_STRING).lower().split(','):
+      for status in getString(Cmd.OB_STRING).lower().split(','):
         if status not in CAA_ALLOWED_ENCRYPTIION_STATUS_MAP:
-          _getMain().invalidChoiceExit(status, CAA_ALLOWED_ENCRYPTIION_STATUS_MAP, True)
+          invalidChoiceExit(status, CAA_ALLOWED_ENCRYPTIION_STATUS_MAP, True)
         device_policy['allowedEncryptionStatuses'].append(CAA_ALLOWED_ENCRYPTIION_STATUS_MAP[status])
     elif myarg == 'osconstraints':
       device_policy['osConstraints'] = CAABuildOsConstraints()
     elif myarg == 'alloweddevicemanagementlevels':
       device_policy['allowedDeviceManagementLevels'] = []
-      for level in _getMain().getString(Cmd.OB_STRING).lower().split(','):
+      for level in getString(Cmd.OB_STRING).lower().split(','):
         if level not in CAA_ALLOWED_DEVICE_MANAGEMENT_LEVELS_MAP:
-          _getMain().invalidChoiceExit(level, CAA_ALLOWED_DEVICE_MANAGEMENT_LEVELS_MAP, True)
+          invalidChoiceExit(level, CAA_ALLOWED_DEVICE_MANAGEMENT_LEVELS_MAP, True)
         device_policy['allowedDeviceManagementLevels'].append(CAA_ALLOWED_DEVICE_MANAGEMENT_LEVELS_MAP[level])
     elif myarg == 'requireadminapproval':
-      device_policy['requireAdminApproval'] = _getMain().getBoolean()
+      device_policy['requireAdminApproval'] = getBoolean()
     elif myarg == 'requirecorpowned':
-      device_policy['requireCorpOwned'] = _getMain().getBoolean()
+      device_policy['requireCorpOwned'] = getBoolean()
     elif myarg == 'enddevicepolicy':
       break
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return device_policy
 
 ISO3166_1_ALPHA_2_CODES = {
@@ -157,107 +183,107 @@ ISO3166_1_ALPHA_2_CODES = {
 def validateISO3166_1_alpha2_code(region):
   if region not in ISO3166_1_ALPHA_2_CODES:
     Cmd.Backup()
-    _getMain().expectedArgumentExit(Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID_CHOICE][1].format(region), Msg.INVALID_REGION)
+    expectedArgumentExit(Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID_CHOICE][1].format(region), Msg.INVALID_REGION)
 
 def CAABuildCondition():
   condition = {}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'ipsubnetworks':
-      condition['ipSubnetworks'] = _getMain().getString(Cmd.OB_STRING_LIST).split(',')
+      condition['ipSubnetworks'] = getString(Cmd.OB_STRING_LIST).split(',')
     elif myarg == 'devicepolicy':
       condition['devicePolicy'] = CAABuildDevicePolicy()
     elif myarg == 'requiredaccesslevels':
-      condition['requiredAccessLevels'] = _getMain().getString(Cmd.OB_STRING_LIST).split(',')
+      condition['requiredAccessLevels'] = getString(Cmd.OB_STRING_LIST).split(',')
     elif myarg == 'negate':
-      condition['negate'] = _getMain().getBoolean()
+      condition['negate'] = getBoolean()
     elif myarg == 'members':
-      condition['members'] = _getMain().getString(Cmd.OB_STRING_LIST).split(',')
+      condition['members'] = getString(Cmd.OB_STRING_LIST).split(',')
     elif myarg == 'regions':
-      condition['regions'] = _getMain().getString(Cmd.OB_STRING_LIST).upper().split(',')
+      condition['regions'] = getString(Cmd.OB_STRING_LIST).upper().split(',')
       for region in condition['regions']:
         validateISO3166_1_alpha2_code(region)
     elif myarg == 'endcondition':
       break
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return condition
 
 def CAABuildBasicLevel():
   basic_level = {'conditions': []}
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'combiningfunction':
-      basic_level['combiningFunction'] = _getMain().getChoice(_getMain().AND_OR_CONJUNCTION_MAP, mapChoice=True)
+      basic_level['combiningFunction'] = getChoice(AND_OR_CONJUNCTION_MAP, mapChoice=True)
     elif myarg == 'condition':
       basic_level['conditions'].append(CAABuildCondition())
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
   return basic_level
 
 def CAABuildLevel(body):
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if myarg == 'basic':
       body['basic'] = CAABuildBasicLevel()
     elif myarg == 'custom':
-      body['custom'] = {'expr': {'expression': _getMain().getString(Cmd.OB_STRING), 'title': 'expr'}}
+      body['custom'] = {'expr': {'expression': getString(Cmd.OB_STRING), 'title': 'expr'}}
     elif myarg == 'description':
-      body['description'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
+      body['description'] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'json':
-      body.update(_getMain().getJSON(['name']))
+      body.update(getJSON(['name']))
     else:
-      _getMain().unknownArgumentExit()
+      unknownArgumentExit()
 
 # gam create caalevel <String> [description <String>] (basic <CAABasicAttribute>+)|(custom <String>)|<JSONData>
 def doCreateCAALevel():
   caa = buildCAAServiceObject()
   ap_name = getAccessPolicy(caa)
-  title = _getMain().getString(Cmd.OB_STRING).replace(' ', '_')
+  title = getString(Cmd.OB_STRING).replace(' ', '_')
   allowed_title_chars = string.ascii_letters + string.digits + '_'
   name = ''.join([c for c in title if c in allowed_title_chars])[:50]
   name = f'{ap_name}/accessLevels/{name}'
   body = {'name': name, 'title': title}
   CAABuildLevel(body)
   try:
-    _getMain().callGAPI(caa.accessPolicies().accessLevels(), 'create',
+    callGAPI(caa.accessPolicies().accessLevels(), 'create',
              throwReasons=[GAPI.ALREADY_EXISTS, GAPI.FAILED_PRECONDITION, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
              parent=ap_name, body=body)
-    _getMain().entityActionPerformed([Ent.CAA_LEVEL, name])
+    entityActionPerformed([Ent.CAA_LEVEL, name])
   except (GAPI.alreadyExists, GAPI.failedPrecondition, GAPI.invalidArgument) as e:
-    _getMain().entityActionFailedWarning([Ent.CAA_LEVEL, name], str(e))
+    entityActionFailedWarning([Ent.CAA_LEVEL, name], str(e))
   except GAPI.permissionDenied:
     CAARoleErrorExit(caa)
 
 # gam update caalevel <CAALevelName> [description <String>] (basic <CAABasicAttribute>+)|(custom <String>)|<JSONData>
 def doUpdateCAALevel():
   caa = buildCAAServiceObject()
-  name = normalizeCAALevelName(caa, _getMain().getString(Cmd.OB_ACCESS_LEVEL_NAME))
+  name = normalizeCAALevelName(caa, getString(Cmd.OB_ACCESS_LEVEL_NAME))
   body = {}
   CAABuildLevel(body)
   updateMask = ','.join(body.keys())
   try:
-    _getMain().callGAPI(caa.accessPolicies().accessLevels(), 'patch',
+    callGAPI(caa.accessPolicies().accessLevels(), 'patch',
              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
              name=name, updateMask=updateMask, body=body)
-    _getMain().entityActionPerformed([Ent.CAA_LEVEL, name])
+    entityActionPerformed([Ent.CAA_LEVEL, name])
   except (GAPI.notFound, GAPI.invalidArgument) as e:
-    _getMain().entityActionFailedWarning([Ent.CAA_LEVEL, name], str(e))
+    entityActionFailedWarning([Ent.CAA_LEVEL, name], str(e))
   except GAPI.permissionDenied:
     CAARoleErrorExit(caa)
 
 # gam delete caalevel <CAALevelName>
 def doDeleteCAALevel():
   caa = buildCAAServiceObject()
-  name = normalizeCAALevelName(caa, _getMain().getString(Cmd.OB_ACCESS_LEVEL_NAME))
-  _getMain().checkForExtraneousArguments()
+  name = normalizeCAALevelName(caa, getString(Cmd.OB_ACCESS_LEVEL_NAME))
+  checkForExtraneousArguments()
   try:
-    _getMain().callGAPI(caa.accessPolicies().accessLevels(), 'delete',
+    callGAPI(caa.accessPolicies().accessLevels(), 'delete',
              throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
              name=name)
-    _getMain().entityActionPerformed([Ent.CAA_LEVEL, name])
+    entityActionPerformed([Ent.CAA_LEVEL, name])
   except (GAPI.notFound, GAPI.invalidArgument) as e:
-    _getMain().entityActionFailedWarning([Ent.CAA_LEVEL, name], str(e))
+    entityActionFailedWarning([Ent.CAA_LEVEL, name], str(e))
   except GAPI.permissionDenied:
     CAARoleErrorExit(caa)
 
@@ -268,16 +294,16 @@ def doDeleteCAALevel():
 def doPrintShowCAALevels():
   caa = buildCAAServiceObject()
   ap_name = getAccessPolicy(caa)
-  csvPF = _getMain().CSVPrintFile(['name', 'title']) if Act.csvFormat() else None
-  FJQC = _getMain().FormatJSONQuoteChar(csvPF)
+  csvPF = CSVPrintFile(['name', 'title']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
   while Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+    myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   try:
-    levels = _getMain().callGAPIpages(caa.accessPolicies().accessLevels(), 'list', 'accessLevels',
+    levels = callGAPIpages(caa.accessPolicies().accessLevels(), 'list', 'accessLevels',
                            throwReasons=[GAPI.PERMISSION_DENIED],
                            parent=ap_name, accessLevelFormat='CEL', fields='*')
   except GAPI.permissionDenied:
@@ -285,25 +311,25 @@ def doPrintShowCAALevels():
   if not csvPF:
     count = len(levels)
     if not FJQC.formatJSON:
-      _getMain().performActionNumItems(count, Ent.CAA_LEVEL)
+      performActionNumItems(count, Ent.CAA_LEVEL)
       i = 0
       for level in levels:
         i += 1
-        _getMain().printEntity([Ent.CAA_LEVEL, level['name']], i, count)
+        printEntity([Ent.CAA_LEVEL, level['name']], i, count)
         Ind.Increment()
-        _getMain().showJSON(None, level)
+        showJSON(None, level)
         Ind.Decrement()
     else:
       for level in levels:
-        _getMain().printLine(json.dumps(_getMain().cleanJSON(level), ensure_ascii=False, sort_keys=True))
+        printLine(json.dumps(cleanJSON(level), ensure_ascii=False, sort_keys=True))
   else:
     for level in levels:
-      row = _getMain().flattenJSON(level)
+      row = flattenJSON(level)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         row = {'name': level['name'], 'title': level['title']}
-        row['JSON'] = json.dumps(_getMain().cleanJSON(level, timeObjects=_getMain().NOTES_TIME_OBJECTS),
+        row['JSON'] = json.dumps(cleanJSON(level, timeObjects=_getMain().NOTES_TIME_OBJECTS),
                                  ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
   if csvPF:
