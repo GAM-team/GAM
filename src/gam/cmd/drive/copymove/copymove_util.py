@@ -10,6 +10,8 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import sys
+
+from gam.cmd.drive.core import DFA_IGNORE_DEFAULT_VISIBILITY, DFA_KEEP_REVISION_FOREVER, DFA_SEARCHARGS
 import os
 
 from gamlib import glaction

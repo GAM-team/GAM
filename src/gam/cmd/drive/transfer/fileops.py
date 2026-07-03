@@ -12,7 +12,7 @@ import re
 import json
 import sys
 
-from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
+from gam.cmd.drive.core import DFA_PARENTID, DFA_PARENTQUERY, _validateUserGetFileIDs, getDriveFileEntity
 import os
 import time
 
