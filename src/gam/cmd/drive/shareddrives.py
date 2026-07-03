@@ -10,6 +10,8 @@ import sys
 import uuid
 import time
 
+from gam.cmd.drive.core import getSharedDriveEntity
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
