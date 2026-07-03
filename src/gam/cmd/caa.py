@@ -1,6 +1,7 @@
 """GAM Context-Aware Access management."""
 
 import json
+import string
 import sys
 
 from gamlib import glaction
