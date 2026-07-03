@@ -14,6 +14,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gamlib import glskus as SKU
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
