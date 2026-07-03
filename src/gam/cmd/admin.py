@@ -3,6 +3,8 @@
 import json
 import sys
 
+from gam.cmd.customer import PRINT_PRIVILEGES_FIELDS
+
 import re
 
 from gamlib import glaction
