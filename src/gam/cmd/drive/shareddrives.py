@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.util.args import formatLocalTime
+
 from gam.cmd.drive.core import _convertSharedDriveNameToId, _getSharedDriveNameFromId
 from gam.cmd.drive.filepaths import _mapDrivePermissionNames
 from gam.cmd.drive.files import _initStatistics

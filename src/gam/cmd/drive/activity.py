@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.util.args import formatLocalTime
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

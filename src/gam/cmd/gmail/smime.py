@@ -6,6 +6,8 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 import sys
+
+from gam.util.args import formatLocalTimestamp
 import base64
 
 from gamlib import glaction

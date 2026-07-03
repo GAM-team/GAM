@@ -3,6 +3,8 @@
 import json
 import sys
 
+from gam.util.args import formatLocalTimestamp
+
 from gam.cmd.calendar import (
     CALENDAR_ACL_ROLES_MAP,
     CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP,

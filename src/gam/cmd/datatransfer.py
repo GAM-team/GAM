@@ -1,6 +1,8 @@
 """GAM data transfer operations."""
 
 import sys
+
+from gam.util.args import formatLocalTime
 import time
 
 from gamlib import glaction
