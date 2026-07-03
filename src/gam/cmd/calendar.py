@@ -93,12 +93,55 @@ from gam.util.errors import (
     unknownArgumentExit,
 )
 from gam.util.fileio import UNKNOWN
-from gam.util.output import executeBatch, setSysExitRC
+from gam.util.output import executeBatch, formatKeyValueList, setSysExitRC
 from gam.constants import DAYS_OF_WEEK, GOOGLE_MEETID_FORMAT_REQUIRED, GOOGLE_MEETID_PATTERN, NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
+
+
+# ACL utility functions (moved from gam/__init__.py)
+def ACLRuleDict(rule):
+  if rule['scope']['type'] != 'default':
+    return {'Scope': f'{rule["scope"]["type"]}:{rule["scope"]["value"]}', 'Role': rule['role']}
+  return {'Scope': f'{rule["scope"]["type"]}', 'Role': rule['role']}
+
+def ACLRuleKeyValueList(rule):
+  if rule['scope']['type'] != 'default':
+    return ['Scope', f'{rule["scope"]["type"]}:{rule["scope"]["value"]}', 'Role', rule['role']]
+  return ['Scope', f'{rule["scope"]["type"]}', 'Role', rule['role']}
+
+def formatACLRule(rule):
+  return formatKeyValueList('(', ACLRuleKeyValueList(rule), ')')
+
+def formatACLScopeRole(scope, role):
+  if role:
+    return formatKeyValueList('(', ['Scope', scope, 'Role', role], ')')
+  return formatKeyValueList('(', ['Scope', scope], ')')
+
+def normalizeRuleId(ruleId):
+  ruleIdParts = ruleId.split(':', 1)
+  if (len(ruleIdParts) == 1) or not ruleIdParts[1]:
+    if ruleIdParts[0] == 'default':
+      return ruleId
+    if ruleIdParts[0] == 'domain':
+      return f'domain:{GC.Values[GC.DOMAIN]}'
+    return f'user:{normalizeEmailAddressOrUID(ruleIdParts[0], noUid=True)}'
+  if ruleIdParts[0] in {'user', 'group'}:
+    return f'{ruleIdParts[0]}:{normalizeEmailAddressOrUID(ruleIdParts[1], noUid=True)}'
+  return ruleId
+
+def makeRoleRuleIdBody(role, ruleId):
+  ruleIdParts = ruleId.split(':', 1)
+  if len(ruleIdParts) == 1:
+    if ruleIdParts[0] == 'default':
+      return {'role': role, 'scope': {'type': ruleIdParts[0]}}
+    if ruleIdParts[0] == 'domain':
+      return {'role': role, 'scope': {'type': ruleIdParts[0], 'value': GC.Values[GC.DOMAIN]}}
+    return {'role': role, 'scope': {'type': 'user', 'value': ruleIdParts[0]}}
+  return {'role': role, 'scope': {'type': ruleIdParts[0], 'value': ruleIdParts[1]}}
+
 Cmd = glclargs.GamCLArgs()
 
 
@@ -234,7 +277,6 @@ def _normalizeCalIdGetRuleIds(origUser, user, origCal, calId, j, jcount, ACLScop
   return (calId, cal, ruleIds, kcount)
 
 def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount, role, ruleId, sendNotifications):
-  from gam import formatACLScopeRole, makeRoleRuleIdBody
   result = True
   if function == 'insert':
     kwargs = {'body': makeRoleRuleIdBody(role, ruleId), 'fields': '', 'sendNotifications': sendNotifications}
@@ -264,7 +306,6 @@ def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount,
   return result
 
 def _createCalendarACLs(cal, entityType, calId, j, jcount, role, ruleIds, kcount, sendNotifications):
-  from gam import normalizeRuleId
   Ind.Increment()
   k = 0
   for ruleId in ruleIds:
@@ -294,7 +335,6 @@ def doCalendarsCreateACLs(calIds):
   _doCalendarsCreateACLs(None, None, None, calIds, len(calIds), role, ACLScopeEntity, sendNotifications)
 
 def _updateDeleteCalendarACLs(cal, function, entityType, calId, j, jcount, role, ruleIds, kcount, sendNotifications):
-  from gam import normalizeRuleId
   Ind.Increment()
   k = 0
   for ruleId in ruleIds:
@@ -334,7 +374,6 @@ def doCalendarsDeleteACLs(calIds):
   _doUpdateDeleteCalendarACLs(None, None, None, 'delete', calIds, len(calIds), ACLScopeEntity, role, False)
 
 def _showCalendarACL(user, entityType, calId, acl, k, kcount, FJQC):
-  from gam import ACLRuleKeyValueList
   if FJQC.formatJSON:
     if entityType == Ent.CALENDAR:
       if user:
@@ -350,7 +389,6 @@ def _showCalendarACL(user, entityType, calId, acl, k, kcount, FJQC):
     printKeyValueListWithCount(ACLRuleKeyValueList(acl), k, kcount)
 
 def _infoCalendarACLs(cal, user, entityType, calId, j, jcount, ruleIds, kcount, FJQC):
-  from gam import formatACLScopeRole, normalizeRuleId
   Ind.Increment()
   k = 0
   for ruleId in ruleIds:

@@ -673,7 +673,7 @@ RESOURCE_FIELDS_WITH_CRS_NLS = {'resourceDescription'}
 
 def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
 
-  from gam import ACLRuleKeyValueList
+  from gam.cmd.calendar import ACLRuleKeyValueList
   def _showResourceField(title, resource, field):
     if field in resource:
       if field not in RESOURCE_FIELDS_WITH_CRS_NLS:

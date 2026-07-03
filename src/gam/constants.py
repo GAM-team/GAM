@@ -146,6 +146,129 @@ YUBIKEY_VALUE_ERROR_RC = 85
 YUBIKEY_MULTIPLE_CONNECTED_RC = 86
 YUBIKEY_NOT_FOUND_RC = 87
 
+
+# Boolean constants
+TRUE = 'true'
+FALSE = 'false'
+TRUE_VALUES = [TRUE, 'on', 'yes', 'enabled', '1']
+FALSE_VALUES = [FALSE, 'off', 'no', 'disabled', '0']
+TRUE_FALSE = [TRUE, FALSE]
+
+# Error/warning prefixes
+ERROR = 'ERROR'
+ERROR_PREFIX = ERROR + ': '
+WARNING = 'WARNING'
+WARNING_PREFIX = WARNING + ': '
+
+# Byte sizes (powers of 10)
+ONE_KILO_10_BYTES = 1000
+ONE_MEGA_10_BYTES = ONE_KILO_10_BYTES * ONE_KILO_10_BYTES
+ONE_GIGA_10_BYTES = ONE_KILO_10_BYTES * ONE_MEGA_10_BYTES
+ONE_TERA_10_BYTES = ONE_KILO_10_BYTES * ONE_GIGA_10_BYTES
+
+# Time durations in seconds
+SECONDS_PER_MINUTE = 60
+SECONDS_PER_HOUR = 3600
+SECONDS_PER_DAY = 86400
+SECONDS_PER_WEEK = 604800
+
+# Google limits
+MAX_GOOGLE_SHEET_CELLS = 10000000  # See https://support.google.com/drive/answer/37603
+SHARED_DRIVE_MAX_FILES_FOLDERS = 500000
+
+# Encoding
+UTF8 = 'utf-8'
+UTF8_SIG = 'utf-8-sig'
+
+# Environment variable names
+EV_GAMCFGDIR = 'GAMCFGDIR'
+EV_GAMCFGSECTION = 'GAMCFGSECTION'
+EV_OLDGAMPATH = 'OLDGAMPATH'
+
+# Config file names
+FN_GAM_CFG = 'gam.cfg'
+FN_LAST_UPDATE_CHECK_TXT = 'lastupdatecheck.txt'
+FN_GAMCOMMANDS_TXT = 'GamCommands.txt'
+
+# Drive path constants
+ROOTID = 'rootid'
+ORPHANS = 'Orphans'
+SHARED_WITHME = 'SharedWithMe'
+SHARED_DRIVES = 'SharedDrives'
+
+# Additional character sets
+URL_SAFE_CHARS = ALPHANUMERIC_CHARS + '-._~'
+FILENAME_SAFE_CHARS = ALPHANUMERIC_CHARS + "-_.() "
+CHAT_MESSAGEID_CHARS = string.ascii_lowercase + string.digits + '-'
+
+# File mode constants
+DEFAULT_CSV_READ_MODE = 'r'
+DEFAULT_FILE_APPEND_MODE = 'a'
+DEFAULT_FILE_READ_MODE = 'r'
+DEFAULT_FILE_WRITE_MODE = 'w'
+
+# Application URLs
+GAM_URL = f'https://github.com/{GIT_USER}/{GAM}'
+GAM_RELEASES = f'https://github.com/{GIT_USER}/{GAM}/releases'
+GAM_WIKI = f'https://github.com/{GIT_USER}/{GAM}/wiki'
+GAM_LATEST_RELEASE = f'https://api.github.com/repos/{GIT_USER}/{GAM}/releases/latest'
+
+# Additional Google API MIME types
+MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
+MIMETYPE_GA_DRAWING = f'{APPLICATION_VND_GOOGLE_APPS}drawing'
+MIMETYPE_GA_FILE = f'{APPLICATION_VND_GOOGLE_APPS}file'
+MIMETYPE_GA_FORM = f'{APPLICATION_VND_GOOGLE_APPS}form'
+MIMETYPE_GA_FUSIONTABLE = f'{APPLICATION_VND_GOOGLE_APPS}fusiontable'
+MIMETYPE_GA_JAM = f'{APPLICATION_VND_GOOGLE_APPS}jam'
+MIMETYPE_GA_MAP = f'{APPLICATION_VND_GOOGLE_APPS}map'
+MIMETYPE_GA_PRESENTATION = f'{APPLICATION_VND_GOOGLE_APPS}presentation'
+MIMETYPE_GA_SCRIPT = f'{APPLICATION_VND_GOOGLE_APPS}script'
+MIMETYPE_GA_SCRIPT_JSON = f'{APPLICATION_VND_GOOGLE_APPS}script+json'
+MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
+MIMETYPE_GA_SITE = f'{APPLICATION_VND_GOOGLE_APPS}site'
+MIMETYPE_GA_SPREADSHEET = f'{APPLICATION_VND_GOOGLE_APPS}spreadsheet'
+MIMETYPE_TEXT_CSV = 'text/csv'
+MIMETYPE_TEXT_HTML = 'text/html'
+MIMETYPE_TEXT_PLAIN = 'text/plain'
+
+# Google infrastructure
+GOOGLE_NAMESERVERS = ['8.8.8.8', '8.8.4.4']
+
+# Date/time sentinel values
+NEVER_DATE = '1970-01-01'
+NEVER_DATETIME = '1970-01-01 00:00'
+NEVER_TIME = '1970-01-01T00:00:00.000Z'
+NEVER_TIME_NOMS = '1970-01-01T00:00:00Z'
+NEVER_END_DATE = '1969-12-31'
+NEVER_START_DATE = NEVER_DATE
+REFRESH_EXPIRY = '1970-01-01T00:00:01Z'
+UNKNOWN = 'Unknown'
+REPLACE_GROUP_PATTERN = re.compile(r'\\(\d+)')
+
+# Additional Drive query fragments
+MY_FOLDERS = ME_IN_OWNERS_AND + ANY_FOLDERS
+WITH_ANY_FILE_NAME = "name = '{0}'"
+WITH_MY_FILE_NAME = ME_IN_OWNERS_AND + WITH_ANY_FILE_NAME
+WITH_OTHER_FILE_NAME = NOT_ME_IN_OWNERS_AND + WITH_ANY_FILE_NAME
+
+# Debug redaction patterns
+DEBUG_REDACTION_PATTERNS = [
+  # Positional patterns that redact sensitive credentials based on their location
+  (r'(Bearer\s+)\S+', r'\1*****'),  # access tokens and JWTs in auth header
+  (r'([?&]refresh_token=)[^&]*', r'\1*****'),  # refresh token URL parameter
+  (r'([?&]client_secret=)[^&]*', r'\1*****'),  # client secret URL parameter
+  (r'([?&]key=)[^&]*', r'\1*****'),  # API key URL parameter
+  (r'([?&]code=)[^&]*', r'\1*****'),  # auth code URL parameter
+
+  # Pattern match patterns that redact sensitive credentials based on known credential pattern
+  (r'ya29.[0-9A-Za-z-_]+', '*****'),  # Access token
+  (r'1%2F%2F[0-9A-Za-z-_]{100}|1%2F%2F[0-9A-Za-z-_]{64}|1%2F%2F[0-9A-Za-z-_]{43}', '*****'),  # Refresh token
+  (r'4/[0-9A-Za-z-_]+', '*****'),  # Auth code
+  (r'GOCSPX-[0-9a-zA-Z-_]{28}', '*****'),  # Client secret
+  (r'AIza[0-9A-Za-z-_]{35}', '*****'),  # API key
+  (r'eyJ[a-zA-Z0-9\-_]+\.eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*', '*****'),  # JWT
+]
+
 # Building address field map
 BUILDING_ADDRESS_FIELD_MAP = {
   'address': 'addressLines',

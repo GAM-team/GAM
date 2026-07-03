@@ -610,7 +610,7 @@ def _getCalendarAttributes(body, returnOnUnknownArgument=False):
       unknownArgumentExit()
 
 def _showCalendar(calendar, j, jcount, FJQC, acls=None):
-  from gam import ACLRuleKeyValueList
+  from gam.cmd.calendar import ACLRuleKeyValueList
   if FJQC.formatJSON:
     if acls:
       calendar['acls'] = [{'id': rule['id'], 'role': rule['role']} for rule in acls]
