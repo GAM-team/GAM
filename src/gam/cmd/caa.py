@@ -163,17 +163,17 @@ def CAABuildCondition():
   while Cmd.ArgumentsRemaining():
     myarg = _getMain().getArgument()
     if myarg == 'ipsubnetworks':
-      condition['ipSubnetworks'] = getString(Cmd.OB_STRING_LIST).split(',')
+      condition['ipSubnetworks'] = _getMain().getString(Cmd.OB_STRING_LIST).split(',')
     elif myarg == 'devicepolicy':
       condition['devicePolicy'] = CAABuildDevicePolicy()
     elif myarg == 'requiredaccesslevels':
-      condition['requiredAccessLevels'] = getString(Cmd.OB_STRING_LIST).split(',')
+      condition['requiredAccessLevels'] = _getMain().getString(Cmd.OB_STRING_LIST).split(',')
     elif myarg == 'negate':
       condition['negate'] = _getMain().getBoolean()
     elif myarg == 'members':
-      condition['members'] = getString(Cmd.OB_STRING_LIST).split(',')
+      condition['members'] = _getMain().getString(Cmd.OB_STRING_LIST).split(',')
     elif myarg == 'regions':
-      condition['regions'] = getString(Cmd.OB_STRING_LIST).upper().split(',')
+      condition['regions'] = _getMain().getString(Cmd.OB_STRING_LIST).upper().split(',')
       for region in condition['regions']:
         validateISO3166_1_alpha2_code(region)
     elif myarg == 'endcondition':
@@ -200,7 +200,7 @@ def CAABuildLevel(body):
     if myarg == 'basic':
       body['basic'] = CAABuildBasicLevel()
     elif myarg == 'custom':
-      body['custom'] = {'expr': {'expression': getString(Cmd.OB_STRING), 'title': 'expr'}}
+      body['custom'] = {'expr': {'expression': _getMain().getString(Cmd.OB_STRING), 'title': 'expr'}}
     elif myarg == 'description':
       body['description'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'json':

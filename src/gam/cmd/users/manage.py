@@ -523,7 +523,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       updatePrimaryEmail = list(_getMain().getREPatternSubstitution(re.IGNORECASE))
       updatePrimaryEmail.append(_getMain().checkArgumentPresent(['preview']))
 #    elif updateCmd and myarg == 'primaryguestemail':
-#      body['guestAccountInfo'] = {'primaryGuestEmail': getEmailAddress(noUid=True)}
+#      body['guestAccountInfo'] = {'primaryGuestEmail': _getMain().getEmailAddress(noUid=True)}
     elif myarg == 'json':
       body.update(_getMain().getJSON(USER_JSON_SKIP_FIELDS))
       if 'name' in body and 'fullName' in body['name']:
@@ -743,7 +743,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
             primary['location'] = Cmd.Location()
             entry['primary'] = _getMain().getBoolean()
           elif argument in {'os', 'operatingsystemtype'}:
-            entry['operatingSystemType'] = getChoice(['linux', 'unspecified', 'windows'])
+            entry['operatingSystemType'] = _getMain().getChoice(['linux', 'unspecified', 'windows'])
           elif argument == 'endposix':
             break
           else:

@@ -367,7 +367,7 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
   elif myarg == 'driveversiondate':
     query.setdefault('driveOptions', {})['versionDate'] = _getMain().getTimeOrDeltaFromNow()
   elif myarg in {'includeshareddrives', 'includeteamdrives'}:
-    query.setdefault('driveOptions', {})['sharedDrivesOption'] = 'INCLUDED' if getBoolean() else 'INCLUDED_IF_ACCOUNT_IS_NOT_A_MEMBER'
+    query.setdefault('driveOptions', {})['sharedDrivesOption'] = 'INCLUDED' if _getMain().getBoolean() else 'INCLUDED_IF_ACCOUNT_IS_NOT_A_MEMBER'
   elif myarg == 'shareddrivesoption':
     query.setdefault('driveOptions', {})['sharedDrivesOption'] = _getMain().getChoice(VAULT_SHARED_DRIVES_OPTION_MAP, mapChoice=True)
   elif myarg == 'driveclientsideencryption':

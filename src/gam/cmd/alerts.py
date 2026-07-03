@@ -156,7 +156,7 @@ def doPrintShowAlerts():
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'filter':
-      kwargs['filter'] = getString(Cmd.OB_STRING).replace("'", '"')
+      kwargs['filter'] = _getMain().getString(Cmd.OB_STRING).replace("'", '"')
     elif myarg == 'orderby':
       OBY.GetChoice()
     else:
@@ -257,7 +257,7 @@ def doPrintShowAlertFeedback():
     elif myarg == 'alertid':
       alertId = _getMain().getString(Cmd.OB_ALERT_ID)
     elif myarg == 'filter':
-      kwargs['filter'] = getString(Cmd.OB_STRING).replace("'", '"')
+      kwargs['filter'] = _getMain().getString(Cmd.OB_STRING).replace("'", '"')
     elif myarg == 'orderby':
       OBY.GetChoice()
     else:

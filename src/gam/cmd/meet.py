@@ -102,18 +102,18 @@ def _getMeetSpaceParameters(myarg, body):
   elif option == 'entryPointAccess':
     body['config'][option] = _getMain().getChoice(MEET_SPACE_ENTRYPOINTACCESS_CHOICES_MAP, mapChoice=True)
   elif option == 'moderation':
-    body['config'][option] = 'ON' if getBoolean() else 'OFF'
+    body['config'][option] = 'ON' if _getMain().getBoolean() else 'OFF'
   elif option in {'chatRestriction', 'reactionRestriction', 'presentRestriction'}:
     body['config'].setdefault('moderationRestrictions', {})
     body['config']['moderationRestrictions'][option] = _getMain().getChoice(MEET_SPACE_RESTRICTIONS_CHOICES_MAP, mapChoice=True)
   elif option == 'defaultJoinAsViewerType':
-    body['config'][option] = 'ON' if getBoolean() else 'OFF'
+    body['config'][option] = 'ON' if _getMain().getBoolean() else 'OFF'
 #  elif option == 'firstJoinerType':
-#    body['config'][option] = getChoice(MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP, mapChoice=True)
+#    body['config'][option] = _getMain().getChoice(MEET_SPACE_FIRSTJOINERTYPE_CHOICES_MAP, mapChoice=True)
   elif option in {'recordingConfig', 'transcriptionConfig', 'smartNotesConfig'}:
     body['config'].setdefault('artifactConfig', {})
     body['config']['artifactConfig'].setdefault(option, {})
-    body['config']['artifactConfig'][option][MEET_SPACE_ARTIFACT_SUB_OPTIONS[option]] = 'ON' if getBoolean() else 'OFF'
+    body['config']['artifactConfig'][option][MEET_SPACE_ARTIFACT_SUB_OPTIONS[option]] = 'ON' if _getMain().getBoolean() else 'OFF'
   return True
 
 # gam <UserTypeEntity> create meetspace
@@ -302,7 +302,7 @@ def printShowMeetConferences(users):
     elif (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
       _updateQuery('AND', f'space.name = "{getSpaceName(myarg)}"')
     elif myarg == 'code':
-      _updateQuery('AND', f'space.meeting_code = "{getString(Cmd.OB_STRING)}"')
+      _updateQuery('AND', f'space.meeting_code = "{_getMain().getString(Cmd.OB_STRING)}"')
     elif  myarg == 'andquery':
       _updateQuery('AND', _getMain().getString(Cmd.OB_QUERY))
     elif  myarg == 'orquery':

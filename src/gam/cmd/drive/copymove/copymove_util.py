@@ -278,10 +278,10 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
   elif myarg == 'copysubfoldernoninheritedpermissions':
     copyMoveOptions['copySubFolderNonInheritedPermissions'] = _getMain().getChoice(COPY_NONINHERITED_PERMISSIONS_CHOICES_MAP, mapChoice=True)
   elif myarg == 'excludepermissionsfromdomains':
-    copyMoveOptions['excludePermissionsFromDomains'] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).lower().replace(',', ' ').split())
+    copyMoveOptions['excludePermissionsFromDomains'] = set(_getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).lower().replace(',', ' ').split())
     copyMoveOptions['includePermissionsFromDomains'] = set()
   elif myarg == 'includepermissionsfromdomains':
-    copyMoveOptions['includePermissionsFromDomains'] = set(getString(Cmd.OB_DOMAIN_NAME_LIST).lower().replace(',', ' ').split())
+    copyMoveOptions['includePermissionsFromDomains'] = set(_getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).lower().replace(',', ' ').split())
     copyMoveOptions['excludePermissionsFromDomains'] = set()
   elif myarg == 'mappermissionsemail':
     sourceEmail = _getMain().getEmailAddress(noUid=True).lower()
@@ -366,7 +366,7 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
         copyMoveOptions['copySubFilesOwnedBy'] = _getMain().getChoice(COPY_OWNED_BY_CHOICE_MAP, mapChoice=True)
         if copyMoveOptions['copySubFilesOwnedBy']:
           if copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'users', 'notusers'}:
-            copyMoveOptions['copySubFilesOwnedBy']['value'] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
+            copyMoveOptions['copySubFilesOwnedBy']['value'] = set(_getMain().getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
           elif copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'regex', 'notregex'}:
             copyMoveOptions['copySubFilesOwnedBy']['value'] = _getMain().getREPattern(re.IGNORECASE)
       elif myarg in {'start', 'starttime', 'end', 'endtime', 'range'}:

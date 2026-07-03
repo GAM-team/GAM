@@ -345,7 +345,7 @@ def deleteUserFromGroups(users):
         for group in groupKeys:
           deleteGroups[_getMain().normalizeEmailAddressOrUID(group)] = {'role': Ent.MEMBER}
       else:
-        matchPattern = {'not': checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE)}
+        matchPattern = {'not': _getMain().checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE)}
       _getMain().checkForExtraneousArguments()
   else:
     _getMain().checkForExtraneousArguments()

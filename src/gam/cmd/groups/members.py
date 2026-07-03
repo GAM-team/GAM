@@ -117,7 +117,7 @@ def getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions
   elif myarg == 'external':
     memberDisplayOptions['external'] = memberDisplayOptions['checkCategory'] = memberDisplayOptions['showCategory'] = True
   elif myarg == 'internaldomains':
-    memberDisplayOptions['internalDomains'] = getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower()
+    memberDisplayOptions['internalDomains'] = _getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower()
   else:
     return False
   return True
@@ -549,11 +549,11 @@ def checkGroupShowOwnedBy(showOwnedBy, members):
 
 def getGroupMatchPatterns(myarg, matchPatterns, ciGroupsAPI):
   if myarg == 'emailmatchpattern':
-    matchPatterns['email'] = {'not': checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE)}
+    matchPatterns['email'] = {'not': _getMain().checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE)}
   elif myarg == 'namematchpattern':
-    matchPatterns['name' if not ciGroupsAPI else 'displayName'] = {'not': checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE|re.UNICODE)}
+    matchPatterns['name' if not ciGroupsAPI else 'displayName'] = {'not': _getMain().checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE|re.UNICODE)}
   elif myarg == 'descriptionmatchpattern':
-    matchPatterns['description'] = {'not': checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE|re.UNICODE)}
+    matchPatterns['description'] = {'not': _getMain().checkArgumentPresent('not'), 'pattern': _getMain().getREPattern(re.IGNORECASE|re.UNICODE)}
   elif not ciGroupsAPI and myarg == 'admincreatedmatch':
     matchPatterns['adminCreated'] = _getMain().getBoolean(None)
   else:

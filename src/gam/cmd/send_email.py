@@ -800,7 +800,7 @@ def doSendReply(users):
       selectLocation = Cmd.Location()
       if query:
         query += ' '
-      query += f'({getString(Cmd.OB_QUERY)})'
+      query += f'({_getMain().getString(Cmd.OB_QUERY)})'
     elif myarg.startswith('querytime'):
       queryTimes[myarg] = _getMain().getDateOrDeltaFromNow().replace('-', '/')
     elif myarg in {'or', 'and'}:

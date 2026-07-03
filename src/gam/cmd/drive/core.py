@@ -1081,7 +1081,7 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
     body.setdefault('contentHints', {})
     body['contentHints']['indexableText'] = _getMain().getString(Cmd.OB_STRING)
   elif myarg == 'securityupdate':
-    body['linkShareMetadata'] = {'securityUpdateEnabled': getBoolean(), 'securityUpdateEligible': True}
+    body['linkShareMetadata'] = {'securityUpdateEnabled': _getMain().getBoolean(), 'securityUpdateEligible': True}
   elif myarg == 'timestamp':
     parameters[DFA_TIMESTAMP] = _getMain().getBoolean()
   elif myarg == 'timeformat':

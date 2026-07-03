@@ -74,7 +74,7 @@ def _getMessageSelectParameters(myarg, parameters):
         parameters['query'] += ')'
         parameters['labelGroupOpen'] = False
       parameters['query'] += ' '
-    parameters['query'] += f'({getString(Cmd.OB_QUERY)})'
+    parameters['query'] += f'({_getMain().getString(Cmd.OB_QUERY)})'
   elif myarg.startswith('querytime'):
     parameters['queryTimes'][myarg] = getDateOrDeltaFromNow().replace('-', '/')
   elif myarg == 'matchlabel':

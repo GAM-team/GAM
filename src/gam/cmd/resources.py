@@ -47,7 +47,7 @@ def _getBuildingAttributes(body):
     elif myarg == 'description':
       body['description'] = _getMain().getString(Cmd.OB_STRING)
     elif myarg == 'floors':
-      body['floorNames'] = getString(Cmd.OB_STRING).split(',')
+      body['floorNames'] = _getMain().getString(Cmd.OB_STRING).split(',')
     elif myarg in _getMain().BUILDING_ADDRESS_FIELD_MAP:
       myarg = _getMain().BUILDING_ADDRESS_FIELD_MAP[myarg]
       body.setdefault('address', {})
@@ -491,7 +491,7 @@ def updateAutoAcceptInvitations(cal, calId, autoAcceptInvitations, i=0, count=0)
 # gam create resource <ResourceID> <Name> <ResourceAttribute>*
 def doCreateResourceCalendar():
   cd = _getMain().buildGAPIObject(API.DIRECTORY)
-  body, autoAcceptInvitations, _ = _getResourceCalendarAttributes(cd, {'resourceId': getString(Cmd.OB_RESOURCE_ID), 'resourceName': _getMain().getString(Cmd.OB_NAME)}, False)
+  body, autoAcceptInvitations, _ = _getResourceCalendarAttributes(cd, {'resourceId': _getMain().getString(Cmd.OB_RESOURCE_ID), 'resourceName': _getMain().getString(Cmd.OB_NAME)}, False)
   if autoAcceptInvitations is not None:
     cal = _getMain().buildGAPIObject(API.CALENDAR)
   try:

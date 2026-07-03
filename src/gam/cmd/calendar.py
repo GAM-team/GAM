@@ -587,7 +587,7 @@ def getCalendarEventEntity():
       elif matchField[0] != 'attendees' or matchField[1] == 'match':
         calendarEventEntity['matches'].append((matchField, _getMain().getREPattern(re.IGNORECASE)))
       elif matchField[0] == 'attendees' and matchField[1] in {'onlydomainlist', 'domainlist', 'notdomainlist'}:
-        calendarEventEntity['matches'].append((matchField, set(getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())))
+        calendarEventEntity['matches'].append((matchField, set(_getMain().getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').split())))
       elif matchField[1] == 'email':
         calendarEventEntity['matches'].append((matchField, _getMain().getNormalizedEmailAddressEntity()))
       elif matchField[1] == 'organizer':
@@ -610,7 +610,7 @@ CALENDAR_EVENT_SENDUPDATES_CHOICE_MAP = {'all': 'all', 'externalonly': 'external
 
 def _getCalendarSendUpdates(myarg, parameters):
   if myarg == 'sendnotifications':
-    parameters['sendUpdates'] = 'all' if getBoolean() else 'none'
+    parameters['sendUpdates'] = 'all' if _getMain().getBoolean() else 'none'
   elif myarg == 'notifyattendees':
     parameters['sendUpdates'] = 'all'
   elif myarg == 'sendupdates':
@@ -694,7 +694,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif myarg == 'location':
     body['location'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
   elif myarg == 'source':
-    body['source'] = {'title': getString(Cmd.OB_STRING), 'url': _getMain().getString(Cmd.OB_URL)}
+    body['source'] = {'title': _getMain().getString(Cmd.OB_STRING), 'url': _getMain().getString(Cmd.OB_URL)}
   elif myarg == 'summary':
     body['summary'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
   elif myarg in  {'start', 'starttime'}:
@@ -723,7 +723,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
       body['recurrence'] = ['RRULE:FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1']
   elif myarg == 'attachment':
     body.setdefault('attachments', [])
-    body['attachments'].append({'title': getString(Cmd.OB_STRING), 'fileUrl': _getMain().getString(Cmd.OB_URL)})
+    body['attachments'].append({'title': _getMain().getString(Cmd.OB_STRING), 'fileUrl': _getMain().getString(Cmd.OB_URL)})
   elif function == 'update' and myarg == 'clearattachments':
     body['attachments'] = []
   elif myarg in {'hangoutsmeet', 'googlemeet'}:
@@ -757,7 +757,7 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif myarg == 'attendee':
     parameters['attendees'].append({'email': _getMain().getEmailAddress(noUid=True)})
   elif myarg == 'optionalattendee':
-    parameters['attendees'].append({'email': getEmailAddress(noUid=True), 'optional': True})
+    parameters['attendees'].append({'email': _getMain().getEmailAddress(noUid=True), 'optional': True})
   elif myarg in {'attendeestatus', 'selectattendees'}:
     optional = _getMain().getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=None, mapChoice=True)
     responseStatus = _getMain().getChoice(CALENDAR_ATTENDEE_STATUS_CHOICE_MAP, defaultChoice=None, mapChoice=True)

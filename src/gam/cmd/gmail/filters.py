@@ -172,7 +172,7 @@ def createFilter(users):
       elif myarg in {'hasAttachment', 'excludeChats'}:
         body['criteria'][myarg] = True
       elif myarg == 'size':
-        body['criteria']['sizeComparison'] = getChoice(['larger', 'smaller'])
+        body['criteria']['sizeComparison'] = _getMain().getChoice(['larger', 'smaller'])
         body['criteria'][myarg] = _getMain().getMaxMessageBytes(_getMain().ONE_KILO_10_BYTES, _getMain().ONE_MEGA_10_BYTES)
     elif jsonData is None and myarg in FILTER_ACTION_CHOICES:
       if myarg in FILTER_ADD_LABEL_ACTIONS:

@@ -679,7 +679,7 @@ class ContactsManager():
       elif fieldName == CONTACT_USER_DEFINED_FIELDS:
         if CheckClearFieldsList(fieldName):
           continue
-        entry = {'rel': getString(Cmd.OB_STRING, minLen=0), 'value': _getMain().getString(Cmd.OB_STRING, minLen=0)}
+        entry = {'rel': _getMain().getString(Cmd.OB_STRING, minLen=0), 'value': _getMain().getString(Cmd.OB_STRING, minLen=0)}
         if not entry['rel'] or entry['rel'].lower() == 'none':
           entry['rel'] = None
         AppendItemToFieldsList(fieldName, entry, 'value')
@@ -2119,7 +2119,7 @@ class PeopleManager():
 #        if CheckClearPersonField(fieldName):
 #          continue
 #        entry = InitArrayFieldEntry(None)
-#        entry['url'] = getString(Cmd.OB_STRING, minLen=0)
+#        entry['url'] = _getMain().getString(Cmd.OB_STRING, minLen=0)
 #        entry['default'] = False
 #        AppendArrayEntryToFields(fieldName, entry, 'url')
       elif fieldName == PEOPLE_GROUPS:

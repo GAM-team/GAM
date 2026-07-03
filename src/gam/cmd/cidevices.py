@@ -64,7 +64,7 @@ def getCIDeviceEntity():
   ci = buildGAPICIDeviceServiceObject()
   customer = _getMain()._getCustomersCustomerIdNoC()
   if _getMain().checkArgumentPresent('devicesn'):
-    query = f'serial:{getString(Cmd.OB_SERIAL_NUMBER)}'
+    query = f'serial:{_getMain().getString(Cmd.OB_SERIAL_NUMBER)}'
   elif _getMain().checkArgumentPresent('query'):
     query = _getMain().getString(Cmd.OB_QUERY)
   else:
@@ -885,7 +885,7 @@ def doInfoCIDeviceUserState():
   while Cmd.ArgumentsRemaining():
     myarg = _getMain().getArgument()
     if myarg == 'clientid':
-      client_id = f'{customerID}-{getString(Cmd.OB_STRING)}'
+      client_id = f'{customerID}-{_getMain().getString(Cmd.OB_STRING)}'
     else:
       _getMain().unknownArgumentExit()
   count = len(entityList)
@@ -924,7 +924,7 @@ def doUpdateCIDeviceUserState():
   while Cmd.ArgumentsRemaining():
     myarg = _getMain().getArgument()
     if myarg == 'clientid':
-      client_id = f'{customerID}-{getString(Cmd.OB_STRING)}'
+      client_id = f'{customerID}-{_getMain().getString(Cmd.OB_STRING)}'
     elif myarg in ['compliantstate', 'compliancestate']:
       body['complianceState'] = _getMain().getChoice(DEVICE_USER_COMPLIANCE_STATE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'healthscore':

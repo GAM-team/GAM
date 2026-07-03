@@ -1257,7 +1257,7 @@ def updateCalendarAttendees(users):
           elif updOp == 'update':
             attendeeMap[updAddr] = {'op': updOp, 'status': updStatus, 'optional': updOptional, 'done': False}
           else: #replace
-            attendeeMap[updAddr] = {'op': 'replace', 'status': updStatus, 'optional': updOptional, 'email': normalizeEmailAddressOrUID(updOp, noUid=True), 'done': False}
+            attendeeMap[updAddr] = {'op': 'replace', 'status': updStatus, 'optional': updOptional, 'email': _getMain().normalizeEmailAddressOrUID(updOp, noUid=True), 'done': False}
       _getMain().closeFile(f)
     elif myarg == 'delete':
       updAddr = _getMain().getEmailAddress(noUid=True)

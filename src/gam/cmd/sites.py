@@ -196,7 +196,7 @@ def printShowBusinessProfileAccounts(users):
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'type':
-      kwargs['filter'] = f'type={getChoice(PROFILE_ACCOUNT_TYPE_MAP, mapChoice=True)}'
+      kwargs['filter'] = f'type={_getMain().getChoice(PROFILE_ACCOUNT_TYPE_MAP, mapChoice=True)}'
     else:
       _getMain().unknownArgumentExit()
   i, count, users = _getMain().getEntityArgument(users)

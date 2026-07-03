@@ -81,7 +81,7 @@ def getRevisionsEntity():
     elif mycmd[:3] == 'id:':
       revisionsEntity['list'] = [myarg[3:]]
     elif mycmd == 'ids':
-      revisionsEntity['list'] = getString(Cmd.OB_DRIVE_FILE_REVISION_ID).replace(',', ' ').split()
+      revisionsEntity['list'] = _getMain().getString(Cmd.OB_DRIVE_FILE_REVISION_ID).replace(',', ' ').split()
     elif mycmd[:4] == 'ids:':
       revisionsEntity['list'] = myarg[4:].replace(',', ' ').split()
     elif mycmd in {'first', 'last', 'allexceptfirst', 'allexceptlast'}:

@@ -119,9 +119,9 @@ def printDriveActivity(users):
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'fileid':
-      baseFileList.append({'id': getString(Cmd.OB_DRIVE_FILE_ID), 'mimeType': MIMETYPE_GA_DOCUMENT})
+      baseFileList.append({'id': _getMain().getString(Cmd.OB_DRIVE_FILE_ID), 'mimeType': MIMETYPE_GA_DOCUMENT})
     elif myarg == 'folderid':
-      baseFileList.append({'id': getString(Cmd.OB_DRIVE_FOLDER_ID), 'mimeType': MIMETYPE_GA_FOLDER})
+      baseFileList.append({'id': _getMain().getString(Cmd.OB_DRIVE_FOLDER_ID), 'mimeType': MIMETYPE_GA_FOLDER})
     elif myarg == 'drivefilename':
       query = f"mimeType != '{MIMETYPE_GA_FOLDER}' and name = '{getEscapedDriveFileName()}'"
     elif myarg == 'drivefoldername':

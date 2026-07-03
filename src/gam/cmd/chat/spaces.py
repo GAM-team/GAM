@@ -63,7 +63,7 @@ def  getChatSpaceParameters(myarg, body, typeChoicesMap, updateMask):
     body['spaceDetails']['guidelines'] = _getMain().getString(Cmd.OB_STRING, minLen=0, maxLen=5000)
     updateMask.add('spaceDetails')
   elif myarg == 'history':
-    body['spaceHistoryState'] = 'HISTORY_ON' if getBoolean() else 'HISTORY_OFF'
+    body['spaceHistoryState'] = 'HISTORY_ON' if _getMain().getBoolean() else 'HISTORY_OFF'
     updateMask.add('spaceHistoryState')
   elif myarg in {'audience', 'restricted'}:
     body['accessSettings']= {'audience': None}

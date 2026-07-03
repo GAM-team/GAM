@@ -547,7 +547,7 @@ def getSendAsAttributes(myarg, body, tagReplacements):
   elif myarg == 'replyto':
     body['replyToAddress'] = _getMain().getString(Cmd.OB_EMAIL_ADDRESS, minLen=0)
     if len(body['replyToAddress']) > 0:
-      body['replyToAddress'] = normalizeEmailAddressOrUID(body['replyToAddress'], noUid=True, noLower=True)
+      body['replyToAddress'] = _getMain().normalizeEmailAddressOrUID(body['replyToAddress'], noUid=True, noLower=True)
   elif myarg == 'default':
     body['isDefault'] = True
   elif myarg == 'treatasalias':
