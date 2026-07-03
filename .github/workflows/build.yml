@@ -108,12 +108,6 @@ jobs:
             name: Build Arm Windows
           - os: ubuntu-24.04
             goal: test
-            python: "3.10"
-            freethreaded: false
-            jid: 15
-            name: Test Python 3.10
-          - os: ubuntu-24.04
-            goal: test
             python: "3.11"
             freethreaded: false
             jid: 16
