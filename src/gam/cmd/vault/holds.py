@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.cmd.vault.matters import _buildVaultQuery, _validateVaultQuery, convertHoldNameToID, convertMatterNameToID, convertQueryNameToID, formatVaultNameId, getMatterItem, warnMatterNotOpen
+
 from gam.cmd.vault.matters import (
     VAULT_CORPUS_ARGUMENT_MAP,
     VAULT_CORPUS_QUERY_MAP,

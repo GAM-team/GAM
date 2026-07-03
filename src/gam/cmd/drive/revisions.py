@@ -7,6 +7,8 @@ Part of the drive sub-package, extracted from drive.py."""
 import re
 import sys
 
+from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

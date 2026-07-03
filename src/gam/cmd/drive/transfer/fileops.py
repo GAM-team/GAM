@@ -11,6 +11,8 @@ Part of the drive sub-package, extracted from drive.py."""
 import re
 import json
 import sys
+
+from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 import os
 import time
 

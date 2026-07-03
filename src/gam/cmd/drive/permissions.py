@@ -8,6 +8,10 @@ import re
 import json
 import sys
 
+from gam.cmd.drive.core import _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity
+from gam.cmd.drive.filepaths import _finalizeIncludePermissionsForView, _getIncludePermissionsForView, _mapDrivePermissionNames
+from gam.cmd.drive.filetree import _validateACLAttributes, _validateACLOwnerType
+
 from gam.util.csv_pf import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
 
 from gamlib import glaction

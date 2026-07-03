@@ -7,6 +7,11 @@ Part of the drive sub-package, extracted from drive.py."""
 import re
 import json
 import sys
+
+from gam.cmd.drive.core import _convertSharedDriveNameToId, _getSharedDriveNameFromId
+from gam.cmd.drive.filepaths import _mapDrivePermissionNames
+from gam.cmd.drive.files import _initStatistics
+from gam.cmd.drive.permissions import _getDriveFileACLPrintKeysTimeObjects, _showDriveFilePermissionJSON, _showDriveFilePermissions, _showDriveFilePermissionsJSON, getDriveFilePermissionsFields
 import uuid
 import time
 

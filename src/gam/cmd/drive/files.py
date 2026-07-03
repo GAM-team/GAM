@@ -6,6 +6,9 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import sys
+
+from gam.cmd.drive.core import _getDriveFileAddRemoveParentInfo, _getDriveFileParentInfo, _validateUserGetFileIDs, escapeDriveFileName, getDriveFileAddRemoveParentAttribute, getDriveFileAttribute, getDriveFileEntity, getDriveFileParentAttribute, getMediaBody, initDriveFileAttributes, setPreservedFileTimes
+from gam.cmd.drive.fileinfo import writeReturnIdLink
 import time
 
 from gamlib import glaction

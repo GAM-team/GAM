@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.cmd.gmail.labels import _getLabelId, _getLabelName, _getLabelSet, _getUserGmailLabels, buildLabelPath
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

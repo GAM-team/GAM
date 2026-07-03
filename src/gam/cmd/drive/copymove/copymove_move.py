@@ -11,6 +11,8 @@ Part of the drive sub-package, extracted from drive.py."""
 import re
 import sys
 
+from gam.cmd.drive.copymove.copymove_util import _checkForDuplicateTargetFile, _checkForExistingShortcut, _copyPermissions, _getCopyFolderNonInheritedPermissions, _getCopyMoveParentInfo, _getCopyMoveTargetInfo, _getUniqueFilename, _identicalSourceTarget, _printStatistics, _targetFilenameExists, _verifyUserIsOrganizer, getCopyMoveOptions, initCopyMoveOptions
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

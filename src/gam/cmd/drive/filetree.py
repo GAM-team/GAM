@@ -7,6 +7,9 @@ Part of the drive sub-package, extracted from drive.py."""
 import re
 import sys
 
+from gam.cmd.drive.core import _getSharedDriveNameFromId, _mapDrive2QueryToDrive3, cleanFileIDsList, escapeDriveFileName, getEscapedDriveFileName, initDriveFileEntity
+from gam.cmd.drive.revisions import _stripMeInOwners, _stripNotMeInOwners, _updateAnyOwnerQuery
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
@@ -213,6 +216,7 @@ def buildFileTree(feed, drive):
 
 def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row,
                       fullpath=False, showDepth=False, folderPathOnly=False, parentPathOnly=False):
+  from gam.cmd.drive.filepaths import getFilePaths  # lazy import to avoid circular dependency
   _, paths, maxDepth = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo,
                                     fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
   kcount = len(paths)
@@ -230,6 +234,7 @@ def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row,
     k += 1
 
 def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=False, folderPathOnly=False, parentPathOnly=False):
+  from gam.cmd.drive.filepaths import getFilePaths  # lazy import to avoid circular dependency
   _, paths, _ = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=addParentsToTree,
                              showDepth=False, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
   fileEntryInfo['paths'] = []

@@ -8,6 +8,7 @@ import re
 import sys
 
 from gam.util.csv_pf import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+from gam.cmd.gmail.labels import _getUserGmailLabels, _initLabelNameMap, _convertLabelNamesToIds
 import io
 import base64
 import os

@@ -8,6 +8,10 @@ import re
 import json
 import sys
 
+from gam.cmd.drive.core import _getSharedDriveNameFromId, _validateUserGetFileIDs, getDriveFileEntity
+from gam.cmd.drive.filetree import addFilePathsToInfo, extendFileTree, extendFileTreeParents, initFileTree
+from gam.cmd.drive.labels import normalizeDriveLabelID
+
 from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
 
 from gamlib import glaction

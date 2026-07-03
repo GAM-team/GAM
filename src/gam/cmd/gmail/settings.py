@@ -7,6 +7,8 @@ Part of the _gmail_monolith sub-package."""
 import re
 import sys
 
+from gam.cmd.gmail.messages import forwardMessagesThreads
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

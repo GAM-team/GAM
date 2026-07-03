@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.cmd.users.manage import _filterSchemaFields, _filterUserMultiAttributes, _formatLanguagesList, _getSchemaNameList, _getUserMultiAttributeFilters, _initSchemaParms, getUserLicenses
+
 from gam.util.csv_pf import RI_JCOUNT, RI_ITEM
 
 from gam.cmd.users.manage import (

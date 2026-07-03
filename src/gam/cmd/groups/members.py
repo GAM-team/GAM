@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.cmd.groups.groups import GroupIsAbuseOrPostmaster, getGroupAttrProperties, getGroupAttrValue, getGroupMemberTypes, mapGroupEmailForSettings
+
 from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_COUNT
 
 from gam.util.entity import GROUP_ROLES_MAP

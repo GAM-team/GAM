@@ -7,6 +7,8 @@ Part of the _gmail_monolith sub-package."""
 import re
 import sys
 
+from gam.cmd.gmail.settings import _processSendAs, _processSignature, getSendAsAttributes
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
