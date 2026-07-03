@@ -504,12 +504,12 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif not updateCmd and myarg in {'license', 'licence', 'licenses', 'licences'}:
       if parameters['lic'] is None:
         parameters['lic'] = _getMain().buildGAPIObject(API.LICENSING)
-      parameters[LICENSE_PRODUCT_SKUIDS] = _getMain().getGoogleSKUList(allowUnknownProduct=True)
+      parameters[_getMain().LICENSE_PRODUCT_SKUIDS] = _getMain().getGoogleSKUList(allowUnknownProduct=True)
       if _getMain().checkArgumentPresent(['product', 'productid']):
         productId = _getMain().getGoogleProduct()
-        for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
+        for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
           productSku = (productId, productSku[1])
-      for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
+      for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
         if not productSku[0]:
           _getMain().invalidChoiceExit(productSku[1], SKU.getSortedSKUList(), True)
     elif updateCmd and myarg == 'updateoufromgroup':
@@ -945,7 +945,7 @@ def doCreateUser():
     if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
       notify['recipients'].append(result['recoveryEmail'])
     _getMain().sendCreateUpdateUserNotification(result, notify, tagReplacements)
-  for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
+  for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
     productId = productSku[0]
     skuId = productSku[1]
     try:
