@@ -7,6 +7,7 @@ Part of the _gmail_monolith sub-package."""
 import re
 import json
 import sys
+import uuid
 import base64
 
 from gamlib import glaction

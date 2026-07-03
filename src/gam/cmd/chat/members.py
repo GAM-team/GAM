@@ -5,6 +5,7 @@ Part of the _chat_tmp sub-package."""
 """GAM Google Chat management."""
 
 import sys
+import uuid
 
 from gamlib import glaction
 from gamlib import glapi as API

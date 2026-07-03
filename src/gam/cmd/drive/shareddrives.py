@@ -7,6 +7,7 @@ Part of the drive sub-package, extracted from drive.py."""
 import re
 import json
 import sys
+import uuid
 import time
 
 from gamlib import glaction

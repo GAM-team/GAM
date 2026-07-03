@@ -2,6 +2,7 @@
 
 import json
 import sys
+import uuid
 
 from gamlib import glaction
 from gamlib import glapi as API
