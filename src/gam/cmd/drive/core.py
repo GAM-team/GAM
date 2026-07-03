@@ -6,6 +6,8 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import sys
+import mimetypes
+import platform
 import io
 import os
 

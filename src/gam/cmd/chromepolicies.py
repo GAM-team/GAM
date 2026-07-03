@@ -3,6 +3,7 @@
 import re
 import json
 import sys
+import mimetypes
 import os
 
 from gamlib import glaction

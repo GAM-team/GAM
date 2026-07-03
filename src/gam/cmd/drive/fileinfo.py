@@ -6,6 +6,7 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import sys
+import platform
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
 import os

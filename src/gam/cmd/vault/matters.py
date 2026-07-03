@@ -7,6 +7,7 @@ Part of the _vault_tmp sub-package."""
 import re
 import json
 import sys
+import zipfile
 import base64
 import os
 import time
