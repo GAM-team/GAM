@@ -1098,7 +1098,7 @@ jobs:
           tar cJvvf cache.tar.xz --exclude-from=excludes.txt $tar_folders
 
   publish:
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
     runs-on: ubuntu-24.04
     needs: build
     permissions:
