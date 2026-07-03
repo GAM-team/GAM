@@ -863,6 +863,7 @@ jobs:
           run_gam config customer_id "C03uzfv2s" save
           run_gam config domain "pdl.jaylee.us" save
           run_gam config admin_email "${gam_user}" save
+          run_gam config license_skus 1010010001,1010340001,1010400001,Google-Apps-For-Business,Google-Apps-Unlimited,1010020020 save
           run_gam config enable_dasa false save
           run_gam oauth info
           run_gam oauth refresh
