@@ -41,7 +41,7 @@ def doDeleteBrowsers():
              customer=customerId, deviceId=deviceId)
     _getMain().entityActionPerformed([Ent.CHROME_BROWSER, deviceId])
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
+    _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
 
 BROWSER_TIME_OBJECTS = {'firstRecordTime', 'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime', 'safeBrowsingWarningsResetTime'}
 
@@ -133,7 +133,7 @@ def doInfoBrowsers():
   except GAPI.invalidArgument as e:
     _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
+    _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
 
 # gam move browsers ou|org|orgunit <OrgUnitPath>
 #	((ids <DeviceIDList>) |
@@ -250,7 +250,7 @@ def doUpdateBrowsers():
                body=browser, projection='BASIC', fields="deviceId")
       _getMain().entityActionPerformed([Ent.CHROME_BROWSER, deviceId], i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId, i, count)
 
 def _getChromeProfileName():
   profileName = _getMain().getString(Cmd.OB_CHROMEPROFILE_NAME)
@@ -800,7 +800,7 @@ def doPrintShowBrowsers():
       except GAPI.invalidArgument as e:
         _getMain().entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-        checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
+        _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
   if csvPF:
     if sortRows and orderBy:
       csvPF.SortRows(orderBy, reverse=sortOrder == 'DESCENDING')

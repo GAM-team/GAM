@@ -204,7 +204,7 @@ def updateCrOSDevices(entityList):
     except GAPI.invalidOrgunit:
       _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, deviceId], Msg.INVALID_ORGUNIT, i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
 
 # gam update cros|croses <CrOSEntity> <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 # gam update cros|croses <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
@@ -719,7 +719,7 @@ def infoCrOSDevices(entityList):
                       throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customerId=GC.Values[GC.CUSTOMER_ID], deviceId=deviceId, projection=projection, fields=fields)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden, GAPI.permissionDenied):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
       continue
     checkTPMVulnerability(cros)
     if 'autoUpdateExpiration' in cros:
@@ -1017,7 +1017,7 @@ def getCrOSDeviceFiles(entityList):
         _getMain().entityActionPerformed([Ent.DEVICE_FILE, downloadfilename], j, jcount)
       Ind.Decrement()
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, deviceId, i, count)
 
 # gam get devicefile <CrOSEntity> [select <DeviceFileEntity>] [targetfolder <FilePath>]
 def doGetCrOSDeviceFiles():
@@ -1207,7 +1207,7 @@ def doPrintCrOSDevices(entityList=None):
     else:
       http_status, reason, message = _getMain().checkGAPIError(exception)
       if reason in [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN]:
-        checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       else:
         errMsg = _getMain().getHTTPError({}, http_status, reason, message)
         _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))
@@ -1487,7 +1487,7 @@ def doPrintCrOSActivity(entityList=None):
     else:
       http_status, reason, message = _getMain().checkGAPIError(exception)
       if reason in [GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN]:
-        checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
+        _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.CROS_DEVICE, ri[RI_ITEM], int(ri[RI_J]), int(ri[RI_JCOUNT]))
       else:
         errMsg = _getMain().getHTTPError({}, http_status, reason, message)
         _getMain().entityActionFailedWarning([Ent.CROS_DEVICE, ri[RI_ITEM]], errMsg, int(ri[RI_J]), int(ri[RI_JCOUNT]))

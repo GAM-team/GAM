@@ -49,7 +49,7 @@ def doCreateOrg():
     except (GAPI.invalidOrgunit, GAPI.backendError):
       _getMain().entityDuplicateWarning([Ent.ORGANIZATIONAL_UNIT, fullPath])
     except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, fullPath)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, fullPath)
     return True
 
   cd = _getMain().buildGAPIObject(API.DIRECTORY)
@@ -120,7 +120,7 @@ def doCreateOrg():
       if not _createOrg(body, body['parentOrgUnitPath'], fullPath):
         return
     except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, fullPath)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, fullPath)
 
 def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
   if orgUnitPath == '/':
@@ -218,7 +218,7 @@ def _batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, i, count, items, quick
         _getMain().entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CROS_DEVICE, ','.join(deviceIds)], str(e), i, count)
         break
       except (GAPI.badRequest, GAPI.forbidden):
-        checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath, i, count)
+        _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath, i, count)
         bcount += kcount
   Ind.Decrement()
 
@@ -365,7 +365,7 @@ def _doUpdateOrgs(entityList):
       except GAPI.conditionNotMet as e:
         _getMain().entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], str(e), i, count)
       except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
-        checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+        _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
 # gam update orgs|ous <OrgUnitEntity> [name <String>] [description <String>] [parent <OrgUnitItem>]
 # gam update orgs|ous <OrgUnitEntity> add|move <CrosTypeEntity> [quickcrosmove [<Boolean>]]
@@ -407,7 +407,7 @@ def _doDeleteOrgs(entityList):
 ### Check for my_customer
       _getMain().entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath, Ent.CUSTOMER_ID, GC.Values[GC.CUSTOMER_ID]], str(e), i, count)
     except (GAPI.badRequest, GAPI.loginRequired):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
 # gam delete orgs|ous <OrgUnitEntity>
 def doDeleteOrgs():
@@ -494,7 +494,7 @@ def _doInfoOrgs(entityList):
     except (GAPI.invalidInput, GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       _getMain().entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.ORGANIZATIONAL_UNIT, orgUnitPath)
 
 # gam info org|ou <OrgUnitItem>
 #	[nousers | ([notarchived|archived] [notsuspended|suspended])] [children|child]

@@ -168,7 +168,7 @@ def doCreateUpdateUserSchemas():
     except (GAPI.conditionNotMet, GAPI.fieldInUse) as e:
       _getMain().entityActionFailedWarning([Ent.USER_SCHEMA, schemaName], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaName, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaName, i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
@@ -190,7 +190,7 @@ def doDeleteUserSchemas():
     except GAPI.fieldInUse as e:
       _getMain().entityActionFailedWarning([Ent.USER_SCHEMA, schemaKey], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 
@@ -210,7 +210,7 @@ def doInfoUserSchemas():
                         customerId=GC.Values[GC.CUSTOMER_ID], schemaKey=schemaKey)
       _showSchema(schema, i, count)
     except (GAPI.invalid, GAPI.badRequest, GAPI.resourceNotFound):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.USER_SCHEMA, schemaKey, i, count)
     except (GAPI.forbidden, GAPI.permissionDenied) as e:
       ClientAPIAccessDeniedExit(str(e))
 

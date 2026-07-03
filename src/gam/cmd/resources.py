@@ -563,7 +563,7 @@ def _doUpdateResourceCalendars(entityList):
     except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable, GAPI.required)  as e:
       _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
 
 # gam update resources <ResourceEntity> <ResourceAttribute>*
 def doUpdateResourceCalendars():
@@ -589,7 +589,7 @@ def _doDeleteResourceCalendars(entityList):
     except GAPI.serviceNotAvailable as e:
       _getMain().entityActionFailedWarning([Ent.RESOURCE_CALENDAR, resourceId], str(e), i, count)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
 
 # gam delete resources <ResourceEntity>
 def doDeleteResourceCalendars():
@@ -714,7 +714,7 @@ def _doInfoResourceCalendars(entityList):
           continue
       _showResource(cd, resource, i, count, FJQC, acls, noSelfOwner)
     except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+      _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
 
 # gam info resources <ResourceEntity>
 #	[acls] [noselfowner] [calendar] [formatjson]

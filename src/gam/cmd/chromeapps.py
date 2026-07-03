@@ -57,7 +57,7 @@ def doInfoChromeApp():
     _getMain().showJSON(None, appDetails, timeObjects=_getMain().CHROME_APPS_TIME_OBJECTS)
     Ind.Decrement()
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
-    checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_APP, f'{app_type}/{app_id}')
+    _getMain().checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_APP, f'{app_type}/{app_id}')
 
 def _getPrintChromeGetting(subou, pfilter, entityType):
   orgUnitPath = subou[0]

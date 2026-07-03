@@ -121,7 +121,7 @@ def getCalendarACLScope():
   return {'list': [scopeType], 'dict': None}
 
 def getCalendarSiteACLScopeEntity():
-  ACLScopeEntity = {'list': getEntityList(Cmd.OB_ACL_SCOPE_ENTITY), 'dict': None}
+  ACLScopeEntity = {'list': _getMain().getEntityList(Cmd.OB_ACL_SCOPE_ENTITY), 'dict': None}
   if isinstance(ACLScopeEntity['list'], dict):
     ACLScopeEntity['dict'] = ACLScopeEntity['list']
   return ACLScopeEntity
@@ -168,7 +168,7 @@ def _normalizeCalIdGetRuleIds(origUser, user, origCal, calId, j, jcount, ACLScop
 def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount, role, ruleId, sendNotifications):
   result = True
   if function == 'insert':
-    kwargs = {'body': makeRoleRuleIdBody(role, ruleId), 'fields': '', 'sendNotifications': sendNotifications}
+    kwargs = {'body': _getMain().makeRoleRuleIdBody(role, ruleId), 'fields': '', 'sendNotifications': sendNotifications}
   elif function == 'patch':
     kwargs = {'ruleId': ruleId, 'body': {'role': role}, 'fields': '', 'sendNotifications': sendNotifications}
   else: # elif function == 'delete':
@@ -2122,7 +2122,7 @@ def _validateResourceId(cd, resourceId, i, count, exitOnNotFound):
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
     if exitOnNotFound:
       _getMain().entityDoesNotExistExit(Ent.RESOURCE_CALENDAR, resourceId, i, count)
-    checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
+    _getMain().checkEntityAFDNEorAccessErrorExit(cd, Ent.RESOURCE_CALENDAR, resourceId, i, count)
     return None
 
 def _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, showAction=True):
