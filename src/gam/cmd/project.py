@@ -1190,7 +1190,7 @@ def checkServiceAccount(users):
       else:
         scopeStatus = testFail
         allScopesPass = False
-      printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
+      printPassFail(scope, f'{scopeStatus}{_getMain().currentCount(j, jcount)}')
     Ind.Decrement()
     if checkDeprecatedScopes:
       deprecatedScopes = sorted(API.DEPRECATED_SCOPES)
@@ -1222,7 +1222,7 @@ def checkServiceAccount(users):
             scopeStatus = testPass
         else:
           scopeStatus = testPass
-        printPassFail(scope, f'{scopeStatus}{currentCount(j, jcount)}')
+        printPassFail(scope, f'{scopeStatus}{_getMain().currentCount(j, jcount)}')
       Ind.Decrement()
     service_account = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
     if allScopesPass:

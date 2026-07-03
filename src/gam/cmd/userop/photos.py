@@ -7,6 +7,9 @@ Part of the _userop_tmp sub-package."""
 import re
 import sys
 
+import google.auth
+import google.auth.exceptions
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
