@@ -14,6 +14,9 @@ import time
 
 import httplib2
 
+import google.auth
+import google.auth.exceptions
+
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
