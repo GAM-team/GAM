@@ -6,7 +6,6 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import json
-import sys
 
 from gam.cmd.drive.core import _getSharedDriveNameFromId, _validateUserGetFileIDs, getDriveFileEntity
 from gam.cmd.drive.filetree import addFilePathsToInfo, extendFileTree, extendFileTreeParents, initFileTree
@@ -23,6 +22,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.constants import MY_DRIVE, TEAM_DRIVE
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -57,16 +57,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from gam.cmd.drive.core import DRIVE_LABEL_CHOICE_MAP  # cross-module ref
 from gam.util.api import callGAPI, callGAPIitems, callGAPIpages
@@ -94,7 +84,11 @@ from gam.util.display import (
     printLine,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+    getEntityList,
+)
 from gam.util.errors import invalidChoiceExit
 from gam.util.output import writeStdout
 
@@ -104,9 +98,9 @@ def initFilePathInfo(delimiter):
 def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=False,
                  fullpath=False, showDepth=False, folderPathOnly=False, parentPathOnly=False):
   def _getParentName(result):
-    if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == _getMain().TEAM_DRIVE):
+    if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == TEAM_DRIVE):
       parentName = _getSharedDriveNameFromId(drive, result['driveId'])
-      if parentName != _getMain().TEAM_DRIVE:
+      if parentName != TEAM_DRIVE:
         return f'{SHARED_DRIVES}{filePathInfo["delimiter"]}{parentName}'
     return result['name']
 
@@ -178,11 +172,11 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
     maxDepth = _makeFilePaths(filePathInfo['localPaths'], fplist, filePaths, initialResult['name'], -1)
   else:
     if (fullpath and initialMimeType == MIMETYPE_GA_FOLDER and
-        ((initialResult['name'] == _getMain().MY_DRIVE) or
+        ((initialResult['name'] == MY_DRIVE) or
          (initialResult.get('driveId') and initialResult['name'].startswith(SHARED_DRIVES)))):
       filePaths.append(initialResult['name'])
     maxDepth = 0
-  return (_getMain()._getEntityMimeType(initialResult), filePaths, maxDepth)
+  return (_getEntityMimeType(initialResult), filePaths, maxDepth)
 
 DRIVEFILE_ORDERBY_CHOICE_MAP = {
   'createddate': 'createdTime',
@@ -805,7 +799,7 @@ def showFileInfo(users):
           result['name'] = _stripControlCharsFromName(result['name'])
         driveId = result.get('driveId')
         if driveId:
-          if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == _getMain().TEAM_DRIVE:
+          if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
             result['name'] = _getSharedDriveNameFromId(drive, driveId)
           if DFF.showSharedDriveNames:
             result['driveName'] = _getSharedDriveNameFromId(drive, driveId)
@@ -830,7 +824,7 @@ def showFileInfo(users):
                                  fileId=fileId)
           _formatFileDriveLabels(showLabels, labels, result, False, ' ')
         if not FJQC.formatJSON:
-          printEntity([_getMain()._getEntityMimeType(result), f'{result["name"]} ({fileId})'], j, jcount)
+          printEntity([_getEntityMimeType(result), f'{result["name"]} ({fileId})'], j, jcount)
           Ind.Increment()
         if filepath:
           if fullpath:

@@ -34,6 +34,7 @@ from gam.util.args import (
     StartEndTime,
     YYYYMMDDTHHMMSS_FORMAT_REQUIRED,
     YYYYMMDD_FORMAT,
+    _getFilterDateTime,
     checkArgumentPresent,
     escapeCRsNLs,
     formatLocalDatestamp,
@@ -51,6 +52,7 @@ from gam.util.args import (
     getYYYYMMDD,
     makeOrgUnitPathAbsolute,
     makeOrgUnitPathRelative,
+    substituteQueryTimes,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -85,6 +87,7 @@ from gam.util.display import (
     printLine,
 )
 from gam.util.entity import (
+    _getCustomersCustomerIdWithC,
     convertEntityToList,
     getDeviceQueries,
     getEntityArgument,
@@ -111,23 +114,13 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
+from gam.constants import PROJECTION_CHOICE_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 UNKNOWN = 'Unknown'
 WARNING_PREFIX = 'WARNING: '
@@ -187,6 +180,7 @@ CROS_ACTION_NAME_MAP = {
 # gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
 #	[actionbatchsize <Integer>] [maxtodeprov <Integer>]
 def updateCrOSDevices(entityList):
+  from gam.cmd.orgunits import _batchMoveCrOSesToOrgUnit, checkOrgUnitPathExists
   cd = buildGAPIObject(API.DIRECTORY)
   noBatchUpdate = False
   update_body = {}
@@ -229,7 +223,7 @@ def updateCrOSDevices(entityList):
     Cmd.SetLocation(actionLocation-1)
     usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('action', '<CrOSAttribute>'))
   if orgUnitPath:
-    status, orgUnitPath, orgUnitId = _getMain().checkOrgUnitPathExists(cd, orgUnitPath)
+    status, orgUnitPath, orgUnitId = checkOrgUnitPathExists(cd, orgUnitPath)
     if not status:
       entityActionFailedWarning([Ent.CROS_DEVICE, ''], f'{Ent.Singular(Ent.ORGANIZATIONAL_UNIT)}: {orgUnitPath}, {Msg.DOES_NOT_EXIST}')
       return
@@ -276,7 +270,7 @@ def updateCrOSDevices(entityList):
     kwargs = {parmId: None, 'body': update_body, 'fields': ''}
   if orgUnitPath:
     Act.Set(Act.ADD)
-    _getMain()._batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, 0, 0, entityList, quickCrOSMove)
+    _batchMoveCrOSesToOrgUnit(cd, orgUnitPath, orgUnitId, 0, 0, entityList, quickCrOSMove)
     Act.Set(Act.UPDATE)
   if function is None:
     return
@@ -591,9 +585,6 @@ def _computeDVRstorageFreePercentage(cros):
       else:
         volume['storageFreePercentage'] = '0'
 
-def _getFilterDateTime():
-  filterDate = getYYYYMMDD(returnDateTime=True)
-  return (filterDate, filterDate.replace(tzinfo='UTC'))
 
 CROS_FIELDS_CHOICE_MAP = {
   'activetimeranges': 'activeTimeRanges',
@@ -765,8 +756,8 @@ def infoCrOSDevices(entityList):
     elif myarg == 'allfields':
       projection = 'FULL'
       fieldsList = []
-    elif myarg in _getMain().PROJECTION_CHOICE_MAP:
-      projection = _getMain().PROJECTION_CHOICE_MAP[myarg]
+    elif myarg in PROJECTION_CHOICE_MAP:
+      projection = PROJECTION_CHOICE_MAP[myarg]
       if projection == 'FULL':
         fieldsList = []
       else:
@@ -1118,13 +1109,6 @@ def getCrOSDeviceFiles(entityList):
 def doGetCrOSDeviceFiles():
   getCrOSDeviceFiles(getCrOSDeviceEntity())
 
-def substituteQueryTimes(queries, queryTimes):
-  if queryTimes:
-    for i, query in enumerate(queries):
-      if query is not None:
-        for queryTimeName, queryTimeValue in queryTimes.items():
-          query = query.replace(f'#{queryTimeName}#', queryTimeValue)
-        queries[i] = query
 
 # Get CrOS devices from gam.cfg print_cros_ous and print_cros_ous_and_children
 def getCfgCrOSEntities():
@@ -1364,8 +1348,8 @@ def doPrintCrOSDevices(entityList=None):
       endDate, endTime = _getFilterDateTime()
     elif myarg == 'timerangeorder':
       activeTimeRangesOrder = getChoice(SORTORDER_CHOICE_MAP, mapChoice=True)
-    elif myarg in _getMain().PROJECTION_CHOICE_MAP:
-      projection = _getMain().PROJECTION_CHOICE_MAP[myarg]
+    elif myarg in PROJECTION_CHOICE_MAP:
+      projection = PROJECTION_CHOICE_MAP[myarg]
       sortHeaders = True
       if projection == 'FULL':
         fieldsList = []
@@ -1931,7 +1915,7 @@ def doInfoPrintShowCrOSTelemetry():
 
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
   cd = None
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   fieldsList = []
   reverseLists = []
   action = Act.Get()

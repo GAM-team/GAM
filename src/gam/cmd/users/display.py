@@ -6,7 +6,6 @@ Part of the _users_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gam.cmd.users.manage import _filterSchemaFields, _filterUserMultiAttributes, _formatLanguagesList, _getSchemaNameList, _getUserMultiAttributeFilters, _initSchemaParms, getUserLicenses
 
@@ -43,17 +42,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from gamlib import glskus as SKU
 from gamlib import gluprop as UProp
@@ -136,13 +124,15 @@ from gam.util.display import (
     printKeyValueWithCRsNLs,
     printLine,
 )
-from gam.util.entity import getCIGroupMembershipGraph, getEntityArgument, getEntityToModify
+from gam.util.entity import getCIGroupMembershipGraph, getEntityArgument, getEntityToModify, setTrueCustomerId
 from gam.util.errors import entityActionFailedExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import ERROR, executeBatch, writeStdout
 
 def infoUsers(entityList):
+  from gam.cmd.groups.members import addJsonGroupParents, getGroupParents, showGroupParents
+  from gam.cmd.resources import _getBuildingNameById
   def printUserCIGroupMap(parent, group_name_mappings, seen_group_count, edges, direction):
     for a_parent, a_child in edges:
       if a_parent == parent:
@@ -174,7 +164,7 @@ def infoUsers(entityList):
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  _getMain().setTrueCustomerId(cd)
+  setTrueCustomerId(cd)
   getAliases = getBuildingNames = getCIGroupsTree = getGroups = getLicenses = getSchemas = not GC.Values[GC.QUICK_INFO_USER]
   getGroupsTree = getIsGuestUser = False
   FJQC = FormatJSONQuoteChar()
@@ -281,13 +271,13 @@ def infoUsers(entityList):
             for group in user['groups']:
               groupEmail = group['email']
               if groupEmail not in groupParents:
-                _getMain().getGroupParents(cd, groupParents, groupEmail, group['name'], {})
-              _getMain().addJsonGroupParents(groupParents, group, groupEmail)
+                getGroupParents(cd, groupParents, groupEmail, group['name'], {})
+              addJsonGroupParents(groupParents, group, groupEmail)
         if getLicenses:
           user['licenses'] = [SKU.formatSKUIdDisplayName(u_license) for u_license in licenses]
         if getBuildingNames:
           for location in user.get('locations', []):
-            location['buildingName'] = _getMain()._getBuildingNameById(cd, location.get('buildingId', ''))
+            location['buildingName'] = _getBuildingNameById(cd, location.get('buildingId', ''))
         if not getAliases:
           user.pop('aliases', None)
           user.pop('nonEditableAliases', None)
@@ -430,7 +420,7 @@ def infoUsers(entityList):
                 _showType(row, typeKey, typeCustomValue, customTypeKey)
                 Ind.Increment()
                 if getBuildingNames:
-                  row['buildingName'] = _getMain()._getBuildingNameById(cd, row.get('buildingId', ''))
+                  row['buildingName'] = _getBuildingNameById(cd, row.get('buildingId', ''))
                 for key in USER_LOCATIONS_PROPERTY_PRINT_ORDER:
                   if key in row:
                     printKeyValueList([key, row[key]])
@@ -533,8 +523,8 @@ def infoUsers(entityList):
         for group in groups:
           groupEmail = group['email']
           if groupEmail not in groupParents:
-            _getMain().getGroupParents(cd, groupParents, groupEmail, group['name'], {})
-          _getMain().showGroupParents(groupParents, groupEmail, None, 0, 0)
+            getGroupParents(cd, groupParents, groupEmail, group['name'], {})
+          showGroupParents(groupParents, groupEmail, None, 0, 0)
         Ind.Decrement()
       elif getCIGroupsTree:
         printEntity([Ent.GROUP_MEMBERSHIP_TREE, ''])
@@ -669,6 +659,9 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[issuspended <Boolean>] [isarchived <Boolean>]
 # 	[showitemcountonly]
 def doPrintUsers(entityList=None):
+  from gam.cmd.aliases import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters, userFilters
+  from gam.cmd.licenses import doPrintLicenses
+  from gam.cmd.resources import _getBuildingNameById
   def _writeUserEntity(userEntity):
     row = flattenJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS)
     if not FJQC.formatJSON:
@@ -780,7 +773,7 @@ def doPrintUsers(entityList=None):
     if 'languages' in userEntity and not FJQC.formatJSON:
       userEntity['languages'] = _formatLanguagesList(userEntity.pop('languages'), delimiter)
     for location in userEntity.get('locations', []):
-      location['buildingName'] = _getMain()._getBuildingNameById(cd, location.get('buildingId', ''))
+      location['buildingName'] = _getBuildingNameById(cd, location.get('buildingId', ''))
     if quotePlusPhoneNumbers:
       for phone in userEntity.get('phones', []):
         phoneNumber = phone.get('value', '')
@@ -900,7 +893,7 @@ def doPrintUsers(entityList=None):
     'sortHeaders': False,
     'maxGroups': 0
     }
-  kwargsDict = _getMain().initUserGroupDomainQueryFilters()
+  kwargsDict = initUserGroupDomainQueryFilters()
   licenses = {}
   lic = None
   skus = None
@@ -925,7 +918,7 @@ def doPrintUsers(entityList=None):
     elif entityList is None and myarg == 'limittoou':
       orgUnitPath = getOrgUnitItem(pathOnly=True, cd=cd)
       orgUnitPathLower = orgUnitPath.lower()
-    elif entityList is None and _getMain().getUserGroupDomainQueryFilters(myarg, kwargsDict):
+    elif entityList is None and getUserGroupDomainQueryFilters(myarg, kwargsDict):
       pass
     elif entityList is None and myarg in {'deletedonly', 'onlydeleted'}:
       showDeleted = True
@@ -1047,7 +1040,7 @@ def doPrintUsers(entityList=None):
     if printOptions['getLicenseFeed']:
       if skus is None and GM.Globals[GM.LICENSE_SKUS]:
         skus = GM.Globals[GM.LICENSE_SKUS]
-      licenses = _getMain().doPrintLicenses(returnFields=['userId', 'skuId'], skus=skus)
+      licenses = doPrintLicenses(returnFields=['userId', 'skuId'], skus=skus)
     elif printOptions['getLicenseFeedByUser']:
       lic = buildGAPIObject(API.LICENSING)
       if skus is None:
@@ -1070,10 +1063,10 @@ def doPrintUsers(entityList=None):
           fieldsList.extend(USER_FIELDS_CHOICE_MAP['archived'])
     fields = getItemFieldsFromFieldsList('users', fieldsList)
     itemCount = 0
-    for kwargsQuery in _getMain().makeUserGroupDomainQueryFilters(kwargsDict, isSuspended, isArchived, isDisabled):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, isSuspended, isArchived, isDisabled):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
-      query, pquery = _getMain().userFilters(kwargs, query, orgUnitPath)
+      query, pquery = userFilters(kwargs, query, orgUnitPath)
       printGettingAllAccountEntities(Ent.USER, pquery)
       pageMessage = getPageMessage(showFirstLastItems=True)
       try:

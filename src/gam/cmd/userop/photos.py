@@ -5,7 +5,6 @@ Part of the _userop_tmp sub-package."""
 """GAM user operations: Looker Studio, user groups, licenses, photos, profile, sheets, tokens, deprovision."""
 
 import re
-import sys
 
 import googleapiclient.http
 import base64
@@ -46,6 +45,7 @@ from gam.util.entity import getEntityArgument, splitEmailAddressOrUID
 from gam.util.errors import entityDoesNotExistExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
 from gam.util.output import writeStdout
+from gam.util.tags import _substituteForUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -53,20 +53,10 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 from tempfile import TemporaryFile
 
 def updatePhoto(users):
+  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   cd = buildGAPIObject(API.DIRECTORY)
   baseFileIdEntity = drive = owner = None
   sourceFolder = os.getcwd()
@@ -88,7 +78,7 @@ def updatePhoto(users):
         owner, drive = buildGAPIServiceObject(API.DRIVE3, getEmailAddress())
         if not drive:
           return
-        baseFileIdEntity = _getMain().getDriveFileEntity(queryShortcutsOK=False)
+        baseFileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
       else:
         unknownArgumentExit()
   p = re.compile('^(ht|f)tps?://.*$')
@@ -96,12 +86,12 @@ def updatePhoto(users):
   for user in users:
     i += 1
     user, userName, _ = splitEmailAddressOrUID(user)
-    filename = _getMain()._substituteForUser(filenamePattern, user, userName)
+    filename = _substituteForUser(filenamePattern, user, userName)
     if baseFileIdEntity is not None:
       fileIdEntity = baseFileIdEntity.copy()
       if fileIdEntity['query'] is not None:
         fileIdEntity['query'] = _substituteForUser(fileIdEntity['query'], user, userName)
-      _, _, jcount = _getMain()._validateUserGetFileIDs(owner, 0, 0, fileIdEntity, drive=drive, entityType=None)
+      _, _, jcount = _validateUserGetFileIDs(owner, 0, 0, fileIdEntity, drive=drive, entityType=None)
       if jcount == 0:
         entityItemValueListActionNotPerformedWarning([Ent.USER, user], [Ent.OWNER, owner],
                                                      Msg.NO_ENTITIES_FOUND.format(Ent.Singular(Ent.DRIVE_FILE)), i, count)
@@ -213,7 +203,7 @@ def getPhoto(users, profileMode):
     else:
       user = normalizeEmailAddressOrUID(user)
     _, userName, _ = splitEmailAddressOrUID(user)
-    filename = os.path.join(targetFolder, _getMain()._substituteForUser(filenamePattern, user, userName))
+    filename = os.path.join(targetFolder, _substituteForUser(filenamePattern, user, userName))
     try:
       if not showPhotoData:
         entityPerformActionNumItems([Ent.USER, user], 1, Ent.PHOTO, i, count)

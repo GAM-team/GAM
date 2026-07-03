@@ -2,7 +2,6 @@
 
 import json
 import string
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -39,6 +38,7 @@ from gam.util.display import (
 )
 from gam.util.errors import expectedArgumentExit, invalidChoiceExit, unknownArgumentExit
 from gam.util.output import systemErrorExit
+from gam.constants import ACCESS_POLICY_ERROR_RC, NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -46,20 +46,9 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def CAARoleErrorExit(caa):
   sa_email = caa._http.credentials.signer_email
-  systemErrorExit(_getMain().NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC,
+  systemErrorExit(NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC,
                   f'Please grant service account {sa_email} the Access Context Manager Editor role in your GCP organization.')
 
 def buildCAAServiceObject():
@@ -67,9 +56,10 @@ def buildCAAServiceObject():
   return caa
 
 def getAccessPolicy(caa=None):
+  from gam.cmd.project import getCRMOrgId
   if not caa:
     caa = buildCAAServiceObject()
-  parent = _getMain().getCRMOrgId()
+  parent = getCRMOrgId()
   if not parent:
     CAARoleErrorExit(caa)
   try:
@@ -79,13 +69,13 @@ def getAccessPolicy(caa=None):
   except GAPI.permissionDenied:
     CAARoleErrorExit(caa)
   if not aps:
-    systemErrorExit(_getMain().ACCESS_POLICY_ERROR_RC, 'You don\'t seem to have any access policies. That is odd.')
+    systemErrorExit(ACCESS_POLICY_ERROR_RC, 'You don\'t seem to have any access policies. That is odd.')
   elif len(aps) == 1:
     return aps[0]['name']
   for ap in aps:
     if ap.get('title') == 'Access policy created in Cloud Identity Console':
       return ap['name']
-  systemErrorExit(_getMain().ACCESS_POLICY_ERROR_RC, 'Could not find a org level access policy. That is odd.')
+  systemErrorExit(ACCESS_POLICY_ERROR_RC, 'Could not find a org level access policy. That is odd.')
 
 def normalizeCAALevelName(caa, name):
   if name.startswith('accessPolicies/'):
@@ -292,6 +282,7 @@ def doDeleteCAALevel():
 # gam show caalevels
 #	[formatjson]
 def doPrintShowCAALevels():
+  from gam.cmd.notes import NOTES_TIME_OBJECTS
   caa = buildCAAServiceObject()
   ap_name = getAccessPolicy(caa)
   csvPF = CSVPrintFile(['name', 'title']) if Act.csvFormat() else None
@@ -329,7 +320,7 @@ def doPrintShowCAALevels():
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         row = {'name': level['name'], 'title': level['title']}
-        row['JSON'] = json.dumps(cleanJSON(level, timeObjects=_getMain().NOTES_TIME_OBJECTS),
+        row['JSON'] = json.dumps(cleanJSON(level, timeObjects=NOTES_TIME_OBJECTS),
                                  ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
   if csvPF:

@@ -6,7 +6,6 @@ Part of the _userop_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gam.util.args import DELIVERY_SETTINGS_UNDEFINED
 
@@ -62,6 +61,7 @@ from gam.util.display import (
 from gam.util.entity import ALL_GROUP_ROLES, getEntityArgument, getEntityList, getUserObjectEntity
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.output import setSysExitRC
+from gam.constants import CHECK_USER_GROUPS_ERROR_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -69,29 +69,19 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def processLookerStudioPermissions(users):
+  from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermissions, _validateUserGetLookerStudioAssetIds, getLookerStudioAssetSelectionParameters, initLookerStudioAssetSelectionParameters
   action = Act.Get()
   if action == Act.CREATE:
     action = Act.ADD
   modifier = LOOKERSTUDIO_PERMISSION_MODIFIER_MAP[action]
-  parameters, assetTypes = _getMain().initLookerStudioAssetSelectionParameters()
+  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
   permissions = {}
   assetIdEntity = None
   showDetails = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if _getMain().getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    if getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
       assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
@@ -115,11 +105,11 @@ def processLookerStudioPermissions(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _getMain()._validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getMain()._getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
+      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
     entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.LOOKERSTUDIO_PERMISSION, modifier, jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
@@ -140,7 +130,7 @@ def processLookerStudioPermissions(users):
                                name=asset['name'], body=body)
           entityActionPerformed([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
           if showDetails:
-            _getMain()._showLookerStudioPermissions(user, asset, results, j, jcount, None)
+            _showLookerStudioPermissions(user, asset, results, j, jcount, None)
         except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
           entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
           continue
@@ -163,6 +153,7 @@ def processLookerStudioPermissions(users):
 #	[role editor|owner|viewer]
 #	[formatjson]
 def printShowLookerStudioPermissions(users):
+  from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermissions, _validateUserGetLookerStudioAssetIds, getLookerStudioAssetSelectionParameters, initLookerStudioAssetSelectionParameters
   def _printLookerStudioPermissions(user, asset, permissions):
     row = flattenJSON(permissions, flattened={'User': user, 'assetId': asset['name']},
                       simpleLists=['members'], delimiter=delimiter)
@@ -175,14 +166,14 @@ def printShowLookerStudioPermissions(users):
   csvPF = CSVPrintFile(['User', 'assetId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  parameters, assetTypes = _getMain().initLookerStudioAssetSelectionParameters()
+  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
   assetIdEntity = None
   role = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif _getMain().getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    elif getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
       assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
@@ -195,11 +186,11 @@ def printShowLookerStudioPermissions(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _getMain()._validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getMain()._getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
+      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
     if not csvPF:
@@ -223,7 +214,7 @@ def printShowLookerStudioPermissions(users):
         break
       if not csvPF:
         Ind.Increment()
-        _getMain()._showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC)
+        _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC)
         Ind.Decrement()
       else:
         _printLookerStudioPermissions(user, asset, permissions)
@@ -615,7 +606,7 @@ def _getUserGroupDomainCustomerId(myarg, kwargs):
 #	[roles <GroupRoleList>] [includederivedmembership] [csv] <GroupEntity>
 def checkUserInGroups(users):
   def _setCheckError():
-    sysRC['sysRC'] = _getMain().CHECK_USER_GROUPS_ERROR_RC
+    sysRC['sysRC'] = CHECK_USER_GROUPS_ERROR_RC
 
   def _checkMember(result):
     role = result.get('role', Ent.MEMBER)
@@ -886,6 +877,7 @@ def printShowUserGroups(users):
 #	[roles <GroupRoleList>]
 #	[formatjson]
 def printShowGroupTree(users):
+  from gam.cmd.groups.members import addJsonGroupParents, getGroupParents, printGroupParents, showGroupParents
   cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
   csvPF = CSVPrintFile(['User', 'Group', 'Name']) if Act.csvFormat() else None
@@ -952,7 +944,7 @@ def printShowGroupTree(users):
       j += 1
       groupEmail = group['email']
       if groupEmail not in groupParents:
-        _getMain().getGroupParents(cd, groupParents, groupEmail, group['name'], kwargs)
+        getGroupParents(cd, groupParents, groupEmail, group['name'], kwargs)
       if rolesSet:
         try:
           result = callGAPI(cd.members(), 'get',
@@ -972,17 +964,17 @@ def printShowGroupTree(users):
         role = None
       if not FJQC.formatJSON:
         if not csvPF:
-          _getMain().showGroupParents(groupParents, groupEmail, role, j, jcount)
+          showGroupParents(groupParents, groupEmail, role, j, jcount)
         else:
           row = {'User': user, 'Group': groupEmail, 'Name': group['name'], 'parents': []}
           if role is not None:
             row['Role'] = role
-          _getMain().printGroupParents(groupParents, groupEmail, row, csvPF, delimiter, showParentsAsList)
+          printGroupParents(groupParents, groupEmail, row, csvPF, delimiter, showParentsAsList)
       else:
         groupInfo = {'email': groupEmail, 'name': group['name'], 'parents': []}
         if role is not None:
           groupInfo['role'] = role
-        _getMain().addJsonGroupParents(groupParents, groupInfo, groupEmail)
+        addJsonGroupParents(groupParents, groupInfo, groupEmail)
         if not csvPF:
           printLine(json.dumps(cleanJSON(groupInfo), ensure_ascii=False, sort_keys=True))
         else:

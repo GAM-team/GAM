@@ -9,7 +9,6 @@ Part of the drive sub-package, extracted from drive.py."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 import re
-import sys
 
 from gam.cmd.drive.core import DFA_IGNORE_DEFAULT_VISIBILITY, DFA_KEEP_REVISION_FOREVER, DFA_SEARCHARGS
 import os
@@ -50,11 +49,15 @@ from gam.util.display import (
     printEntityKVList,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+)
 from gam.util.errors import deprecatedArgument, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN, closeFile
 from gam.util.gdoc import openCSVFileReader
 from gam.util.output import writeStdout
+from gam.constants import ANY_NON_TRASHED_WITH_PARENTS, WITH_PARENTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -89,16 +92,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 MY_DRIVE = 'My Drive'
 TEAM_DRIVE = 'Drive'
@@ -1229,7 +1222,7 @@ def copyDriveFile(users):
     sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
                                    throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                    retryReasons=[GAPI.UNKNOWN_ERROR],
-                                   q=_getMain().WITH_PARENTS.format(folderId),
+                                   q=WITH_PARENTS.format(folderId),
                                    orderBy='folder desc,name,modifiedTime desc',
                                    fields='nextPageToken,files(id,name,parents,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
                                      'description,folderColorRgb,mimeType,modifiedTime,ownedByMe,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare,'\
@@ -1241,7 +1234,7 @@ def copyDriveFile(users):
         subTargetChildren = callGAPIpages(drive.files(), 'list', 'files',
                                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                           retryReasons=[GAPI.UNKNOWN_ERROR],
-                                          q=_getMain().ANY_NON_TRASHED_WITH_PARENTS.format(newFolderId),
+                                          q=ANY_NON_TRASHED_WITH_PARENTS.format(newFolderId),
                                           orderBy='folder desc,name,modifiedTime desc',
                                           fields='nextPageToken,files(id,name,capabilities,mimeType,modifiedTime)',
                                           **parentParms[DFA_SEARCHARGS])
@@ -1257,7 +1250,7 @@ def copyDriveFile(users):
         childMimeType = child['mimeType']
         if childId in copiedTargetFiles: # Don't recopy file/folder copied into a sub-folder
           continue
-        kvList = [Ent.USER, user, _getMain()._getEntityMimeType(child), childNameId]
+        kvList = [Ent.USER, user, _getEntityMimeType(child), childNameId]
         if childId in skipFileIdEntity['list']:
           if not suppressNotSelectedMessages:
             entityActionNotPerformedWarning(kvList, Msg.IN_SKIPIDS, k, kcount)
@@ -1281,7 +1274,7 @@ def copyDriveFile(users):
           newChildName = childName
 # If source child has already been copied, make shortcut to its copy
         if childId in copiedSourceFiles:
-          _makeCopyShortcut(drive, user, k, kcount, _getMain()._getEntityMimeType(child), childId, childName,
+          _makeCopyShortcut(drive, user, k, kcount, _getEntityMimeType(child), childId, childName,
                             newChildName, newFolderId, newFolderName, copiedSourceFiles[childId])
           continue
         child.pop('parents', [])
@@ -1451,7 +1444,7 @@ def copyDriveFile(users):
         sourceName = source['name']
         sourceNameId = f"{sourceName}({source['id']})"
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
-        kvList = [Ent.USER, user, _getMain()._getEntityMimeType(source), sourceNameId]
+        kvList = [Ent.USER, user, _getEntityMimeType(source), sourceNameId]
         if fileId in copiedSourceFiles:
           entityActionNotPerformedWarning(kvList, Msg.DUPLICATE, j, jcount)
           _incrStatistic(statistics, STAT_FILE_DUPLICATE)
@@ -1557,7 +1550,7 @@ def copyDriveFile(users):
                 targetId = shortcut['targetId']
                 if targetId in copiedSourceFiles and copyMoveOptions['copiedShortcutsPointToCopiedFiles']:
                   targetId = copiedSourceFiles[targetId]
-                _makeCopyShortcut(drive, user, k, kcount, _getMain()._getEntityMimeType(shortcut), shortcut['childId'], shortcut['childName'],
+                _makeCopyShortcut(drive, user, k, kcount, _getEntityMimeType(shortcut), shortcut['childId'], shortcut['childName'],
                                   shortcut['newChildName'], shortcut['newFolderId'], shortcut['newFolderName'], targetId)
               Ind.Decrement()
           else:

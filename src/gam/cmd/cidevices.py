@@ -32,6 +32,7 @@ from gam.util.args import (
     getInteger,
     getString,
     getTimeOrDeltaFromNow,
+    substituteQueryTimes,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -54,7 +55,7 @@ from gam.util.display import (
     printGettingAllAccountEntities,
     printLine,
 )
-from gam.util.entity import _validateDeviceQuery, convertEntityToList, getDeviceQueries
+from gam.util.entity import _getCustomersCustomerIdNoC, _validateDeviceQuery, convertEntityToList, getDeviceQueries, setTrueCustomerId
 from gam.util.errors import (
     csvFieldErrorExit,
     invalidArgumentExit,
@@ -71,17 +72,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def buildGAPICIDeviceServiceObject():
   if not GC.Values[GC.ENABLE_DASA]:
@@ -114,7 +104,7 @@ def getUpdateDeleteCIDeviceOptions(entityType, count, action, doit, actionChoice
 
 def getCIDeviceEntity():
   ci = buildGAPICIDeviceServiceObject()
-  customer = _getMain()._getCustomersCustomerIdNoC()
+  customer = _getCustomersCustomerIdNoC()
   if checkArgumentPresent('devicesn'):
     query = f'serial:{getString(Cmd.OB_SERIAL_NUMBER)}'
   elif checkArgumentPresent('query'):
@@ -152,7 +142,7 @@ DEVICE_USERNAME_CLIENT_STATE_PATTERN = re.compile(r'^(devices/.+/deviceUsers/.+)
 DEVICE_USERNAME_FORMAT_REQUIRED = 'devices/<String>/deviceUsers/<String>'
 def getCIDeviceUserEntity():
   ci = buildGAPICIDeviceServiceObject()
-  customer = _getMain()._getCustomersCustomerIdNoC()
+  customer = _getCustomersCustomerIdNoC()
   if checkArgumentPresent('query'):
     query = getString(Cmd.OB_QUERY)
   else:
@@ -206,7 +196,7 @@ DEVICE_TIME_OBJECTS = {'createTime', 'firstSyncTime', 'lastSyncTime', 'lastUpdat
 # gam create device serialnumber <String> devicetype <DeviceType> [assettag <String>]
 def doCreateCIDevice():
   ci = buildGAPICIDeviceServiceObject()
-  customer = _getMain()._getCustomersCustomerIdNoC()
+  customer = _getCustomersCustomerIdNoC()
   body = {'deviceType': '', 'serialNumber': ''}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -300,7 +290,7 @@ DEVICE_MISSING_ACTION_MAP = {
 #	[preview]
 def doSyncCIDevices():
   ci = buildGAPICIDeviceServiceObject()
-  customer = _getMain()._getCustomersCustomerIdNoC()
+  customer = _getCustomersCustomerIdNoC()
   queryTimes = {}
   queries = [None]
   filename = None
@@ -365,7 +355,7 @@ def doSyncCIDevices():
   fields = f'nextPageToken,devices({",".join(fieldsList)})'
   remoteDevices = {}
   remoteDeviceMap = {}
-  _getMain().substituteQueryTimes(queries, queryTimes)
+  substituteQueryTimes(queries, queryTimes)
   for query in queries:
     printGettingAllAccountEntities(Ent.COMPANY_DEVICE, query)
     pageMessage = getPageMessage()
@@ -603,7 +593,7 @@ DEVICE_ORDERBY_CHOICE_MAP = {
 # 	[showitemcountonly]
 def doPrintCIDevices():
   ci = buildGAPICIDeviceServiceObject()
-  customer = _getMain()._getCustomersCustomerIdNoC()
+  customer = _getCustomersCustomerIdNoC()
   parent = 'devices/-'
   csvPF = CSVPrintFile(['name'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -646,7 +636,7 @@ def doPrintCIDevices():
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   fields = getItemFieldsFromFieldsList('devices', fieldsList)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
-  _getMain().substituteQueryTimes(queries, queryTimes)
+  substituteQueryTimes(queries, queryTimes)
   if FJQC.formatJSON and oneUserPerRow:
     csvPF.SetJSONTitles(['name', 'user.name', 'JSON'])
   itemCount = 0
@@ -841,7 +831,7 @@ def doInfoCIDeviceUser():
 # 	[showitemcountonly]
 def doPrintCIDeviceUsers():
   ci = buildGAPICIDeviceServiceObject()
-  customer = _getMain()._getCustomersCustomerIdNoC()
+  customer = _getCustomersCustomerIdNoC()
   csvPF = CSVPrintFile(['name'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   OBY = OrderBy(DEVICE_ORDERBY_CHOICE_MAP)
@@ -873,7 +863,7 @@ def doPrintCIDeviceUsers():
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
-  _getMain().substituteQueryTimes(queries, queryTimes)
+  substituteQueryTimes(queries, queryTimes)
   itemCount = 0
   for query in queries:
     printGettingAllAccountEntities(Ent.DEVICE_USER, query)
@@ -930,7 +920,7 @@ DEVICE_USER_CUSTOM_VALUE_TYPE_CHOICE_MAP = {
 
 # gam info deviceuserstate <DeviceUserEntity> [clientid <String>]
 def doInfoCIDeviceUserState():
-  _getMain().setTrueCustomerId()
+  setTrueCustomerId()
   entityList, ci, customer, _ = getCIDeviceUserEntity()
   customerID = customer[10:]
   client_id = f'{customerID}-gam'
@@ -968,7 +958,7 @@ def doInfoCIDeviceUserState():
 #	[healthscore verypoor|poor|neutral|good|verygood] [scorereason clear|<String>]
 #	(customvalue clear|(bool|boolean <String> <Boolean>)|(number <String> <Integer>)(string <String> <String>))*
 def doUpdateCIDeviceUserState():
-  _getMain().setTrueCustomerId()
+  setTrueCustomerId()
   entityList, ci, customer, _ = getCIDeviceUserEntity()
   customerID = customer[10:]
   client_id = f'{customerID}-gam'

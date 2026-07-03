@@ -5,7 +5,6 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 import re
-import sys
 
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
@@ -51,23 +50,13 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import executeBatch, setSysExitRC
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getUserGmailLabels(gmail, user, i, count, fields):
   try:
@@ -701,7 +690,7 @@ def printShowLabels(users):
       if not csvPF:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LABEL, i, count)
       if jcount == 0:
-        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(NO_ENTITIES_FOUND_RC)
         continue
       if not csvPF:
         labelTree = _buildLabelTree(labels)

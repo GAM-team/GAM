@@ -6,7 +6,6 @@ Part of the _vault_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gam.cmd.vault.matters import _buildVaultQuery, _validateVaultQuery, convertHoldNameToID, convertMatterNameToID, convertQueryNameToID, formatVaultNameId, getMatterItem, warnMatterNotOpen
 
@@ -28,6 +27,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.constants import NO_ENTITIES_FOUND_RC, PROJECTION_CHOICE_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -35,16 +35,6 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from gam.cmd.vault.matters import (
     VAULT_CORPUS_ARGUMENT_MAP,
@@ -120,7 +110,7 @@ from gam.util.errors import (
     unknownArgumentExit,
     usageErrorExit,
 )
-from gam.util.orgunits import _getMain, getAllParentOrgUnitsForUser, getOrgUnitId
+from gam.util.orgunits import getAllParentOrgUnitsForUser, getOrgUnitId
 from gam.util.output import setSysExitRC, writeStdout
 
 def _cleanVaultHold(hold, cd):
@@ -559,7 +549,7 @@ def doPrintShowVaultHolds():
   jcount = len(results)
   if not csvPF:
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
   j = 0
   for matter in results:
     j += 1
@@ -691,13 +681,14 @@ def printShowUserVaultHolds(entityList):
     printKeyValueList(['Total Holds', totalHolds])
 
 def _cleanVaultQuery(query, cd, drive):
+  from gam.cmd.drive.core import _getSharedDriveNameFromId
   if 'query' in query:
     if cd is not None and 'orgUnitInfo' in query['query']:
       query['query']['orgUnitInfo']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, query['query']['orgUnitInfo']['orgUnitId'])
     if drive is not None and 'sharedDriveInfo' in query['query']:
       query['query']['sharedDriveInfo']['sharedDriveNames'] = []
       for sharedDriveId in query['query']['sharedDriveInfo']['sharedDriveIds']:
-        query['query']['sharedDriveInfo']['sharedDriveNames'].append(_getMain()._getSharedDriveNameFromId(drive, sharedDriveId, False))
+        query['query']['sharedDriveInfo']['sharedDriveNames'].append(_getSharedDriveNameFromId(drive, sharedDriveId, False))
     query['query'].pop('searchMethod', None)
     query['query'].pop('teamDriveInfo', None)
 
@@ -923,7 +914,7 @@ def doPrintShowVaultQueries():
   jcount = len(results)
   if not csvPF:
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
   j = 0
   for matter in results:
     j += 1
@@ -1203,8 +1194,8 @@ def doInfoVaultMatter():
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in _getMain().PROJECTION_CHOICE_MAP:
-      view = _getMain().PROJECTION_CHOICE_MAP[myarg]
+    if myarg in PROJECTION_CHOICE_MAP:
+      view = PROJECTION_CHOICE_MAP[myarg]
     elif getFieldsList(myarg, VAULT_MATTER_FIELDS_CHOICE_MAP, fieldsList, initialField=['matterId', 'name']):
       pass
     else:
@@ -1246,8 +1237,8 @@ def doPrintShowVaultMatters():
           matterStatesList.append(VAULT_MATTER_STATE_MAP[state])
         else:
           invalidChoiceExit(state, list(VAULT_MATTER_STATE_MAP), True)
-    elif myarg in _getMain().PROJECTION_CHOICE_MAP:
-      view = _getMain().PROJECTION_CHOICE_MAP[myarg]
+    elif myarg in PROJECTION_CHOICE_MAP:
+      view = PROJECTION_CHOICE_MAP[myarg]
     elif getFieldsList(myarg, VAULT_MATTER_FIELDS_CHOICE_MAP, fieldsList, initialField=['matterId', 'name']):
       pass
     else:
@@ -1282,7 +1273,7 @@ def doPrintShowVaultMatters():
     cd = buildGAPIObject(API.DIRECTORY)
   if not csvPF:
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not FJQC.formatJSON:
       performActionNumItems(jcount, Ent.VAULT_MATTER)
     Ind.Increment()

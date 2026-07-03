@@ -5,7 +5,6 @@ Part of the drive sub-package, extracted from drive.py."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 import re
-import sys
 
 from gam.cmd.drive.core import _getSharedDriveNameFromId, _mapDrive2QueryToDrive3, cleanFileIDsList, escapeDriveFileName, getEscapedDriveFileName, initDriveFileEntity
 from gam.cmd.drive.revisions import _stripMeInOwners, _stripNotMeInOwners, _updateAnyOwnerQuery
@@ -19,6 +18,8 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.util.entity import QUERY_SHORTCUTS_MAP
+from gam.constants import MY_DRIVE, TEAM_DRIVE
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -53,8 +54,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
 
 from gam.cmd.drive.core import (
     MimeTypeCheck,
@@ -87,13 +86,6 @@ from gam.util.args import (
 from gam.util.display import entityActionFailedWarning, userDriveServiceNotEnabledWarning
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def initFileTree(drive, shareddrive, DLP, shareddriveFields, showParent, user, i, count):
   fileTree = {
@@ -157,7 +149,7 @@ def extendFileTree(fileTree, feed, DLP, stripCRsFromName):
     fileId = f_file['id']
     if not f_file.get('parents', []):
       if not f_file.get('driveId'):
-        if f_file['mimeType'] == MIMETYPE_GA_FOLDER and f_file['name'] == _getMain().MY_DRIVE:
+        if f_file['mimeType'] == MIMETYPE_GA_FOLDER and f_file['name'] == MY_DRIVE:
           f_file['parents'] = []
         else:
           f_file['parents'] = [ORPHANS] if f_file.get('ownedByMe', False) and 'sharedWithMeTime' not in f_file else [SHARED_WITHME]
@@ -182,7 +174,7 @@ def extendFileTreeParents(drive, fileTree, fields):
         if not result.get('driveId'):
           result['parents'] = [ORPHANS] if result.get('ownedByMe', False) and 'sharedWithMeTime' not in result else [SHARED_WITHME]
         else:
-          if result['name'] == _getMain().TEAM_DRIVE:
+          if result['name'] == TEAM_DRIVE:
             result['name'] = _getSharedDriveNameFromId(drive, result['driveId'])
           result['parents'] = [SHARED_DRIVES] if 'sharedWithMeTime' not in result else [SHARED_WITHME]
       fileTree[fileId]['info'] = result
@@ -609,9 +601,9 @@ class DriveListParameters():
         self.AppendToQuery(Cmd.Previous().strip()[6:])
       elif self.myargOptions['allowQuery'] and myarg == 'fullquery':
         self.SetQuery(getString(Cmd.OB_QUERY, minLen=0))
-      elif self.myargOptions['allowQuery'] and myarg in _getMain().QUERY_SHORTCUTS_MAP:
+      elif self.myargOptions['allowQuery'] and myarg in QUERY_SHORTCUTS_MAP:
         self.UpdateAnyOwnerQuery()
-        self.AppendToQuery(_getMain().QUERY_SHORTCUTS_MAP[myarg])
+        self.AppendToQuery(QUERY_SHORTCUTS_MAP[myarg])
       elif self.myargOptions['allowChoose'] and myarg == 'choose':
         myarg = checkGetArgument()
         if myarg in DRIVE_BY_NAME_CHOICE_MAP:
@@ -641,7 +633,7 @@ class DriveListParameters():
       if (myarg == 'query' or
           myarg.startswith('query:') or
           myarg == 'fullquery' or
-          myarg in _getMain().QUERY_SHORTCUTS_MAP or
+          myarg in QUERY_SHORTCUTS_MAP or
           myarg in DRIVE_BY_NAME_CHOICE_MAP):
         usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('select', myarg))
       return False

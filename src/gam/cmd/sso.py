@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -50,17 +49,6 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def getCIOrgunitID(cd, orgunit):
   ou_id = getOrgUnitId(cd, orgunit)[1]
   if ou_id.startswith('id:'):
@@ -68,9 +56,11 @@ def getCIOrgunitID(cd, orgunit):
   return f'orgUnits/{ou_id}'
 
 def _getInboundSSOProfiles(ci, mode):
-  customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
+  from gam.cmd.ciuserinvitations import INBOUNDSSO_ALL_OIDC, INBOUNDSSO_ALL_SAML
+  from gam.cmd.reseller import normalizeChannelCustomerID
+  customer = normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
   profiles = []
-  if mode in _getMain().INBOUNDSSO_ALL_SAML:
+  if mode in INBOUNDSSO_ALL_SAML:
     try:
       profiles.extend(callGAPIpages(ci.inboundSamlSsoProfiles(), 'list', 'inboundSamlSsoProfiles',
                                     throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
@@ -81,7 +71,7 @@ def _getInboundSSOProfiles(ci, mode):
             GAPI.forbidden, GAPI.badRequest, GAPI.invalid,
             GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.INBOUND_SSO_PROFILE, customer], str(e))
-  if mode in _getMain().INBOUNDSSO_ALL_OIDC:
+  if mode in INBOUNDSSO_ALL_OIDC:
     try:
       profiles.extend(callGAPIpages(ci.inboundOidcSsoProfiles(), 'list', 'inboundOidcSsoProfiles',
                                     throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
@@ -192,7 +182,8 @@ def _processInboundSSOProfileResult(result, returnNameOnly, kvlist, function):
     writeStdout('inProgress\n')
 
 def _getInboundSSOModeService(ci):
-  mode = getChoice(_getMain().INBOUNDSSO_INPUT_MODE_CHOICE_MAP, defaultChoice='saml', mapChoice=True)
+  from gam.cmd.ciuserinvitations import INBOUNDSSO_INPUT_MODE_CHOICE_MAP
+  mode = getChoice(INBOUNDSSO_INPUT_MODE_CHOICE_MAP, defaultChoice='saml', mapChoice=True)
   service = ci.inboundSamlSsoProfiles() if mode == 'saml' else ci.inboundOidcSsoProfiles()
   return (mode, service)
 
@@ -200,9 +191,10 @@ def _getInboundSSOModeService(ci):
 #	[entityid <String>] [loginurl <URL>] [logouturl <URL>] [changepasswordurl <URL>]
 #	[returnnameonly]
 def doCreateInboundSSOProfile():
+  from gam.cmd.reseller import normalizeChannelCustomerID
   ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   mode, service = _getInboundSSOModeService(ci)
-  body = {'customer': _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID]),
+  body = {'customer': normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID]),
           'displayName': 'SSO Profile'
          }
   returnNameOnly, body = _getInboundSSOProfileArguments(body, mode)
@@ -268,9 +260,10 @@ def doDeleteInboundSSOProfile():
     entityActionFailedWarning(kvlist, str(e))
 
 def _getInboundSSOProfileByName(ci, mode, name):
+  from gam.cmd.ciuserinvitations import INBOUNDSSO_ALL_OIDC, INBOUNDSSO_ALL_SAML
   notFound = False
   kvlist = [Ent.INBOUND_SSO_PROFILE, name]
-  if mode in _getMain().INBOUNDSSO_ALL_SAML:
+  if mode in INBOUNDSSO_ALL_SAML:
     try:
       return callGAPI(ci.inboundSamlSsoProfiles(), 'get',
                       throwReasons=GAPI.CISSO_GET_THROW_REASONS,
@@ -282,7 +275,7 @@ def _getInboundSSOProfileByName(ci, mode, name):
     except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
             GAPI.badRequest, GAPI.invalid, GAPI.systemError, GAPI.permissionDenied, GAPI.internalError, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning(kvlist, str(e))
-  if mode in _getMain().INBOUNDSSO_ALL_OIDC:
+  if mode in INBOUNDSSO_ALL_OIDC:
     try:
       return callGAPI(ci.inboundOidcSsoProfiles(), 'get',
                       throwReasons=GAPI.CISSO_GET_THROW_REASONS,
@@ -300,8 +293,9 @@ def _getInboundSSOProfileByName(ci, mode, name):
 
 # gam info inboundssoprofile [all|saml|oidc] <SSOProfileItem> [formatjson]
 def doInfoInboundSSOProfile():
+  from gam.cmd.ciuserinvitations import INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP
   ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  mode = getChoice(_getMain().INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
+  mode = getChoice(INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
   name = getString(Cmd.OB_STRING)
   FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   name = _convertInboundSSOProfileDisplaynameToName(ci, mode, name)
@@ -317,12 +311,14 @@ def doInfoInboundSSOProfile():
 # gam print inboundssoprofile [all|saml|oidc] [todrive <ToDriveAttribute>*]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowInboundSSOProfiles():
+  from gam.cmd.ciuserinvitations import INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP
+  from gam.cmd.reseller import normalizeChannelCustomerID
   ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
+  customer = normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
   csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   cfilter = f'customer=="{customer}"'
-  mode = getChoice(_getMain().INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
+  mode = getChoice(INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP, defaultChoice='all', mapChoice=True)
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -399,6 +395,7 @@ def _processInboundSSOCredentialsResult(result, kvlist, function):
 # gam create inboundssocredentials profile <SSOProfileItem>
 #	(pemfile <FileName>)|(generatekey [keysize 1024|2048|4096]) [replaceolddest]
 def doCreateInboundSSOCredential():
+  from gam.cmd.project import _generatePrivateKeyAndPublicCert
   ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
   mode = 'saml'
   profile = None
@@ -444,7 +441,7 @@ def doCreateInboundSSOCredential():
       writeStdout(Msg.NO_CREDENTIALS_REPLACEMENT.format(Ent.Singular(Ent.INBOUND_SSO_PROFILE), profile,
                                                         count, Ent.Choose(Ent.INBOUND_SSO_CREDENTIALS, count)))
   if generateKey:
-    privKey, pemData = _getMain()._generatePrivateKeyAndPublicCert('', '', 'GAM', keySize, b64enc_pub=False)
+    privKey, pemData = _generatePrivateKeyAndPublicCert('', '', 'GAM', keySize, b64enc_pub=False)
     timestamp = arrow.now(GC.Values[GC.TIMEZONE]).strftime('%Y%m%d-%I%M%S')
     priv_file = f'privatekey-{timestamp}.pem'
     writeFile(priv_file, privKey)
@@ -579,7 +576,8 @@ def _getInboundSSOAssignment(ci, name):
   return None
 
 def _getInboundSSOAssignments(ci):
-  customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
+  from gam.cmd.reseller import normalizeChannelCustomerID
+  customer = normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
   try:
     return callGAPIpages(ci.inboundSsoAssignments(), 'list', 'inboundSsoAssignments',
                          throwReasons=GAPI.CISSO_LIST_THROW_REASONS,
@@ -626,6 +624,7 @@ def _getInboundSSOAssignmentByTarget(ci, cd, target):
   usageErrorExit(Msg.NO_SSO_PROFILE_ASSIGNED.format(targetType, target))
 
 def _getInboundSSOAssignmentArguments(ci, cd, body):
+  from gam.cmd.ciuserinvitations import INBOUNDSSO_MODE_CHOICE_MAP
   mode = None
   rank = 0
   while Cmd.ArgumentsRemaining():
@@ -633,7 +632,7 @@ def _getInboundSSOAssignmentArguments(ci, cd, body):
     if myarg == 'rank':
       rank = getInteger(minVal=1)
     elif myarg == 'mode':
-      body['ssoMode'] = getChoice(_getMain().INBOUNDSSO_MODE_CHOICE_MAP, mapChoice=True)
+      body['ssoMode'] = getChoice(INBOUNDSSO_MODE_CHOICE_MAP, mapChoice=True)
       if body['ssoMode'] == 'SAML_SSO':
         mode = 'saml'
         profile = 'inboundSamlSsoProfile'
@@ -700,9 +699,10 @@ def _processInboundSSOAssignmentResult(result, kvlist, ci, cd, function):
 #	(mode sso_off)|(mode saml_sso profile <SSOProfileItem>)|(mode oidc_sso profile <SSOProfileName>}|(mode domain_wide_saml_if_enabled)
 #	[neverredirect]
 def doCreateInboundSSOAssignment():
+  from gam.cmd.reseller import normalizeChannelCustomerID
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  body = {'customer': _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])}
+  body = {'customer': normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])}
   body = _getInboundSSOAssignmentArguments(ci, cd, body)
   if not body:
     return
@@ -795,9 +795,10 @@ def doInfoInboundSSOAssignment():
 # gam print inboundssoassignments [todrive <ToDriveAttribute>*]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowInboundSSOAssignments():
+  from gam.cmd.reseller import normalizeChannelCustomerID
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_INBOUND_SSO)
-  customer = _getMain().normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
+  customer = normalizeChannelCustomerID(GC.Values[GC.CUSTOMER_ID])
   csvPF = CSVPrintFile(['name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   cfilter = f'customer=="{customer}"'

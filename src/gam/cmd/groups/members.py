@@ -6,7 +6,6 @@ Part of the _groups_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gam.util.args import formatLocalTime
 
@@ -25,15 +24,12 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.constants import ONE_KILO_BYTES, ONE_MEGA_BYTES
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
-
-
-def _getMain():
-  return sys.modules['gam']
 
 
 from gam.cmd.groups.groups import ALL_GROUP_MEMBER_TYPES, MEMBEROPTION_DISPLAYMATCH, MEMBEROPTION_GETDELIVERYSETTINGS, MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED, MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_MATCHPATTERN, MEMBEROPTION_MEMBERNAMES, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE, getGroupMemberTypes, GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
@@ -113,18 +109,12 @@ from gam.util.entity import (
     getEntityArgument,
     getEntityList,
     getEntityToModify,
+    setTrueCustomerId,
 )
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import executeBatch, writeStderr, writeStdout
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def initMemberOptions():
   return [False, False, False, False, None, None, False, None, True]
@@ -319,6 +309,8 @@ def _showCIGroup(group, groupEmail, i=0, count=0):
   Ind.Decrement()
 
 def infoGroups(entityList):
+  from gam.cmd.mobile import GROUP_ATTRIBUTES_SET, GROUP_DEPRECATED_ATTRIBUTES, GROUP_FIELDS_WITH_CRS_NLS, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_SETTINGS_ATTRIBUTES
+  from gam.cmd.users.manage import INFO_USER_OPTIONS
   def initGroupFieldsLists():
     if not groupFieldsLists['cd']:
       groupFieldsLists['cd'] = ['email']
@@ -375,7 +367,7 @@ def infoGroups(entityList):
     elif myarg in GROUP_FIELDS_CHOICE_MAP:
       initGroupFieldsLists()
       addFieldToFieldsList(myarg, GROUP_FIELDS_CHOICE_MAP, groupFieldsLists['cd'])
-    elif myarg in _getMain().GROUP_ATTRIBUTES_SET:
+    elif myarg in GROUP_ATTRIBUTES_SET:
       initGroupFieldsLists()
       attrProperties = getGroupAttrProperties(myarg)
       groupFieldsLists['gs'].extend([attrProperties[0]])
@@ -387,7 +379,7 @@ def infoGroups(entityList):
         else:
           attrProperties = getGroupAttrProperties(field)
           if attrProperties is None:
-            invalidChoiceExit(field, list(GROUP_FIELDS_CHOICE_MAP)+list(_getMain().GROUP_ATTRIBUTES_SET), True)
+            invalidChoiceExit(field, list(GROUP_FIELDS_CHOICE_MAP)+list(GROUP_ATTRIBUTES_SET), True)
           groupFieldsLists['gs'].extend([attrProperties[0]])
     elif myarg == 'cifields':
       initGroupFieldsLists()
@@ -397,7 +389,7 @@ def infoGroups(entityList):
         else:
           invalidChoiceExit(field, list(CIGROUP_FIELDS_CHOICE_MAP), True)
 # Ignore info user arguments that may have come from whatis
-    elif myarg in _getMain().INFO_USER_OPTIONS:
+    elif myarg in INFO_USER_OPTIONS:
       if myarg == 'schemas':
         getString(Cmd.OB_SCHEMA_NAME_LIST)
     else:
@@ -502,19 +494,19 @@ def infoGroups(entityList):
           for val in value:
             printKeyValueList([val])
           Ind.Decrement()
-        elif key not in _getMain().GROUP_FIELDS_WITH_CRS_NLS:
+        elif key not in GROUP_FIELDS_WITH_CRS_NLS:
           printKeyValueList([key, value])
         else:
           printKeyValueWithCRsNLs(key, value)
       if settings:
-        for _, attr in sorted(_getMain().GROUP_SETTINGS_ATTRIBUTES.items()):
+        for _, attr in sorted(GROUP_SETTINGS_ATTRIBUTES.items()):
           key = attr[0]
           if key in settings:
-            if key not in _getMain().GROUP_FIELDS_WITH_CRS_NLS:
+            if key not in GROUP_FIELDS_WITH_CRS_NLS:
               printKeyValueList([key, settings[key]])
             else:
               printKeyValueWithCRsNLs(key, settings[key])
-        for key in _getMain().GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
+        for key in GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
           if key in settings:
             printKeyValueList([key, settings[key]])
             Ind.Increment()
@@ -522,7 +514,7 @@ def infoGroups(entityList):
           else:
             showTitle = True
           if showDeprecatedAttributes:
-            for _, subattr in sorted(_getMain().GROUP_MERGED_TO_COMPONENT_MAP[key].items()):
+            for _, subattr in sorted(GROUP_MERGED_TO_COMPONENT_MAP[key].items()):
               subkey = subattr[0]
               if subkey in settings:
                 if showTitle:
@@ -534,7 +526,7 @@ def infoGroups(entityList):
             Ind.Decrement()
         if showDeprecatedAttributes:
           showTitle = True
-          for _, attr in sorted(_getMain().GROUP_DEPRECATED_ATTRIBUTES.items()):
+          for _, attr in sorted(GROUP_DEPRECATED_ATTRIBUTES.items()):
             subkey = attr[0]
             if subkey in settings:
               if showTitle:
@@ -544,7 +536,7 @@ def infoGroups(entityList):
               if subkey != 'maxMessageBytes':
                 printKeyValueList([subkey, settings[subkey]])
               else:
-                printKeyValueList([subkey, formatMaxMessageBytes(settings[subkey], _getMain().ONE_KILO_BYTES, _getMain().ONE_MEGA_BYTES)])
+                printKeyValueList([subkey, formatMaxMessageBytes(settings[subkey], ONE_KILO_BYTES, ONE_MEGA_BYTES)])
           if not showTitle:
             Ind.Decrement()
       Ind.Decrement()
@@ -605,7 +597,8 @@ def groupFilters(kwargs, query):
   return query, queryTitle
 
 def getGroupFilters(myarg, kwargsDict, showOwnedBy):
-  if _getMain().getUserGroupDomainQueryFilters(myarg, kwargsDict):
+  from gam.cmd.aliases import getUserGroupDomainQueryFilters
+  if getUserGroupDomainQueryFilters(myarg, kwargsDict):
     pass
   elif myarg in {'member', 'showownedby'}:
     emailAddressOrUID = getEmailAddress()
@@ -817,6 +810,8 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintGroups():
+  from gam.cmd.aliases import initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
+  from gam.cmd.mobile import GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_ATTRIBUTES_SET, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_FIELDS_WITH_CRS_NLS, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
   def _printGroupRow(groupEntity, groupSettings, groupMembers):
     nonlocal itemCount
     row = {}
@@ -861,7 +856,7 @@ def doPrintGroups():
       if field in groupEntity:
         if isinstance(groupEntity[field], list):
           row[field] = delimiter.join(groupEntity[field])
-        elif convertCRNL and field in _getMain().GROUP_FIELDS_WITH_CRS_NLS:
+        elif convertCRNL and field in GROUP_FIELDS_WITH_CRS_NLS:
           row[field] = escapeCRsNLs(groupEntity[field])
         else:
           row[field] = groupEntity[field]
@@ -874,7 +869,7 @@ def doPrintGroups():
           if value is None:
             value = ''
           csvPF.AddTitles(key)
-          if convertCRNL and key in _getMain().GROUP_FIELDS_WITH_CRS_NLS:
+          if convertCRNL and key in GROUP_FIELDS_WITH_CRS_NLS:
             row[key] = escapeCRsNLs(value)
           else:
             row[key] = value
@@ -987,7 +982,7 @@ def doPrintGroups():
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  kwargsDict = _getMain().initUserGroupDomainQueryFilters()
+  kwargsDict = initUserGroupDomainQueryFilters()
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   getCloudIdentity = getSettings = showCIgroupKey = sortHeaders = False
@@ -1031,11 +1026,11 @@ def doPrintGroups():
     elif myarg == 'maxresults':
       maxResults = getInteger(minVal=1, maxVal=200)
     elif myarg == 'nodeprecated':
-      deprecatedAttributesSet.update([attr[0] for attr in _getMain().GROUP_DISCOVER_ATTRIBUTES.values()])
-      deprecatedAttributesSet.update([attr[0] for attr in _getMain().GROUP_ASSIST_CONTENT_ATTRIBUTES.values()])
-      deprecatedAttributesSet.update([attr[0] for attr in _getMain().GROUP_MODERATE_CONTENT_ATTRIBUTES.values()])
-      deprecatedAttributesSet.update([attr[0] for attr in _getMain().GROUP_MODERATE_MEMBERS_ATTRIBUTES.values()])
-      deprecatedAttributesSet.update([attr[0] for attr in _getMain().GROUP_DEPRECATED_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_DISCOVER_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_ASSIST_CONTENT_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_MODERATE_CONTENT_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_MODERATE_MEMBERS_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
     elif myarg in {'convertcrnl', 'converttextnl', 'convertfooternl'}:
       convertCRNL = True
     elif myarg == 'delimiter':
@@ -1061,7 +1056,7 @@ def doPrintGroups():
       sortHeaders = getBoolean()
     elif myarg in GROUP_FIELDS_CHOICE_MAP:
       csvPF.AddField(myarg, GROUP_FIELDS_CHOICE_MAP, groupFieldsLists['cd'])
-    elif myarg in _getMain().GROUP_ATTRIBUTES_SET:
+    elif myarg in GROUP_ATTRIBUTES_SET:
       attrProperties = getGroupAttrProperties(myarg)
       csvPF.AddField(myarg, {myarg: attrProperties[0]}, groupFieldsLists['gs'])
     elif myarg == 'fields':
@@ -1071,7 +1066,7 @@ def doPrintGroups():
         else:
           attrProperties = getGroupAttrProperties(field)
           if attrProperties is None:
-            invalidChoiceExit(field, list(GROUP_FIELDS_CHOICE_MAP)+list(_getMain().GROUP_ATTRIBUTES_SET), True)
+            invalidChoiceExit(field, list(GROUP_FIELDS_CHOICE_MAP)+list(GROUP_ATTRIBUTES_SET), True)
           csvPF.AddField(field, {field: attrProperties[0]}, groupFieldsLists['gs'])
     elif myarg == 'cifields':
       for field in _getFieldsList():
@@ -1123,7 +1118,7 @@ def doPrintGroups():
   if getSettings:
     gs = buildGAPIObject(API.GROUPSSETTINGS)
   if groupFieldsLists['ci']:
-    _getMain().setTrueCustomerId(cd)
+    setTrueCustomerId(cd)
     getCloudIdentity = True
     showCIgroupKey = 'groupKey' in groupFieldsLists['ci']
     if not showCIgroupKey:
@@ -1158,7 +1153,7 @@ def doPrintGroups():
     setMemberDisplayTitles(memberDisplayOptions, csvPF)
   if entitySelection is None:
     entityList = []
-    for kwargsQuery in _getMain().makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
       query, pquery = groupFilters(kwargs, query)
@@ -1286,13 +1281,13 @@ def doPrintGroups():
       sortTitles.extend(sorted(addCSVData.keys()))
     sortTitles.extend(GROUP_INFO_PRINT_ORDER+['aliases', 'nonEditableAliases'])
     if getSettings:
-      sortTitles += sorted([attr[0] for attr in _getMain().GROUP_SETTINGS_ATTRIBUTES.values()])
-      for key in _getMain().GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
+      sortTitles += sorted([attr[0] for attr in GROUP_SETTINGS_ATTRIBUTES.values()])
+      for key in GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
         sortTitles.append(key)
         if not deprecatedAttributesSet:
-          sortTitles += sorted([attr[0] for attr in _getMain().GROUP_MERGED_TO_COMPONENT_MAP[key].values()])
+          sortTitles += sorted([attr[0] for attr in GROUP_MERGED_TO_COMPONENT_MAP[key].values()])
       if not deprecatedAttributesSet:
-        sortTitles += sorted([attr[0] for attr in _getMain().GROUP_DEPRECATED_ATTRIBUTES.values()])
+        sortTitles += sorted([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
     if rolesSet:
       setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
     csvPF.SetSortTitles(sortTitles)
@@ -1383,10 +1378,11 @@ def doInfoGroupMembers():
   infoGroupMembers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1], False)
 
 def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsDict):
+  from gam.cmd.aliases import makeUserGroupDomainQueryFilters
   if entityList is None:
     updateFieldsForGroupMatchPatterns(matchPatterns, fieldsList)
     entityList = []
-    for kwargsQuery in _getMain().makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
       kwargs = kwargsQuery[0]
       query  = kwargsQuery[1]
       query, pquery = groupFilters(kwargs, query)
@@ -1411,6 +1407,7 @@ def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsD
 
 def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, count,
                     memberOptions, memberDisplayOptions, level, typesSet):
+  from gam.cmd.chat.members import _getChatSpaceMembers
   def _getMemberDeliverySettings(member):
     if 'delivery_settings' not in member:
       try:
@@ -1438,7 +1435,7 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
       entityUnknownWarning(Ent.GROUP, groupEmail, i, count)
       return
   else:
-    groupMembers =  _getMain()._getChatSpaceMembers(cd, groupEmail, '')
+    groupMembers =  _getChatSpaceMembers(cd, groupEmail, '')
   checkShowCategory = memberDisplayOptions['checkShowCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
     if memberOptions[MEMBEROPTION_NODUPLICATES]:
@@ -1568,6 +1565,8 @@ GROUPMEMBERS_SORT_FIELDS = ['type', 'role', 'id', 'status', 'email']
 #	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def doPrintGroupMembers():
+  from gam.cmd.aliases import initUserGroupDomainQueryFilters
+  from gam.cmd.users.manage import USER_FIELDS_CHOICE_MAP, USER_SKIP_OBJECTS, USER_TIME_OBJECTS, _getSchemaNameList, _initSchemaParms
   def getNameFromPeople(memberId):
     try:
       info = callGAPI(people.people(), 'get',
@@ -1590,7 +1589,7 @@ def doPrintGroupMembers():
   memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   groupColumn = True
   customerKey = GC.Values[GC.CUSTOMER_ID]
-  kwargsDict = _getMain().initUserGroupDomainQueryFilters()
+  kwargsDict = initUserGroupDomainQueryFilters()
   subTitle = f'{Msg.ALL} {Ent.Plural(Ent.GROUP)}'
   fieldsList = []
   csvPF = CSVPrintFile('group')
@@ -1599,7 +1598,7 @@ def doPrintGroupMembers():
   showOwnedBy = {}
   cdfieldsList = ['email']
   userFieldsList = []
-  schemaParms = _getMain()._initSchemaParms('basic')
+  schemaParms = _initSchemaParms('basic')
   rolesSet = set()
   typesSet = set()
   matchPatterns = {}
@@ -1644,15 +1643,15 @@ def doPrintGroupMembers():
       showDeliverySettings = True
     elif myarg == 'userfields':
       for field in _getFieldsList():
-        if field in _getMain().USER_FIELDS_CHOICE_MAP:
-          csvPF.AddField(field, _getMain().USER_FIELDS_CHOICE_MAP, userFieldsList)
+        if field in USER_FIELDS_CHOICE_MAP:
+          csvPF.AddField(field, USER_FIELDS_CHOICE_MAP, userFieldsList)
         else:
-          invalidChoiceExit(field, _getMain().USER_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, USER_FIELDS_CHOICE_MAP, True)
     elif myarg in {'allschemas', 'custom', 'schemas', 'customschemas'}:
       if myarg == 'allschemas':
-        schemaParms = _getMain()._initSchemaParms('full')
+        schemaParms = _initSchemaParms('full')
       else:
-        _getMain()._getSchemaNameList(schemaParms)
+        _getSchemaNameList(schemaParms)
       userFieldsList.append('customSchemas')
     elif myarg == 'noduplicates':
       memberOptions[MEMBEROPTION_NODUPLICATES] = True
@@ -1806,7 +1805,7 @@ def doPrintGroupMembers():
                 fjrow['group'] = groupEmail
               if addCSVData:
                 fjrow.update(addCSVData)
-              fjrow['JSON'] = json.dumps(cleanJSON(row, skipObjects=_getMain().USER_SKIP_OBJECTS, timeObjects=_getMain().USER_TIME_OBJECTS),
+              fjrow['JSON'] = json.dumps(cleanJSON(row, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
                                          ensure_ascii=False, sort_keys=True)
               csvPF.WriteRowNoFilter(fjrow)
             continue
@@ -1866,7 +1865,7 @@ def doPrintGroupMembers():
           fjrow['allowExternalMembers'] = allowExternalMembers
         if addCSVData:
           fjrow.update(addCSVData)
-        fjrow['JSON'] = json.dumps(cleanJSON(row, skipObjects=_getMain().USER_SKIP_OBJECTS, timeObjects=_getMain().USER_TIME_OBJECTS),
+        fjrow['JSON'] = json.dumps(cleanJSON(row, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS),
                                    ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(fjrow)
   if not FJQC.formatJSON:
@@ -1899,6 +1898,7 @@ def doPrintGroupMembers():
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[includederivedmembership]
 def doShowGroupMembers():
+  from gam.cmd.aliases import initUserGroupDomainQueryFilters
   def _roleOrder(key):
     return {Ent.ROLE_OWNER: 0, Ent.ROLE_MANAGER: 1, Ent.ROLE_MEMBER: 2}.get(key, 3)
 
@@ -1942,7 +1942,7 @@ def doShowGroupMembers():
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = None
-  kwargsDict = _getMain().initUserGroupDomainQueryFilters()
+  kwargsDict = initUserGroupDomainQueryFilters()
   entityList = None
   showOwnedBy = {}
   cdfieldsList = ['email']
@@ -2002,8 +2002,9 @@ def doShowGroupMembers():
       _showGroup(groupEmail, 0)
 
 def getGroupParents(cd, groupParents, groupEmail, groupName, kwargs):
+  from gam.cmd.userop.usergroups import _setUserGroupArgs
   groupParents[groupEmail] = {'name': groupName, 'parents': []}
-  _getMain()._setUserGroupArgs(groupEmail, kwargs)
+  _setUserGroupArgs(groupEmail, kwargs)
   try:
     entityList = callGAPIpages(cd.groups(), 'list', 'groups',
                                throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,

@@ -44,6 +44,7 @@ from gam.util.display import (
     printLine,
 )
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.tags import ADDRESS_FIELDS_PRINT_ORDER
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -51,22 +52,11 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def _showCustomerAddressPhoneNumber(customerInfo):
   if 'postalAddress' in customerInfo:
     printKeyValueList(['Address', None])
     Ind.Increment()
-    for field in _getMain().ADDRESS_FIELDS_PRINT_ORDER:
+    for field in ADDRESS_FIELDS_PRINT_ORDER:
       if field in customerInfo['postalAddress']:
         printKeyValueList([field, customerInfo['postalAddress'][field]])
     Ind.Decrement()
@@ -162,9 +152,9 @@ def doInfoResoldCustomer():
 
 def getCustomerSubscription(res):
   customerId = getString(Cmd.OB_CUSTOMER_ID)
-  productId, skuId = _getMain().SKU.getProductAndSKU(getString(Cmd.OB_SKU_ID))
+  productId, skuId = SKU.getProductAndSKU(getString(Cmd.OB_SKU_ID))
   if not productId:
-    invalidChoiceExit(skuId, _getMain().SKU.getSortedSKUList(), True)
+    invalidChoiceExit(skuId, SKU.getSortedSKUList(), True)
   try:
     subscriptions = callGAPIpages(res.subscriptions(), 'list', 'subscriptions',
                                   throwReasons=GAPI.RESELLER_THROW_REASONS,
@@ -207,9 +197,9 @@ def _getResoldSubscriptionAttr(customerId):
       if Cmd.ArgumentsRemaining() and Cmd.Current().isdigit():
         seats2 = getInteger(minVal=0)
     elif myarg in {'sku', 'skuid'}:
-      productId, body['skuId'] = _getMain().SKU.getProductAndSKU(getString(Cmd.OB_SKU_ID))
+      productId, body['skuId'] = SKU.getProductAndSKU(getString(Cmd.OB_SKU_ID))
       if not productId:
-        invalidChoiceExit(body['skuId'], _getMain().SKU.getSortedSKUList(), True)
+        invalidChoiceExit(body['skuId'], SKU.getSortedSKUList(), True)
     elif myarg in {'customerauthtoken', 'transfertoken'}:
       customerAuthToken = getString('customer_auth_token')
     else:

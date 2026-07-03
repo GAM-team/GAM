@@ -1,7 +1,6 @@
 """GAM customer info/update and instance info commands."""
 
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -37,6 +36,16 @@ from gam.util.display import (
 from gam.util.errors import unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import printWarningMessage, writeStdout
+from gam.util.entity import (
+    PRINT_PRIVILEGES_FIELDS,
+    _getCustomerId,
+    _getCustomerIdNoC,
+    _getCustomersCustomerIdNoC,
+    _getCustomersCustomerIdWithC,
+    _getDomainList,
+    setTrueCustomerId,
+)
+from gam.constants import DATA_NOT_AVALIABLE_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -44,18 +53,9 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def _showCustomerLicenseInfo(customerInfo, FJQC):
+  from gam.cmd.domains import CUSTOMER_LICENSE_MAP
+  from gam.cmd.reports import _adjustTryDate, _checkDataRequiredServices
   def numUsersAvailable(result):
     usageReports = result.get('usageReports', [])
     if usageReports:
@@ -65,7 +65,7 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
     return None
 
   rep = buildGAPIObject(API.REPORTS)
-  parameters = ','.join(_getMain().CUSTOMER_LICENSE_MAP)
+  parameters = ','.join(CUSTOMER_LICENSE_MAP)
   tryDate = todaysDate().strftime(YYYYMMDD_FORMAT)
   dataRequiredServices = {'accounts'}
   while True:
@@ -77,15 +77,15 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
       usageReports = numUsersAvailable(result)
       if usageReports:
         break
-      fullData, tryDate, usageReports = _getMain()._checkDataRequiredServices(result, tryDate, dataRequiredServices)
+      fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate, dataRequiredServices)
       if fullData < 0:
-        printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_USER_COUNTS_DATA_AVAILABLE)
+        printWarningMessage(DATA_NOT_AVALIABLE_RC, Msg.NO_USER_COUNTS_DATA_AVAILABLE)
         return
       if fullData == 0:
         continue
       break
     except (GAPI.invalid, GAPI.failedPrecondition) as e:
-      tryDate = _getMain()._adjustTryDate(str(e), 0, -1, tryDate)
+      tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
       if not tryDate:
         return
       continue
@@ -95,7 +95,7 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
     printKeyValueList([f'User counts as of {tryDate}:'])
     Ind.Increment()
   for item in usageReports[0]['parameters']:
-    api_name = _getMain().CUSTOMER_LICENSE_MAP.get(item['name'])
+    api_name = CUSTOMER_LICENSE_MAP.get(item['name'])
     api_value = int(item.get('intValue', '0'))
     if api_name and api_value:
       if not FJQC.formatJSON:
@@ -105,59 +105,11 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
   if not FJQC.formatJSON:
     Ind.Decrement()
 
-def setTrueCustomerId(cd=None, forceUpdate=False):
-  if GC.Values[GC.CUSTOMER_ID] == GC.MY_CUSTOMER or forceUpdate:
-    if not cd:
-      cd = buildGAPIObject(API.DIRECTORY)
-    try:
-      customerInfo = callGAPI(cd.customers(), 'get',
-                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND,
-                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
-                              customerKey=GC.MY_CUSTOMER,
-                              fields='id')
-      GC.Values[GC.CUSTOMER_ID] = customerInfo['id']
-    except (GAPI.badRequest, GAPI.invalidInput, GAPI.resourceNotFound):
-      pass
-    except (GAPI.forbidden, GAPI.permissionDenied) as e:
-      ClientAPIAccessDeniedExit(str(e))
 
-def _getCustomerId():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId != GC.MY_CUSTOMER and customerId[0] != 'C':
-    customerId = 'C' + customerId
-  return customerId
-
-def _getCustomerIdNoC():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId[0] == 'C':
-    return customerId[1:]
-  return customerId
-
-def _getCustomersCustomerIdNoC():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId.startswith('C'):
-    customerId = customerId[1:]
-  return f'customers/{customerId}'
-
-def _getCustomersCustomerIdWithC():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId != GC.MY_CUSTOMER and customerId[0] != 'C':
-    customerId = 'C' + customerId
-  return f'customers/{customerId}'
-
-def _getDomainList(cd, customer, fields):
-  try:
-    return callGAPIitems(cd.domains(), 'list', 'domains',
-                         throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
-                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
-                         customer=customer, fields=fields)
-  except (GAPI.badRequest, GAPI.notFound):
-    accessErrorExit(cd)
-  except (GAPI.forbidden, GAPI.permissionDenied) as e:
-    ClientAPIAccessDeniedExit(str(e))
 
 # gam info customer [formatjson]
 def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
+  from gam.cmd.reseller import _showCustomerAddressPhoneNumber
   cd = buildGAPIObject(API.DIRECTORY)
   customerId = _getCustomerId()
   if FJQC is None:
@@ -200,7 +152,7 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
     printKeyValueList(['Primary Domain Verified', customerInfo['verified']])
     printKeyValueList(['Customer Creation Time', customerInfo['customerCreationTime']])
     printKeyValueList(['Default Language', customerInfo.get('language', 'Unset or Unknown (defaults to en)')])
-    _getMain()._showCustomerAddressPhoneNumber(customerInfo)
+    _showCustomerAddressPhoneNumber(customerInfo)
     printKeyValueList(['Admin Secondary Email', customerInfo.get('alternateEmail', UNKNOWN)])
     _showCustomerLicenseInfo(customerInfo, FJQC)
   except (GAPI.badRequest, GAPI.invalidInput, GAPI.domainNotFound, GAPI.notFound, GAPI.resourceNotFound):
@@ -213,14 +165,15 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
 #	[address1|addressline1 <String>] [address2|addressline2 <String>] [address3|addressline3 <String>]
 #	[locality <String>] [region <String>] [postalcode <String>] [country|countrycode <String>]
 def doUpdateCustomer():
+  from gam.cmd.reseller import ADDRESS_FIELDS_ARGUMENT_MAP
   cd = buildGAPIObject(API.DIRECTORY)
   customerId = _getCustomerId()
   body = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in _getMain().ADDRESS_FIELDS_ARGUMENT_MAP:
+    if myarg in ADDRESS_FIELDS_ARGUMENT_MAP:
       body.setdefault('postalAddress', {})
-      body['postalAddress'][_getMain().ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = getString(Cmd.OB_STRING, minLen=0)
+      body['postalAddress'][ADDRESS_FIELDS_ARGUMENT_MAP[myarg]] = getString(Cmd.OB_STRING, minLen=0)
     elif myarg == 'primary':
       body['customerDomain'] = getString(Cmd.OB_DOMAIN_NAME)
     elif myarg in {'adminsecondaryemail', 'alternateemail'}:
@@ -259,8 +212,9 @@ DOMAIN_PRINT_ORDER = ['customerDomain', 'creationTime', 'isPrimary', 'verified']
 DOMAIN_SKIP_OBJECTS = {'domainName', 'domainAliases'}
 
 def _showDomain(result, FJQC, i=0, count=0):
+  from gam.cmd.domains import DOMAIN_ALIAS_SKIP_OBJECTS, DOMAIN_TIME_OBJECTS, _showDomainAlias
   if FJQC.formatJSON:
-    printLine(json.dumps(cleanJSON(result, timeObjects=_getMain().DOMAIN_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    printLine(json.dumps(cleanJSON(result, timeObjects=DOMAIN_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
   skipObjects = DOMAIN_SKIP_OBJECTS
   printEntity([Ent.DOMAIN, result['domainName']], i, count)
@@ -275,9 +229,9 @@ def _showDomain(result, FJQC, i=0, count=0):
   aliases = result.get(field)
   if aliases:
     skipObjects.add(field)
-    aliasSkipObjects = _getMain().DOMAIN_ALIAS_SKIP_OBJECTS
+    aliasSkipObjects = DOMAIN_ALIAS_SKIP_OBJECTS
     for alias in aliases:
-      _getMain()._showDomainAlias(alias, FJQC, aliasSkipObjects)
+      _showDomainAlias(alias, FJQC, aliasSkipObjects)
       showJSON(None, alias, aliasSkipObjects)
   showJSON(None, result, skipObjects)
   Ind.Decrement()
@@ -312,6 +266,7 @@ DOMAIN_SORT_TITLES = ['domainName', 'parentDomainName', 'creationTime', 'type', 
 #	[formatjson]
 #	[showitemcountonly]
 def doPrintShowDomains():
+  from gam.cmd.domains import DOMAIN_TIME_OBJECTS, _printDomain
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['domainName'], DOMAIN_SORT_TITLES) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -337,17 +292,17 @@ def doPrintShowDomains():
     elif not FJQC.formatJSON:
       domain['type'] = 'primary' if domain.pop('isPrimary') else 'secondary'
       domainAliases = domain.pop('domainAliases', [])
-      _getMain()._printDomain(domain, csvPF)
+      _printDomain(domain, csvPF)
       for domainAlias in domainAliases:
         domainAlias['type'] = 'alias'
         domainAlias['domainName'] = domainAlias.pop('domainAliasName')
-        _getMain()._printDomain(domainAlias, csvPF)
+        _printDomain(domainAlias, csvPF)
     else:
       csvPF.WriteRowNoFilter({'domainName': domain['domainName'],
-                              'JSON': json.dumps(cleanJSON(domain, timeObjects=_getMain().DOMAIN_TIME_OBJECTS),
+                              'JSON': json.dumps(cleanJSON(domain, timeObjects=DOMAIN_TIME_OBJECTS),
                                                  ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Domains')
 
-PRINT_PRIVILEGES_FIELDS = ['serviceId', 'serviceName', 'privilegeName', 'isOuScopable', 'childPrivileges']
+
 

@@ -1,7 +1,6 @@
 """GAM user and group alias management."""
 
 import re
-import sys
 import time
 
 from gamlib import glaction
@@ -43,6 +42,7 @@ from gam.util.display import (
     printGettingEntityItemForWhom,
 )
 from gam.util.entity import (
+    _getDomainList,
     convertEntityToList,
     getEntityArgument,
     getEntityList,
@@ -52,6 +52,7 @@ from gam.util.entity import (
 from gam.util.errors import entityActionFailedExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import setSysExitRC
+from gam.constants import ENTITY_IS_NOT_AN_ALIAS_RC, NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -59,18 +60,9 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def doCreateUpdateAliases():
+  from gam.cmd.ciuserinvitations import _getIsInvitableUser
+  from gam.cmd.orgunits import ALIAS_TARGET_TYPES
   def verifyAliasTargetExists():
     if targetType != 'group':
       try:
@@ -131,7 +123,7 @@ def doCreateUpdateAliases():
   ci = None
   updateCmd = Act.Get() == Act.UPDATE
   aliasList = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
-  targetType = getChoice(_getMain().ALIAS_TARGET_TYPES)
+  targetType = getChoice(ALIAS_TARGET_TYPES)
   targetEmails = getEntityList(Cmd.OB_GROUP_ENTITY)
   entityLists = targetEmails if isinstance(targetEmails, dict) else None
   verifyNotInvitable = False
@@ -155,7 +147,7 @@ def doCreateUpdateAliases():
       targetEmails = entityLists[aliasEmail]
     aliasEmail = normalizeEmailAddressOrUID(aliasEmail, noUid=True, noLower=True)
     if verifyNotInvitable:
-      isInvitableUser, ci = _getMain()._getIsInvitableUser(ci, aliasEmail)
+      isInvitableUser, ci = _getIsInvitableUser(ci, aliasEmail)
       if isInvitableUser:
         entityActionNotPerformedWarning([Ent.ALIAS_EMAIL, aliasEmail], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
         continue
@@ -213,8 +205,9 @@ def doCreateUpdateAliases():
 
 # gam delete aliases|nicknames [user|group|target] <EmailAddressEntity>
 def doDeleteAliases():
+  from gam.cmd.orgunits import ALIAS_TARGET_TYPES
   cd = buildGAPIObject(API.DIRECTORY)
-  targetType = getChoice(_getMain().ALIAS_TARGET_TYPES, defaultChoice='target')
+  targetType = getChoice(ALIAS_TARGET_TYPES, defaultChoice='target')
   entityList = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
   checkForExtraneousArguments()
   i = 0
@@ -357,7 +350,7 @@ def deleteUsersAliases(users):
       jcount = len(user_aliases['aliases']) if ('aliases' in user_aliases) else 0
       entityPerformActionNumItems([Ent.USER, user_primary], jcount, Ent.ALIAS, i, count)
       if jcount == 0:
-        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(NO_ENTITIES_FOUND_RC)
         continue
       Ind.Increment()
       j = 0
@@ -377,6 +370,8 @@ def deleteUsersAliases(users):
 
 def infoAliases(entityList):
 
+  from gam.cmd.groups.members import INFO_GROUP_OPTIONS
+  from gam.cmd.users.manage import INFO_USER_OPTIONS
   def _showAliasInfo(uid, email, aliasEmail, entityType, aliasEntityType, i, count):
     if email.lower() != aliasEmail:
       printEntity([aliasEntityType, aliasEmail], i, count)
@@ -385,7 +380,7 @@ def infoAliases(entityList):
       printEntity([Ent.UNIQUE_ID, uid])
       Ind.Decrement()
     else:
-      setSysExitRC(_getMain().ENTITY_IS_NOT_AN_ALIAS_RC)
+      setSysExitRC(ENTITY_IS_NOT_AN_ALIAS_RC)
       printEntityKVList([Ent.EMAIL, aliasEmail],
                         [f'Is a {Ent.Singular(entityType)}, not a {Ent.Singular(aliasEntityType)}'],
                         i, count)
@@ -394,7 +389,7 @@ def infoAliases(entityList):
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
 # Ignore info group/user arguments that may have come from whatis
-    if (myarg in _getMain().INFO_GROUP_OPTIONS) or (myarg in _getMain().INFO_USER_OPTIONS):
+    if (myarg in INFO_GROUP_OPTIONS) or (myarg in INFO_USER_OPTIONS):
       if myarg == 'schemas':
         getString(Cmd.OB_SCHEMA_NAME_LIST)
     else:
@@ -503,6 +498,7 @@ def userFilters(kwargs, query, orgUnitPath):
 #	[suppressnoaliasrows]
 #	(addcsvdata <FieldName> <String>)*
 def doPrintAliases():
+  from gam.cmd.groups.members import groupFilters
   def writeAliases(target, targetEmail, targetType):
     if not oneRowPerTarget:
       for alias in target.get('aliases', []):
@@ -648,7 +644,7 @@ def doPrintAliases():
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
       kwargs = kwargsQuery[0]
       query = kwargsQuery[1]
-      query, pquery = _getMain().groupFilters(kwargs, query)
+      query, pquery = groupFilters(kwargs, query)
       printGettingAllAccountEntities(Ent.GROUP, pquery)
       try:
         entityList = callGAPIpages(cd.groups(), 'list', 'groups',
@@ -755,7 +751,7 @@ def doPrintAddresses():
     return
   for resource in entityList:
     csvPF.WriteRow({'Type': 'Resource', 'Email': resource['resourceEmail']})
-  domains = _getMain()._getDomainList(cd, GC.Values[GC.CUSTOMER_ID], f'domains({",".join(domainFields)})')
+  domains = _getDomainList(cd, GC.Values[GC.CUSTOMER_ID], f'domains({",".join(domainFields)})')
   for domain in domains:
     domainEmail = domain['domainName']
     csvPF.WriteRow({'Type': 'DomainPrimary' if domain['isPrimary'] else 'DomainSecondary', 'Email': domainEmail})

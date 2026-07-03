@@ -5,7 +5,6 @@ Part of the drive sub-package, extracted from drive.py."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 import re
-import sys
 
 from gam.cmd.drive.core import DFA_IGNORE_DEFAULT_VISIBILITY, DFA_KEEP_REVISION_FOREVER, DFA_LOCALFILENAME, DFA_LOCALFILEPATH, DFA_LOCALMIMETYPE, DFA_OCRLANGUAGE, DFA_PARENTID, DFA_PRESERVE_FILE_TIMES, DFA_REPLACEFILENAME, DFA_SHAREDDRIVE_PARENT, DFA_STRIPNAMEPREFIX, DFA_TIMEFORMAT, DFA_TIMESTAMP, DFA_URL, DFA_USE_CONTENT_AS_INDEXABLE_TEXT, _getDriveFileAddRemoveParentInfo, _getDriveFileParentInfo, _validateUserGetFileIDs, escapeDriveFileName, getDriveFileAddRemoveParentAttribute, getDriveFileAttribute, getDriveFileEntity, getDriveFileParentAttribute, getMediaBody, initDriveFileAttributes, setPreservedFileTimes
 from gam.cmd.drive.fileinfo import writeReturnIdLink
@@ -44,10 +43,16 @@ from gam.util.display import (
     entityPerformActionSubItemModifierNumItems,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, shlexSplitList
+from gam.util.entity import (
+    _getEntityMimeType,
+    _getTargetEntityMimeType,
+    getEntityArgument,
+    shlexSplitList,
+)
 from gam.util.errors import emptyArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN, readFile
 from gam.util.output import writeStdout
+from gam.constants import AND_NOT_SHORTCUT, ANY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS, MY_DRIVE, MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -82,16 +87,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def processFilenameReplacements(name, replacements):
   for replacement in replacements:
@@ -187,7 +182,7 @@ def createDriveFile(users):
       continue
     if not _getDriveFileParentInfo(drive, user, i, count, body, parameters):
       continue
-    entityType = _getMain()._getEntityMimeType(body) if 'mimeType' in body else Ent.DRIVE_FILE
+    entityType = _getEntityMimeType(body) if 'mimeType' in body else Ent.DRIVE_FILE
     try:
       if noDuplicate:
         # Check for existing file/folder, do not duplicate
@@ -221,7 +216,7 @@ def createDriveFile(users):
           if parameters[DFA_LOCALFILENAME]:
             kvList.extend([Ent.DRIVE_FILE, titleInfo])
           else:
-            kvList.extend([_getMain()._getEntityMimeType(result), titleInfo])
+            kvList.extend([_getEntityMimeType(result), titleInfo])
         else:
           if result['mimeType'] != MIMETYPE_GA_FOLDER:
             kvList.extend([Ent.DRIVE_FILE, result['name'], Ent.DRIVE_FILE_ID, result['id']])
@@ -273,14 +268,14 @@ def createDriveFolderPath(users):
       folderPathLocation = Cmd.Location()
       driveFolderNameList = getString(Cmd.OB_DRIVE_FOLDER_PATH).lstrip(pathDelimiter).strip(' ').split(pathDelimiter)
       if len(driveFolderNameList) > 0:
-        if driveFolderNameList[0].lower() == _getMain().MY_DRIVE.lower():
+        if driveFolderNameList[0].lower() == MY_DRIVE.lower():
           parentParms[DFA_PARENTID] = ROOT
           driveFolderNameList = driveFolderNameList[1:]
         elif driveFolderNameList[0].lower() == SHARED_DRIVES.lower() and len(driveFolderNameList) > 1:
           parentParms[DFA_SHAREDDRIVE_PARENT] = driveFolderNameList[1]
           driveFolderNameList = driveFolderNameList[2:]
         else:
-          usageErrorExit(Msg.FULL_PATH_MUST_START_WITH_DRIVE.format(_getMain().MY_DRIVE, f'{SHARED_DRIVES}{pathDelimiter}<SharedDriveName>'))
+          usageErrorExit(Msg.FULL_PATH_MUST_START_WITH_DRIVE.format(MY_DRIVE, f'{SHARED_DRIVES}{pathDelimiter}<SharedDriveName>'))
         fullPath = True
     elif myarg == 'path':
       folderPathLocation = Cmd.Location()
@@ -323,9 +318,9 @@ def createDriveFolderPath(users):
       continue
     parentId = parentBody['parents'][0]
     if parentParms.get('searchargs', {}).get('corpora', ''):
-      query = _getMain().ANY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS
+      query = ANY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS
     else:
-      query = _getMain().MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS
+      query = MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS
     errors = False
     createOnly = False
     if not returnIdOnly and not csvPF:
@@ -419,9 +414,9 @@ def createDriveFileShortcut(users):
     else:
       unknownArgumentExit()
   if fileIdEntity['query']:
-    fileIdEntity['query'] = fileIdEntity['query']+_getMain().AND_NOT_SHORTCUT
+    fileIdEntity['query'] = fileIdEntity['query']+AND_NOT_SHORTCUT
   elif fileIdEntity['shareddrivefilequery']:
-    fileIdEntity['shareddrivefilequery'] = fileIdEntity['shareddrivefilequery']+_getMain().AND_NOT_SHORTCUT
+    fileIdEntity['shareddrivefilequery'] = fileIdEntity['shareddrivefilequery']+AND_NOT_SHORTCUT
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -467,7 +462,7 @@ def createDriveFileShortcut(users):
         shortcutName = baseShortcutName.replace('#filename#', targetName)
       else:
         shortcutName = targetName
-      targetEntityType = _getMain()._getEntityMimeType(target)
+      targetEntityType = _getEntityMimeType(target)
       if convertParents:
         newParents = target.get('parents', [])[:-1]
         numNewParents = len(newParents)
@@ -586,7 +581,7 @@ def checkDriveFileShortcut(users):
         row['name'] = scresult['name']
         if scresult['mimeType'] != MIMETYPE_GA_SHORTCUT:
           if not csvPF:
-            entityActionFailedWarning([Ent.USER, user, _getMain()._getEntityMimeType(scresult), fileId],
+            entityActionFailedWarning([Ent.USER, user, _getEntityMimeType(scresult), fileId],
                                       Msg.INVALID_MIMETYPE.format(scresult['mimeType'], MIMETYPE_GA_SHORTCUT), j, jcount)
           else:
             row['code'] = SHORTCUT_CODE_NOT_A_SHORTCUT
@@ -606,7 +601,7 @@ def checkDriveFileShortcut(users):
           row['targetId'] = trresult['id']
           row['targetMimeType'] = trresult['mimeType']
           entityList = [Ent.USER, user, Ent.DRIVE_FILE_SHORTCUT, f"{scresult['name']}({fileId})",
-                        _getMain()._getEntityMimeType(trresult), f"{trresult['name']}({trfileId})"]
+                        _getEntityMimeType(trresult), f"{trresult['name']}({trfileId})"]
           if scresult['shortcutDetails']['targetMimeType'] == trresult['mimeType']:
             if not csvPF:
               entityActionPerformed(entityList, j, jcount)
@@ -620,7 +615,7 @@ def checkDriveFileShortcut(users):
         except GAPI.fileNotFound:
           if not csvPF:
             entityActionFailedWarning([Ent.USER, user, Ent.DRIVE_FILE_SHORTCUT, f"{scresult['name']}({fileId})",
-                                       _getMain()._getTargetEntityMimeType(scresult), trfileId], Msg.NOT_FOUND, j, jcount)
+                                       _getTargetEntityMimeType(scresult), trfileId], Msg.NOT_FOUND, j, jcount)
           else:
             row['code'] = SHORTCUT_CODE_TARGET_NOT_FOUND
       except GAPI.fileNotFound:
@@ -852,7 +847,7 @@ def updateDriveFile(users):
                 entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DRIVE_FILE, result['name']],
                                                       Act.MODIFIER_WITH_CONTENT_FROM, parameters[DFA_LOCALFILENAME] or parameters[DFA_URL], j, jcount)
               else:
-                entityActionPerformed([Ent.USER, user, _getMain()._getEntityMimeType(result), result['name']], j, jcount)
+                entityActionPerformed([Ent.USER, user, _getEntityMimeType(result), result['name']], j, jcount)
             else:
               if returnIdLink:
                 writeStdout(f'{fileId}\n')

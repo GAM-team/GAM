@@ -1,6 +1,5 @@
 """GAM contact delegate management."""
 
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -27,23 +26,13 @@ from gam.util.display import (
 from gam.util.entity import checkUserExists, getEntityArgument, getUserObjectEntity
 from gam.util.errors import unknownArgumentExit
 from gam.util.output import setSysExitRC, writeStdout
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _validateUserGetDelegateList(cd, user, i, count, entity):
   if entity['dict']:
@@ -56,7 +45,7 @@ def _validateUserGetDelegateList(cd, user, i, count, entity):
   jcount = len(entityList)
   entityPerformActionNumItems([Ent.USER, user], jcount, entity['item'], i, count)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   return (user, entityList, jcount)
 
 def _getDelegateName(cd, delegateEmail, delegateNames):

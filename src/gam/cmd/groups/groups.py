@@ -5,7 +5,6 @@ Part of the _groups_tmp sub-package."""
 """GAM group management."""
 
 import re
-import sys
 
 from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
 
@@ -72,6 +71,7 @@ from gam.util.entity import (
     convertUIDtoEmailAddress,
     getEntityList,
     getEntityToModify,
+    setTrueCustomerId,
 )
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit
 from gam.util.output import writeStderr
@@ -82,50 +82,41 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 WARNING_PREFIX = 'WARNING: '
 
 def getGroupAttrProperties(myarg):
-  attrProperties = _getMain().GROUP_BASIC_ATTRIBUTES.get(myarg)
+  from gam.cmd.mobile import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_BASIC_ATTRIBUTES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
+  attrProperties = GROUP_BASIC_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_SETTINGS_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_SETTINGS_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_ALIAS_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_ALIAS_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_DISCOVER_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_DISCOVER_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_ASSIST_CONTENT_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_ASSIST_CONTENT_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_MODERATE_CONTENT_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_MODERATE_CONTENT_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_MODERATE_MEMBERS_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_MODERATE_MEMBERS_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_MERGED_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_MERGED_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
-  attrProperties = _getMain().GROUP_DEPRECATED_ATTRIBUTES.get(myarg)
+  attrProperties = GROUP_DEPRECATED_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
   return None
 
 def getGroupAttrValue(argument, gs_body):
+  from gam.cmd.mobile import GROUP_FIELDS_WITH_CRS_NLS
   if argument == 'copyfrom':
     gs_body[argument] = getEmailAddress()
     return
@@ -138,7 +129,7 @@ def getGroupAttrValue(argument, gs_body):
   if attrType == GC.TYPE_BOOLEAN:
     gs_body[attrName] = str(getBoolean()).lower()
   elif attrType == GC.TYPE_STRING:
-    if attrName in _getMain().GROUP_FIELDS_WITH_CRS_NLS:
+    if attrName in GROUP_FIELDS_WITH_CRS_NLS:
       gs_body[attrName] = getStringWithCRsNLs()
     else:
       gs_body[attrName] = getString(Cmd.OB_STRING, minLen=0)
@@ -233,6 +224,7 @@ GROUP_ACCESS_TYPE_CHOICE_MAP = {
 #	[verifyduplicateretries <Integer>] [verifyduplicateretrydelay <Integer>]
 #	[verifycreationretries <Integer>] [verifycreationinitialdelay <Integer>] [verifycreationretrydelay <Integer>]
 def doCreateGroup(ciGroupsAPI=False):
+  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def waitingForCreationToComplete(sleep_time):
     writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.GROUP), sleep_time))
     time.sleep(sleep_time)
@@ -252,7 +244,7 @@ def doCreateGroup(ciGroupsAPI=False):
   else:
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
     initialGroupConfig = 'EMPTY'
-    _getMain().setTrueCustomerId(cd)
+    setTrueCustomerId(cd)
     parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
     body = {'groupKey': {'id': groupEmail},
             'parent': parent,
@@ -296,7 +288,7 @@ def doCreateGroup(ciGroupsAPI=False):
     else:
       getGroupAttrValue(myarg, gs_body)
   if verifyNotInvitable:
-    isInvitableUser, _ = _getMain()._getIsInvitableUser(None, groupEmail)
+    isInvitableUser, _ = _getIsInvitableUser(None, groupEmail)
     if isInvitableUser:
       entityActionNotPerformedWarning([Ent.GROUP, groupEmail], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
       return
@@ -442,6 +434,7 @@ GROUP_PREVIEW_TITLES = ['group', 'email', 'role', 'action', 'message']
 #	[preview] [actioncsv]
 def doUpdateGroups():
 
+  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def _getPreviewActionCSV():
     preview = checkArgumentPresent('preview')
     if checkArgumentPresent('actioncsv'):
@@ -890,7 +883,7 @@ def doUpdateGroups():
           entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
           continue
       if 'email' in body and verifyNotInvitable:
-        isInvitableUser, _ = _getMain()._getIsInvitableUser(None, body['email'])
+        isInvitableUser, _ = _getIsInvitableUser(None, body['email'])
         if isInvitableUser:
           entityActionNotPerformedWarning([Ent.GROUP, body['email']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
           continue

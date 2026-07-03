@@ -1,7 +1,6 @@
 """GAM usage reports and activity reports."""
 
 import arrow
-import sys
 
 import datetime
 import re
@@ -63,6 +62,7 @@ from gam.util.output import (
     stderrWarningMsg,
     systemErrorExit,
 )
+from gam.constants import DATA_NOT_AVALIABLE_RC, DAYS_OF_WEEK, ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC, ENTITY_IS_A_GROUP_ALIAS_RC, ENTITY_IS_A_GROUP_RC, ENTITY_IS_A_USER_ALIAS_RC, ENTITY_IS_A_USER_RC, ENTITY_IS_UKNOWN_RC, GOOGLE_API_ERROR_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -70,18 +70,11 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def doWhatIs():
+  from gam.cmd.aliases import infoAliases
+  from gam.cmd.ciuserinvitations import _getCIUserInvitationsEntity, _getIsInvitableUser, infoCIUserInvitations
+  from gam.cmd.groups.members import infoGroups
+  from gam.cmd.users.display import infoUsers
   def _showPrimaryType(entityType, email):
     printEntity([entityType, email])
 
@@ -105,23 +98,23 @@ def doWhatIs():
                       userKey=email, fields='id,primaryEmail')
     if (result['primaryEmail'].lower() == email) or (result['id'] == email):
       if showInfo:
-        _getMain().infoUsers(entityList=[email])
+        infoUsers(entityList=[email])
       else:
         _showPrimaryType(Ent.USER, email)
-      setSysExitRC(_getMain().ENTITY_IS_A_USER_RC)
+      setSysExitRC(ENTITY_IS_A_USER_RC)
     else:
       if showInfo:
-        _getMain().infoAliases(entityList=[email])
+        infoAliases(entityList=[email])
       else:
         _showAliasType(Ent.USER_ALIAS, email, Ent.USER, result['primaryEmail'])
-      setSysExitRC(_getMain().ENTITY_IS_A_USER_ALIAS_RC)
+      setSysExitRC(ENTITY_IS_A_USER_ALIAS_RC)
     return
   except (GAPI.userNotFound, GAPI.badRequest):
     pass
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
           GAPI.backendError, GAPI.systemError):
     entityUnknownWarning(Ent.EMAIL, email)
-    setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
+    setSysExitRC(ENTITY_IS_UKNOWN_RC)
     return
   try:
     result = callGAPI(cd.groups(), 'get',
@@ -129,38 +122,38 @@ def doWhatIs():
                       groupKey=email, fields='id,email')
     if (result['email'].lower() == email) or (result['id'] == email):
       if showInfo:
-        _getMain().infoGroups([email])
+        infoGroups([email])
       else:
         _showPrimaryType(Ent.GROUP, email)
-      setSysExitRC(_getMain().ENTITY_IS_A_GROUP_RC)
+      setSysExitRC(ENTITY_IS_A_GROUP_RC)
     else:
       if showInfo:
-        _getMain().infoAliases(entityList=[email])
+        infoAliases(entityList=[email])
       else:
         _showAliasType(Ent.GROUP_ALIAS, email, Ent.GROUP, result['email'])
-      setSysExitRC(_getMain().ENTITY_IS_A_GROUP_ALIAS_RC)
+      setSysExitRC(ENTITY_IS_A_GROUP_ALIAS_RC)
     return
   except (GAPI.groupNotFound, GAPI.forbidden):
     pass
   except (GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.badRequest):
     entityUnknownWarning(Ent.EMAIL, email)
-    setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
+    setSysExitRC(ENTITY_IS_UKNOWN_RC)
     return
   if not invitableCheck:
     isInvitableUser = False
     ci = None
   else:
-    isInvitableUser, ci = _getMain()._getIsInvitableUser(None, email)
+    isInvitableUser, ci = _getIsInvitableUser(None, email)
   if isInvitableUser:
     if showInfo:
-      name, user, ci = _getMain()._getCIUserInvitationsEntity(ci, email)
-      _getMain().infoCIUserInvitations(name, user, ci, None)
+      name, user, ci = _getCIUserInvitationsEntity(ci, email)
+      infoCIUserInvitations(name, user, ci, None)
     else:
       _showPrimaryType(Ent.USER_INVITATION, email)
-    setSysExitRC(_getMain().ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC)
+    setSysExitRC(ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC)
   else:
     entityUnknownWarning(Ent.EMAIL, email)
-    setSysExitRC(_getMain().ENTITY_IS_UKNOWN_RC)
+    setSysExitRC(ENTITY_IS_UKNOWN_RC)
 
 def _adjustTryDate(errMsg, numDateChanges, limitDateChanges, prevTryDate):
   match_date = re.match('Data for dates later than (.*) is not yet available. Please check back later', errMsg)
@@ -176,7 +169,7 @@ def _adjustTryDate(errMsg, numDateChanges, limitDateChanges, prevTryDate):
         tryDateTime = arrow.Arrow.strptime(prevTryDate, YYYYMMDD_FORMAT).shift(days=-1)
         tryDate = tryDateTime.strftime(YYYYMMDD_FORMAT)
   if (not match_date) or (numDateChanges > limitDateChanges >= 0):
-    printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, errMsg)
+    printWarningMessage(DATA_NOT_AVALIABLE_RC, errMsg)
     return None
   return tryDate
 
@@ -274,7 +267,7 @@ def doReportUsageParameters():
                         date=tryDate, customerId=customerId, fields='warnings,usageReports(parameters(name))', **kwargs)
       fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate, dataRequiredServices)
       if fullData < 0:
-        printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_USAGE_PARAMETERS_DATA_AVAILABLE)
+        printWarningMessage(DATA_NOT_AVALIABLE_RC, Msg.NO_USAGE_PARAMETERS_DATA_AVAILABLE)
         return
       if usageReports:
         for parameter in usageReports[0]['parameters']:
@@ -432,7 +425,7 @@ def doReportUsage():
             skipStartDate = skipStartDate.shift(days=1)
     elif myarg == 'skipdaysofweek':
       skipdaynames = getString(Cmd.OB_STRING).lower().split(',')
-      dow = [d.lower() for d in _getMain().DAYS_OF_WEEK]
+      dow = [d.lower() for d in DAYS_OF_WEEK]
       skipDayNumbers = [dow.index(d) for d in skipdaynames if d in dow]
     elif userReports and myarg == 'user':
       userKey = getString(Cmd.OB_EMAIL_ADDRESS)
@@ -550,7 +543,7 @@ def doReportUsage():
       stderrWarningMsg(str(e))
       break
     except GAPI.invalidInput as e:
-      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+      systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
     except GAPI.forbidden as e:
       accessErrorExit(None, str(e))
   if startUseDate:
@@ -1202,7 +1195,7 @@ def doReport():
             fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                          dataRequiredServices, parameterServices, True)
             if fullData < 0:
-              printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
+              printWarningMessage(DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
               break
             numDateChanges += 1
             if fullData == 0:
@@ -1240,7 +1233,7 @@ def doReport():
           startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
           continue
         except GAPI.invalidInput as e:
-          systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+          systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
         except GAPI.badRequest:
           if user != 'all':
             entityUnknownWarning(Ent.USER, user, i, count)
@@ -1311,7 +1304,7 @@ def doReport():
           fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                        dataRequiredServices, parameterServices)
           if fullData < 0:
-            printWarningMessage(_getMain().DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
+            printWarningMessage(DATA_NOT_AVALIABLE_RC, Msg.NO_REPORT_AVAILABLE.format(report))
             break
           numDateChanges += 1
           if fullData == 0:
@@ -1338,7 +1331,7 @@ def doReport():
         startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
         continue
       except GAPI.invalidInput as e:
-        systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+        systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
       except GAPI.forbidden as e:
         accessErrorExit(None, str(e))
       startDateTime = startDateTime.shift(days=1)
@@ -1434,7 +1427,7 @@ def doReport():
           printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
           break
         except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
-          systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+          systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
         except GAPI.authError:
           accessErrorExit(None)
         for activity in feed:

@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 import gdata.apps.contacts
 
@@ -15,15 +14,13 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
 
 from gamlib import glgdata as GDATA
 from gam.util.access import entityUnknownWarning
@@ -65,15 +62,9 @@ from gam.util.entity import getEntityList
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import setSysExitRC, writeStdout
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getCreateContactReturnOptions(parameters):
+  from gam.cmd.users.manage import ADDRESS_ARGUMENT_TO_FIELD_MAP, ORGANIZATION_ARGUMENT_TO_FIELD_MAP
   myarg = getArgument()
   if myarg == 'returnidonly':
     parameters['returnIdOnly'] = True
@@ -219,7 +210,7 @@ class ContactsManager():
     gdata.apps.contacts.REL_OTHER: 'other',
     }
 
-  _getMain().ADDRESS_ARGUMENT_TO_FIELD_MAP = {
+  ADDRESS_ARGUMENT_TO_FIELD_MAP = {
     'streetaddress': 'street',
     'pobox': 'pobox',
     'neighborhood': 'neighborhood',
@@ -363,7 +354,7 @@ class ContactsManager():
     gdata.apps.contacts.REL_OTHER: 'other',
     }
 
-  _getMain().ORGANIZATION_ARGUMENT_TO_FIELD_MAP = {
+  ORGANIZATION_ARGUMENT_TO_FIELD_MAP = {
     'location': 'where',
     'department': 'department',
     'title': 'title',
@@ -1210,7 +1201,7 @@ def _clearUpdateContacts(updateContacts):
   jcount = len(entityList)
   entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in entityList:
@@ -1293,7 +1284,7 @@ def doDedupDomainContacts():
   jcount = len(contacts)
   entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in contacts:
@@ -1339,7 +1330,7 @@ def doDeleteDomainContacts():
   jcount = len(entityList)
   entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.CONTACT)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in entityList:
@@ -1461,7 +1452,7 @@ def doInfoDomainContacts():
   if not FJQC.formatJSON:
     entityPerformActionNumItems([entityType, user], jcount, Ent.CONTACT)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for contact in entityList:
@@ -1614,6 +1605,7 @@ def normalizeContactGroupResourceName(resourceName):
   return f'contactGroups/{resourceName}'
 
 def normalizeOtherContactsResourceName(resourceName):
+  from gam.cmd.users.manage import ADDRESS_ARGUMENT_TO_FIELD_MAP, ORGANIZATION_ARGUMENT_TO_FIELD_MAP
   if resourceName.startswith('otherContacts/'):
     return resourceName
   return f'otherContacts/{resourceName}'
@@ -1774,7 +1766,7 @@ class PeopleManager():
     'removecontactgroups': PEOPLE_REMOVE_GROUPS,
     }
 
-  _getMain().ADDRESS_ARGUMENT_TO_FIELD_MAP = {
+  ADDRESS_ARGUMENT_TO_FIELD_MAP = {
     'formatted': 'formattedValue',
     'unstructured': 'formattedValue',
     'pobox': 'poBox',
@@ -1813,7 +1805,7 @@ class PeopleManager():
     'yahoo': 'yahoo',
     }
 
-  _getMain().ORGANIZATION_ARGUMENT_TO_FIELD_MAP = {
+  ORGANIZATION_ARGUMENT_TO_FIELD_MAP = {
     'startdate': 'startDate',
     'enddate': 'endDate',
     'current': 'current',

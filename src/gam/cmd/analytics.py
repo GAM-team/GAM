@@ -1,7 +1,6 @@
 """GAM Google Analytics commands."""
 
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -39,19 +38,9 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def printShowAnalyticItems(users, entityType):
-  analyticEntityMap = _getMain().ANALYTIC_ENTITY_MAP[entityType]
+  from gam.cmd.reseller import ANALYTIC_ENTITY_MAP
+  analyticEntityMap = ANALYTIC_ENTITY_MAP[entityType]
   csvPF = CSVPrintFile(analyticEntityMap['titles'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   kwargs = {'pageSize': analyticEntityMap['pageSize']}

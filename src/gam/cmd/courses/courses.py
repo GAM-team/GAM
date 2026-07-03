@@ -6,7 +6,6 @@ Part of the _courses_tmp sub-package."""
 
 import re
 import json
-import sys
 import time
 
 from gamlib import glaction
@@ -70,23 +69,13 @@ from gam.util.entity import getEntityList
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import currentCount, formatKeyValueList, writeStdout
+from gam.constants import OWNER_ACCESS_OPTIONS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def checkCourseExists(croom, courseId, i=0, count=0, entityType=Ent.COURSE):
   courseId = addCourseIdScope(courseId)
@@ -1111,7 +1100,7 @@ def _doInfoCourses(courseIdList):
     myarg = getArgument()
     if _getCourseShowProperties(myarg, courseShowProperties):
       pass
-    elif myarg in _getMain().OWNER_ACCESS_OPTIONS:
+    elif myarg in OWNER_ACCESS_OPTIONS:
       useOwnerAccess = True
     else:
       FJQC.GetFormatJSON(myarg)

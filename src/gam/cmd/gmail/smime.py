@@ -5,7 +5,6 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 import re
-import sys
 
 from gam.util.args import formatLocalTimestamp
 import base64
@@ -39,23 +38,13 @@ from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import readFile, setFilePath
 from gam.util.output import setSysExitRC
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def createSmime(users):
   sendAsEmailBase = None
@@ -112,7 +101,7 @@ def _getSmimeIds(gmail, user, i, count, sendAsEmail, function):
     if jcount == 0:
       entityActionNotPerformedWarning([Ent.USER, user, Ent.SENDAS_ADDRESS, sendAsEmail, Ent.SMIME_ID, None],
                                       Msg.NO_ENTITIES_FOUND.format(Ent.Plural(Ent.SMIME_ID)), i, count)
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     elif jcount > 1:
       entityActionNotPerformedWarning([Ent.USER, user, Ent.SENDAS_ADDRESS, sendAsEmail, Ent.SMIME_ID, None],
                                       Msg.PLEASE_SELECT_ENTITY_TO_PROCESS.format(jcount, Ent.Plural(Ent.SMIME_ID), function, 'id <S/MIMEID>'),

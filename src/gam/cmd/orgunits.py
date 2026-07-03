@@ -1,7 +1,6 @@
 """GAM organizational unit management."""
 
 import json
-import sys
 
 from gam.util.csv_pf import RI_I, RI_J, RI_JCOUNT, RI_ITEM
 import time
@@ -75,7 +74,7 @@ from gam.util.display import (
     printKeyValueList,
     printKeyValueWithCRsNLs,
 )
-from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify
+from gam.util.entity import _getCustomerIdNoC, _getCustomersCustomerIdWithC, getEntityList, getEntityToModify, getItemsToModify
 from gam.util.errors import (
     entityActionFailedExit,
     entityDoesNotExistExit,
@@ -93,23 +92,13 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
+from gam.constants import INVALID_DOMAIN_RC, ORGUNIT_NOT_EMPTY_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 WARNING_PREFIX = 'WARNING: '
 
@@ -156,7 +145,7 @@ def doCreateOrg():
     except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       errMsg = accessErrorMessage(cd)
       if errMsg:
-        systemErrorExit(_getMain().INVALID_DOMAIN_RC, errMsg)
+        systemErrorExit(INVALID_DOMAIN_RC, errMsg)
     if not parentPath and not buildPath:
       entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, name, Ent.PARENT_ORGANIZATIONAL_UNIT, parent], Msg.ENTITY_DOES_NOT_EXIST.format(Ent.Singular(Ent.PARENT_ORGANIZATIONAL_UNIT)))
       return
@@ -215,7 +204,7 @@ def checkOrgUnitPathExists(cd, orgUnitPath, i=0, count=0, showError=False):
   except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
     errMsg = accessErrorMessage(cd)
     if errMsg:
-      systemErrorExit(_getMain().INVALID_DOMAIN_RC, errMsg)
+      systemErrorExit(INVALID_DOMAIN_RC, errMsg)
   if showError:
     entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
   return (False, orgUnitPath, orgUnitPath)
@@ -1036,7 +1025,7 @@ def doCheckOrgUnit():
       titlesList.append(title)
   if 'browsers' in fieldsList:
     cbcm = buildGAPIObject(API.CBCM)
-    customerId = _getMain()._getCustomerIdNoC()
+    customerId = _getCustomerIdNoC()
     printGettingAllEntityItemsForWhom(Ent.CHROME_BROWSER, orgUnitPath, entityType=Ent.ORGANIZATIONAL_UNIT)
     pageMessage = getPageMessage()
     try:
@@ -1107,7 +1096,7 @@ def doCheckOrgUnit():
     sds = callGAPIpages(ci.orgUnits().memberships(), 'list', 'orgMemberships',
                         pageMessage=getPageMessageForWhom(),
                         parent=f'orgUnits/{orgUnitId[3:]}',
-                        customer=_getMain()._getCustomersCustomerIdWithC(),
+                        customer=_getCustomersCustomerIdWithC(),
                         filter="type == 'shared_drive'")
     orgUnitItemCounts['sharedDrives'] = len(sds)
     if f is not None and orgUnitItemCounts['sharedDrives'] > 0:
@@ -1160,7 +1149,7 @@ def doCheckOrgUnit():
     csvPF.WriteRowNoFilter(baseRow)
   csvPF.writeCSVfile(f'OrgUnit {orgUnitPath} Item Counts')
   if not empty and GM.Globals[GM.SYSEXITRC] == 0:
-    setSysExitRC(_getMain().ORGUNIT_NOT_EMPTY_RC)
+    setSysExitRC(ORGUNIT_NOT_EMPTY_RC)
 
 ALIAS_TARGET_TYPES = ['user', 'group', 'target']
 

@@ -5,7 +5,6 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 import re
-import sys
 
 from gam.cmd.gmail.messages import forwardMessagesThreads
 
@@ -48,23 +47,18 @@ from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUs
 from gam.util.errors import missingArgumentExit, missingChoiceExit, unknownArgumentExit
 from gam.util.html import dehtml
 from gam.util.output import writeStdout
+from gam.util.tags import (
+    _getTagReplacement,
+    _getTagReplacementFieldValues,
+    _initTagReplacements,
+    _processTagReplacements,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _showForward(user, i, count, result):
   if 'enabled' in result:
@@ -540,7 +534,7 @@ def _processSignature(tagReplacements, signature, html):
   if signature:
     signature = signature.replace('\r', '').replace('\\n', '<br/>')
     if tagReplacements['tags']:
-      signature = _getMain()._processTagReplacements(tagReplacements, signature)
+      signature = _processTagReplacements(tagReplacements, signature)
     if not html:
       signature = signature.replace('\n', '<br/>')
   return signature
@@ -570,7 +564,7 @@ def _processSendAs(user, i, count, entityType, emailAddress, j, jcount, gmail, f
   return userDefined
 
 def getSendAsAttributes(myarg, body, tagReplacements):
-  if _getMain()._getTagReplacement(myarg, tagReplacements, True):
+  if _getTagReplacement(myarg, tagReplacements, True):
     pass
   elif myarg == 'name':
     body['displayName'] = getString(Cmd.OB_NAME, minLen=0)
@@ -613,7 +607,7 @@ def createUpdateSendAs(users):
     body = {}
   signature = None
   smtpMsa = {}
-  tagReplacements = _getMain()._initTagReplacements()
+  tagReplacements = _initTagReplacements()
   html = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -653,7 +647,7 @@ def createUpdateSendAs(users):
     if not gmail:
       continue
     if signature is not None and tagReplacements['subs']:
-      _getMain()._getTagReplacementFieldValues(user, i, count, tagReplacements)
+      _getTagReplacementFieldValues(user, i, count, tagReplacements)
       kwargs['body']['signature'] = _processSignature(tagReplacements, signature, html)
     _processSendAs(user, i, count, Ent.SENDAS_ADDRESS, emailAddress, i, count, gmail, ['create', 'patch'][updateCmd], False, **kwargs)
 

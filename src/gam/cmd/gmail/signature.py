@@ -5,7 +5,6 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 import re
-import sys
 
 from gam.cmd.gmail.settings import _processSendAs, _processSignature, getSendAsAttributes
 
@@ -42,6 +41,12 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import unknownArgumentExit
 from gam.util.html import dehtml
+from gam.util.tags import (
+    _getTagReplacement,
+    _getTagReplacementFieldValues,
+    _initTagReplacements,
+    _processTagReplacements,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -49,19 +54,8 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def setSignature(users):
-  tagReplacements = _getMain()._initTagReplacements()
+  tagReplacements = _initTagReplacements()
   signature, _, html = getStringOrFile('sig')
   body = {}
   primary = False
@@ -82,7 +76,7 @@ def setSignature(users):
     if not gmail:
       continue
     if tagReplacements['subs']:
-      _getMain()._getTagReplacementFieldValues(user, i, count, tagReplacements)
+      _getTagReplacementFieldValues(user, i, count, tagReplacements)
       body['signature'] = _processSignature(tagReplacements, signature, html)
     if primary:
       try:
@@ -161,7 +155,7 @@ def setVacation(users):
     body['enableAutoReply'] = getBoolean(None)
   responseBodyType = 'responseBodyPlainText'
   message = subject = None
-  tagReplacements = _getMain()._initTagReplacements()
+  tagReplacements = _initTagReplacements()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'subject':
@@ -170,7 +164,7 @@ def setVacation(users):
       message, _, html = getStringOrFile(myarg)
       if html:
         responseBodyType = 'responseBodyHtml'
-    elif _getMain()._getTagReplacement(myarg, tagReplacements, True):
+    elif _getTagReplacement(myarg, tagReplacements, True):
       pass
     elif myarg == 'html':
       if getBoolean():
@@ -191,11 +185,11 @@ def setVacation(users):
     else:
       message = message.replace('\r', '').replace('\\n', '\n')
     if tagReplacements['tags'] and not tagReplacements['subs']:
-      message = _getMain()._processTagReplacements(tagReplacements, message)
+      message = _processTagReplacements(tagReplacements, message)
     body[responseBodyType] = message
   if subject:
     if tagReplacements['tags'] and not tagReplacements['subs']:
-      subject = _getMain()._processTagReplacements(tagReplacements, subject)
+      subject = _processTagReplacements(tagReplacements, subject)
     body['responseSubject'] = subject
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -204,11 +198,11 @@ def setVacation(users):
     if not gmail:
       continue
     if (message or subject) and tagReplacements['subs']:
-      _getMain()._getTagReplacementFieldValues(user, i, count, tagReplacements)
+      _getTagReplacementFieldValues(user, i, count, tagReplacements)
       if message:
-        body[responseBodyType] = _getMain()._processTagReplacements(tagReplacements, message)
+        body[responseBodyType] = _processTagReplacements(tagReplacements, message)
       if subject:
-        body['responseSubject'] = _getMain()._processTagReplacements(tagReplacements, subject)
+        body['responseSubject'] = _processTagReplacements(tagReplacements, subject)
     try:
       oldBody = callGAPI(gmail.users().settings(), 'getVacation',
                          throwReasons=GAPI.GMAIL_THROW_REASONS,

@@ -5,7 +5,6 @@ Part of the drive sub-package, extracted from drive.py."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 import re
-import sys
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
 
@@ -50,6 +49,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument, getEntitySelection, getEntitySelector
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import _stripControlCharsFromName, setSysExitRC
+from gam.constants import AND_ME_IN_OWNERS, AND_NOT_ME_IN_OWNERS, NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -84,16 +84,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def getRevisionsEntity():
   revisionsEntity = {'list': [], 'dict': None, 'count': None, 'time': None, 'range': None}
@@ -250,7 +240,7 @@ def deleteFileRevisions(users):
       if kcount == 0:
         entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                    Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.DRIVE_FILE_REVISION)), j, jcount)
-        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(NO_ENTITIES_FOUND_RC)
         continue
       if not previewDelete:
         if maxToProcess and kcount > maxToProcess:
@@ -340,7 +330,7 @@ def updateFileRevisions(users):
       if kcount == 0:
         entityNumEntitiesActionNotPerformedWarning([Ent.USER, user, entityType, fileName], Ent.DRIVE_FILE_REVISION, kcount,
                                                    Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.DRIVE_FILE_REVISION)), j, jcount)
-        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(NO_ENTITIES_FOUND_RC)
         continue
       if not previewUpdate:
         if maxToProcess and kcount > maxToProcess:
@@ -598,14 +588,14 @@ def _stripMeInOwners(query):
   if not query:
     return query
   query = query.replace(ME_IN_OWNERS_AND, '')
-  query = query.replace(_getMain().AND_ME_IN_OWNERS, '')
+  query = query.replace(AND_ME_IN_OWNERS, '')
   return query.replace(ME_IN_OWNERS, '').strip()
 
 def _stripNotMeInOwners(query):
   if not query:
     return query
   query = query.replace(NOT_ME_IN_OWNERS_AND, '')
-  query = query.replace(_getMain().AND_NOT_ME_IN_OWNERS, '')
+  query = query.replace(AND_NOT_ME_IN_OWNERS, '')
   return query.replace(NOT_ME_IN_OWNERS, '').strip()
 
 def _updateAnyOwnerQuery(query):

@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 import googleapiclient.http
 import os
@@ -61,23 +60,13 @@ from gam.util.display import (
 from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUserObjectEntity, splitEmailAddressOrUID
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import closeFile, openFile, setFilePath, uniqueFilename
+from gam.util.tags import _substituteForUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def normalizeNoteName(noteName):
   if noteName.startswith('notes/'):
@@ -534,12 +523,13 @@ GET_NOTE_HTTP_ERROR_PATTERN = re.compile(r'^.*\'description\': \'(.*)\'')
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 #	[<DriveFileParentAttribute>]
 def getNoteAttachments(users):
+  from gam.cmd.drive.core import _driveFileParentSpecified, _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   noteNameEntity = getUserObjectEntity(Cmd.OB_NAME, Ent.NOTE)
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
   targetNamePattern = None
   overwrite = False
   body = {}
-  parentParms = _getMain().initDriveFileAttributes()
+  parentParms = initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'targetfolder':
@@ -548,11 +538,11 @@ def getNoteAttachments(users):
       targetNamePattern = getString(Cmd.OB_FILE_NAME)
     elif myarg == 'overwrite':
       overwrite = getBoolean()
-    elif _getMain().getDriveFileParentAttribute(myarg, parentParms):
+    elif getDriveFileParentAttribute(myarg, parentParms):
       pass
     else:
       unknownArgumentExit()
-  parentSpecified = _getMain()._driveFileParentSpecified(parentParms)
+  parentSpecified = _driveFileParentSpecified(parentParms)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -564,13 +554,13 @@ def getNoteAttachments(users):
       _ , drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
       if not drive:
         continue
-      if not _getMain()._getDriveFileParentInfo(drive, user, i, count, body, parentParms):
+      if not _getDriveFileParentInfo(drive, user, i, count, body, parentParms):
         continue
     _, userName, _ = splitEmailAddressOrUID(user)
-    targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
+    targetFolder = _substituteForUser(targetFolderPattern, user, userName)
     if not os.path.isdir(targetFolder):
       os.makedirs(targetFolder)
-    targetName = _getMain()._substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
+    targetName = _substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
     Ind.Increment()
     j = 0
     for name in noteNames:

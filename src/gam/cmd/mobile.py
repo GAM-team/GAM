@@ -1,7 +1,6 @@
 """GAM mobile device management."""
 
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -26,6 +25,7 @@ from gam.util.args import (
     getString,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
+    substituteQueryTimes,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -54,23 +54,13 @@ from gam.util.entity import _validateDeviceQuery, getDeviceQueries, getEntityLis
 from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import writeStdout
+from gam.constants import PROJECTION_CHOICE_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def getMobileDeviceEntity():
   cd = buildGAPIObject(API.DIRECTORY)
@@ -249,8 +239,8 @@ def _getMobileFieldsArguments(myarg, parameters):
   if myarg == 'allfields':
     parameters['projection'] = 'FULL'
     parameters['fieldsList'] = []
-  elif myarg in _getMain().PROJECTION_CHOICE_MAP:
-    parameters['projection'] = _getMain().PROJECTION_CHOICE_MAP[myarg]
+  elif myarg in PROJECTION_CHOICE_MAP:
+    parameters['projection'] = PROJECTION_CHOICE_MAP[myarg]
     parameters['fieldsList'] = []
   elif getFieldsList(myarg, MOBILE_FIELDS_CHOICE_MAP, parameters['fieldsList'], initialField='resourceId'):
     pass
@@ -420,7 +410,7 @@ def doPrintMobileDevices():
   if appsLimit >= 0:
     parameters['projection'] = 'FULL'
   fields = getItemFieldsFromFieldsList('mobiledevices', parameters['fieldsList'])
-  _getMain().substituteQueryTimes(queries, queryTimes)
+  substituteQueryTimes(queries, queryTimes)
   itemCount = 0
   for query in queries:
     printGettingAllAccountEntities(Ent.MOBILE_DEVICE, query)

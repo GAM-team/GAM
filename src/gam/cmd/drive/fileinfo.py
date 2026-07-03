@@ -5,7 +5,6 @@ Part of the drive sub-package, extracted from drive.py."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 import re
-import sys
 import platform
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
@@ -20,6 +19,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.constants import WITH_PARENTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -54,8 +54,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
 
 from gam.cmd.drive.core import (
     MimeTypeCheck, _getSharedDriveNameFromId, _simpleFileIdEntityList,
@@ -103,20 +101,13 @@ from gam.util.display import (
     printKeyValueListWithCount,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+)
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import writeStdout
 
-
-
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 SHARED_DRIVE_MAX_FILES_FOLDERS = 500000
 TEAM_DRIVE = 'Drive'
@@ -462,7 +453,7 @@ DISKUSAGE_SHOW_CHOICES = {'all', 'summary', 'summaryandtrash'}
 def printDiskUsage(users):
   def _getChildDriveFolderInfo(drive, fileEntry, user, i, count, depth):
     fileEntry['depth'] = depth
-    q = _getMain().WITH_PARENTS.format(fileEntry['id'])
+    q = WITH_PARENTS.format(fileEntry['id'])
     try:
       children = callGAPIpages(drive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
@@ -588,7 +579,7 @@ def printDiskUsage(users):
           topFolder['name'] = _stripControlCharsFromName(topFolder['name'])
         mimeType = topFolder.pop('mimeType')
         if mimeType != MIMETYPE_GA_FOLDER:
-          entityValueList = [Ent.USER, user, _getMain()._getEntityMimeType(topFolder), topFolder['name']]
+          entityValueList = [Ent.USER, user, _getEntityMimeType(topFolder), topFolder['name']]
           entityActionNotPerformedWarning(entityValueList, Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_FOLDER), i, count)
           continue
         if topFolder['trashed']:
@@ -610,7 +601,7 @@ def printDiskUsage(users):
             topFolder['path'] = topFolder['name']
           topFolder.pop('ownedByMe', None)
         elif topFolder['name'] == MY_DRIVE and not topFolder.get('parents'):
-          topFolder['path'] = _getMain().MY_DRIVE
+          topFolder['path'] = MY_DRIVE
         else:
           topFolder['path'] = topFolder['name']
         topFolder['User'] = user
@@ -688,6 +679,7 @@ FILESHARECOUNTS_CATEGORIES = {
 #	[internaldomains all|primary|<DomainNameList>]
 #	[summary none|only|plus] [summaryuser <String>]
 def printShowFileShareCounts(users):
+  from gam.cmd.groups.members import finalizeInternalDomains
   def incrementCounter(counter):
     if not counterSet[counter]:
       userShareCounts[counter] += 1
@@ -732,7 +724,7 @@ def printShowFileShareCounts(users):
       summaryUser = getString(Cmd.OB_STRING)
     else:
       unknownArgumentExit()
-  internalDomains = _getMain().finalizeInternalDomains(cd, internalDomains)
+  internalDomains = finalizeInternalDomains(cd, internalDomains)
   summaryShareCounts = FILESHARECOUNTS_ZEROCOUNTS.copy()
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -888,7 +880,7 @@ def printShowFileTree(users):
   def _showChildDriveFolderContents(drive, fileEntry, user, i, count, depth):
     if not DLP.CheckExcludeTrashed(fileEntry):
       return
-    q = _getMain().WITH_PARENTS.format(fileEntry['id'])
+    q = WITH_PARENTS.format(fileEntry['id'])
     if selectSubQuery:
       q += ' and ('+selectSubQuery+')'
     try:

@@ -1621,4 +1621,14 @@ def getHTTPError(responses, http_status, reason, message):
     return responses[reason]
   return formatHTTPError(http_status, reason, message)
 
+def substituteQueryTimes(queries, queryTimes):
+  if queryTimes:
+    for i, query in enumerate(queries):
+      if query is not None:
+        for queryTimeName, queryTimeValue in queryTimes.items():
+          query = query.replace(f'#{queryTimeName}#', queryTimeValue)
+        queries[i] = query
 
+def _getFilterDateTime():
+  filterDate = getYYYYMMDD(returnDateTime=True)
+  return (filterDate, filterDate.replace(tzinfo='UTC'))

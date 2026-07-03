@@ -1,7 +1,6 @@
 """GAM buildings, features, and resource calendar management."""
 
 import json
-import sys
 import uuid
 
 from gamlib import glaction
@@ -58,23 +57,13 @@ from gam.util.display import (
 from gam.util.entity import getEntityList, shlexSplitList
 from gam.util.errors import entityDoesNotExistExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import printErrorMessage, writeStdout
+from gam.constants import BUILDING_ADDRESS_FIELD_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getBuildingAttributes(body):
   while Cmd.ArgumentsRemaining():
@@ -93,8 +82,8 @@ def _getBuildingAttributes(body):
       body['description'] = getString(Cmd.OB_STRING)
     elif myarg == 'floors':
       body['floorNames'] = getString(Cmd.OB_STRING).split(',')
-    elif myarg in _getMain().BUILDING_ADDRESS_FIELD_MAP:
-      myarg = _getMain().BUILDING_ADDRESS_FIELD_MAP[myarg]
+    elif myarg in BUILDING_ADDRESS_FIELD_MAP:
+      myarg = BUILDING_ADDRESS_FIELD_MAP[myarg]
       body.setdefault('address', {})
       if myarg == 'addressLines':
         body['address'][myarg] = getStringWithCRsNLs().split('\n')
@@ -683,6 +672,8 @@ RESOURCE_FIELDS_WITH_CRS_NLS = {'resourceDescription'}
 
 def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
 
+  from gam import ACLRuleKeyValueList
+  from gam.cmd.calendar import _showCalendarSettings
   def _showResourceField(title, resource, field):
     if field in resource:
       if field not in RESOURCE_FIELDS_WITH_CRS_NLS:
@@ -713,7 +704,7 @@ def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
     _showResourceField(field, resource, field)
   calendar = resource.get('calendar')
   if calendar:
-    _getMain()._showCalendarSettings(calendar, 0, 0)
+    _showCalendarSettings(calendar, 0, 0)
   if acls:
     j = 0
     jcount = len(acls)
@@ -723,7 +714,7 @@ def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
       j += 1
       if noSelfOwner and rule['role'] == 'owner' and rule['scope']['value'] == resource['resourceEmail']:
         continue
-      printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(rule), j, jcount)
+      printKeyValueListWithCount(ACLRuleKeyValueList(rule), j, jcount)
     Ind.Decrement()
   Ind.Decrement()
 

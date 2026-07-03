@@ -6,7 +6,6 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import json
-import sys
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity
 from gam.cmd.drive.filepaths import _finalizeIncludePermissionsForView, _getIncludePermissionsForView, _mapDrivePermissionNames
@@ -73,7 +72,11 @@ from gam.util.display import (
     printLine,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+    getEntityList,
+)
 from gam.util.errors import (
     deprecatedArgument,
     invalidChoiceExit,
@@ -83,6 +86,7 @@ from gam.util.errors import (
 )
 from gam.util.fileio import UNKNOWN
 from gam.util.output import executeBatch
+from gam.constants import ADMIN_ACCESS_OPTIONS, WITH_PARENTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -117,20 +121,10 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def printEmptyDriveFolders(users):
   def _checkChildDriveFolderContents(drive, fileEntry, user, i, count, pathList):
-    query = _getMain().WITH_PARENTS.format(fileEntry ['id'])
+    query = WITH_PARENTS.format(fileEntry ['id'])
     try:
       children = callGAPIpages(drive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
@@ -195,7 +189,7 @@ def printEmptyDriveFolders(users):
         pathList = [fileEntryInfo['name']]
       mimeType = fileEntryInfo['mimeType']
       if mimeType != MIMETYPE_GA_FOLDER:
-        entityValueList = [Ent.USER, user, _getMain()._getEntityMimeType(fileEntryInfo), fileEntryInfo['name']]
+        entityValueList = [Ent.USER, user, _getEntityMimeType(fileEntryInfo), fileEntryInfo['name']]
         entityActionNotPerformedWarning(entityValueList, Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_FOLDER), i, count)
         continue
       _checkChildDriveFolderContents(drive, fileEntryInfo, user, i, count, pathList)
@@ -214,7 +208,7 @@ def printEmptyDriveFolders(users):
 #	[pathdelimiter <Character>]
 def deleteEmptyDriveFolders(users):
   def _deleteEmptyChildDriveFolders(drive, fileEntry, user, i, count, pathList, atTop):
-    query = _getMain().WITH_PARENTS.format(fileEntry ['id'])
+    query = WITH_PARENTS.format(fileEntry ['id'])
     try:
       children = callGAPIpages(drive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID,
@@ -285,7 +279,7 @@ def deleteEmptyDriveFolders(users):
         pathList = [fileEntryInfo['name']]
       mimeType = fileEntryInfo['mimeType']
       if mimeType != MIMETYPE_GA_FOLDER:
-        entityValueList = [Ent.USER, user, _getMain()._getEntityMimeType(fileEntryInfo), fileEntryInfo['name']]
+        entityValueList = [Ent.USER, user, _getEntityMimeType(fileEntryInfo), fileEntryInfo['name']]
         entityActionNotPerformedWarning(entityValueList, Msg.INVALID_MIMETYPE.format(mimeType, MIMETYPE_GA_FOLDER), i, count)
         continue
       _deleteEmptyChildDriveFolders(drive, fileEntryInfo, user, i, count, pathList, True)
@@ -497,7 +491,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
       FJQC.SetCsvPF(csvPF)
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg)
@@ -657,7 +651,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
     elif myarg == 'transferownership':
       deprecatedArgument(myarg)
       getBoolean()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg)
@@ -856,7 +850,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
     elif myarg == 'emailmessage':
       sendNotificationEmail = True
       emailMessage = getString(Cmd.OB_STRING)
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif PM and PM.ProcessArgument(myarg):
       pass
@@ -942,7 +936,7 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
       showTitles = getBoolean()
     elif myarg == 'updatesheetprotectedranges':
       updateSheetProtectedRanges = getBoolean()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       unknownArgumentExit()
@@ -1063,7 +1057,7 @@ def deletePermissions(users, useDomainAdminAccess=False):
     PM.SetDefaultMatch(False, {'role': 'owner'})
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    if myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif PM and PM.ProcessArgument(myarg):
       pass
@@ -1139,7 +1133,7 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
     myarg = getArgument()
     if myarg == 'showtitles':
       showTitles = getBoolean()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       FJQC.GetFormatJSON(myarg)
@@ -1271,7 +1265,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
         csvPF.SetSortAllTitles()
     elif getDriveFilePermissionsFields(myarg, fieldsList):
       pass
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif myarg == 'pmselect':
       pmselect = True

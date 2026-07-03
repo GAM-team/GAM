@@ -88,23 +88,18 @@ from gam.util.fileio import closeFile, writeFile
 from gam.util.gdoc import openCSVFileReader
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import readStdin, setSysExitRC, systemErrorExit, writeStderr
+from gam.constants import MULTIPLE_DELETED_USERS_FOUND_RC, NO_ENTITIES_FOUND_RC, PASSWORD_SAFE_CHARS, USER_SUSPENDED_RC
+from gam.util.tags import (
+    _getTagReplacement,
+    _initTagReplacements,
+    sendCreateUpdateUserNotification,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from secrets import SystemRandom
 from passlib.hash import sha512_crypt
@@ -177,7 +172,7 @@ class PasswordOptions():
         self.randomPasswordChars = [chr(i) for i in range(1, 55296)]
       return ''.join(rnd.choice(self.randomPasswordChars) for _ in range(4096))
     # Generate a clean password that can be used for logins
-    return ''.join(rnd.choice(_getMain().PASSWORD_SAFE_CHARS) for _ in range(self.cleanPasswordLen))
+    return ''.join(rnd.choice(PASSWORD_SAFE_CHARS) for _ in range(self.cleanPasswordLen))
 
   def ProcessArgument(self, myarg, notify, notFoundBody):
     if myarg == 'ignorenullpassword':
@@ -426,6 +421,8 @@ def getNotifyArguments(myarg, notify, userNotification):
   return True
 
 def getUserAttributes(cd, updateCmd, noUid=False):
+  from gam.cmd.resources import _getBuildingByNameOrId
+  from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
   def getKeywordAttribute(keywords, attrdict, **opts):
     if Cmd.ArgumentsRemaining():
       keyword = Cmd.Current().strip().lower()
@@ -521,7 +518,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     'immutableOUs': set(),
     'addNumericSuffixOnDuplicate': 0,
     'lic': None,
-    _getMain().LICENSE_PRODUCT_SKUIDS: [],
+    LICENSE_PRODUCT_SKUIDS: [],
     }
   if updateCmd:
     body = {}
@@ -533,7 +530,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
   primary = {}
   updatePrimaryEmail = []
   groupOrgUnitMap = None
-  tagReplacements = _getMain()._initTagReplacements()
+  tagReplacements = _initTagReplacements()
   addGroups = {}
   addAliases = []
   PwdOpts = PasswordOptions(updateCmd)
@@ -546,7 +543,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
       parameters['notifyRecoveryEmail'] = True
     elif PwdOpts.ProcessArgument(myarg, notify, notFoundBody):
       pass
-    elif _getMain()._getTagReplacement(myarg, tagReplacements, True):
+    elif _getTagReplacement(myarg, tagReplacements, True):
       pass
     elif myarg == 'admin':
       value = getBoolean()
@@ -572,12 +569,12 @@ def getUserAttributes(cd, updateCmd, noUid=False):
     elif not updateCmd and myarg in {'license', 'licence', 'licenses', 'licences'}:
       if parameters['lic'] is None:
         parameters['lic'] = buildGAPIObject(API.LICENSING)
-      parameters[_getMain().LICENSE_PRODUCT_SKUIDS] = getGoogleSKUList(allowUnknownProduct=True)
+      parameters[LICENSE_PRODUCT_SKUIDS] = getGoogleSKUList(allowUnknownProduct=True)
       if checkArgumentPresent(['product', 'productid']):
         productId = getGoogleProduct()
-        for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
+        for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
           productSku = (productId, productSku[1])
-      for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
+      for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
         if not productSku[0]:
           invalidChoiceExit(productSku[1], SKU.getSortedSKUList(), True)
     elif updateCmd and myarg == 'updateoufromgroup':
@@ -722,7 +719,7 @@ def getUserAttributes(cd, updateCmd, noUid=False):
           elif argument == 'area':
             entry['area'] = getString(Cmd.OB_STRING)
           elif argument in {'building', 'buildingid'}:
-            entry['buildingId'] = _getMain()._getBuildingByNameOrId(cd, allowNV=True)
+            entry['buildingId'] = _getBuildingByNameOrId(cd, allowNV=True)
           elif argument in {'floor', 'floorname'}:
             entry['floorName'] = getString(Cmd.OB_STRING, minLen=0)
           elif argument in {'section', 'floorsection'}:
@@ -930,18 +927,20 @@ def getUserAttributes(cd, updateCmd, noUid=False):
           resolveConflictAccount)
 
 def createUserAddToGroups(cd, user, addGroups, i, count):
+  from gam.cmd.userop.usergroups import _addUserToGroups
   action = Act.Get()
   Act.Set(Act.ADD)
   Ind.Increment()
-  _getMain()._addUserToGroups(cd, user, set(addGroups), addGroups, i, count)
+  _addUserToGroups(cd, user, set(addGroups), addGroups, i, count)
   Ind.Decrement()
   Act.Set(action)
 
 def createUserAddAliases(cd, user, aliasList, i, count):
+  from gam.cmd.aliases import _addUserAliases
   action = Act.Get()
   Act.Set(Act.ADD)
   Ind.Increment()
-  _getMain()._addUserAliases(cd, user, aliasList, i, count)
+  _addUserAliases(cd, user, aliasList, i, count)
   Ind.Decrement()
   Act.Set(action)
 
@@ -961,6 +960,8 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[logpassword <FileName>] [ignorenullpassword]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
+  from gam.cmd.ciuserinvitations import _getIsInvitableUser
+  from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
   cd = buildGAPIObject(API.DIRECTORY)
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     _, _, _, \
@@ -972,7 +973,7 @@ def doCreateUser():
   while True:
     user = body['primaryEmail']
     if parameters['verifyNotInvitable']:
-      isInvitableUser, _ = _getMain()._getIsInvitableUser(None, user)
+      isInvitableUser, _ = _getIsInvitableUser(None, user)
       if isInvitableUser:
         entityActionNotPerformedWarning([Ent.USER, user], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT)
         return
@@ -1012,8 +1013,8 @@ def doCreateUser():
   if (notify.get('recipients') or (parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'))):
     if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
       notify['recipients'].append(result['recoveryEmail'])
-    _getMain().sendCreateUpdateUserNotification(result, notify, tagReplacements)
-  for productSku in parameters[_getMain().LICENSE_PRODUCT_SKUIDS]:
+    sendCreateUpdateUserNotification(result, notify, tagReplacements)
+  for productSku in parameters[LICENSE_PRODUCT_SKUIDS]:
     productId = productSku[0]
     skuId = productSku[1]
     try:
@@ -1082,6 +1083,7 @@ def doCreateGuestUser():
 #	[notifyonupdate [<Boolean>]]
 #	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
+  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def waitingForCreationToComplete(sleep_time):
     writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.USER), sleep_time))
     time.sleep(sleep_time)
@@ -1159,7 +1161,7 @@ def updateUsers(entityList):
           pass
       if body:
         if 'primaryEmail' in body and parameters['verifyNotInvitable']:
-          isInvitableUser, ci = _getMain()._getIsInvitableUser(ci, body['primaryEmail'])
+          isInvitableUser, ci = _getIsInvitableUser(ci, body['primaryEmail'])
           if isInvitableUser:
             entityActionNotPerformedWarning([Ent.USER, body['primaryEmail']], Msg.EMAIL_ADDRESS_IS_UNMANAGED_ACCOUNT, i, count)
             continue
@@ -1182,7 +1184,7 @@ def updateUsers(entityList):
                 (notify.get('recipients') or (parameters['notifyRecoveryEmail'] and result.get('recoveryEmail')))):
               if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
                 notify['recipients'].append(result['recoveryEmail'])
-              _getMain().sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count, createMessage=False)
+              sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count, createMessage=False)
             break
           except GAPI.conditionNotMet as e:
             retry += 1
@@ -1219,7 +1221,7 @@ def updateUsers(entityList):
                     notify['password'] = notify['notFoundPassword']
                     if parameters['notifyRecoveryEmail'] and result.get('recoveryEmail'):
                       notify['recipients'].append(result['recoveryEmail'])
-                    _getMain().sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count)
+                    sendCreateUpdateUserNotification(result, notify, tagReplacements, i, count)
                 except GAPI.duplicate:
                   duplicateAliasGroupUserWarning(cd, [Ent.USER, body['primaryEmail']], i, count)
               else:
@@ -1323,7 +1325,7 @@ def undeleteUsers(entityList):
       jcount = len(matching_users)
       if jcount == 0:
         entityUnknownWarning(Ent.DELETED_USER, user, i, count)
-        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(NO_ENTITIES_FOUND_RC)
         continue
       if jcount > 1:
         entityActionNotPerformedWarning([Ent.DELETED_USER, user],
@@ -1339,7 +1341,7 @@ def undeleteUsers(entityList):
               printKeyValueList([attr_name, formatLocalTime(matching_user[attr_name])])
           Ind.Decrement()
         Ind.Decrement()
-        setSysExitRC(_getMain().MULTIPLE_DELETED_USERS_FOUND_RC)
+        setSysExitRC(MULTIPLE_DELETED_USERS_FOUND_RC)
         continue
       user_uid = matching_users[0]['id']
     if userOrgUnitLists:
@@ -1387,7 +1389,7 @@ def doCheckUserSuspended():
   if result[up]:
     up = 'suspensionReason'
     kvList.extend([UProp.PROPERTIES[up][UProp.TITLE], result[up]])
-    setSysExitRC(_getMain().USER_SUSPENDED_RC)
+    setSysExitRC(USER_SUSPENDED_RC)
   printKeyValueList(kvList)
 
 # gam <UserTypeEntity> suspend users [noactionifalias]

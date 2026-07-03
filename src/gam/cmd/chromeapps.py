@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -18,6 +17,7 @@ from gam.util.api import buildGAPIObject, buildGAPIObjectNoAuthentication, callG
 from gam.util.args import (
     OrderBy,
     YYYYMMDD_FORMAT,
+    _getFilterDateTime,
     getArgument,
     getBoolean,
     getCharacter,
@@ -47,7 +47,7 @@ from gam.util.display import (
     printKeyValueList,
     printLine,
 )
-from gam.util.entity import convertEntityToList, getEntityList
+from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, getEntityList
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
@@ -58,20 +58,10 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def doInfoChromeApp():
+  from gam.cmd.printers import CHROME_APPS_TIME_OBJECTS, CHROME_APPS_TYPE_CHOICES
   cm = buildGAPIObject(API.CHROMEMANAGEMENT_APPDETAILS)
-  app_type = getChoice(_getMain().CHROME_APPS_TYPE_CHOICES)
+  app_type = getChoice(CHROME_APPS_TYPE_CHOICES)
   app_id = getString(Cmd.OB_APP_ID)
   FJQC = FormatJSONQuoteChar()
   while Cmd.ArgumentsRemaining():
@@ -92,7 +82,7 @@ def doInfoChromeApp():
       return
     printEntity([Ent.CHROME_APP, app_id])
     Ind.Increment()
-    showJSON(None, appDetails, timeObjects=_getMain().CHROME_APPS_TIME_OBJECTS)
+    showJSON(None, appDetails, timeObjects=CHROME_APPS_TIME_OBJECTS)
     Ind.Decrement()
   except (GAPI.badRequest, GAPI.notFound, GAPI.forbidden):
     checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_APP, f'{app_type}/{app_id}')
@@ -138,6 +128,7 @@ CHROME_APPS_TITLES = [
 #	[orderby appname|apptype|installtype|numberofpermissions|totalinstallcount]
 #	[formatjson]
 def doPrintShowChromeApps():
+  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printApp(app):
     if showOrgUnit:
       app['orgUnitPath'] = orgUnitPath
@@ -161,7 +152,7 @@ def doPrintShowChromeApps():
 
   cd = buildGAPIObject(API.DIRECTORY)
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  customerId = _getMain()._getCustomersCustomerIdWithC()
+  customerId = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['appId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
@@ -173,8 +164,8 @@ def doPrintShowChromeApps():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ORGUNIT_ENTITIES_MAP:
-      myarg = _getMain().ORGUNIT_ENTITIES_MAP[myarg]
+    elif myarg in ORGUNIT_ENTITIES_MAP:
+      myarg = ORGUNIT_ENTITIES_MAP[myarg]
       ous = convertEntityToList(getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
       directlyInOU = myarg in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS}
     elif myarg == 'filter':
@@ -264,6 +255,7 @@ CHROME_APP_DEVICES_TITLES = ['appType', 'deviceId', 'machine']
 #	[orderby deviceid|machine]
 #	[formatjson]
 def doPrintShowChromeAppDevices():
+  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printDevice(device):
     device['appId'] = appId
     device['appType'] = appType
@@ -291,7 +283,7 @@ def doPrintShowChromeAppDevices():
 
   cd = buildGAPIObject(API.DIRECTORY)
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  customerId = _getMain()._getCustomersCustomerIdWithC()
+  customerId = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['appId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   ous = [None]
@@ -303,8 +295,8 @@ def doPrintShowChromeAppDevices():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ORGUNIT_ENTITIES_MAP:
-      myarg = _getMain().ORGUNIT_ENTITIES_MAP[myarg]
+    elif myarg in ORGUNIT_ENTITIES_MAP:
+      myarg = ORGUNIT_ENTITIES_MAP[myarg]
       ous = convertEntityToList(getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
       directlyInOU = myarg in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS}
     elif myarg == 'appid':
@@ -312,10 +304,10 @@ def doPrintShowChromeAppDevices():
     elif myarg == 'apptype':
       appType = getChoice(CHROME_APP_DEVICES_APPTYPE_CHOICE_MAP, mapChoice=True)
     elif myarg in CROS_START_ARGUMENTS:
-      startDate, _ = _getMain()._getFilterDateTime()
+      startDate, _ = _getFilterDateTime()
       startDate = startDate.strftime(YYYYMMDD_FORMAT)
     elif myarg in CROS_END_ARGUMENTS:
-      endDate, _ = _getMain()._getFilterDateTime()
+      endDate, _ = _getFilterDateTime()
       endDate = endDate.strftime(YYYYMMDD_FORMAT)
     elif myarg == 'orderby':
       orderBy = getChoice(CHROME_APP_DEVICES_ORDERBY_CHOICE_MAP, mapChoice=True)
@@ -399,6 +391,7 @@ CHROME_AUE_TITLES = ['aueMonth', 'aueYear', 'expired']
 #	[minauedate <Date>] [maxauedate <Date>]
 #	[formatjson]
 def doPrintShowChromeAues():
+  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printAue(aue):
     if showOrgUnit:
       aue['orgUnitPath'] = orgUnitPath
@@ -422,7 +415,7 @@ def doPrintShowChromeAues():
 
   cd = buildGAPIObject(API.DIRECTORY)
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  customerId = _getMain()._getCustomersCustomerIdWithC()
+  customerId = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['model', 'count']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   ous = [None]
@@ -433,15 +426,15 @@ def doPrintShowChromeAues():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ORGUNIT_ENTITIES_MAP:
-      myarg = _getMain().ORGUNIT_ENTITIES_MAP[myarg]
+    elif myarg in ORGUNIT_ENTITIES_MAP:
+      myarg = ORGUNIT_ENTITIES_MAP[myarg]
       ous = convertEntityToList(getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
       directlyInOU = myarg in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS}
     elif myarg == 'minauedate':
-      minAueDate, _ = _getMain()._getFilterDateTime()
+      minAueDate, _ = _getFilterDateTime()
       minAueDate = minAueDate.strftime(YYYYMMDD_FORMAT)
     elif myarg == 'maxauedate':
-      maxAueDate, _ = _getMain()._getFilterDateTime()
+      maxAueDate, _ = _getFilterDateTime()
       maxAueDate = maxAueDate.strftime(YYYYMMDD_FORMAT)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
@@ -514,6 +507,7 @@ CHROME_NEEDSATTN_TITLES = ['noRecentPolicySyncCount', 'noRecentUserActivityCount
 #	 (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
 #	[formatjson]
 def doPrintShowChromeNeedsAttn():
+  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printNeedsAttn(needsattn):
     if showOrgUnit:
       needsattn['orgUnitPath'] = orgUnitPath
@@ -539,7 +533,7 @@ def doPrintShowChromeNeedsAttn():
 
   cd = buildGAPIObject(API.DIRECTORY)
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  customerId = _getMain()._getCustomersCustomerIdWithC()
+  customerId = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile([]) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   ous = [None]
@@ -549,8 +543,8 @@ def doPrintShowChromeNeedsAttn():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ORGUNIT_ENTITIES_MAP:
-      myarg = _getMain().ORGUNIT_ENTITIES_MAP[myarg]
+    elif myarg in ORGUNIT_ENTITIES_MAP:
+      myarg = ORGUNIT_ENTITIES_MAP[myarg]
       ous = convertEntityToList(getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
       directlyInOU = myarg in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS}
     else:
@@ -627,7 +621,7 @@ CHROME_DEVICE_COUNTS_MODE_CSV_TITLE = {
 #	[formatjson]
 def doPrintShowChromeDeviceCounts():
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  customerId = _getMain()._getCustomersCustomerIdWithC()
+  customerId = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['date']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pdate = todaysDate()
@@ -695,6 +689,7 @@ CHROME_VERSIONS_TITLES = ['channel', 'system', 'deviceOsVersion']
 #	[recentfirst [<Boolean>]]
 #	[formatjson]
 def doPrintShowChromeVersions():
+  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _getVersionKey(v):
     if 'version' not in v:
       return (0, 0, 0, 0)
@@ -730,7 +725,7 @@ def doPrintShowChromeVersions():
 
   cd = buildGAPIObject(API.DIRECTORY)
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
-  customerId = _getMain()._getCustomersCustomerIdWithC()
+  customerId = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['version', 'count']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   ous = [None]
@@ -741,15 +736,15 @@ def doPrintShowChromeVersions():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ORGUNIT_ENTITIES_MAP:
-      myarg = _getMain().ORGUNIT_ENTITIES_MAP[myarg]
+    elif myarg in ORGUNIT_ENTITIES_MAP:
+      myarg = ORGUNIT_ENTITIES_MAP[myarg]
       ous = convertEntityToList(getString(Cmd.OB_ENTITY, minLen=0), shlexSplit=True, nonListEntityType=myarg in [Cmd.ENTITY_OU, Cmd.ENTITY_OU_AND_CHILDREN])
       directlyInOU = myarg in {Cmd.ENTITY_OU, Cmd.ENTITY_OUS}
     elif myarg in CROS_START_ARGUMENTS:
-      startDate, _ = _getMain()._getFilterDateTime()
+      startDate, _ = _getFilterDateTime()
       startDate = startDate.strftime(YYYYMMDD_FORMAT)
     elif myarg in CROS_END_ARGUMENTS:
-      endDate, _ = _getMain()._getFilterDateTime()
+      endDate, _ = _getFilterDateTime()
       endDate = endDate.strftime(YYYYMMDD_FORMAT)
     elif myarg == 'recentfirst':
       reverse = getBoolean()

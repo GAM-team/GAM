@@ -61,23 +61,14 @@ from gam.util.entity import getEntityArgument, splitEmailAddressOrUID
 from gam.util.errors import entityDoesNotExistExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.fileio import setFilePath
 from gam.util.output import setSysExitRC, systemErrorExit, writeStdout
+from gam.constants import ADMIN_ACCESS_OPTIONS, API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NO_ENTITIES_FOUND_RC
+from gam.util.tags import _substituteForUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def buildChatServiceObject(api=API.CHAT, user=None, i=0, count=0, entityTypeList=None, useAdminAccess=False):
   if user is None:
@@ -107,11 +98,11 @@ def exitIfChatNotConfigured(chat, kvList, errMsg, i, count):
   if (('No bot associated with this project.' in errMsg) or
       ('Invalid project number.' in errMsg) or
       ('Google Chat app not found.' in errMsg)):
-    systemErrorExit(_getMain().API_ACCESS_DENIED_RC, Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat), GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id']))
+    systemErrorExit(API_ACCESS_DENIED_RC, Msg.TO_SET_UP_GOOGLE_CHAT.format(setupChatURL(chat), GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['project_id']))
   entityActionFailedWarning(kvList, errMsg, i, count)
 
 def _getChatAdminAccess(adminAPI, userAPI):
-  if checkArgumentPresent(_getMain().ADMIN_ACCESS_OPTIONS) or GC.Values[GC.USE_CHAT_ADMIN_ACCESS]:
+  if checkArgumentPresent(ADMIN_ACCESS_OPTIONS) or GC.Values[GC.USE_CHAT_ADMIN_ACCESS]:
     return (True, adminAPI, {'useAdminAccess': True})
   return (False, userAPI, {})
 
@@ -207,7 +198,7 @@ def createChatEmoji(users):
     if not chat:
       continue
     user, userName, _ = splitEmailAddressOrUID(user)
-    filename = os.path.join(sourceFolder, _getMain()._substituteForUser(filenamePattern, user, userName))
+    filename = os.path.join(sourceFolder, _substituteForUser(filenamePattern, user, userName))
     try:
       with open(filename, 'rb') as f:
         image_data = f.read()
@@ -484,7 +475,7 @@ def createUpdateChatSection(users):
       userChatServiceNotEnabledWarning(user, i, count)
       continue
     except AttributeError:
-      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
 
 # gam <UserTypeEntity> delete chatsection <ChatSection>
 def deleteChatSection(users):
@@ -516,7 +507,7 @@ def deleteChatSection(users):
       userChatServiceNotEnabledWarning(user, i, count)
       continue
     except AttributeError:
-      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
 
 # gam <UserTypeEntity> show chatsections
 #	[formatjson]
@@ -552,10 +543,10 @@ def printShowChatSections(users):
       userChatServiceNotEnabledWarning(user, i, count)
       continue
     except AttributeError:
-      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
     jcount = len(sections)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems(kvList, jcount, Ent.CHAT_SECTION, i, count)
@@ -608,7 +599,7 @@ def moveShowChatSectionItem(users):
       userChatServiceNotEnabledWarning(user, i, count)
       continue
     except AttributeError:
-      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
 
 # gam <UserTypeEntity> show chatsectionitems <ChatSection>
 #	[space <ChatSpace>]
@@ -681,10 +672,10 @@ def printShowChatSectionItems(users):
       userChatServiceNotEnabledWarning(user, i, count)
       continue
     except AttributeError:
-      systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
+      systemErrorExit(GOOGLE_API_ERROR_RC, Msg.DEVELOPER_PREVIEW_REQUIRED)
     jcount = len(sectionItems)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems(kvList, jcount, Ent.CHAT_SECTION_ITEM, i, count)

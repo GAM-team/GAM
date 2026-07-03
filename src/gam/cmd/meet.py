@@ -1,7 +1,6 @@
 """GAM Google Meet management."""
 
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -19,6 +18,7 @@ from gam.util.args import (
     getChoice,
     getString,
     getTimeOrDeltaFromNow,
+    substituteQueryTimes,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -39,23 +39,13 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import entityActionFailedExit, missingArgumentExit, unknownArgumentExit
 from gam.util.output import setSysExitRC, writeStdout
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def buildMeetServiceObject(api, user=None, i=0, count=0, entityTypeList=None):
   user, meet = buildGAPIServiceObject(api, user, i, count)
@@ -189,13 +179,14 @@ def createMeetSpace(users):
 #	<MeetSpaceOptions>*
 #	[formatjson]
 def updateMeetSpace(users):
+  from gam.cmd.chat.spaces import getSpaceName
   FJQC = FormatJSONQuoteChar()
   name = None
   body = {'config': {}}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
-      name = _getMain().getSpaceName(myarg)
+      name = getSpaceName(myarg)
     elif _getMeetSpaceParameters(myarg, body):
       pass
     else:
@@ -223,12 +214,13 @@ def updateMeetSpace(users):
 # gam <UserTypeEntity> info meetspace <MeetSpaceName>
 #	[formatjson]
 def infoMeetSpace(users):
+  from gam.cmd.chat.spaces import getSpaceName
   FJQC = FormatJSONQuoteChar()
   name = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
-      name = _getMain().getSpaceName(myarg)
+      name = getSpaceName(myarg)
     else:
       FJQC.GetFormatJSON(myarg)
   if not name:
@@ -253,11 +245,12 @@ def infoMeetSpace(users):
 
 # gam <UserTypeEntity> end meetconference <MeetSpaceName>
 def endMeetConference(users):
+  from gam.cmd.chat.spaces import getSpaceName
   name = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if (myarg == 'space' or myarg.startswith('spaces/') or myarg.startswith('space/')):
-      name = _getMain().getSpaceName(myarg)
+      name = getSpaceName(myarg)
     else:
       unknownArgumentExit()
   if not name:
@@ -311,6 +304,7 @@ def _printMeetConfItem(user, citem, csvPF, FJQC):
 #	[andquery|orquery <String>] [querytime<String> <Time>]
 #	[formatjson [quotechar <Character>]]
 def printShowMeetConferences(users):
+  from gam.cmd.chat.spaces import getSpaceName
   def _updateQuery(conjunction, clause):
     if queries[0]:
       queries[0] += f' {conjunction} '
@@ -338,7 +332,7 @@ def printShowMeetConferences(users):
       queryTimes[myarg] = getTimeOrDeltaFromNow()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  _getMain().substituteQueryTimes(queries, queryTimes)
+  substituteQueryTimes(queries, queryTimes)
   if queries[0]:
     pfilter = kwargs['filter'] = queries[0]
   else:
@@ -359,7 +353,7 @@ def printShowMeetConferences(users):
       continue
     jcount = len(confRecs)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems(kvList, jcount, Ent.MEET_CONFERENCE, i, count)
@@ -414,7 +408,7 @@ def _printShowMeetItems(users, entityType):
       queryTimes[myarg] = getTimeOrDeltaFromNow()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  _getMain().substituteQueryTimes(queries, queryTimes)
+  substituteQueryTimes(queries, queryTimes)
   if queries[0]:
     pfilter = kwargs['filter'] = queries[0]
   else:
@@ -447,7 +441,7 @@ def _printShowMeetItems(users, entityType):
       continue
     jcount = len(confRecs)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems(kvList, jcount, entityType, i, count)

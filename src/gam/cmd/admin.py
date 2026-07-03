@@ -1,9 +1,7 @@
 """GAM admin roles, privileges, and admin user management."""
 
 import json
-import sys
 
-from gam.cmd.customer import PRINT_PRIVILEGES_FIELDS
 
 import re
 
@@ -50,6 +48,7 @@ from gam.util.display import (
 )
 from gam.util.entity import (
     ALL_GROUP_ROLES,
+    PRINT_PRIVILEGES_FIELDS,
     convertEmailAddressToUID,
     convertOrgUnitIDtoPath,
     convertUIDtoEmailAddressWithType,
@@ -64,17 +63,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _listPrivileges(cd):
   fields = f'items({",".join(PRINT_PRIVILEGES_FIELDS)})'
@@ -109,7 +97,7 @@ def doPrintShowPrivileges():
     Ind.Decrement()
 
   cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(_getMain().PRINT_PRIVILEGES_FIELDS, 'sortall') if Act.csvFormat() else None
+  csvPF = CSVPrintFile(PRINT_PRIVILEGES_FIELDS, 'sortall') if Act.csvFormat() else None
   getTodriveOnly(csvPF)
   privileges = _listPrivileges(cd)
   if not csvPF:

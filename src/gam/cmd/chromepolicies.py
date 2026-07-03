@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 import mimetypes
 import os
 
@@ -63,7 +62,7 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import convertEmailAddressToUID, convertOrgUnitIDtoPath, getGroupEmailFromID
+from gam.util.entity import _getCustomersCustomerIdWithC, convertEmailAddressToUID, convertOrgUnitIDtoPath, getGroupEmailFromID
 from gam.util.errors import (
     entityDoesNotExistExit,
     invalidArgumentExit,
@@ -81,17 +80,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getOrgunitsOrgUnitIdPath(cd, orgUnit):
   if orgUnit.startswith('orgunits/'):
@@ -280,7 +268,7 @@ def updatePolicyRequests(body, targetResource, printer_id, app_id):
 def doDeleteChromePolicy():
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   app_id = groupEmail = orgUnit = printer_id = targetResource = None
   body = {'requests': []}
   schemaNameList = []
@@ -562,6 +550,7 @@ CHROME_TARGET_VERSION_PATTERN = re.compile(r'^(\d{1,4}\.){1,4}$')
 #	((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
 #	[(printerid <PrinterID>)|(appid <AppID>)]
 def doUpdateChromePolicy():
+  from gam.cmd.chromeapps import getPlatformChannelMap, getRelativeMilestone
   def getSpecialVtypeValue(vtype, value):
     if vtype in {'duration', 'value', 'downloadUri'}:
       return {vtype: value}
@@ -574,7 +563,7 @@ def doUpdateChromePolicy():
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
   cv = None
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   app_id = channelMap = groupEmail = orgUnit = printer_id = targetResource = None
   body = {'requests': []}
   schemaNameList = []
@@ -644,10 +633,10 @@ def doUpdateChromePolicy():
               if mg:
                 channel = mg.group(1).lower().replace('_', '')
                 if channelMap is None:
-                  cv, channelMap = _getMain().getPlatformChannelMap(cv, Ent.CHROME_CHANNEL)
+                  cv, channelMap = getPlatformChannelMap(cv, Ent.CHROME_CHANNEL)
                 if channel not in channelMap:
                   invalidChoiceExit(value, channelMap, True)
-                cv, status, milestone = _getMain().getRelativeMilestone(cv, channelMap[channel], int(mg.group(2)))
+                cv, status, milestone = getRelativeMilestone(cv, channelMap[channel], int(mg.group(2)))
                 if not status:
                   Cmd.Backup()
                   invalidArgumentExit(f'{milestone} for {casedField}: {value}')
@@ -708,16 +697,16 @@ def doUpdateChromePolicy():
         elif vtype == 'TYPE_LIST':
           value = value.split(',') if value else []
         elif vtype == 'TYPE_STRING' and convertCRsNLs:
-          value = _getMain().un_getMain().escapeCRsNLs(value)
+          value = escapeCRsNLs(value)
         if myarg == 'chrome.users.chromebrowserupdates' and casedField == 'targetVersionPrefixSetting':
           mg = CHROME_TARGET_VERSION_CHANNEL_MINUS_PATTERN.match(value)
           if mg:
             channel = mg.group(1).lower().replace('_', '')
             if channelMap is None:
-              cv, channelMap = _getMain().getPlatformChannelMap(cv, Ent.CHROME_CHANNEL)
+              cv, channelMap = getPlatformChannelMap(cv, Ent.CHROME_CHANNEL)
             if channel not in channelMap:
               invalidChoiceExit(value, channelMap, True)
-            cv, status, milestone = _getMain().getRelativeMilestone(cv, channelMap[channel], int(mg.group(2)))
+            cv, status, milestone = getRelativeMilestone(cv, channelMap[channel], int(mg.group(2)))
             if not status:
               Cmd.Backup()
               invalidArgumentExit(f'{milestone} for {casedField}: {value}')
@@ -774,6 +763,7 @@ CHROME_POLICY_SHOW_CHOICE_MAP = {
 #	[show all|direct|inherited] [shownopolicy]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowChromePolicies():
+  from gam.cmd.cigroups.members import _showPolicy
   def normalizedPolicy(policy):
     norm = {'name': policy['value']['policySchema']}
     if app_id:
@@ -893,7 +883,7 @@ def doPrintShowChromePolicies():
 
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['name'], indexedTitles=CHROME_POLICY_INDEXED_TITLES) if Act.csvFormat() else None
   if csvPF:
     csvPF.SetNoEscapeChar(True)
@@ -1012,7 +1002,7 @@ def doPrintShowChromePolicies():
     j = 0
     for policy in policies:
       j += 1
-      _getMain()._showPolicy(policy, j, jcount)
+      _showPolicy(policy, j, jcount)
     Ind.Decrement()
   else:
     for policy in policies:
@@ -1031,10 +1021,11 @@ CHROME_IMAGE_SCHEMAS_MAP = {
 
 # gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 def doCreateChromePolicyImage():
+  from gam.cmd.drive.core import DFA_URL, getMediaBody
   cp = buildGAPIObject(API.CHROMEPOLICY)
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   schema = getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)
-  parameters = {_getMain().DFA_URL: None}
+  parameters = {DFA_URL: None}
   parameters[DFA_LOCALFILEPATH] = setFilePath(getString(Cmd.OB_FILE_NAME), GC.INPUT_DIR)
   try:
     f = open(parameters[DFA_LOCALFILEPATH], 'rb')
@@ -1047,7 +1038,7 @@ def doCreateChromePolicyImage():
   if parameters[DFA_LOCALMIMETYPE] is None:
     parameters[DFA_LOCALMIMETYPE] = 'image/jpeg'
   checkForExtraneousArguments()
-  media_body = _getMain().getMediaBody(parameters)
+  media_body = getMediaBody(parameters)
   try:
     result = callGAPI(cp.media(), 'upload',
                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
@@ -1139,7 +1130,7 @@ def doPrintShowChromePolicySchemas():
       doShowChromePolicySchemasStd(cp)
       return
     unknownArgumentExit()
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['name', 'schemaName', 'policyDescription',
                         'policyApiLifecycle.policyApiLifecycleStage',
                         'policyApiLifecycle.description',
@@ -1254,7 +1245,7 @@ def doShowChromePolicySchemasStd(cp):
       sfilter = getString(Cmd.OB_STRING)
     else:
       unknownArgumentExit()
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   result = callGAPIpages(cp.customers().policySchemas(), 'list', 'policySchemas',
                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          parent=parent, filter=sfilter)
@@ -1271,7 +1262,7 @@ def doShowChromePolicySchemasStd(cp):
 def doCreateChromeNetwork():
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   body = {}
   orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
   body['name'] = getString(Cmd.OB_STRING)
@@ -1295,7 +1286,7 @@ def doCreateChromeNetwork():
 def doDeleteChromeNetwork():
   cp = buildGAPIObject(API.CHROMEPOLICY)
   cd = buildGAPIObject(API.DIRECTORY)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   body = {}
   orgUnitPath, body['targetResource'] = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
   body['networkId'] = getString(Cmd.OB_NETWORK_ID)

@@ -14,7 +14,6 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
-from gam.util.orgunits import _getMain
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
     checkForExtraneousArguments,

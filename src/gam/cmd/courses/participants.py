@@ -6,7 +6,6 @@ Part of the _courses_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
@@ -44,23 +43,13 @@ from gam.util.display import entityActionFailedWarning, entityActionPerformed, e
 from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import executeBatch, writeStdout
+from gam.constants import OWNER_ACCESS_OPTIONS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def doPrintCourseParticipants():
   croom = buildGAPIObject(API.CLASSROOM)
@@ -530,7 +519,7 @@ def doCourseRemoveItems(courseIdList, getEntityListArg):
   if not getEntityListArg:
     if removeType in {Ent.STUDENT, Ent.TEACHER}:
       useOwnerAccess = GC.Values[GC.USE_COURSE_OWNER_ACCESS]
-      if checkArgumentPresent(_getMain().OWNER_ACCESS_OPTIONS):
+      if checkArgumentPresent(OWNER_ACCESS_OPTIONS):
         useOwnerAccess = True
       removeItems = getStringReturnInList(Cmd.OB_EMAIL_ADDRESS)
     elif removeType == Ent.COURSE_ALIAS:
@@ -545,7 +534,7 @@ def doCourseRemoveItems(courseIdList, getEntityListArg):
     courseParticipantLists = None
   else:
     if removeType in {Ent.STUDENT, Ent.TEACHER}:
-      useOwnerAccess = checkArgumentPresent(_getMain().OWNER_ACCESS_OPTIONS)
+      useOwnerAccess = checkArgumentPresent(OWNER_ACCESS_OPTIONS)
       _, removeItems = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS,
                                          typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[removeType]})
     elif removeType == Ent.COURSE_ALIAS:
@@ -652,13 +641,14 @@ def doCourseClearParticipants(courseIdList, _):
 # gam courses <CourseEntity> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 # gam course <CourseID> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 def doCourseSyncParticipants(courseIdList, _):
+  from gam.cmd.groups.groups import getSyncOperation
   croom = buildGAPIObject(API.CLASSROOM)
   role = getChoice(CLEAR_SYNC_PARTICIPANT_TYPES_MAP, mapChoice=True)
   if role == Ent.TEACHER:
     makeFirstTeacherOwner = checkArgumentPresent(['makefirstteacherowner'])
   else:
     makeFirstTeacherOwner = False
-  syncOperation = _getMain().getSyncOperation()
+  syncOperation = getSyncOperation()
   _, syncParticipants = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS,
                                           typeMap={Cmd.ENTITY_COURSEPARTICIPANTS: PARTICIPANT_EN_MAP[role]},
                                           isSuspended=False, isArchived=False)

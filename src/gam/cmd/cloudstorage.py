@@ -1,7 +1,6 @@
 """GAM cloud storage management."""
 
 import re
-import sys
 
 import googleapiclient.http
 import hashlib
@@ -52,23 +51,13 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
+from gam.constants import GOOGLE_API_ERROR_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _copyStorageObjects(objects, target_bucket, target_prefix):
   """Copies objects to target_bucket.
@@ -108,7 +97,7 @@ def _copyStorageObjects(objects, target_bucket, target_prefix):
       source_md5 = files_to_copy[fileIndex]['md5Hash']
       target_md5 = response['resource']['md5Hash']
       if source_md5 != target_md5:
-        systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, f'Target file {target_displayname} checksum {target_md5} does not match source {source_md5}. This should not happen')
+        systemErrorExit(GOOGLE_API_ERROR_RC, f'Target file {target_displayname} checksum {target_md5} does not match source {source_md5}. This should not happen')
       entityActionPerformedMessage([Ent.CLOUD_STORAGE_FILE, None], f'{1:>7.2%} Complete', fileIndex+1, totalFiles)
       Ind.Increment()
       writeStdout(formatKeyValueList(Ind.Spaces(), ['Source', source_displayname], '\n'))
@@ -186,6 +175,7 @@ def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
     systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None, zipToStdout=False, j=0, jcount=0):
+  from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
   if not zipToStdout:
     localFilename = cleanFilepath(localFilename)
     entityValueList = [Ent.DRIVE_FILE, localFilename]
@@ -217,7 +207,7 @@ def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None,
     if expectedMd5 and not md5MatchesFile(localFilename, expectedMd5):
       systemErrorExit(FILE_ERROR_RC, fileErrorMessage(localFilename, Msg.CORRUPT_FILE))
   except googleapiclient.http.HttpError as e:
-    mg = _getMain().HTTP_ERROR_PATTERN.match(str(e))
+    mg = HTTP_ERROR_PATTERN.match(str(e))
     entityModifierNewValueActionFailedWarning([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, mg.group(1) if mg else str(e), j, jcount)
 
 TAKEOUT_EXPORT_PATTERN = re.compile(r'(takeout-export-[a-f,0-9,-]*)')
@@ -301,6 +291,7 @@ def doDownloadCloudStorageBucket():
 # gam download storagefile <StorageBucketObjectName>
 #	[targetfolder <FilePath>] [overwrite [<Boolean>]] [nogcspath [Boolean>]]
 def doDownloadCloudStorageFile():
+  from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
   bucket, s_object, bucketObject = getBucketObjectName()
   targetFolder = GC.Values[GC.DRIVE_DIR]
   overwrite = nogcspath = False
@@ -336,6 +327,6 @@ def doDownloadCloudStorageFile():
     entityModifierNewValueActionPerformed([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, filename)
     closeFile(f, True)
   except googleapiclient.http.HttpError as e:
-    mg = _getMain().HTTP_ERROR_PATTERN.match(str(e))
+    mg = HTTP_ERROR_PATTERN.match(str(e))
     entityActionFailedWarning([Ent.CLOUD_STORAGE_FILE, bucketObject], mg.group(1) if mg else str(e))
 

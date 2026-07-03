@@ -6,7 +6,6 @@ Part of the _cigroups_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gam.util.args import formatLocalTime
 
@@ -26,8 +25,6 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
 
 from gam.cmd.groups.groups import (
     MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED,
@@ -84,6 +81,7 @@ from gam.util.entity import (
     _checkMemberIsSuspendedIsArchived,
     _checkMemberRole,
     _getCIRoleVerification,
+    _getCustomersCustomerIdWithC,
     convertEmailAddressToUID,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,
@@ -93,6 +91,7 @@ from gam.util.entity import (
     getCIGroupTransitiveMemberRoleFixType,
     getEntityList,
     getEntityToModify,
+    setTrueCustomerId,
     shlexSplitList,
 )
 from gam.util.errors import (
@@ -104,17 +103,9 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import UNKNOWN
-from gam.util.orgunits import _getMain
 from gam.util.output import systemErrorExit, writeStdout
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 UNKNOWN = 'Unknown'
 
@@ -139,6 +130,7 @@ def getCIGroupMemberTypes(myarg, typesSet):
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[formatjson]
 def doInfoCIGroups():
+  from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP, CIGROUP_TIME_OBJECTS, _checkCIMemberMatch, _showCIGroup, finalizeIPSGMGroupRolesMemberDisplayOptions, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions
   def printCIGroupMemberTree(group_id, showRole):
     if not group_id in cachedGroupMembers:
       try:
@@ -185,8 +177,8 @@ def doInfoCIGroups():
   entityType = Ent.MEMBER
   rolesSet = set()
   typesSet = set()
-  memberOptions = _getMain().initMemberOptions()
-  memberDisplayOptions = _getMain().initIPSGMGroupMemberDisplayOptions()
+  memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   cachedGroupMembers = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -196,29 +188,29 @@ def doInfoCIGroups():
       getUsers = False
     elif myarg == 'membertree':
       showMemberTree = True
-    elif _getMain().getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       getUsers = True
     elif getCIGroupMemberTypes(myarg, typesSet):
       pass
-    elif _getMain().getMemberMatchOptions(myarg, memberOptions):
+    elif getMemberMatchOptions(myarg, memberOptions):
       pass
     elif myarg == 'noaliases':
       getAliases = False
     elif myarg in {'allfields', 'ciallfields', 'allcifields'}:
       if not groupFieldsLists['ci']:
         groupFieldsLists['ci'] = []
-      for field in _getMain().CIGROUP_FIELDS_CHOICE_MAP:
-        addFieldToFieldsList(field, _getMain().CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
-    elif myarg in _getMain().CIGROUP_FIELDS_CHOICE_MAP:
+      for field in CIGROUP_FIELDS_CHOICE_MAP:
+        addFieldToFieldsList(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+    elif myarg in CIGROUP_FIELDS_CHOICE_MAP:
       initGroupFieldsLists()
-      addFieldToFieldsList(myarg, _getMain().CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+      addFieldToFieldsList(myarg, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
     elif myarg in {'fields', 'cifields'}:
       initGroupFieldsLists()
       for field in _getFieldsList():
-        if field in _getMain().CIGROUP_FIELDS_CHOICE_MAP:
-          addFieldToFieldsList(field, _getMain().CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+        if field in CIGROUP_FIELDS_CHOICE_MAP:
+          addFieldToFieldsList(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
         else:
-          invalidChoiceExit(field, _getMain().CIGROUP_FIELDS_CHOICE_MAP, True)
+          invalidChoiceExit(field, CIGROUP_FIELDS_CHOICE_MAP, True)
     elif myarg == 'nojoindate':
       showJoinDate = False
     elif myarg == 'showupdatedate':
@@ -236,7 +228,7 @@ def doInfoCIGroups():
   else:
     view = 'FULL'
     pageSize = 500
-  showCategory, checkShowCategory = _getMain().finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
+  showCategory, checkShowCategory = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
   i = 0
   count = len(entityList)
   for group in entityList:
@@ -260,7 +252,7 @@ def doInfoCIGroups():
           getCIGroupMemberRoleFixType(member)
           if ((member['type'] in typesSet) and
               _checkMemberRole(member, rolesSet) and
-              _getMain()._checkCIMemberMatch(member, memberOptions) and
+              _checkCIMemberMatch(member, memberOptions) and
               (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
             members.append(member)
       if getSecuritySettings:
@@ -270,9 +262,9 @@ def doInfoCIGroups():
       if FJQC.formatJSON:
         if getUsers and not showMemberTree:
           cigInfo['members'] = members
-        printLine(json.dumps(cleanJSON(cigInfo, timeObjects=_getMain().CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+        printLine(json.dumps(cleanJSON(cigInfo, timeObjects=CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
         continue
-      _getMain()._showCIGroup(cigInfo, group, i, count)
+      _showCIGroup(cigInfo, group, i, count)
       if getUsers and not showMemberTree:
         Ind.Increment()
         printEntitiesCount(entityType, members)
@@ -315,10 +307,11 @@ def checkCIGroupShowOwnedBy(showOwnedBy, members):
   return False
 
 def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
+  from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP
   for field in ['displayName', 'description']:
     if field in matchPatterns:
       if csvPF is not None:
-        csvPF.AddField(field, _getMain().CIGROUP_FIELDS_CHOICE_MAP, fieldsList)
+        csvPF.AddField(field, CIGROUP_FIELDS_CHOICE_MAP, fieldsList)
       else:
         fieldsList.append(field)
 
@@ -439,6 +432,7 @@ def _checkPoliciesWithDASA():
 #	json <JSONData>
 #	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
 def doCreateUpdateCIPolicy():
+  from gam.cmd.chromepolicies import _getOrgunitsOrgUnitIdPath
   _checkPoliciesWithDASA()
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   cd = buildGAPIObject(API.DIRECTORY)
@@ -478,7 +472,7 @@ def doCreateUpdateCIPolicy():
       if query:
         Cmd.Backup()
         usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'query'))
-      orgUnit, targetResource = _getMain()._getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
+      orgUnit, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
       policy['policyQuery'] = {'orgUnit': f"orgUnits/{targetResource}"}
     elif myarg == 'group':
       if orgUnit:
@@ -503,7 +497,7 @@ def doCreateUpdateCIPolicy():
       unknownArgumentExit()
   if 'policyQuery' not in policy:
     missingArgumentExit('ou|org|orgunit|group|query')
-  policy['customer'] = _getMain()._getCustomersCustomerIdWithC()
+  policy['customer'] = _getCustomersCustomerIdWithC()
   try:
     if updateCmd:
       result = callGAPI(ci.policies(), 'patch',
@@ -701,6 +695,7 @@ def doPrintShowCIPolicies():
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintCIGroups():
+  from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP, CIGROUP_FULL_FIELDS, CIGROUP_PRINT_ORDER, CIGROUP_TIME_OBJECTS, addMemberInfoToRow, checkGroupMatchPatterns, finalizeIPSGMGroupRolesMemberDisplayOptions, getGroupAllowExternalMembers, getGroupMatchPatterns, getMemberMatchOptions, getPGGroupRolesMemberDisplayOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions, mapCIGroupFieldNames, setMemberDisplaySortTitles, setMemberDisplayTitles
   def _printGroupRow(groupEntity, groupMembers):
     nonlocal itemCount
     for member in groupMembers:
@@ -721,39 +716,39 @@ def doPrintCIGroups():
       row['email'] = groupEntity['groupKey']['id'].lower()
       if addCSVData and includeCSVDataInJSON:
         groupEntity.update(addCSVData)
-      row['JSON'] = json.dumps(cleanJSON(groupEntity, timeObjects=_getMain().CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
+      row['JSON'] = json.dumps(cleanJSON(groupEntity, timeObjects=CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
       if rolesSet and groupMembers is not None:
         row['JSON-members'] = json.dumps(groupMembers, ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
       return
-    _getMain().mapCIGroupFieldNames(groupEntity)
+    mapCIGroupFieldNames(groupEntity)
     for k, v in groupEntity.pop('labels', {}).items():
       if v == '':
         groupEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = True
       else:
         groupEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = v
-    for key, value in sorted(flattenJSON(groupEntity, flattened={}, timeObjects=_getMain().CIGROUP_TIME_OBJECTS).items()):
+    for key, value in sorted(flattenJSON(groupEntity, flattened={}, timeObjects=CIGROUP_TIME_OBJECTS).items()):
       csvPF.AddTitles(key)
       row[key] = value
     if rolesSet and groupMembers is not None:
-      _getMain().addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplayOptions, delimiter,
+      addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplayOptions, delimiter,
                          False, False, True)
     csvPF.WriteRow(row)
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
-  _getMain().setTrueCustomerId(cd)
+  setTrueCustomerId(cd)
   parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   memberRestrictions = sortHeaders = False
-  memberDisplayOptions = _getMain().initIPSGMGroupMemberDisplayOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   pageSize = 500
   groupFieldsLists = {'ci': ['groupKey']}
   csvPF = CSVPrintFile(['email'])
   FJQC = FormatJSONQuoteChar(csvPF)
   rolesSet = set()
   typesSet = set()
-  memberOptions = _getMain().initMemberOptions()
+  memberOptions = initMemberOptions()
   allowExternalMembers = entitySelection = groupMembers = memberQuery = query = showOwnedBy = None
   matchPatterns = {}
   showItemCountOnly = False
@@ -774,7 +769,7 @@ def doPrintCIGroups():
     elif myarg == 'query':
       query = getString(Cmd.OB_QUERY)
       entitySelection = None
-    elif _getMain().getGroupMatchPatterns(myarg, matchPatterns, True):
+    elif getGroupMatchPatterns(myarg, matchPatterns, True):
       pass
     elif myarg == 'select':
       entitySelection = getEntityList(Cmd.OB_GROUP_ENTITY)
@@ -786,26 +781,26 @@ def doPrintCIGroups():
     elif myarg in {'allfields', 'ciallfields', 'allcifields'}:
       sortHeaders = True
       groupFieldsLists = {'ci': []}
-      for field in _getMain().CIGROUP_FIELDS_CHOICE_MAP:
-        addFieldToFieldsList(field, _getMain().CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+      for field in CIGROUP_FIELDS_CHOICE_MAP:
+        addFieldToFieldsList(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
     elif myarg == 'basic':
       sortHeaders = True
       groupFieldsLists = {'ci': ['*']}
     elif myarg == 'sortheaders':
       sortHeaders = getBoolean()
-    elif myarg in _getMain().CIGROUP_FIELDS_CHOICE_MAP:
-      csvPF.AddField(myarg, _getMain().CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+    elif myarg in CIGROUP_FIELDS_CHOICE_MAP:
+      csvPF.AddField(myarg, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
     elif myarg in {'fields', 'cifields'}:
       for field in _getFieldsList():
-        if field in _getMain().CIGROUP_FIELDS_CHOICE_MAP:
-          csvPF.AddField(field, _getMain().CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+        if field in CIGROUP_FIELDS_CHOICE_MAP:
+          csvPF.AddField(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
         else:
-          invalidChoiceExit(field, list(_getMain().CIGROUP_FIELDS_CHOICE_MAP), True)
-    elif _getMain().getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+          invalidChoiceExit(field, list(CIGROUP_FIELDS_CHOICE_MAP), True)
+    elif getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
     elif getCIGroupMemberTypes(myarg, typesSet):
       pass
-    elif _getMain().getMemberMatchOptions(myarg, memberOptions):
+    elif getMemberMatchOptions(myarg, memberOptions):
       pass
     elif myarg == 'memberrestrictions':
       memberRestrictions = True
@@ -819,7 +814,7 @@ def doPrintCIGroups():
       FJQC.GetFormatJSONQuoteChar(myarg, False)
   if not typesSet:
     typesSet = ALL_CIGROUP_MEMBER_TYPES
-  showCategory, _ = _getMain().finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
+  showCategory, _ = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
   fields = ','.join(set(groupFieldsLists['ci']))
   csvPF.MapTitles('name', 'id')
   csvPF.MapTitles('displayName', 'name')
@@ -853,7 +848,7 @@ def doPrintCIGroups():
     getRolesSet.add(Ent.ROLE_OWNER)
   getRoles = ','.join(sorted(getRolesSet))
   if rolesSet:
-    _getMain().setMemberDisplayTitles(memberDisplayOptions, csvPF)
+    setMemberDisplayTitles(memberDisplayOptions, csvPF)
   if memberQuery:
     printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP, memberQuery)
     try:
@@ -872,10 +867,10 @@ def doPrintCIGroups():
   if entitySelection is None:
     if groupFieldsLists['ci']:
       for field in groupFieldsLists['ci']:
-        if field in _getMain().CIGROUP_FULL_FIELDS:
+        if field in CIGROUP_FULL_FIELDS:
           getFullFieldsList.append(field)
     else:
-      getFullFieldsList = list(_getMain().CIGROUP_FULL_FIELDS)
+      getFullFieldsList = list(CIGROUP_FULL_FIELDS)
     getFullFields = ','.join(getFullFieldsList)#
     if query:
       method = 'search'
@@ -926,7 +921,7 @@ def doPrintCIGroups():
   for groupEntity in entityList:
     i += 1
     groupEmail = groupEntity['groupKey']['id'].lower()
-    if not _getMain().checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
+    if not checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
       continue
     kvList = [Ent.CLOUD_IDENTITY_GROUP, groupEmail]
     if getFullFields:
@@ -940,7 +935,7 @@ def doPrintCIGroups():
               GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning(kvList, str(e), i, count)
     if showCategory:
-      allowExternalMembers = _getMain().getGroupAllowExternalMembers(memberDisplayOptions['gs'], groupEmail, False,
+      allowExternalMembers = getGroupAllowExternalMembers(memberDisplayOptions['gs'], groupEmail, False,
                                                           kvList, i, count)
       if allowExternalMembers is None:
         continue
@@ -979,22 +974,25 @@ def doPrintCIGroups():
       sortTitles.append('allowExternalMembers')
     if addCSVData:
       sortTitles.extend(sorted(addCSVData.keys()))
-    sortTitles.extend(_getMain().CIGROUP_PRINT_ORDER)
+    sortTitles.extend(CIGROUP_PRINT_ORDER)
     if rolesSet:
-      _getMain().setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
+      setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
     csvPF.SetSortTitles(sortTitles)
   csvPF.SortRows('email', False)
   csvPF.writeCSVfile('Cloud Identity Groups')
 
 # gam <UserTypeEntity> info cimember <GroupEntity>
 def infoCIGroupMembers(entityList):
-  _getMain().infoGroupMembers(entityList, True)
+  from gam.cmd.groups.members import infoGroupMembers
+  infoGroupMembers(entityList, True)
 
 # gam info cimember <UserTypeEntity> <GroupEntity>
 def doInfoCIGroupMembers():
-  _getMain().infoGroupMembers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1], True)
+  from gam.cmd.groups.members import infoGroupMembers
+  infoGroupMembers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1], True)
 
 def getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, fieldsList, csvPF):
+  from gam.cmd.groups.members import clearUnneededGroupMatchPatterns
   if query:
     printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP, query)
     parent = 'groups/-'
@@ -1024,7 +1022,7 @@ def getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, 
             GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
       entityActionFailedExit([Ent.CLOUD_IDENTITY_GROUP, parent], str(e))
   else:
-    _getMain().clearUnneededGroupMatchPatterns(matchPatterns)
+    clearUnneededGroupMatchPatterns(matchPatterns)
   return entityList
 
 def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
@@ -1046,6 +1044,8 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
 
 def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i, count,
                       memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs):
+  from gam.cmd.chat.members import _getChatSpaceMembers
+  from gam.cmd.groups.members import _checkCIMemberMatch
   nameToPrint = groupEmail if groupEmail else groupName
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, nameToPrint, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
@@ -1055,7 +1055,7 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
       return
     for member in groupMembers:
       if _checkMemberRole(member, validRoles):
-        if member['type'] in typesSet and _getMain()._checkCIMemberMatch(member, memberOptions):
+        if member['type'] in typesSet and _checkCIMemberMatch(member, memberOptions):
           membersList.append(member)
     return
   if not groupEmail.startswith('space/'):
@@ -1070,7 +1070,7 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
       entityUnknownWarning(Ent.CLOUD_IDENTITY_GROUP, nameToPrint, i, count)
       return
   else:
-    groupMembers = _getMain()._getChatSpaceMembers(cd, groupEmail, groupName)
+    groupMembers = _getChatSpaceMembers(cd, groupEmail, groupName)
   checkShowCategory = memberDisplayOptions['checkShowCategory']
   if not memberOptions[MEMBEROPTION_RECURSIVE]:
     if memberOptions[MEMBEROPTION_NODUPLICATES]:
@@ -1081,14 +1081,14 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
             (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions)) and
             memberName not in membersSet):
           membersSet.add(memberName)
-          if member['type'] in typesSet and _getMain()._checkCIMemberMatch(member, memberOptions):
+          if member['type'] in typesSet and _checkCIMemberMatch(member, memberOptions):
             membersList.append(member)
     else:
       for member in groupMembers:
         getCIGroupMemberRoleFixType(member)
         if (_checkMemberRole(member, validRoles) and
             (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
-          if member['type'] in typesSet and _getMain()._checkCIMemberMatch(member, memberOptions):
+          if member['type'] in typesSet and _checkCIMemberMatch(member, memberOptions):
             membersList.append(member)
   elif memberOptions[MEMBEROPTION_NODUPLICATES]:
     groupMemberList = []
@@ -1097,7 +1097,7 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
       memberName = member.get('preferredMemberKey', {}).get('id', '')
       if member['type'] != Ent.TYPE_GROUP:
         if (member['type'] in typesSet and
-            _getMain()._checkCIMemberMatch(member, memberOptions) and
+            _checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
             (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions)) and
             memberName not in membersSet):
@@ -1109,7 +1109,7 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
         if memberName not in membersSet:
           membersSet.add(memberName)
           if (member['type'] in typesSet and
-              _getMain()._checkCIMemberMatch(member, memberOptions) and
+              _checkCIMemberMatch(member, memberOptions) and
               (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
             member['level'] = level
             member['subgroup'] = nameToPrint
@@ -1125,7 +1125,7 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
       memberName = member.get('preferredMemberKey', {}).get('id', '')
       if member['type'] != Ent.TYPE_GROUP:
         if (member['type'] in typesSet and
-            _getMain()._checkCIMemberMatch(member, memberOptions) and
+            _checkCIMemberMatch(member, memberOptions) and
             _checkMemberRole(member, validRoles) and
             (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
@@ -1133,7 +1133,7 @@ def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i
           membersList.append(member)
       else:
         if (member['type'] in typesSet and
-            _getMain()._checkCIMemberMatch(member, memberOptions) and
+            _checkCIMemberMatch(member, memberOptions) and
             (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
           member['level'] = level
           member['subgroup'] = nameToPrint
@@ -1193,12 +1193,13 @@ def _getCIListGroupMembersArgs(listView):
 #	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def doPrintCIGroupMembers():
+  from gam.cmd.groups.members import checkGroupMatchPatterns, finalizeIPSGMGroupRolesMemberDisplayOptions, getGroupAllowExternalMembers, getGroupMatchPatterns, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions, mapCIGroupMemberFieldNames
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
-  _getMain().setTrueCustomerId(cd)
+  setTrueCustomerId(cd)
   parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
-  memberOptions = _getMain().initMemberOptions()
-  memberDisplayOptions = _getMain().initIPSGMGroupMemberDisplayOptions()
+  memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   groupColumn = True
   subTitle = f'{Msg.ALL} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
   fieldsList = []
@@ -1228,17 +1229,17 @@ def doPrintCIGroupMembers():
       entityList = [getString(Cmd.OB_EMAIL_ADDRESS)]
       subTitle = f'{Ent.Singular(Ent.CLOUD_IDENTITY_GROUP)}={entityList[0]}'
       query = None
-    elif _getMain().getGroupMatchPatterns(myarg, matchPatterns, True):
+    elif getGroupMatchPatterns(myarg, matchPatterns, True):
       pass
     elif myarg == 'select':
       entityList = getEntityList(Cmd.OB_GROUP_ENTITY)
       subTitle = f'{Msg.SELECTED} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
       query = None
-    elif _getMain().getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
     elif getCIGroupMemberTypes(myarg, typesSet):
       pass
-    elif _getMain().getMemberMatchOptions(myarg, memberOptions):
+    elif getMemberMatchOptions(myarg, memberOptions):
       pass
     elif getFieldsList(myarg, CIGROUPMEMBERS_FIELDS_CHOICE_MAP, fieldsList, initialField='preferredMemberKey'):
       pass
@@ -1264,7 +1265,7 @@ def doPrintCIGroupMembers():
     usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format('minimal', 'recursive'))
   if not typesSet:
     typesSet = {Ent.TYPE_USER} if memberOptions[MEMBEROPTION_RECURSIVE] else ALL_CIGROUP_MEMBER_TYPES
-  showCategory, _ = _getMain().finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, verifyAllowExternal)
+  showCategory, _ = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, verifyAllowExternal)
   fields = ','.join(set(groupFieldsLists['ci']))
   entityList = getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, groupFieldsLists['ci'], csvPF)
   if not fieldsList:
@@ -1323,11 +1324,11 @@ def doPrintCIGroupMembers():
     groupEmail = groupEntity['groupKey']['id'].lower()
     kvList = [Ent.CLOUD_IDENTITY_GROUP, groupEmail]
     if showCategory:
-      allowExternalMembers = _getMain().getGroupAllowExternalMembers(memberDisplayOptions['gs'], groupEmail, verifyAllowExternal,
+      allowExternalMembers = getGroupAllowExternalMembers(memberDisplayOptions['gs'], groupEmail, verifyAllowExternal,
                                                           kvList, i, count)
       if allowExternalMembers is None:
         continue
-    if not _getMain().checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
+    if not checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
       continue
     membersList = []
     membersSet = set()
@@ -1352,7 +1353,7 @@ def doPrintCIGroupMembers():
         row['category'] = member['category']
       if listView == 'minimal':
         dmember.pop('type', None)
-      _getMain().mapCIGroupMemberFieldNames(dmember)
+      mapCIGroupMemberFieldNames(dmember)
       if not FJQC.formatJSON:
         if allowExternalMembers is not None:
           row['allowExternalMembers'] = allowExternalMembers
@@ -1400,6 +1401,7 @@ def doPrintCIGroupMembers():
 #	[minimal|basic|full]
 #	[(depth <Number>) | includederivedmembership]
 def doShowCIGroupMembers():
+  from gam.cmd.groups.members import _checkCIMemberMatch, checkGroupMatchPatterns, finalizeIPSGMGroupRolesMemberDisplayOptions, getGroupMatchPatterns, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions
   def _roleOrder(key):
     return {Ent.ROLE_OWNER: 0, Ent.ROLE_MANAGER: 1, Ent.ROLE_MEMBER: 2}.get(key, 3)
 
@@ -1436,7 +1438,7 @@ def doShowCIGroupMembers():
           (not checkShowCategory or _checkCIMemberCategory(member, memberDisplayOptions))):
         if (_checkMemberRole(member, rolesSet) and
             member['type'] in typesSet and
-            _getMain()._checkCIMemberMatch(member, memberOptions)):
+            _checkCIMemberMatch(member, memberOptions)):
           if listView != 'minimal':
             memberDetails = f'{member.get("role", Ent.ROLE_MEMBER)}, {member["type"]}, {member["preferredMemberKey"]["id"]}'
           else:
@@ -1455,15 +1457,15 @@ def doShowCIGroupMembers():
 
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
-  _getMain().setTrueCustomerId(cd)
+  setTrueCustomerId(cd)
   parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
   subTitle = f'{Msg.ALL} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
   groupFieldsLists = {'ci': ['groupKey', 'name']}
   entityList = query = showOwnedBy = None
   rolesSet = set()
   typesSet = set()
-  memberOptions = _getMain().initMemberOptions()
-  memberDisplayOptions = _getMain().initIPSGMGroupMemberDisplayOptions()
+  memberOptions = initMemberOptions()
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
   matchPatterns = {}
   maxdepth = -1
   includeDerivedMembership = False
@@ -1482,17 +1484,17 @@ def doShowCIGroupMembers():
       entityList = [getString(Cmd.OB_EMAIL_ADDRESS)]
       subTitle = f'{Ent.Singular(Ent.CLOUD_IDENTITY_GROUP)}={entityList[0]}'
       query = None
-    elif _getMain().getGroupMatchPatterns(myarg, matchPatterns, False):
+    elif getGroupMatchPatterns(myarg, matchPatterns, False):
       pass
     elif myarg == 'select':
       entityList = getEntityList(Cmd.OB_GROUP_ENTITY)
       subTitle = f'{Msg.SELECTED} {Ent.Plural(Ent.CLOUD_IDENTITY_GROUP)}'
       query = None
-    elif _getMain().getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+    elif getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
       pass
     elif getCIGroupMemberTypes(myarg, typesSet):
       pass
-    elif _getMain().getMemberMatchOptions(myarg, memberOptions):
+    elif getMemberMatchOptions(myarg, memberOptions):
       pass
     elif myarg == 'depth':
       maxdepth = getInteger(minVal=-1)
@@ -1506,7 +1508,7 @@ def doShowCIGroupMembers():
     rolesSet = ALL_GROUP_ROLES
   if not typesSet:
     typesSet = ALL_CIGROUP_MEMBER_TYPES
-  showCategory, checkShowCategory = _getMain().finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
+  showCategory, checkShowCategory = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
   fields = ','.join(set(groupFieldsLists['ci']))
   entityList = getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, groupFieldsLists['ci'], None)
   kwargs = _getCIListGroupMembersArgs(listView)
@@ -1530,7 +1532,7 @@ def doShowCIGroupMembers():
         entityActionFailedWarning([Ent.CLOUD_IDENTITY_GROUP, groupEmail], str(e), i, count)
         continue
     groupEmail = groupEntity['groupKey']['id'].lower()
-    if _getMain().checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
+    if checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
       _showGroup(groupEntity['name'], groupEmail, 0)
 
 # gam print licenses [todrive <ToDriveAttribute>*]

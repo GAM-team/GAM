@@ -1,7 +1,6 @@
 """GAM audit monitor commands (GDATA).\n\nExtracted from gam/__init__.py. Provides mailbox monitor\ncreation/deletion/listing and doWhatIs command."""
 
 import re
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -33,23 +32,13 @@ from gam.util.display import (
 )
 from gam.util.errors import invalidArgumentExit, unknownArgumentExit
 from gam.util.output import setSysExitRC
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def getAuditParameters(emailAddressRequired=True, requestIdRequired=True, destUserRequired=False):
   auditObject = getEmailAuditObject()
@@ -155,7 +144,7 @@ def doShowMonitors():
     jcount = len(results) if (results) else 0
     entityPerformActionNumItems([Ent.USER, parameters['auditUser']], jcount, Ent.AUDIT_MONITOR_REQUEST)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return
     Ind.Increment()
     j = 0

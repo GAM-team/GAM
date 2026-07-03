@@ -5,7 +5,6 @@ Part of the _cigroups_tmp sub-package."""
 """GAM Cloud Identity group management."""
 
 import re
-import sys
 
 from gam.util.entity import GROUP_ROLES_MAP
 
@@ -62,27 +61,18 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
 CIGROUP_DYNAMIC_LABEL = 'cloudidentity.googleapis.com/groups.dynamic'
 CIGROUP_SECURITY_LABEL = 'cloudidentity.googleapis.com/groups.security'
 CIGROUP_LOCKED_LABEL = 'cloudidentity.googleapis.com/groups.locked'
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 NEVER_TIME = '1970-01-01T00:00:00.000Z'
 
 
 def doCreateCIGroup():
-  _getMain().doCreateGroup(ciGroupsAPI=True)
+  from gam.cmd.groups.groups import doCreateGroup
+  doCreateGroup(ciGroupsAPI=True)
 
 # gam update cigroups <GroupEntity> [email <EmailAddress>]
 #	[updateprimaryemail <RESEarchPattern> <RESubstitution> [preview]]
@@ -117,6 +107,7 @@ def doCreateCIGroup():
 #	[preview] [actioncsv]
 def doUpdateCIGroups():
 
+  from gam.cmd.groups.groups import GROUP_ACCESS_TYPE_CHOICE_MAP, GROUP_CIGROUP_FIELDS_MAP, GROUP_JSON_SKIP_FIELDS, GROUP_PREVIEW_TITLES, GroupIsAbuseOrPostmaster, UPDATE_GROUP_SUBCMDS, checkReplyToCustom, getGroupAttrValue, getSettingsFromGroup, getSyncOperation, mapGroupEmailForSettings
   def _getExpireTime(role):
     if role == Ent.ROLE_MEMBER and checkArgumentPresent(['expire', 'expires']):
       return getTimeOrDeltaFromNow()
@@ -125,7 +116,7 @@ def doUpdateCIGroups():
   def _getPreviewActionCSV():
     preview = checkArgumentPresent('preview')
     if checkArgumentPresent('actioncsv'):
-      csvPF = CSVPrintFile(_getMain().GROUP_PREVIEW_TITLES)
+      csvPF = CSVPrintFile(GROUP_PREVIEW_TITLES)
     else:
       csvPF = None
     return (preview, csvPF)
@@ -268,7 +259,7 @@ def doUpdateCIGroups():
   csvPF = None
   getBeforeUpdate = preview = False
   entityList = getEntityList(Cmd.OB_GROUP_ENTITY)
-  CL_subCommand = getChoice(_getMain().UPDATE_GROUP_SUBCMDS, defaultChoice=None)
+  CL_subCommand = getChoice(UPDATE_GROUP_SUBCMDS, defaultChoice=None)
   lockGroup = None
   if not CL_subCommand:
     gs_body = {}
@@ -310,15 +301,15 @@ def doUpdateCIGroups():
       elif myarg == 'unlocked':
         lockGroup = False
       elif myarg == 'json':
-        gs_body.update(getJSON(_getMain().GROUP_JSON_SKIP_FIELDS))
+        gs_body.update(getJSON(GROUP_JSON_SKIP_FIELDS))
       elif myarg == 'accesstype':
-        gs_body.update(getChoice(_getMain().GROUP_ACCESS_TYPE_CHOICE_MAP, mapChoice=True))
+        gs_body.update(getChoice(GROUP_ACCESS_TYPE_CHOICE_MAP, mapChoice=True))
       else:
-        _getMain().getGroupAttrValue(myarg, gs_body)
+        getGroupAttrValue(myarg, gs_body)
     if gs_body:
       gs = buildGAPIObject(API.GROUPSSETTINGS)
-      gs_body = _getMain().getSettingsFromGroup(cd, ','.join(entityList), gs, gs_body)
-      for k, v in _getMain().GROUP_CIGROUP_FIELDS_MAP.items():
+      gs_body = getSettingsFromGroup(cd, ','.join(entityList), gs, gs_body)
+      for k, v in GROUP_CIGROUP_FIELDS_MAP.items():
         if k in gs_body:
           ci_body[v] = gs_body.pop(k)
       if gs_body:
@@ -343,7 +334,7 @@ def doUpdateCIGroups():
         else:
           entityActionNotPerformedWarning([Ent.GROUP, group], Msg.PRIMARY_EMAIL_DID_NOT_MATCH_PATTERN.format(updatePrimaryEmail[0].pattern), i, count)
           continue
-      if gs_body and not _getMain().GroupIsAbuseOrPostmaster(group):
+      if gs_body and not GroupIsAbuseOrPostmaster(group):
         try:
           if group.find('@') == -1: # group settings API won't take uid so we make sure cd API is used so that we can grab real email.
             group = callGAPI(cd.groups(), 'get',
@@ -352,9 +343,9 @@ def doUpdateCIGroups():
           if getBeforeUpdate:
             settings = callGAPI(gs.groups(), 'get',
                                 throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS, retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS,
-                                groupUniqueId=_getMain().mapGroupEmailForSettings(group), fields='*')
+                                groupUniqueId=mapGroupEmailForSettings(group), fields='*')
             settings.update(gs_body)
-          if not _getMain().checkReplyToCustom(group, settings, i, count):
+          if not checkReplyToCustom(group, settings, i, count):
             continue
         except GAPI.notFound:
           entityActionFailedWarning([entityType, group], Msg.DOES_NOT_EXIST, i, count)
@@ -364,12 +355,12 @@ def doUpdateCIGroups():
                 GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
           entityActionFailedWarning([entityType, group], str(e), i, count)
           continue
-      if gs_body and not _getMain().GroupIsAbuseOrPostmaster(group):
+      if gs_body and not GroupIsAbuseOrPostmaster(group):
         try:
           callGAPI(gs.groups(), 'update',
                    bailOnInvalidError='messageModerationLevel' in settings,
                    throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS, retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS,
-                   groupUniqueId=_getMain().mapGroupEmailForSettings(group), body=settings, fields='')
+                   groupUniqueId=mapGroupEmailForSettings(group), body=settings, fields='')
         except GAPI.notFound:
           entityActionFailedWarning([entityType, group], Msg.DOES_NOT_EXIST, i, count)
           continue
@@ -534,7 +525,7 @@ def doUpdateCIGroups():
   elif CL_subCommand == 'sync':
     baseRole, groupMemberType = _getRoleGroupMemberType(allowIgnoreRole=True)
     ignoreRole = baseRole == Ent.ROLE_ALL
-    syncOperation = _getMain().getSyncOperation()
+    syncOperation = getSyncOperation()
     isSuspended, isArchived = _getOptionalIsSuspendedIsArchived()
     expireTime = _getExpireTime(baseRole)
     preview, csvPF = _getPreviewActionCSV()
@@ -754,7 +745,7 @@ def doUpdateCIGroups():
       elif myarg == 'preview':
         preview = True
       elif myarg == 'actioncsv':
-        csvPF = CSVPrintFile(_getMain().GROUP_PREVIEW_TITLES)
+        csvPF = CSVPrintFile(GROUP_PREVIEW_TITLES)
       else:
         unknownArgumentExit()
     Act.Set(Act.REMOVE)
@@ -809,7 +800,8 @@ def doUpdateCIGroups():
 
 # gam delete cigroups <GroupEntity>
 def doDeleteCIGroups():
-  _getMain().doDeleteGroups(ciGroupsAPI=True)
+  from gam.cmd.groups.groups import doDeleteGroups
+  doDeleteGroups(ciGroupsAPI=True)
 
 CIGROUP_MEMBER_TYPES_MAP = {
   'cbcmbrowser': Ent.TYPE_CBCM_BROWSER,

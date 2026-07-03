@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -45,7 +44,7 @@ from gam.util.display import (
     printKeyValueList,
     printLine,
 )
-from gam.util.entity import convertEntityToList, convertOrgUnitIDtoPath, getEntitiesFromCSVFile, getEntitiesFromFile
+from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, convertOrgUnitIDtoPath, getEntitiesFromCSVFile, getEntitiesFromFile
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import writeStdout
@@ -56,24 +55,13 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 def isolatePrinterID(name):
   ''' converts long name into simple ID'''
   return name.split('/')[-1]
 
 def _getPrinterID():
   cd = buildGAPIObject(API.PRINTERS)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   printerId = getString(Cmd.OB_PRINTER_ID)
   pattern = re.compile(rf'^{customer}/chrome/printers/(.+)$')
   mg = pattern.match(printerId)
@@ -83,7 +71,7 @@ def _getPrinterID():
 
 def _getPrinterEntity():
   cd = buildGAPIObject(API.PRINTERS)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   printerId = getString(Cmd.OB_PRINTER_ID)
   entitySelector = printerId.lower()
   if entitySelector == Cmd.ENTITY_SELECTOR_FILE:
@@ -181,7 +169,7 @@ def _showPrinter(cd, printer, FJQC, orgUnitId=None, showInherited=False, i=0, co
 # gam create printer <PrinterAttribute>+ [nodetails|returnidonly]
 def doCreatePrinter():
   cd = buildGAPIObject(API.DIRECTORY)
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   body, showDetails, returnIdOnly = _getPrinterAttributes(cd, CREATE_PRINTER_JSON_SKIP_FIELDS)
   if not body.get('orgUnitId'):
     missingArgumentExit('orgunit')
@@ -298,7 +286,7 @@ def doPrintShowPrinters():
                                                  ensure_ascii=False, sort_keys=True)})
 
   cd = buildGAPIObject(API.DIRECTORY)
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['id']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
@@ -402,7 +390,7 @@ def doPrintShowPrinterModels():
                                                  ensure_ascii=False, sort_keys=True)})
 
   cd = buildGAPIObject(API.DIRECTORY)
-  parent = _getMain()._getCustomersCustomerIdWithC()
+  parent = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile() if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   pfilter = None

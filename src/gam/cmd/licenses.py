@@ -1,6 +1,5 @@
 """GAM license management."""
 
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -18,28 +17,19 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
 from gamlib import glskus as SKU
 from gam.util.api import buildGAPIObject, callGAPIpages
 from gam.util.args import getArgument, getGoogleProductList, getGoogleSKUList, getInteger
 from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList
 from gam.util.display import entityActionNotPerformedWarning, getPageMessageForWhom, printEntityKVList
+from gam.util.entity import _getCustomerId, setTrueCustomerId
 from gam.util.errors import unknownArgumentExit
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
   lic = buildGAPIObject(API.LICENSING)
-  _getMain().setTrueCustomerId()
-  customerId = _getMain()._getCustomerId()
+  setTrueCustomerId()
+  customerId = _getCustomerId()
   csvPF = CSVPrintFile()
   products = []
   feed = []

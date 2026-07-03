@@ -1,4 +1,4 @@
-"""_getMain().GAM OAuth flows and credential management.
+"""GAM OAuth flows and credential management.
 
 Extracted from gam/__init__.py. Provides OAuth2 authentication flows,
 credential creation/deletion/info/update/refresh/export commands.
@@ -75,23 +75,13 @@ from gam.util.output import (
     systemErrorExit,
     writeStdout,
 )
+from gam.constants import GAM, INVALID_TOKEN_RC, SYSTEM_ERROR_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 ERROR_PREFIX = 'ERROR: '
 
@@ -289,7 +279,7 @@ def _localhost_to_ip():
   return local_ip
 
 def _waitForHttpClient(d):
-  wsgi_app = google_auth_oauthlib.flow._RedirectWSGIApp(Msg.AUTHENTICATION_FLOW_COMPLETE_CLOSE_BROWSER.format(_getMain().GAM))
+  wsgi_app = google_auth_oauthlib.flow._RedirectWSGIApp(Msg.AUTHENTICATION_FLOW_COMPLETE_CLOSE_BROWSER.format(GAM))
   wsgiref.simple_server.WSGIServer.allow_reuse_address = False
   # Convert hostname to IP since apparently binding to the IP
   # reduces odds of firewall blocking us
@@ -365,7 +355,7 @@ class _GamOauthFlow(google_auth_oauthlib.flow.InstalledAppFlow):
         checkUser = False
         alive -= 1
     if 'code' not in d:
-      systemErrorExit(_getMain().SYSTEM_ERROR_RC, Msg.AUTHENTICATION_FLOW_FAILED)
+      systemErrorExit(SYSTEM_ERROR_RC, Msg.AUTHENTICATION_FLOW_FAILED)
     while True:
       code = d['code']
       if code.startswith('http'):
@@ -380,7 +370,7 @@ class _GamOauthFlow(google_auth_oauthlib.flow.InstalledAppFlow):
         break
       except Exception as e:
         if not userInput:
-          systemErrorExit(_getMain().INVALID_TOKEN_RC, str(e))
+          systemErrorExit(INVALID_TOKEN_RC, str(e))
         stderrErrorMsg(str(e))
         _waitForUserInput(d)
     print(Msg.AUTHENTICATION_FLOW_COMPLETE)
@@ -412,11 +402,11 @@ class Credentials(google.oauth2.credentials.Credentials):
         information is provided.
       refresh_token: String, The OAuth 2.0 refresh token. If specified,
         credentials can be refreshed.
-      id_token: String, The Open _getMain().ID Connect _getMain().ID Token.
+      id_token: String, The Open ID Connect ID Token.
       token_uri: String, The OAuth 2.0 authorization server's token endpoint
         URI. Must be specified for refresh, can be left as None if the token can
         not be refreshed.
-      client_id: String, The OAuth 2.0 client _getMain().ID. Must be specified for refresh,
+      client_id: String, The OAuth 2.0 client ID. Must be specified for refresh,
         can be left as None if the token can not be refreshed.
       client_secret: String, The OAuth 2.0 client secret. Must be specified for
         refresh, can be left as None if the token can not be refreshed.
@@ -427,12 +417,12 @@ class Credentials(google.oauth2.credentials.Credentials):
           (e.g. The refresh token scopes are a superset of this or contain a
           wild card scope like
             'https://www.googleapis.com/auth/any-api').
-      quota_project_id: String, The project _getMain().ID used for quota and billing. This
+      quota_project_id: String, The project ID used for quota and billing. This
         project may be different from the project used to create the
         credentials.
       expiry: datetime.datetime, The time at which the provided token will
         expire.
-      id_token_data: Oauth2.0 _getMain().ID Token data which was previously fetched for
+      id_token_data: Oauth2.0 ID Token data which was previously fetched for
         this access token against the google.oauth2.id_token library.
       filename: String, Path to a file that will be used to store the
         credentials. If provided, a lock file of the same name and a ".lock"
@@ -474,7 +464,7 @@ class Credentials(google.oauth2.credentials.Credentials):
 
   @classmethod
   def from_authorized_user_info_gam(cls, info, filename=None):
-    """Generates Credentials from _getMain().JSON containing authorized user info.
+    """Generates Credentials from JSON containing authorized user info.
 
     Args:
       info: Dict, authorized user info in Google format.
@@ -501,7 +491,7 @@ class Credentials(google.oauth2.credentials.Credentials):
       expiry = arrow.Arrow.strptime(expiry, YYYYMMDDTHHMMSSZ_FORMAT, tzinfo='UTC').naive
     id_token_data = info.get('decoded_id_token')
 
-    # Provide backwards compatibility with field names when loading from _getMain().JSON.
+    # Provide backwards compatibility with field names when loading from JSON.
     # Some field names may be different, depending on when/how the credentials
     # were pickled.
     return cls(token=info.get('token', info.get('auth_token', '')),
@@ -540,7 +530,7 @@ class Credentials(google.oauth2.credentials.Credentials):
     """Runs an OAuth Flow from client secrets to generate credentials.
 
     Args:
-      client_id: String, The OAuth2.0 Client _getMain().ID.
+      client_id: String, The OAuth2.0 Client ID.
       client_secret: String, The OAuth2.0 Client Secret.
       scopes: Sequence[str], A list of scopes to include in the credentials.
       access_type: String, 'offline' or 'online'.  Indicates whether your
@@ -555,7 +545,7 @@ class Credentials(google.oauth2.credentials.Credentials):
       login_hint: String, The email address that will be displayed on the Google
         login page as a hint for the user to login to the correct account.
       filename: String, the path to a file to use to save the credentials.
-      open_browser: Boolean: whether or not _getMain().GAM should try to open the browser
+      open_browser: Boolean: whether or not GAM should try to open the browser
         automatically.
 
     Returns:
@@ -582,14 +572,14 @@ class Credentials(google.oauth2.credentials.Credentials):
     return cls.from_google_oauth2_credentials(flow.credentials, filename=filename)
 
   def to_json(self, strip=None):
-    """Creates a _getMain().JSON representation of a Credentials.
+    """Creates a JSON representation of a Credentials.
 
     Args:
         strip: Sequence[str], Optional list of members to exclude from the
-          generated _getMain().JSON.
+          generated JSON.
 
     Returns:
-        str: A _getMain().JSON representation of this instance, suitable to pass to
+        str: A JSON representation of this instance, suitable to pass to
              from_json().
     """
     expiry = self.expiry.strftime(YYYYMMDDTHHMMSSZ_FORMAT) if self.expiry else None

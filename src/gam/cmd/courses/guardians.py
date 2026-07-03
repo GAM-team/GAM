@@ -6,7 +6,6 @@ Part of the _courses_tmp sub-package."""
 
 import re
 import json
-import sys
 
 from gamlib import gluprop as UProp
 
@@ -63,23 +62,13 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
+from gam.constants import ADMIN_ACCESS_OPTIONS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def studentUnknownWarning(studentId, errMsg, i, count):
   setSysExitRC(SERVICE_NOT_APPLICABLE_RC)
@@ -757,7 +746,7 @@ def createClassroomInvitations(users):
       FJQC.SetCsvPF(csvPF)
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useOwnerAccess = False
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, False)

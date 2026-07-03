@@ -1556,3 +1556,133 @@ def checkUserSuspended(cd, user, entityType=None, i=0, count=0):
           GAPI.badRequest, GAPI.backendError, GAPI.systemError):
     _getMain().entityUnknownWarning(entityType, user, i, count)
     return None
+
+def _getCustomerId():
+  customerId = GC.Values[GC.CUSTOMER_ID]
+  if customerId != GC.MY_CUSTOMER and customerId[0] != 'C':
+    customerId = 'C' + customerId
+  return customerId
+
+def _getCustomerIdNoC():
+  customerId = GC.Values[GC.CUSTOMER_ID]
+  if customerId[0] == 'C':
+    return customerId[1:]
+  return customerId
+
+def _getCustomersCustomerIdNoC():
+  customerId = GC.Values[GC.CUSTOMER_ID]
+  if customerId.startswith('C'):
+    customerId = customerId[1:]
+  return f'customers/{customerId}'
+
+def _getCustomersCustomerIdWithC():
+  customerId = GC.Values[GC.CUSTOMER_ID]
+  if customerId != GC.MY_CUSTOMER and customerId[0] != 'C':
+    customerId = 'C' + customerId
+  return f'customers/{customerId}'
+
+def _getDomainList(cd, customer, fields):
+  from gam.util.access import accessErrorExit, ClientAPIAccessDeniedExit
+  try:
+    return _getMain().callGAPIitems(cd.domains(), 'list', 'domains',
+                         throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                                       GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                         customer=customer, fields=fields)
+  except (GAPI.badRequest, GAPI.notFound):
+    accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
+
+def setTrueCustomerId(cd=None, forceUpdate=False):
+  from gam.util.access import ClientAPIAccessDeniedExit
+  if GC.Values[GC.CUSTOMER_ID] == GC.MY_CUSTOMER or forceUpdate:
+    if not cd:
+      cd = _getMain().buildGAPIObject(API.DIRECTORY)
+    try:
+      customerInfo = _getMain().callGAPI(cd.customers(), 'get',
+                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                              customerKey=GC.MY_CUSTOMER,
+                              fields='id')
+      GC.Values[GC.CUSTOMER_ID] = customerInfo['id']
+    except (GAPI.badRequest, GAPI.invalidInput, GAPI.resourceNotFound):
+      pass
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
+      ClientAPIAccessDeniedExit(str(e))
+
+PRINT_PRIVILEGES_FIELDS = ['serviceId', 'serviceName', 'privilegeName', 'isOuScopable', 'childPrivileges']
+
+# Drive MIME type constants (moved from cmd/userservices.py)
+APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
+MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
+MIMETYPE_GA_FOLDER = f'{APPLICATION_VND_GOOGLE_APPS}folder'
+MIMETYPE_GA_FORM = f'{APPLICATION_VND_GOOGLE_APPS}form'
+MIMETYPE_GA_PRESENTATION = f'{APPLICATION_VND_GOOGLE_APPS}presentation'
+MIMETYPE_GA_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}shortcut'
+MIMETYPE_GA_SPREADSHEET = f'{APPLICATION_VND_GOOGLE_APPS}spreadsheet'
+MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
+ME_IN_OWNERS = "'me' in owners"
+ME_IN_OWNERS_AND = ME_IN_OWNERS + " and "
+NOT_ME_IN_OWNERS = "not " + ME_IN_OWNERS
+NOT_ME_IN_OWNERS_AND = NOT_ME_IN_OWNERS + " and "
+
+def _getEntityMimeType(fileEntry):
+  Ent = _getMain().Ent
+  if fileEntry['mimeType'] == MIMETYPE_GA_FOLDER:
+    return Ent.DRIVE_FOLDER
+  if fileEntry['mimeType'].startswith(MIMETYPE_GA_3P_SHORTCUT):
+    return Ent.DRIVE_3PSHORTCUT
+  if fileEntry['mimeType'] != MIMETYPE_GA_SHORTCUT:
+    return Ent.DRIVE_FILE
+  if 'shortcutDetails' not in fileEntry or 'targetMimeType' not in fileEntry['shortcutDetails']:
+    return Ent.DRIVE_SHORTCUT
+  return Ent.DRIVE_FOLDER_SHORTCUT if fileEntry['shortcutDetails']['targetMimeType'] == MIMETYPE_GA_FOLDER else Ent.DRIVE_FILE_SHORTCUT
+
+def _getTargetEntityMimeType(fileEntry):
+  Ent = _getMain().Ent
+  return Ent.DRIVE_FOLDER if fileEntry['shortcutDetails']['targetMimeType'] == MIMETYPE_GA_FOLDER else Ent.DRIVE_FILE
+
+QUERY_SHORTCUTS_MAP = {
+  'allfiles': f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'allfolders': f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'allforms': f"mimeType = '{MIMETYPE_GA_FORM}'",
+  'allgooglefiles': f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'allnongooglefiles': "not mimeType contains 'vnd.google'",
+  'allshortcuts': f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
+  'all3pshortcuts': f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
+  'allitems': 'allitems',
+  'mycommentableitems': ME_IN_OWNERS_AND+f"(mimeType = '{MIMETYPE_GA_DOCUMENT}' or mimeType = '{MIMETYPE_GA_SPREADSHEET}' or mimeType = '{MIMETYPE_GA_PRESENTATION}')",
+  'mydocs': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_DOCUMENT}'",
+  'myfiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'myfolders': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'myforms': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FORM}'",
+  'mygooglefiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'mynongooglefiles': ME_IN_OWNERS_AND+"not mimeType contains 'vnd.google'",
+  'mypresentations': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_PRESENTATION}'",
+  'mypublishableitems': ME_IN_OWNERS_AND+f"(mimeType = '{MIMETYPE_GA_DOCUMENT}' or mimeType = '{MIMETYPE_GA_SPREADSHEET}' or mimeType = '{MIMETYPE_GA_FORM}' or mimeType = '{MIMETYPE_GA_PRESENTATION}')",
+  'mysheets': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SPREADSHEET}'",
+  'myshortcuts': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
+  'myslides': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_PRESENTATION}'",
+  'my3pshortcuts': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
+  'myitems': ME_IN_OWNERS,
+  'mytopfiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and 'root' in parents",
+  'mytopfolders': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}' and 'root' in parents",
+  'mytopitems': ME_IN_OWNERS_AND+"'root' in parents",
+  'othersfiles': NOT_ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'othersfolders': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'othersforms': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FORM}'",
+  'othersgooglefiles': NOT_ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'othersnongooglefiles': NOT_ME_IN_OWNERS_AND+"not mimeType contains 'vnd.google'",
+  'othersshortcuts': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
+  'others3pshortcuts': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
+  'othersitems': NOT_ME_IN_OWNERS,
+  'writablefiles': f"'me' in writers and mimeType != '{MIMETYPE_GA_FOLDER}'",
+  }
+SHAREDDRIVE_QUERY_SHORTCUTS_MAP = {
+  'allfiles': f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'allfolders': f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'allgooglefiles': f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'allnongooglefiles': "not mimeType contains 'vnd.google'",
+  'allitems': 'allitems',
+  }
+

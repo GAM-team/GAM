@@ -30,6 +30,7 @@ from gam.util.args import (
     getStringOrFile,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
+    substituteQueryTimes,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -56,23 +57,13 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.output import setSysExitRC, systemErrorExit, writeStdout
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def getSpaceName(myarg):
   if myarg == 'space':
@@ -582,7 +573,7 @@ def printShowChatSpaces(users):
   if useAdminAccess:
     _chkChatAdminAccess(count)
     kwargsCS['orderBy'] = OBY.orderBy
-    _getMain().substituteQueryTimes(queries, queryTimes)
+    substituteQueryTimes(queries, queryTimes)
     pfilter = kwargsCS['query'] = queries[0]
     kwargsCS['useAdminAccess'] = True
     sortName = 'displayName' if 'displayName' in fieldsList else 'name'
@@ -620,7 +611,7 @@ def printShowChatSpaces(users):
       continue
     jcount = len(spaces)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems(kvList, jcount, Ent.CHAT_SPACE, i, count)

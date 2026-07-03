@@ -6,7 +6,6 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import json
-import sys
 
 from gam.util.args import formatLocalTime
 
@@ -24,6 +23,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.constants import NO_ENTITIES_FOUND_RC, TEAM_DRIVE, WITH_PARENTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -58,8 +58,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
 
 from gam.cmd.drive.filepaths import (
     DRIVEFILE_BASIC_PERMISSION_FIELDS, DRIVEFILE_ORDERBY_CHOICE_MAP,
@@ -153,13 +151,6 @@ from gam.util.output import (
     writeStdout,
 )
 
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 MY_DRIVE = 'My Drive'
 NEVER_TIME = '1970-01-01T00:00:00.000Z'
@@ -325,7 +316,7 @@ def printFileList(users):
           if childEntry['info']['mimeType'] == MIMETYPE_GA_FOLDER and (maxdepth == -1 or depth < maxdepth):
             _printChildDriveFolderContents(drive, childEntry['info'], user, i, count, depth+1)
       return
-    q = _getMain().WITH_PARENTS.format(fileEntry['id'])
+    q = WITH_PARENTS.format(fileEntry['id'])
     if selectSubQuery:
       q += ' and ('+selectSubQuery+')'
     if depth == 0:
@@ -402,7 +393,7 @@ def printFileList(users):
   pmselect = True
   showLabels = None
   rootFolderId = ROOT
-  rootFolderName = _getMain().MY_DRIVE
+  rootFolderName = MY_DRIVE
   maxdepth = -1
   nodataFields = []
   simpleLists = ['permissionIds', 'spaces']
@@ -784,7 +775,7 @@ def printFileList(users):
   titlePrefix = f'{Cmd.Argument(GM.Globals[GM.ENTITY_CL_START])} {Cmd.Argument(GM.Globals[GM.ENTITY_CL_START]+1)} ' if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is None else ''
   if not countsOnly:
     if not csvPF.rows:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     sortTitles = ['Owner']
     if addCSVData:
       sortTitles.extend(sorted(addCSVData.keys()))
@@ -796,7 +787,7 @@ def printFileList(users):
     csvPF.writeCSVfile(f'{titlePrefix}Drive Files')
   else:
     if not csvPFco.rows:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if summary != FILECOUNT_SUMMARY_NONE:
       writeMimeTypeCountsRow(summaryUser, 'Various', 'Various', summaryMimeTypeInfo)
     csvPFco.todrive = csvPF.todrive
@@ -1130,7 +1121,7 @@ def printShowFilePaths(users):
           result['name'] = _stripControlCharsFromName(result['name'])
         driveId = result.get('driveId')
         if driveId:
-          if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == _getMain().TEAM_DRIVE:
+          if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
             result['name'] = _getSharedDriveNameFromId(drive, driveId)
             if returnPathOnly:
               if fullpath:
@@ -1219,7 +1210,7 @@ def printFileParentTree(users):
             else:
               driveId = result.get('driveId')
               if driveId:
-                if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == _getMain().TEAM_DRIVE:
+                if result['mimeType'] == MIMETYPE_GA_FOLDER and result['name'] == TEAM_DRIVE:
                   result['name'] = _getSharedDriveNameFromId(drive, driveId)
                   result['isRoot'] = True
             result['parents'] = ['']

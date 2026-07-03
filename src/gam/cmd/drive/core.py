@@ -49,7 +49,12 @@ from gam.util.display import (
     printGotEntityItemsForWhom,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import convertUIDtoEmailAddress, getEntitySelection, getEntitySelector
+from gam.util.entity import (
+    _getEntityMimeType,
+    convertUIDtoEmailAddress,
+    getEntitySelection,
+    getEntitySelector,
+)
 from gam.util.errors import (
     deprecatedArgument,
     entityActionFailedExit,
@@ -59,6 +64,7 @@ from gam.util.errors import (
 )
 from gam.util.fileio import FILE_ERROR_RC, fileErrorMessage, setFilePath
 from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit
+from gam.constants import ANY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME, NO_ENTITIES_FOUND_RC, TEAM_DRIVE
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -93,16 +99,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 ROOTID = 'rootid'
 
@@ -504,7 +500,7 @@ def _getSharedDriveNameFromId(drive, sharedDriveId, useDomainAdminAccess=False):
                                  useDomainAdminAccess=useDomainAdminAccess,
                                  driveId=sharedDriveId, fields='name')['name']
     except (GAPI.fileNotFound, GAPI.notFound, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
-      sharedDriveName = _getMain().TEAM_DRIVE
+      sharedDriveName = TEAM_DRIVE
     GM.Globals[GM.MAP_SHAREDDRIVE_ID_TO_NAME][sharedDriveId] = sharedDriveName
   return sharedDriveName
 
@@ -515,11 +511,11 @@ def _getDriveFileNameFromId(drive, fileId, combineTitleId=True, useDomainAdminAc
                       fileId=fileId, fields='name,mimeType,driveId', supportsAllDrives=True)
     if result:
       fileName = result['name']
-      if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == _getMain().TEAM_DRIVE):
+      if (result['mimeType'] == MIMETYPE_GA_FOLDER) and result.get('driveId') and (result['name'] == TEAM_DRIVE):
         fileName = _getSharedDriveNameFromId(drive, result['driveId'])
       if combineTitleId:
         fileName += '('+fileId+')'
-      return (fileName, _getMain()._getEntityMimeType(result), result['mimeType'])
+      return (fileName, _getEntityMimeType(result), result['mimeType'])
   except GAPI.fileNotFound:
     if useDomainAdminAccess:
       try:
@@ -587,19 +583,19 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
   if fileIdEntity['query']:
     fileIdEntity['list'] = doDriveSearch(drive, user, i, count, query=fileIdEntity['query'], orderBy=orderBy)
     if fileIdEntity['list'] is None:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
   elif fileIdEntity['shareddriveadminquery']:
     fileIdEntity['list'] = doSharedDriveSearch(drive, user, i, count, fileIdEntity['shareddriveadminquery'], useDomainAdminAccess)
     if fileIdEntity['list'] is None:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
   elif fileIdEntity['shareddrivefilequery']:
     if not fileIdEntity['shareddrive'].get('driveId'):
       fileIdEntity['shareddrive']['corpora'] = CORPORA_ALL_DRIVES
     fileIdEntity['list'] = doDriveSearch(drive, user, i, count, query=fileIdEntity['shareddrivefilequery'], orderBy=orderBy, sharedDriveOnly=True, **fileIdEntity['shareddrive'])
     if fileIdEntity['list'] is None or not fileIdEntity['list']:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
     fileIdEntity['shareddrive'].pop('driveId', None)
     fileIdEntity['shareddrive'].pop('corpora', None)
@@ -608,7 +604,7 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
       return (user, None, 0)
   l = len(fileIdEntity['list'])
   if l == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if entityType:
     entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
   return (user, drive, l)
@@ -674,7 +670,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
   if parameters[DFA_PARENTQUERY]:
     parents = doDriveSearch(drive, user, i, count, query=parameters[DFA_PARENTQUERY], parentQuery=True, emptyQueryOK=emptyQueryOK)
     if parents is None:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return False
     body.setdefault('parents', [])
     for parent in parents:
@@ -725,7 +721,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
     parents = doDriveSearch(drive, user, i, count, query=parameters[DFA_SHAREDDRIVE_PARENTQUERY], parentQuery=True, emptyQueryOK=emptyQueryOK,
                             sharedDriveOnly=True, **parameters[DFA_KWARGS])
     if parents is None:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return False
     body.setdefault('parents', [])
     for parent in parents:
@@ -744,14 +740,14 @@ def _getDriveFileAddRemoveParentInfo(user, i, count, parameters, drive):
   for query in parameters[DFA_ADD_PARENT_NAMES]:
     parents = doDriveSearch(drive, user, i, count, query=query, parentQuery=True)
     if parents is None:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return (False, None, None)
     addParents.extend(parents)
   removeParents = parameters[DFA_REMOVE_PARENT_IDS][:]
   for query in parameters[DFA_REMOVE_PARENT_NAMES]:
     parents = doDriveSearch(drive, user, i, count, query=query, parentQuery=True)
     if parents is None:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return (False, None, None)
     removeParents.extend(parents)
   return (True, addParents, removeParents)
@@ -770,13 +766,13 @@ def _validateUserGetSharedDriveFileIDs(user, i, count, fileIdEntity, drive=None,
   if fileIdEntity['shareddrivefilequery']:
     fileIdEntity['list'] = doDriveSearch(drive, user, i, count, query=fileIdEntity['shareddrivefilequery'], sharedDriveOnly=True, **fileIdEntity['shareddrive'])
     if fileIdEntity['list'] is None or not fileIdEntity['list']:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       return (user, None, 0)
     fileIdEntity['shareddrive'].pop('driveId', None)
     fileIdEntity['shareddrive'].pop('corpora', None)
   l = len(fileIdEntity['list'])
   if l == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if entityType:
     entityPerformActionNumItems([Ent.USER, user], l, entityType, i, count)
   return (user, drive, l)
@@ -949,15 +945,15 @@ def getDriveFileParentAttribute(myarg, parameters):
   if myarg == 'parentid':
     parameters[DFA_PARENTID] = getString(Cmd.OB_DRIVE_FOLDER_ID)
   elif myarg == 'parentname':
-    parameters[DFA_PARENTQUERY] = _getMain().MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
+    parameters[DFA_PARENTQUERY] = MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
   elif myarg in {'anyownerparentname', 'sharedparentname'}:
-    parameters[DFA_PARENTQUERY] = _getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
+    parameters[DFA_PARENTQUERY] = ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
   elif myarg in {'teamdriveparent', 'shareddriveparent'}:
     parameters[DFA_SHAREDDRIVE_PARENT] = getString(Cmd.OB_SHAREDDRIVE_NAME)
   elif myarg in {'teamdriveparentid', 'shareddriveparentid'}:
     parameters[DFA_SHAREDDRIVE_PARENTID] = getString(Cmd.OB_DRIVE_FOLDER_ID)
   elif myarg in {'teamdriveparentname', 'shareddriveparentname'}:
-    parameters[DFA_SHAREDDRIVE_PARENTQUERY] = _getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
+    parameters[DFA_SHAREDDRIVE_PARENTQUERY] = ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName())
     parameters[DFA_KWARGS]['corpora'] = CORPORA_ALL_DRIVES
     parameters[DFA_KWARGS]['includeItemsFromAllDrives'] = True
     parameters[DFA_KWARGS]['supportsAllDrives'] = True
@@ -973,13 +969,13 @@ def getDriveFileAddRemoveParentAttribute(myarg, parameters):
   elif myarg in {'removeparent', 'removeparents'}:
     parameters[DFA_REMOVE_PARENT_IDS].extend(getString(Cmd.OB_DRIVE_FOLDER_ID_LIST).replace(',', ' ').split())
   elif myarg == 'addparentname':
-    parameters[DFA_ADD_PARENT_NAMES].append(_getMain().MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
+    parameters[DFA_ADD_PARENT_NAMES].append(MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
   elif myarg == 'removeparentname':
-    parameters[DFA_REMOVE_PARENT_NAMES].append(_getMain().MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
+    parameters[DFA_REMOVE_PARENT_NAMES].append(MY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
   elif myarg in {'addanyownerparentname', 'addsharedparentname'}:
-    parameters[DFA_ADD_PARENT_NAMES].append(_getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
+    parameters[DFA_ADD_PARENT_NAMES].append(ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
   elif myarg in {'removeanyownerparentname', 'removesharedparentname'}:
-    parameters[DFA_REMOVE_PARENT_NAMES].append(_getMain().ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
+    parameters[DFA_REMOVE_PARENT_NAMES].append(ANY_NON_TRASHED_FOLDER_NAME.format(getEscapedDriveFolderName()))
   elif myarg == 'enforcesingleparent':
     deprecatedArgument(myarg)
   else:

@@ -82,7 +82,7 @@ from gam.util.display import (
     printLine,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.entity import _getCustomersCustomerIdWithC, getEntityArgument, getEntityList
 from gam.util.errors import (
     blankArgumentExit,
     invalidArgumentExit,
@@ -93,6 +93,7 @@ from gam.util.errors import (
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import setSysExitRC, systemErrorExit, writeStderr, writeStdout
+from gam.constants import ADMIN_ACCESS_OPTIONS, GOOGLE_API_ERROR_RC, NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -127,16 +128,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def doPrintShowOwnership():
   rep = buildGAPIObject(API.REPORTS)
@@ -199,7 +190,7 @@ def doPrintShowOwnership():
   except GAPI.badRequest:
     systemErrorExit(BAD_REQUEST_RC, Msg.BAD_REQUEST)
   except GAPI.invalid as e:
-    systemErrorExit(_getMain().GOOGLE_API_ERROR_RC, str(e))
+    systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
   except GAPI.authError:
     accessErrorExit(None)
   for activity in feed:
@@ -331,7 +322,7 @@ def _moveSharedDriveToOU(orgUnit, orgUnitId, driveId, user, i, count, ci, return
   name = f'orgUnits/-/memberships/shared_drive;{driveId}'
   if ci is None:
     ci = buildGAPIObject(API.CLOUDIDENTITY_ORGUNITS_BETA)
-  cibody = {'customer': _getMain()._getCustomersCustomerIdWithC(),
+  cibody = {'customer': _getCustomersCustomerIdWithC(),
             'destinationOrgUnit': f'orgUnits/{orgUnitId[3:]}'}
   try:
     callGAPI(ci.orgUnits().memberships(), 'move',
@@ -391,7 +382,7 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       csvPF.GetTodriveParameters()
     elif csvPF and myarg == 'addcsvdata':
       getAddCSVData(addCSVData)
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif myarg == 'errorretries':
       errorRetries = getInteger(minVal=0, maxVal=10)
@@ -543,7 +534,7 @@ def updateSharedDrive(users, useDomainAdminAccess=False):
       pass
     elif myarg in {'hide', 'hidden'}:
       hide = getBoolean()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       unknownArgumentExit()
@@ -601,7 +592,7 @@ def deleteSharedDrive(users):
     myarg = getArgument()
     if myarg in {'nukefromorbit', 'allowitemdeletion'}:
       allowItemDeletion = useDomainAdminAccess = True
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       unknownArgumentExit()
@@ -740,7 +731,7 @@ def infoSharedDrive(users, useDomainAdminAccess=False):
   guiRoles = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    if myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif getFieldsList(myarg, SHAREDDRIVE_FIELDS_CHOICE_MAP, fieldsList, initialField=['id', 'name']):
       pass
@@ -809,6 +800,7 @@ SHOWWEBVIEWLINK_CHOICES = {'text', 'hyperlink'}
 #	[guiroles [<Boolean>]] [formatjson]
 # 	[showitemcountonly]
 def printShowSharedDrives(users, useDomainAdminAccess=False):
+  from gam.cmd.orgunits import getOrgUnitIdToPathMap
   def stripNonShowFields(shareddrive):
     if orgUnitIdToPathMap:
       td_ouid = shareddrive.get('orgUnitId')
@@ -859,7 +851,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       roles |= getACLRoles(SHAREDDRIVE_ACL_ROLES_MAP)
     elif myarg == 'checkgroups':
       pass
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif getFieldsList(myarg, SHAREDDRIVE_FIELDS_CHOICE_MAP, fieldsList, initialField=['id', 'name']):
       pass
@@ -890,7 +882,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       csvPF.AddJSONTitles(['role'])
       csvPF.MoveJSONTitlesToEnd(['JSON'])
   if showOrgUnitPaths and useDomainAdminAccess and ((not showFields) or ('orgUnitId' in showFields)):
-    orgUnitIdToPathMap = _getMain().getOrgUnitIdToPathMap(cd)
+    orgUnitIdToPathMap = getOrgUnitIdToPathMap(cd)
     if showFields:
       showFields.add('orgUnit')
   if showWebViewLink:
@@ -950,7 +942,7 @@ def printShowSharedDrives(users, useDomainAdminAccess=False):
       matchedFeed = feed
     jcount = len(matchedFeed)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if showItemCountOnly:
       writeStdout(f'{jcount}\n')
       return
@@ -1039,11 +1031,11 @@ def doPrintShowOrgunitSharedDrives():
   sds = callGAPIpages(ci.orgUnits().memberships(), 'list', 'orgMemberships',
                       pageMessage=getPageMessageForWhom(),
                       parent=f'orgUnits/{orgUnitId[3:]}',
-                      customer=_getMain()._getCustomersCustomerIdWithC(),
+                      customer=_getCustomersCustomerIdWithC(),
                       filter="type == 'shared_drive'")
   jcount = len(sds)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if showItemCountOnly:
     writeStdout(f'{jcount}\n')
     return
@@ -1090,7 +1082,7 @@ def copySyncSharedDriveACLs(users, useDomainAdminAccess=False):
     myarg = getArgument()
     if getCopyMoveOptions(myarg, copyMoveOptions):
       pass
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       unknownArgumentExit()
@@ -1211,7 +1203,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
       maxItems = getInteger(minVal=0)
     elif getDriveFilePermissionsFields(myarg, fieldsList):
       pass
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif PM.ProcessArgument(myarg):
       pass
@@ -1349,7 +1341,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
         pass
     jcount = len(matchFeed)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if not csvPF:
       if not FJQC.formatJSON:
         entityPerformActionNumItems([Ent.USER, user], jcount, Ent.SHAREDDRIVE, i, count)
@@ -1470,7 +1462,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
       orgUnitPath, orgUnitId = getOrgUnitId(cd)
       orgUnitId = orgUnitId[3:]
       orgUnitInfo = {'orgUnit': orgUnitPath, 'orgUnitId': orgUnitId}
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     elif myarg == 'domainlist':
       domainList = set(getString(Cmd.OB_DOMAIN_NAME_LIST, minLen=0).replace(',', ' ').lower().split())
@@ -1590,7 +1582,7 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
               GAPI.unknownError, GAPI.invalid):
         pass
     if len(matchFeed) == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     for shareddrive in sorted(matchFeed, key=lambda k: k['name']):
       row = {'id': shareddrive['id'], 'name': shareddrive['name'],
              'organizers': delimiter.join(shareddrive['organizers']),

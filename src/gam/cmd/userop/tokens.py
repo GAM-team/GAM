@@ -5,7 +5,6 @@ Part of the _userop_tmp sub-package."""
 """GAM user operations: Looker Studio, user groups, licenses, photos, profile, sheets, tokens, deprovision."""
 
 import re
-import sys
 
 from gam.cmd.userop.sheets import commonClientIds
 
@@ -50,17 +49,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def deleteTokens(users):
   cd = buildGAPIObject(API.DIRECTORY)
@@ -107,6 +95,7 @@ TOKENS_TITLE_MAP = {
   }
 
 def _printShowTokens(entityType, users):
+  from gam.cmd.project import getGCPOrgId
   def _printToken(token):
     row = {}
     for item in token:
@@ -207,7 +196,7 @@ def _printShowTokens(entityType, users):
     crm1 = buildGAPIObject('cloudresourcemanagerv1')
     admin_email = _getAdminEmail()
     admin_domain = getEmailAddressDomain(admin_email)
-    GC.Values[GC.GCP_ORG_ID] = _getMain().getGCPOrgId(crm, admin_email, admin_domain).split('/')[1]
+    GC.Values[GC.GCP_ORG_ID] = getGCPOrgId(crm, admin_email, admin_domain).split('/')[1]
   fields = ','.join(TOKENS_FIELDS_TITLES)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -331,6 +320,7 @@ def doPrintShowTokens():
 
 # gam <UserTypeEntity> deprovision|deprov [popimap] [signout] [turnoff2sv]
 def deprovisionUser(users):
+  from gam.cmd.gmail.settings import _imapDefaults, _popDefaults, _setImap, _setPop
   cd = buildGAPIObject(API.DIRECTORY)
   disablePopImap = signout = turnoff2sv = False
   while Cmd.ArgumentsRemaining():
@@ -344,8 +334,8 @@ def deprovisionUser(users):
     else:
       unknownArgumentExit()
   if disablePopImap:
-    imapBody = _getMain()._imapDefaults(False)
-    popBody = _getMain()._popDefaults(False)
+    imapBody = _imapDefaults(False)
+    popBody = _popDefaults(False)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -436,8 +426,8 @@ def deprovisionUser(users):
 #
       Act.Set(Act.DEPROVISION)
       if disablePopImap:
-        _getMain()._setImap(user, imapBody, i, count)
-        _getMain()._setPop(user, popBody, i, count)
+        _setImap(user, imapBody, i, count)
+        _setPop(user, popBody, i, count)
 #
       entityActionPerformed([Ent.USER, user], i, count)
     except GAPI.userNotFound:

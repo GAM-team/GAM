@@ -6,7 +6,6 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -51,17 +50,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 MIMETYPE_GA_FORM = 'application/vnd.google-apps.form'
 
@@ -118,13 +106,14 @@ def _getPublishSettings(myarg, pbody):
 #	[drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
 #	[(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 def createForm(users):
+  from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   csvPF = None
   returnIdOnly = False
   title = ''
   body = {'mimeType': MIMETYPE_GA_FORM}
   ubody = {'includeFormInResponse': True, 'requests': []}
   pbody = _initPublishSettings()
-  parentParms = _getMain().initDriveFileAttributes()
+  parentParms = initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'title':
@@ -141,7 +130,7 @@ def createForm(users):
       pass
     elif myarg == 'drivefilename':
       body['name'] = getString(Cmd.OB_DRIVE_FILE_NAME)
-    elif _getMain().getDriveFileParentAttribute(myarg, parentParms):
+    elif getDriveFileParentAttribute(myarg, parentParms):
       pass
     elif myarg == 'returnidonly':
       returnIdOnly = True
@@ -162,7 +151,7 @@ def createForm(users):
     user, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
     if not drive:
       continue
-    if not _getMain()._getDriveFileParentInfo(drive, user, i, count, body, parentParms):
+    if not _getDriveFileParentInfo(drive, user, i, count, body, parentParms):
       continue
     _, gform = buildGAPIServiceObject(API.FORMS, user, i, count)
     if not gform:
@@ -209,9 +198,10 @@ def createForm(users):
 #	[title <String>] [description <String>] [isquiz [Boolean>]] [<JSONData>]
 #	[ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 def updateForm(users):
+  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   ubody = {'includeFormInResponse': False, 'requests': []}
   pbody = _initPublishSettings()
-  fileIdEntity = _getMain().getDriveFileEntity()
+  fileIdEntity = getDriveFileEntity()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'title':
@@ -233,7 +223,7 @@ def updateForm(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, _, jcount = _getMain()._validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.FORM)
+    user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.FORM)
     if jcount == 0:
       continue
     _, gform = buildGAPIServiceObject(API.FORMS, user, i, count)
@@ -263,9 +253,10 @@ def updateForm(users):
 # gam <UserTypeEntity> show forms <DriveFileEntity>
 #	[formatjson]
 def printShowForms(users):
+  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   csvPF = CSVPrintFile(['User', 'formId', 'name', 'title', 'description'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  fileIdEntity = _getMain().getDriveFileEntity()
+  fileIdEntity = getDriveFileEntity()
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -284,7 +275,7 @@ def printShowForms(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, _, jcount = _getMain()._validateUserGetFileIDs(user, i, count, fileIdEntity,
+    user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity,
                                               entityType=[Ent.FORM, None][csvPF is not None or FJQC.formatJSON])
     if jcount == 0:
       continue
@@ -339,12 +330,13 @@ FORM_RESPONSE_TIME_OBJECTS = {'createTime', 'lastSubmittedTime'}
 #	[filter <String> (filtertime<String> <Time>)*]
 #	[countsonly|formatjson]
 def printShowFormResponses(users):
+  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   csvPF = CSVPrintFile(['User', 'formId', 'responseId', 'createTime', 'lastSubmittedTime', 'respondentEmail', 'totalScore'],
                        'sortall', indexedTitles=['answers']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   frfilter = None
   filterTimes = {}
-  fileIdEntity = _getMain().getDriveFileEntity()
+  fileIdEntity = getDriveFileEntity()
   countsOnly = False
   addCSVData = {}
   while Cmd.ArgumentsRemaining():
@@ -376,7 +368,7 @@ def printShowFormResponses(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, _, jcount = _getMain()._validateUserGetFileIDs(user, i, count, fileIdEntity,
+    user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity,
                                               entityType=[Ent.FORM, None][csvPF is not None or FJQC.formatJSON])
     if jcount == 0:
       continue

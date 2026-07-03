@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 from gam.cmd.contacts import (
     PEOPLE_ADDRESSES,
@@ -131,23 +130,13 @@ from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import deprecatedArgument, invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
 from gam.util.output import setSysExitRC, writeStdout
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _initPeopleContactQueryAttributes(printShowCmd):
   return {'query': None, 'updateTime': None,
@@ -424,6 +413,7 @@ def getPeopleContactGroupsInfo(people, entityType, entityName, i, count):
 
 def validatePeopleContactGroup(people, contactGroupName,
                                contactGroupIDs, contactGroupNames, entityType, entityName, i, count):
+  from gam.cmd.contacts import normalizeContactGroupResourceName
   if not contactGroupNames:
     contactGroupIDs, contactGroupNames = getPeopleContactGroupsInfo(people, entityType, entityName, i, count)
     if contactGroupNames is False:
@@ -435,7 +425,7 @@ def validatePeopleContactGroup(people, contactGroupName,
     contactGroupName = cg.group(1)
     if contactGroupName in contactGroupIDs:
       return (contactGroupName, contactGroupIDs, contactGroupNames)
-    normalizedContactGroupName = _getMain().normalizeContactGroupResourceName(contactGroupName)
+    normalizedContactGroupName = normalizeContactGroupResourceName(contactGroupName)
     if normalizedContactGroupName in contactGroupIDs:
       return (normalizedContactGroupName, contactGroupIDs, contactGroupNames)
   else:
@@ -443,7 +433,7 @@ def validatePeopleContactGroup(people, contactGroupName,
       return (contactGroupName, contactGroupIDs, contactGroupNames)
     if contactGroupName in contactGroupNames:
       return (contactGroupNames[contactGroupName][0], contactGroupIDs, contactGroupNames)
-    normalizedContactGroupName = _getMain().normalizeContactGroupResourceName(contactGroupName)
+    normalizedContactGroupName = normalizeContactGroupResourceName(contactGroupName)
     if normalizedContactGroupName != contactGroupName and normalizedContactGroupName in contactGroupIDs:
       return (normalizedContactGroupName, contactGroupIDs, contactGroupNames)
   return (None, contactGroupIDs, contactGroupNames)
@@ -469,8 +459,9 @@ def validatePeopleContactGroupsList(people, contactId,
 #	(contactgroup <ContactGroupItem>)*
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def createUserPeopleContact(users):
+  from gam.cmd.contacts import PeopleManager
   entityType = Ent.USER
-  peopleManager = _getMain().PeopleManager()
+  peopleManager = PeopleManager()
   peopleEntityType = Ent.CONTACT
   sources = PEOPLE_READ_SOURCES_CHOICE_MAP['contact']
   parameters = {'csvPF': None, 'titles': ['User', 'resourceName'], 'addCSVData': {}, 'returnIdOnly': False}
@@ -553,9 +544,10 @@ def clearPeopleEmailAddressMatches(contactClear, contact):
   return updateRequired
 
 def _clearUpdatePeopleContacts(users, updateContacts):
+  from gam.cmd.contacts import PeopleManager
   action = Act.Get()
   entityType = Ent.USER
-  peopleManager = _getMain().PeopleManager()
+  peopleManager = PeopleManager()
   peopleEntityType = Ent.PEOPLE_CONTACT
   sources = PEOPLE_READ_SOURCES_CHOICE_MAP['contact']
   entityList, resourceNameLists, contactQuery, queriedContacts = _getPeopleContactEntityList(entityType, 1)
@@ -601,7 +593,7 @@ def _clearUpdatePeopleContacts(users, updateContacts):
     jcount = len(entityList)
     entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, peopleEntityType, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     validatedContactGroupsLists = {
       PEOPLE_GROUPS_LIST: [],
@@ -788,7 +780,7 @@ def dedupReplaceDomainUserPeopleContacts(users):
     jcount = len(entityList)
     entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, peopleEntityType, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Act.Set(Act.UPDATE)
     Ind.Increment()
@@ -829,6 +821,7 @@ def dedupReplaceDomainUserPeopleContacts(users):
 
 # gam <UserTypeEntity> delete contacts <PeopleResourceNameEntity>|<PeopleUserContactSelection>
 def deleteUserPeopleContacts(users):
+  from gam.cmd.contacts import normalizePeopleResourceName
   entityType = Ent.USER
   peopleEntityType = Ent.PEOPLE_CONTACT
   entityList, resourceNameLists, contactQuery, queriedContacts = _getPeopleContactEntityList(entityType, -1)
@@ -856,7 +849,7 @@ def deleteUserPeopleContacts(users):
     jcount = len(entityList)
     entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, peopleEntityType, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contact in entityList:
@@ -866,7 +859,7 @@ def deleteUserPeopleContacts(users):
           continue
         resourceName = contact['resourceName']
       else:
-        resourceName = _getMain().normalizePeopleResourceName(contact)
+        resourceName = normalizePeopleResourceName(contact)
       try:
         callGAPI(people.people(), 'deleteContact',
                  bailOnInternalError=True,
@@ -1110,6 +1103,7 @@ def _getPersonFields(fieldsChoiceMap, defaultFields, fieldsList, parameters):
   return ','.join(fieldsList)
 
 def _infoPeople(users, entityType, source):
+  from gam.cmd.contacts import normalizePeopleResourceName
   if entityType == Ent.DOMAIN:
     people = buildGAPIObject(API.PEOPLE)
   peopleEntityType = Ent.DOMAIN_PROFILE if source == 'profile' else Ent.PEOPLE_CONTACT
@@ -1152,7 +1146,7 @@ def _infoPeople(users, entityType, source):
     if not FJQC.formatJSON:
       entityPerformActionNumItems([entityType, user], jcount, peopleEntityType, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contact in entityList:
@@ -1160,7 +1154,7 @@ def _infoPeople(users, entityType, source):
       if isinstance(contact, dict):
         resourceName = contact['resourceName']
       else:
-        resourceName = _getMain().normalizePeopleResourceName(contact)
+        resourceName = normalizePeopleResourceName(contact)
       try:
         result = callGAPI(people.people(), 'get',
                           bailOnInternalError=True,
@@ -1311,6 +1305,7 @@ CONTACTGROUPS_MYCONTACTS_NAME = 'My Contacts'
 # gam <UserTypeEntity> copy othercontacts
 #	<OtherContactResourceNameEntity>|<OtherContactSelection>
 def copyUserPeopleOtherContacts(users):
+  from gam.cmd.contacts import normalizeOtherContactsResourceName
   entityType = Ent.USER
   peopleEntityType = Ent.OTHER_CONTACT
   sources = [PEOPLE_READ_SOURCES_CHOICE_MAP['contact']]
@@ -1333,7 +1328,7 @@ def copyUserPeopleOtherContacts(users):
     jcount = len(entityList)
     entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, peopleEntityType, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contact in entityList:
@@ -1343,7 +1338,7 @@ def copyUserPeopleOtherContacts(users):
           continue
         resourceName = contact['resourceName']
       else:
-        resourceName = _getMain().normalizeOtherContactsResourceName(contact)
+        resourceName = normalizeOtherContactsResourceName(contact)
       try:
         callGAPI(people.otherContacts(), 'copyOtherContactToMyContactsGroup',
                  bailOnInternalError=True,
@@ -1366,6 +1361,7 @@ def copyUserPeopleOtherContacts(users):
 #	<PeopleContactAttribute>*
 #	(contactgroup <ContactGroupItem>)*
 def processUserPeopleOtherContacts(users):
+  from gam.cmd.contacts import PeopleManager, normalizeOtherContactsResourceName
   action = Act.Get()
   entityType = Ent.USER
   peopleEntityType = Ent.OTHER_CONTACT
@@ -1373,7 +1369,7 @@ def processUserPeopleOtherContacts(users):
   entityList, resourceNameLists, contactQuery, queriedContacts = _getPeopleOtherContactEntityList(1)
   if action == Act.UPDATE:
     Act.Set(Act.UPDATE_MOVE)
-    peopleManager = _getMain().PeopleManager()
+    peopleManager = PeopleManager()
     body, updatePersonFields, contactGroupsLists = peopleManager.GetPersonFields(entityType, False)
   else:
     body = {PEOPLE_MEMBERSHIPS: [{'contactGroupMembership': {'contactGroupResourceName': CONTACTGROUPS_MYCONTACTS_ID}}]}
@@ -1417,7 +1413,7 @@ def processUserPeopleOtherContacts(users):
     jcount = len(entityList)
     entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, peopleEntityType, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contact in entityList:
@@ -1427,7 +1423,7 @@ def processUserPeopleOtherContacts(users):
           continue
         resourceName = contact['resourceName']
       else:
-        resourceName = _getMain().normalizeOtherContactsResourceName(contact)
+        resourceName = normalizeOtherContactsResourceName(contact)
         contact = otherContacts.get(resourceName)
         if contact is None:
           entityActionFailedWarning([entityType, user, peopleEntityType, resourceName], Msg.DOES_NOT_EXIST, j, jcount)
@@ -1713,6 +1709,7 @@ def printShowUserPeopleProfiles(users):
     csvPF.writeCSVfile('People Profiles')
 
 def _processPeopleContactPhotos(users, function):
+  from gam.cmd.contacts import normalizePeopleResourceName
   def _makeFilenameFromPattern(resourceName):
     filename = filenamePattern[:]
     if subForContactId:
@@ -1788,7 +1785,7 @@ def _processPeopleContactPhotos(users, function):
     jcount = len(entityList)
     entityPerformActionModifierNumItems([entityType, user], Msg.MAXIMUM_OF, jcount, Ent.PHOTO, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contact in entityList:
@@ -1798,7 +1795,7 @@ def _processPeopleContactPhotos(users, function):
           continue
         resourceName = contact['resourceName']
       else:
-        resourceName = _getMain().normalizePeopleResourceName(contact)
+        resourceName = normalizePeopleResourceName(contact)
       try:
         if subForEmail:
           result = callGAPI(people.people(), 'get',
@@ -1895,7 +1892,8 @@ def doDeleteDomainContactPhoto():
 # gam <UserTypeEntity> create contactgroup <ContactGroupAttribute>+
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def createUserPeopleContactGroup(users):
-  peopleManager = _getMain().PeopleManager()
+  from gam.cmd.contacts import PeopleManager
+  peopleManager = PeopleManager()
   entityType = Ent.USER
   parameters = {'csvPF': None, 'titles': ['User', 'resourceName'], 'addCSVData': {}, 'returnIdOnly': False}
   body, _ = peopleManager.GetContactGroupFields(parameters)
@@ -1942,7 +1940,8 @@ def createUserPeopleContactGroup(users):
 
 # gam <UserTypeEntity> update contactgroups <ContactGroupItem> <ContactAttribute>+
 def updateUserPeopleContactGroup(users):
-  peopleManager = _getMain().PeopleManager()
+  from gam.cmd.contacts import PeopleManager
+  peopleManager = PeopleManager()
   entityType = Ent.USER
   entityList = getStringReturnInList(Cmd.OB_CONTACT_GROUP_ITEM)
   body, fields = peopleManager.GetContactGroupFields()
@@ -1957,7 +1956,7 @@ def updateUserPeopleContactGroup(users):
     jcount = len(entityList)
     entityPerformActionNumItems([entityType, user], jcount, Ent.CONTACT_GROUP, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contactGroup in entityList:
@@ -2013,7 +2012,7 @@ def deleteUserPeopleContactGroups(users):
     jcount = len(entityList)
     entityPerformActionNumItems([entityType, user], jcount, Ent.CONTACT_GROUP, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contactGroup in entityList:
@@ -2114,7 +2113,7 @@ def infoUserPeopleContactGroups(users):
     if not FJQC.formatJSON:
       entityPerformActionNumItems([entityType, user], jcount, Ent.CONTACT_GROUP, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     for contactGroup in entityList:

@@ -6,7 +6,6 @@ Part of the _vault_tmp sub-package."""
 
 import re
 import json
-import sys
 import zipfile
 import base64
 import os
@@ -79,23 +78,13 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
+from gam.constants import DATA_NOT_AVALIABLE_RC, NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 WARNING_PREFIX = 'WARNING: '
 
@@ -224,7 +213,7 @@ def warnMatterNotOpen(v, matter, matterNameId, j, jcount):
     except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied, GAPI.invalidArgument):
       matter['state'] = 'Unknown'
   else:
-    setSysExitRC(_getMain().DATA_NOT_AVALIABLE_RC)
+    setSysExitRC(DATA_NOT_AVALIABLE_RC)
   message = formatKeyValueList('',
                                Ent.FormatEntityValueList([Ent.VAULT_MATTER, matterNameId])+
                                [Msg.MATTER_NOT_OPEN.format(matter['state'])],
@@ -726,7 +715,7 @@ def doPrintShowVaultExports():
   jcount = len(results)
   if not csvPF:
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
   j = 0
   for matter in results:
     j += 1
@@ -787,6 +776,7 @@ def doPrintShowVaultExports():
 #	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[copyattempts <Integer>] [retryinterval <Integer>]
 def doCopyVaultExport():
+  from gam.cmd.cloudstorage import _copyStorageObjects
   v = buildGAPIObject(API.VAULT)
   if not Cmd.ArgumentIsAhead('matter'):
     matterId, matterNameId = getMatterItem(v)
@@ -844,7 +834,7 @@ def doCopyVaultExport():
     # Convert to md5Hash format Storage API uses because OF COURSE they differ
     md5Hash = base64.b64encode(bytes.fromhex(s_file['md5Hash'])).decode()
     objects.append({'bucket': s_file['bucketName'], 'name': s_file['objectName'], 'md5Hash': md5Hash})
-  _getMain()._copyStorageObjects(objects, target_bucket, target_prefix)
+  _copyStorageObjects(objects, target_bucket, target_prefix)
 
 ZIP_EXTENSION_PATTERN = re.compile(r'^.*\.zip$', re.IGNORECASE)
 
@@ -857,6 +847,7 @@ ZIP_EXTENSION_PATTERN = re.compile(r'^.*\.zip$', re.IGNORECASE)
 #	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[downloadattempts <Integer>] [retryinterval <Integer>]
 def doDownloadVaultExport():
+  from gam.cmd.cloudstorage import _getCloudStorageObject
   def extract_nested_zip(zippedFile):
     """ Extract a zip file including any nested zip files
         Delete the zip file(s) after extraction
@@ -976,7 +967,7 @@ def doDownloadVaultExport():
     if not zipToStdout:
       performAction(Ent.CLOUD_STORAGE_FILE, s_object, j, jcount)
     Ind.Increment()
-    _getMain()._getCloudStorageObject(s, bucket, s_object, filename,
+    _getCloudStorageObject(s, bucket, s_object, filename,
                            expectedMd5=s_file['md5Hash'] if verifyFiles else None,
                            zipToStdout=zipToStdout, j=j, jcount=jcount)
     if extractFiles and ZIP_EXTENSION_PATTERN.match(filename):

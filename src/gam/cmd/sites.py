@@ -40,23 +40,13 @@ from gam.util.entity import getEntityArgument
 from gam.util.errors import INVALID_JSON_RC, deprecatedCommandExit, unknownArgumentExit
 from gam.util.fileio import writeFile
 from gam.util.output import ERROR, systemErrorExit
+from gam.constants import NETWORK_ERROR_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from urllib.parse import unquote
 from urllib.parse import urlencode
@@ -129,6 +119,7 @@ DNS_ERROR_CODES_MAP = {
 
 # gam update verify|verification <DomainName> cname|txt|text|file|site
 def doUpdateSiteVerification():
+  from gam.cmd.sso import SITEVERIFICATION_METHOD_CHOICE_MAP
   def showDNSrecords():
     try:
       verify_data = callGAPI(verif.webResource(), 'getToken',
@@ -167,15 +158,15 @@ def doUpdateSiteVerification():
             if not found:
               printKeyValueList(['DNS      Record', 'No matching record found'])
         elif status == 0:
-          systemErrorExit(_getMain().NETWORK_ERROR_RC, Msg.DOMAIN_NOT_FOUND_IN_DNS)
+          systemErrorExit(NETWORK_ERROR_RC, Msg.DOMAIN_NOT_FOUND_IN_DNS)
         else:
-          systemErrorExit(_getMain().NETWORK_ERROR_RC, DNS_ERROR_CODES_MAP.get(status, f'Unknown error {status}'))
+          systemErrorExit(NETWORK_ERROR_RC, DNS_ERROR_CODES_MAP.get(status, f'Unknown error {status}'))
       except (IndexError, KeyError, SyntaxError, TypeError, ValueError):
         systemErrorExit(INVALID_JSON_RC, Msg.INVALID_JSON_INFORMATION)
 
   verif = buildGAPIObject(API.SITEVERIFICATION)
   a_domain = getString(Cmd.OB_DOMAIN_NAME)
-  verificationMethod = getChoice(_getMain().SITEVERIFICATION_METHOD_CHOICE_MAP, mapChoice=True)
+  verificationMethod = getChoice(SITEVERIFICATION_METHOD_CHOICE_MAP, mapChoice=True)
   if verificationMethod in {'DNS_TXT', 'DNS_CNAME'}:
     verify_type = 'INET_DOMAIN'
     identifier = a_domain

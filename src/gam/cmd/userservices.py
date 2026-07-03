@@ -93,6 +93,22 @@ from gam.util.display import (
     userYouTubeServiceNotEnabledWarning,
 )
 from gam.util.entity import (
+    APPLICATION_VND_GOOGLE_APPS,
+    ME_IN_OWNERS,
+    ME_IN_OWNERS_AND,
+    MIMETYPE_GA_3P_SHORTCUT,
+    MIMETYPE_GA_DOCUMENT,
+    MIMETYPE_GA_FOLDER,
+    MIMETYPE_GA_FORM,
+    MIMETYPE_GA_PRESENTATION,
+    MIMETYPE_GA_SHORTCUT,
+    MIMETYPE_GA_SPREADSHEET,
+    NOT_ME_IN_OWNERS,
+    NOT_ME_IN_OWNERS_AND,
+    QUERY_SHORTCUTS_MAP,
+    SHAREDDRIVE_QUERY_SHORTCUTS_MAP,
+    _getEntityMimeType,
+    _getTargetEntityMimeType,
     checkUserSuspended,
     convertEntityToList,
     convertUIDtoEmailAddress,
@@ -113,43 +129,20 @@ from gam.util.errors import (
 from gam.util.fileio import UNKNOWN, closeFile
 from gam.util.gdoc import openCSVFileReader
 from gam.util.output import setSysExitRC, stderrErrorMsg, systemErrorExit
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
-MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
-MIMETYPE_GA_FOLDER = f'{APPLICATION_VND_GOOGLE_APPS}folder'
-MIMETYPE_GA_FORM = f'{APPLICATION_VND_GOOGLE_APPS}form'
-MIMETYPE_GA_PRESENTATION = f'{APPLICATION_VND_GOOGLE_APPS}presentation'
-MIMETYPE_GA_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}shortcut'
-MIMETYPE_GA_SPREADSHEET = f'{APPLICATION_VND_GOOGLE_APPS}spreadsheet'
-MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
-ME_IN_OWNERS = "'me' in owners"
-ME_IN_OWNERS_AND = ME_IN_OWNERS + " and "
-NOT_ME_IN_OWNERS = "not " + ME_IN_OWNERS
-NOT_ME_IN_OWNERS_AND = NOT_ME_IN_OWNERS + " and "
-
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _showASPs(user, asps, i=0, count=0):
   Act.Set(Act.SHOW)
   jcount = len(asps)
   entityPerformActionNumItems([Ent.USER, user], jcount, Ent.APPLICATION_SPECIFIC_PASSWORD, i, count)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   for asp in asps:
@@ -199,7 +192,7 @@ def deleteASP(users):
     jcount = len(codeIds)
     entityPerformActionNumItems([Ent.USER, user], jcount, Ent.APPLICATION_SPECIFIC_PASSWORD, i, count)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     Ind.Increment()
     j = 0
@@ -273,7 +266,7 @@ def _showBackupCodes(user, codes, i, count):
       jcount += 1
   entityPerformActionNumItems([Ent.USER, user], jcount, Ent.BACKUP_VERIFICATION_CODES, i, count)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
     return
   Ind.Increment()
   j = 0
@@ -398,6 +391,7 @@ def initUserCalendarEntity():
 
 def getUserCalendarEntity(default='primary', noSelectionKwargs=None):
 
+  from gam.cmd.courses.courses import _getCourseStates
   def _initCourseCalendarSelectionParameters():
     return {'courseIds': [], 'teacherId': None, 'myCoursesAsTeacher': False,
             'studentId': None, 'myCoursesAsStudent': False, 'courseStates': []}
@@ -418,7 +412,7 @@ def getUserCalendarEntity(default='primary', noSelectionKwargs=None):
       courseSelectionParameters['myCoursesAsStudent'] = True
       courseSelectionParameters['studentId'] = None
     elif myarg in {'coursestate', 'coursestates', 'coursestatus'}:
-      _getMain()._getCourseStates(Cmd.OB_COURSE_STATE_LIST, courseSelectionParameters['courseStates'])
+      _getCourseStates(Cmd.OB_COURSE_STATE_LIST, courseSelectionParameters['courseStates'])
     else:
       return False
     return True
@@ -478,11 +472,13 @@ def getUserCalendarEntity(default='primary', noSelectionKwargs=None):
 
 def _validateUserGetCalendarIds(user, i, count, calendarEntity,
                                 itemType=None, modifier=None, showAction=True, setRC=True, newCalId=None, secondaryCalendarsOnly=False):
+  from gam.cmd.calendar import checkCalendarExists, validateCalendar
+  from gam.cmd.courses.courses import _getCoursesInfo
   if user and calendarEntity['dict']:
     calIds = calendarEntity['dict'][user][:]
   else:
     calIds = calendarEntity['list'][:]
-  user, cal = _getMain().validateCalendar(user, i, count, noClientAccess=True)
+  user, cal = validateCalendar(user, i, count, noClientAccess=True)
   if not cal:
     return (user, None, None, 0)
   if calendarEntity['resourceIds']:
@@ -502,7 +498,7 @@ def _validateUserGetCalendarIds(user, i, count, calendarEntity,
       courseSelectionParameters['teacherId'] = user
     if courseSelectionParameters['myCoursesAsStudent']:
       courseSelectionParameters['studentId'] = user
-    coursesInfo = _getMain()._getCoursesInfo(calendarEntity['croom'], courseSelectionParameters,
+    coursesInfo = _getCoursesInfo(calendarEntity['croom'], courseSelectionParameters,
                                   calendarEntity['courseShowProperties'])
     if coursesInfo is None:
       return (user, None, None, 0)
@@ -524,12 +520,12 @@ def _validateUserGetCalendarIds(user, i, count, calendarEntity,
     return (user, None, None, 0)
   if newCalId:
     newcal = buildGAPIObject(API.CALENDAR)
-    if not _getMain().checkCalendarExists(newcal, newCalId, i, count):
+    if not checkCalendarExists(newcal, newCalId, i, count):
       entityActionFailedWarning([Ent.USER, user, Ent.CALENDAR, newCalId], Msg.DOES_NOT_EXIST, i, count)
       return (user, None, None, 0)
   jcount = len(calIds)
   if setRC and jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if showAction:
     if not itemType:
       entityPerformActionNumItems([Ent.USER, user], jcount, Ent.CALENDAR, i, count)
@@ -589,12 +585,14 @@ def _getCalendarAttributes(body, returnOnUnknownArgument=False):
       unknownArgumentExit()
 
 def _showCalendar(calendar, j, jcount, FJQC, acls=None):
+  from gam import ACLRuleKeyValueList
+  from gam.cmd.calendar import _showCalendarSettings
   if FJQC.formatJSON:
     if acls:
       calendar['acls'] = [{'id': rule['id'], 'role': rule['role']} for rule in acls]
     printLine(json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True))
     return
-  _getMain()._showCalendarSettings(calendar, j, jcount)
+  _showCalendarSettings(calendar, j, jcount)
   Ind.Increment()
   if 'primary' in calendar:
     printKeyValueList(['Primary', calendar['primary']])
@@ -629,7 +627,7 @@ def _showCalendar(calendar, j, jcount, FJQC, acls=None):
     Ind.Increment()
     for rule in acls:
       j += 1
-      printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(rule), j, jcount)
+      printKeyValueListWithCount(ACLRuleKeyValueList(rule), j, jcount)
     Ind.Decrement()
   Ind.Decrement()
 
@@ -651,6 +649,7 @@ def _processCalendarList(user, i, count, calId, j, jcount, cal, function, **kwar
 
 # gam <UserTypeEntity> add calendars <UserCalendarAddEntity> <CalendarAttribute>*
 def addCalendars(users):
+  from gam.cmd.calendar import normalizeCalendarId
   calendarEntity = getUserCalendarEntity()
   body = {'selected': True, 'hidden': False}
   _getCalendarAttributes(body)
@@ -665,12 +664,13 @@ def addCalendars(users):
     j = 0
     for calId in calIds:
       j += 1
-      body['id'] = calId = _getMain().normalizeCalendarId(calId, user)
+      body['id'] = calId = normalizeCalendarId(calId, user)
       _processCalendarList(user, i, count, calId, j, jcount, cal, 'insert',
                            body=body, colorRgbFormat=colorRgbFormat, fields='')
     Ind.Decrement()
 
 def _updateDeleteCalendars(users, calendarEntity, function, **kwargs):
+  from gam.cmd.calendar import normalizeCalendarId
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -681,7 +681,7 @@ def _updateDeleteCalendars(users, calendarEntity, function, **kwargs):
     j = 0
     for calId in calIds:
       j += 1
-      calId = _getMain().normalizeCalendarId(calId, user)
+      calId = normalizeCalendarId(calId, user)
       _processCalendarList(user, i, count, calId, j, jcount, cal, function,
                            calendarId=calId, **kwargs)
     Ind.Decrement()
@@ -703,8 +703,9 @@ def deleteCalendars(users):
 
 # gam <UserTypeEntity> create calendars <CalendarSettings>
 def createCalendar(users):
+  from gam.cmd.calendar import getCalendarSettings
   calendarEntity = initUserCalendarEntity()
-  body = _getMain().getCalendarSettings(summaryRequired=True)
+  body = getCalendarSettings(summaryRequired=True)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -728,6 +729,7 @@ def addCreateCalendars(users):
     createCalendar(users)
 
 def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
+  from gam.cmd.calendar import normalizeCalendarId
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -738,7 +740,7 @@ def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
     j = 0
     for calId in calIds:
       j += 1
-      calId = _getMain().normalizeCalendarId(calId, user)
+      calId = normalizeCalendarId(calId, user)
       try:
         callGAPI(cal.calendars(), function,
                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.CANNOT_DELETE_PRIMARY_CALENDAR,
@@ -754,8 +756,9 @@ def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
 
 # gam <UserTypeEntity> modify calendars <UserCalendarEntity> <CalendarSettings>
 def modifyCalendars(users):
+  from gam.cmd.calendar import getCalendarSettings
   calendarEntity = getUserCalendarEntity()
-  body = _getMain().getCalendarSettings(summaryRequired=False)
+  body = getCalendarSettings(summaryRequired=False)
   _modifyRemoveCalendars(users, calendarEntity, 'patch', body=body)
 
 # gam <UserTypeEntity> remove calendars <UserCalendarEntity>
@@ -801,6 +804,7 @@ CALENDAR_LIST_FIELDS_CHOICE_MAP = {
 #	[fields <CalendarFieldList>]  [permissions]
 #	[formatjson]
 def infoCalendars(users):
+  from gam.cmd.calendar import normalizeCalendarId
   calendarEntity = getUserCalendarEntity()
   FJQC = FormatJSONQuoteChar()
   fieldsList = []
@@ -828,7 +832,7 @@ def infoCalendars(users):
     j = 0
     for calId in calIds:
       j += 1
-      calId = _getMain().normalizeCalendarId(calId, user)
+      calId = normalizeCalendarId(calId, user)
       try:
         result = callGAPI(cal.calendarList(), 'get',
                           throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND],
@@ -860,6 +864,7 @@ CALENDAR_EXCLUDE_DOMAINS = {
 #	[fields <CalendarFieldList>] [permissions]
 #	[formatjson]
 def printShowCalendars(users):
+  from gam.cmd.calendar import validateCalendar
   acls = []
   getCalPermissions = oneItemPerRow = noPrimary = primaryOnly = False
   excludes = set()
@@ -907,7 +912,7 @@ def printShowCalendars(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, cal = _getMain().validateCalendar(user, i, count, noClientAccess=True)
+    user, cal = validateCalendar(user, i, count, noClientAccess=True)
     if not cal:
       continue
     if csvPF:
@@ -1007,6 +1012,7 @@ USER_CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
 # gam <UserTypeEntity> show calsettings
 #	[formatjson]
 def printShowCalSettings(users):
+  from gam.cmd.calendar import validateCalendar
   csvPF = CSVPrintFile(['User'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
@@ -1022,7 +1028,7 @@ def printShowCalSettings(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, cal = _getMain().validateCalendar(user, i, count, noClientAccess=True)
+    user, cal = validateCalendar(user, i, count, noClientAccess=True)
     if not cal:
       continue
     try:
@@ -1055,8 +1061,9 @@ def printShowCalSettings(users):
 
 # gam <UserTypeEntity> create calendaracls <UserCalendarEntity> <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def createCalendarACLs(users):
+  from gam.cmd.calendar import _doCalendarsCreateACLs, getCalendarCreateUpdateACLsOptions
   calendarEntity = getUserCalendarEntity()
-  role, ACLScopeEntity, sendNotifications = _getMain().getCalendarCreateUpdateACLsOptions(True)
+  role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1065,10 +1072,11 @@ def createCalendarACLs(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._doCalendarsCreateACLs(origUser, user, cal, calIds, jcount, role, ACLScopeEntity, sendNotifications)
+    _doCalendarsCreateACLs(origUser, user, cal, calIds, jcount, role, ACLScopeEntity, sendNotifications)
     Ind.Decrement()
 
 def updateDeleteCalendarACLs(users, calendarEntity, function, modifier, ACLScopeEntity, role, sendNotifications):
+  from gam.cmd.calendar import _doUpdateDeleteCalendarACLs
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1077,27 +1085,30 @@ def updateDeleteCalendarACLs(users, calendarEntity, function, modifier, ACLScope
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._doUpdateDeleteCalendarACLs(origUser, user, cal, function, calIds, jcount, ACLScopeEntity, role, sendNotifications)
+    _doUpdateDeleteCalendarACLs(origUser, user, cal, function, calIds, jcount, ACLScopeEntity, role, sendNotifications)
     Ind.Decrement()
 
 # gam <UserTypeEntity> update calendaracls <UserCalendarEntity> <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def updateCalendarACLs(users):
+  from gam.cmd.calendar import getCalendarCreateUpdateACLsOptions
   calendarEntity = getUserCalendarEntity()
-  role, ACLScopeEntity, sendNotifications = _getMain().getCalendarCreateUpdateACLsOptions(True)
+  role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   updateDeleteCalendarACLs(users, calendarEntity, 'patch', Act.MODIFIER_IN, ACLScopeEntity, role, sendNotifications)
 
 # gam <UserTypeEntity> delete calendaracls <UserCalendarEntity> [<CalendarACLRole>] <CalendarACLScopeEntity>
 def deleteCalendarACLs(users):
+  from gam.cmd.calendar import getCalendarDeleteACLsOptions
   calendarEntity = getUserCalendarEntity()
-  role, ACLScopeEntity = _getMain().getCalendarDeleteACLsOptions(True)
+  role, ACLScopeEntity = getCalendarDeleteACLsOptions(True)
   updateDeleteCalendarACLs(users, calendarEntity, 'delete', Act.MODIFIER_FROM, ACLScopeEntity, role, False)
 
 # gam <UserTypeEntity> info calendaracls <UserCalendarEntity> <CalendarACLScopeEntity>
 #	[formatjson]
 def infoCalendarACLs(users):
+  from gam.cmd.calendar import _doInfoCalendarACLs, _getCalendarInfoACLOptions, getCalendarSiteACLScopeEntity
   calendarEntity = getUserCalendarEntity()
-  ACLScopeEntity = _getMain().getCalendarSiteACLScopeEntity()
-  FJQC = _getMain()._getCalendarInfoACLOptions()
+  ACLScopeEntity = getCalendarSiteACLScopeEntity()
+  FJQC = _getCalendarInfoACLOptions()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1106,7 +1117,7 @@ def infoCalendarACLs(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._doInfoCalendarACLs(origUser, user, cal, calIds, jcount, ACLScopeEntity, FJQC)
+    _doInfoCalendarACLs(origUser, user, cal, calIds, jcount, ACLScopeEntity, FJQC)
     Ind.Decrement()
 
 # gam <UserTypeEntity> print calendaracls <UserCalendarEntity> [todrive <ToDriveAttribute>*]
@@ -1116,8 +1127,9 @@ def infoCalendarACLs(users):
 #	[noselfowner]
 #	[formatjson]
 def printShowCalendarACLs(users):
+  from gam.cmd.calendar import _getCalendarPrintShowACLOptions, _printShowCalendarACLs
   calendarEntity = getUserCalendarEntity(default='all')
-  csvPF, FJQC, noSelfOwner, addCSVData = _getMain()._getCalendarPrintShowACLOptions(['primaryEmail', 'calendarId'])
+  csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['primaryEmail', 'calendarId'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1129,13 +1141,14 @@ def printShowCalendarACLs(users):
     for calId in calIds:
       j += 1
       calId = convertUIDtoEmailAddress(calId)
-      _getMain()._printShowCalendarACLs(cal, user, Ent.CALENDAR, calId, j, jcount, csvPF, FJQC, noSelfOwner, addCSVData)
+      _printShowCalendarACLs(cal, user, Ent.CALENDAR, calId, j, jcount, csvPF, FJQC, noSelfOwner, addCSVData)
     Ind.Decrement()
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
 
 # gam <CalendarEntity> transfer ownership <UserItem>
 def doCalendarsTransferOwnership(calIds):
+  from gam.cmd.calendar import validateCalendar
   Act.Set(Act.TRANSFER_OWNERSHIP)
   newDataOwner = getEmailAddress()
   checkForExtraneousArguments()
@@ -1143,7 +1156,7 @@ def doCalendarsTransferOwnership(calIds):
   i = 0
   for calId in calIds:
     i += 1
-    calId, cal = _getMain().validateCalendar(calId, i, count)
+    calId, cal = validateCalendar(calId, i, count)
     if not cal:
       continue
     try:
@@ -1160,8 +1173,9 @@ def doCalendarsTransferOwnership(calIds):
       return
 
 def _createImportCalendarEvent(users, function):
+  from gam.cmd.calendar import _createCalendarEvents, _getCalendarCreateImportUpdateEventOptions
   calendarEntity = getUserCalendarEntity()
-  body, parameters = _getMain()._getCalendarCreateImportUpdateEventOptions(function, Ent.USER)
+  body, parameters = _getCalendarCreateImportUpdateEventOptions(function, Ent.USER)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1169,7 +1183,7 @@ def _createImportCalendarEvent(users, function):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._createCalendarEvents(user, cal, function, calIds, jcount, body, parameters)
+    _createCalendarEvents(user, cal, function, calIds, jcount, body, parameters)
     Ind.Decrement()
 
 # gam <UserTypeEntity> create event <UserCalendarEntity> [id <String>] <EventAddAttribute>+
@@ -1188,9 +1202,10 @@ def importCalendarEvent(users):
 #	[showdayofweek]
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def updateCalendarEvents(users):
+  from gam.cmd.calendar import _getCalendarCreateImportUpdateEventOptions, _updateCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
-  body, parameters = _getMain()._getCalendarCreateImportUpdateEventOptions('update', Ent.USER)
+  calendarEventEntity = getCalendarEventEntity()
+  body, parameters = _getCalendarCreateImportUpdateEventOptions('update', Ent.USER)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1199,15 +1214,16 @@ def updateCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._updateCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, body, parameters)
+    _updateCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, body, parameters)
     Ind.Decrement()
 
 # gam <UserTypeEntity> delete events <UserCalendarEntity> <EventEntity>
 #	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def deleteCalendarEvents(users):
+  from gam.cmd.calendar import _deleteCalendarEvents, _getCalendarDeleteEventOptions, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
-  parameters = _getMain()._getCalendarDeleteEventOptions()
+  calendarEventEntity = getCalendarEventEntity()
+  parameters = _getCalendarDeleteEventOptions()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1216,15 +1232,16 @@ def deleteCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._deleteCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, parameters)
+    _deleteCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, parameters)
     Ind.Decrement()
 
 # gam <UserTypeEntity> purge events <UserCalendarEntity> <EventEntity>
 #	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def purgeCalendarEvents(users):
+  from gam.cmd.calendar import _getCalendarDeleteEventOptions, _purgeCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
-  parameters = _getMain()._getCalendarDeleteEventOptions()
+  calendarEventEntity = getCalendarEventEntity()
+  parameters = _getCalendarDeleteEventOptions()
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1233,11 +1250,12 @@ def purgeCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._purgeCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, parameters, False)
+    _purgeCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, parameters, False)
     Ind.Decrement()
 
 # gam <UserTypeEntity> wipe events <UserCalendarEntity>
 def wipeCalendarEvents(users):
+  from gam.cmd.calendar import _wipeCalendarEvents
   calendarEntity = getUserCalendarEntity()
   checkForExtraneousArguments()
   i, count, users = getEntityArgument(users)
@@ -1247,17 +1265,18 @@ def wipeCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._wipeCalendarEvents(user, cal, calIds, jcount)
+    _wipeCalendarEvents(user, cal, calIds, jcount)
     Ind.Decrement()
 
 # gam <UserTypeEntity> move events <UserCalendarEntity> <EventEntity> to|destination <CalendarItem> [<EventNotificationAttribute>]
 def moveCalendarEvents(users):
+  from gam.cmd.calendar import _getCalendarMoveEventsOptions, _moveCalendarEvents, checkCalendarExists, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
+  calendarEventEntity = getCalendarEventEntity()
   checkArgumentPresent(['to', 'destination'])
   newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
-  parameters, _ = _getMain()._getCalendarMoveEventsOptions()
-  if not _getMain().checkCalendarExists(None, newCalId, 0, 0, True):
+  parameters, _ = _getCalendarMoveEventsOptions()
+  if not checkCalendarExists(None, newCalId, 0, 0, True):
     return
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -1267,11 +1286,12 @@ def moveCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._moveCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, newCalId, parameters)
+    _moveCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, newCalId, parameters)
     Ind.Decrement()
 
 # gam <UserTypeEntity> empty calendartrash <UserCalendarEntity>
 def emptyCalendarTrash(users):
+  from gam.cmd.calendar import _emptyCalendarTrash
   calendarEntity = getUserCalendarEntity()
   checkForExtraneousArguments()
   i, count, users = getEntityArgument(users)
@@ -1282,7 +1302,7 @@ def emptyCalendarTrash(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._emptyCalendarTrash(user, cal, calIds, jcount)
+    _emptyCalendarTrash(user, cal, calIds, jcount)
     Ind.Decrement()
 
 # gam <UserTypeEntity> update calattendees <UserCalendarEntity> <EventEntity> [anyorganizer]
@@ -1299,6 +1319,7 @@ def emptyCalendarTrash(users):
 #	(updatestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)*
 #	(updateentitystatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)*
 def updateCalendarAttendees(users):
+  from gam.cmd.calendar import _getCalendarSendUpdates, _validateCalendarGetEvents, checkCalendarExists, getCalendarEventEntity
   def getStatus(option):
     if option.endswith('status'):
       return(getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=None, mapChoice=True),
@@ -1306,7 +1327,7 @@ def updateCalendarAttendees(users):
     return (None, None)
 
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
+  calendarEventEntity = getCalendarEventEntity()
   anyOrganizer = doIt = splitUpdate = False
   parameters = {'sendUpdates': 'none'}
   attendeeMap = {}
@@ -1375,7 +1396,7 @@ def updateCalendarAttendees(users):
       attendeeMap[updAddr] = {'op': 'replace', 'status': updStatus, 'optional': updOptional, 'email': newAddr, 'done': False}
     elif myarg in {'anyorganizer', 'allevents'}:
       anyOrganizer = True
-    elif _getMain()._getCalendarSendUpdates(myarg, parameters):
+    elif _getCalendarSendUpdates(myarg, parameters):
       pass
     elif myarg == 'doit':
       doIt = True
@@ -1405,7 +1426,7 @@ def updateCalendarAttendees(users):
     for calId in calIds:
       j += 1
       Act.Set(Act.UPDATE)
-      calId, cal, events, kcount = _getMain()._validateCalendarGetEvents(origUser, user, cal, calId, j, jcount, calendarEventEntity,
+      calId, cal, events, kcount = _validateCalendarGetEvents(origUser, user, cal, calId, j, jcount, calendarEventEntity,
                                                               fieldsList, True)
       if kcount == 0:
         continue
@@ -1508,7 +1529,7 @@ def updateCalendarAttendees(users):
                          sendUpdates=parameters['sendUpdates'], fields='')
                 entityActionPerformedMessage([Ent.EVENT, eventSummary], removeMessage, j, jcount)
               except GAPI.notFound as e:
-                if not _getMain().checkCalendarExists(cal, calId, i, count):
+                if not checkCalendarExists(cal, calId, i, count):
                   entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
                   break
                 entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventSummary], str(e), k, kcount)
@@ -1527,7 +1548,7 @@ def updateCalendarAttendees(users):
                          sendUpdates=parameters['sendUpdates'], fields='')
                 entityActionPerformedMessage([Ent.EVENT, eventSummary], addMessage, jcount)
               except GAPI.notFound as e:
-                if not _getMain().checkCalendarExists(cal, calId, i, count):
+                if not checkCalendarExists(cal, calId, i, count):
                   entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
                   break
                 entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventSummary], str(e), k, kcount)
@@ -1546,9 +1567,10 @@ def updateCalendarAttendees(users):
 #	[fields <EventFieldNameList>] [showdayofweek]
 #	[formatjson]
 def infoCalendarEvents(users):
+  from gam.cmd.calendar import _getCalendarInfoEventOptions, _infoCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
-  FJQC, fieldsList = _getMain()._getCalendarInfoEventOptions(calendarEventEntity)
+  calendarEventEntity = getCalendarEventEntity()
+  FJQC, fieldsList = _getCalendarInfoEventOptions(calendarEventEntity)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1557,7 +1579,7 @@ def infoCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._infoCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, FJQC, fieldsList)
+    _infoCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity, FJQC, fieldsList)
     Ind.Decrement()
 
 # gam <UserTypeEntity> print events <UserCalendarEntity> <EventEntity> <EventDisplayProperties>*
@@ -1569,9 +1591,10 @@ def infoCalendarEvents(users):
 #	[fields <EventFieldNameList>] [showdayofweek]
 #	~[countsonly|formatjson]
 def printShowCalendarEvents(users):
+  from gam.cmd.calendar import _getCalendarPrintShowEventOptions, _printShowCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
-  calendarEventEntity = _getMain().getCalendarEventEntity()
-  csvPF, FJQC, fieldsList, addCSVData, attendeesList = _getMain()._getCalendarPrintShowEventOptions(calendarEventEntity, Ent.USER)
+  calendarEventEntity = getCalendarEventEntity()
+  csvPF, FJQC, fieldsList, addCSVData, attendeesList = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.USER)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1581,7 +1604,7 @@ def printShowCalendarEvents(users):
     if jcount == 0:
       continue
     Ind.Increment()
-    _getMain()._printShowCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity,
+    _printShowCalendarEvents(origUser, user, cal, calIds, jcount, calendarEventEntity,
                              csvPF, FJQC, fieldsList, addCSVData, attendeesList)
     Ind.Decrement()
   if csvPF:
@@ -1644,11 +1667,12 @@ def getStatusEventDateTime(dateType, dateList):
 STATUS_EVENTS_DATETIME_CHOICES = {'date', 'allday', 'range', 'daily', 'weekly', 'timerange'}
 
 def getStatusEventProperties(myarg, body, parameters, dateList):
+  from gam.cmd.calendar import _getCalendarEventReminders
   if myarg in STATUS_EVENTS_DATETIME_CHOICES:
     getStatusEventDateTime(myarg, dateList)
   elif myarg == 'timezone':
     parameters['timeZone'] = getString(Cmd.OB_STRING)
-  elif _getMain()._getCalendarEventReminders(myarg, body):
+  elif _getCalendarEventReminders(myarg, body):
     pass
   else:
     return False
@@ -1697,6 +1721,7 @@ WORKING_LOCATION_CHOICE_MAP = {
   }
 
 def getWorkingLocationProperties(body, parameters, dateList):
+  from gam.cmd.resources import _getBuildingByNameOrId
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[EVENT_TYPE_WORKINGLOCATION]
   body.update({'eventType': EVENT_TYPE_WORKINGLOCATION, eventProperties: {},
                'visibility': 'public', 'transparency':'transparent'})
@@ -1716,7 +1741,7 @@ def getWorkingLocationProperties(body, parameters, dateList):
         while Cmd.ArgumentsRemaining():
           myarg = getArgument()
           if myarg in {'building', 'buildingid'}:
-            entry['buildingId'] = _getMain()._getBuildingByNameOrId(None)
+            entry['buildingId'] = _getBuildingByNameOrId(None)
           elif myarg in {'floor', 'floorname'}:
             entry['floorId'] = getString(Cmd.OB_STRING, minLen=0)
           elif myarg in {'section', 'floorsection'}:
@@ -1770,6 +1795,7 @@ def getWorkingLocationProperties(body, parameters, dateList):
 #	[timezone <String>]
 #	(noreminders|(reminder email|popup <Number>)+)
 def createStatusEvent(users, eventType):
+  from gam.cmd.calendar import _setEventRecurrenceTimeZone
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   body = {'start': {}, 'end': {}, 'recurrence': None}
@@ -1829,7 +1855,7 @@ def createStatusEvent(users, eventType):
           kvList[7] = body['end']['dateTime']
           if wlDate['recurrence']:
             body['recurrence'] = wlDate['recurrence']
-            if not _getMain()._setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
+            if not _setEventRecurrenceTimeZone(cal, calId, body, parameters, i, count):
               break
         try:
           event = callGAPI(cal.events(), 'insert',
@@ -1869,6 +1895,7 @@ def createWorkingLocation(users):
 #	 (weekly yyyy-mm-dd N)|
 #	 (timerange <Time> <Time>))+
 def deleteStatusEvent(users, eventType):
+  from gam.cmd.calendar import checkCalendarExists
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   kwargs = {'eventTypes': [eventType], 'showDeleted': False, 'singleEvents': True,
@@ -1940,7 +1967,7 @@ def deleteStatusEvent(users, eventType):
                 kvList.extend([Ent.LOCATION, location])
             entityActionPerformed(kvList, k, kcount)
           except (GAPI.notFound, GAPI.deleted) as e:
-            if not _getMain().checkCalendarExists(cal, calId, i, count):
+            if not checkCalendarExists(cal, calId, i, count):
               entityUnknownWarning(Ent.CALENDAR, calId, k, kcount)
               break
             entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), k, kcount)
@@ -1990,6 +2017,7 @@ def _showCalendarStatusEvent(primaryEmail, calId, eventEntityType, event, k, kco
 #	[showdayofweek]
 #	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 def printShowStatusEvent(users, eventType):
+  from gam.cmd.calendar import _getEventDaysOfWeek, _printCalendarEvent
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   csvPF = CSVPrintFile(['primaryEmail', 'calendarId', 'id'], 'sortall') if Act.csvFormat() else None
@@ -2046,14 +2074,14 @@ def printShowStatusEvent(users, eventType):
           for event in events:
             k += 1
             if showDayOfWeek:
-              _getMain()._getEventDaysOfWeek(event)
+              _getEventDaysOfWeek(event)
             _showCalendarStatusEvent(user, calId, Ent.EVENT, event, k, kcount, FJQC)
           Ind.Decrement()
         elif events:
           for event in events:
             if showDayOfWeek:
-              _getMain()._getEventDaysOfWeek(event)
-            _getMain()._printCalendarEvent(user, calId, event, csvPF, FJQC, {}, False)
+              _getEventDaysOfWeek(event)
+            _printCalendarEvent(user, calId, event, csvPF, FJQC, {}, False)
         elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
           csvPF.WriteRowNoFilter({'primaryEmail': user})
         first = first.shift(**wlDate['udelta'])
@@ -2185,20 +2213,6 @@ def printShowYouTubeChannel(users):
   if csvPF:
     csvPF.writeCSVfile('YouTube Channels')
 
-def _getEntityMimeType(fileEntry):
-  if fileEntry['mimeType'] == MIMETYPE_GA_FOLDER:
-    return Ent.DRIVE_FOLDER
-  if fileEntry['mimeType'].startswith(MIMETYPE_GA_3P_SHORTCUT):
-    return Ent.DRIVE_3PSHORTCUT
-  if fileEntry['mimeType'] != MIMETYPE_GA_SHORTCUT:
-    return Ent.DRIVE_FILE
-  if 'shortcutDetails' not in fileEntry or 'targetMimeType' not in fileEntry['shortcutDetails']:
-    return Ent.DRIVE_SHORTCUT
-  return Ent.DRIVE_FOLDER_SHORTCUT if fileEntry['shortcutDetails']['targetMimeType'] == MIMETYPE_GA_FOLDER else Ent.DRIVE_FILE_SHORTCUT
-
-def _getTargetEntityMimeType(fileEntry):
-  return Ent.DRIVE_FOLDER if fileEntry['shortcutDetails']['targetMimeType'] == MIMETYPE_GA_FOLDER else Ent.DRIVE_FILE
-
 CORPORA_ALL_DRIVES = 'allDrives'
 CORPORA_CHOICE_MAP = {
   'alldrives': CORPORA_ALL_DRIVES,
@@ -2208,49 +2222,5 @@ CORPORA_CHOICE_MAP = {
   'onlyshareddrives': CORPORA_ALL_DRIVES,
   'onlyteamdrives': CORPORA_ALL_DRIVES,
   'user': 'user',
-  }
-
-QUERY_SHORTCUTS_MAP = {
-  'allfiles': f"mimeType != '{MIMETYPE_GA_FOLDER}'",
-  'allfolders': f"mimeType = '{MIMETYPE_GA_FOLDER}'",
-  'allforms': f"mimeType = '{MIMETYPE_GA_FORM}'",
-  'allgooglefiles': f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
-  'allnongooglefiles': "not mimeType contains 'vnd.google'",
-  'allshortcuts': f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
-  'all3pshortcuts': f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
-  'allitems': 'allitems',
-  'mycommentableitems': ME_IN_OWNERS_AND+f"(mimeType = '{MIMETYPE_GA_DOCUMENT}' or mimeType = '{MIMETYPE_GA_SPREADSHEET}' or mimeType = '{MIMETYPE_GA_PRESENTATION}')",
-  'mydocs': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_DOCUMENT}'",
-  'myfiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}'",
-  'myfolders': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}'",
-  'myforms': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FORM}'",
-  'mygooglefiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
-  'mynongooglefiles': ME_IN_OWNERS_AND+"not mimeType contains 'vnd.google'",
-  'mypresentations': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_PRESENTATION}'",
-  'mypublishableitems': ME_IN_OWNERS_AND+f"(mimeType = '{MIMETYPE_GA_DOCUMENT}' or mimeType = '{MIMETYPE_GA_SPREADSHEET}' or mimeType = '{MIMETYPE_GA_FORM}' or mimeType = '{MIMETYPE_GA_PRESENTATION}')",
-  'mysheets': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SPREADSHEET}'",
-  'myshortcuts': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
-  'myslides': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_PRESENTATION}'",
-  'my3pshortcuts': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
-  'myitems': ME_IN_OWNERS,
-  'mytopfiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and 'root' in parents",
-  'mytopfolders': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}' and 'root' in parents",
-  'mytopitems': ME_IN_OWNERS_AND+"'root' in parents",
-  'othersfiles': NOT_ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}'",
-  'othersfolders': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}'",
-  'othersforms': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FORM}'",
-  'othersgooglefiles': NOT_ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
-  'othersnongooglefiles': NOT_ME_IN_OWNERS_AND+"not mimeType contains 'vnd.google'",
-  'othersshortcuts': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
-  'others3pshortcuts': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
-  'othersitems': NOT_ME_IN_OWNERS,
-  'writablefiles': f"'me' in writers and mimeType != '{MIMETYPE_GA_FOLDER}'",
-  }
-SHAREDDRIVE_QUERY_SHORTCUTS_MAP = {
-  'allfiles': f"mimeType != '{MIMETYPE_GA_FOLDER}'",
-  'allfolders': f"mimeType = '{MIMETYPE_GA_FOLDER}'",
-  'allgooglefiles': f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
-  'allnongooglefiles': "not mimeType contains 'vnd.google'",
-  'allitems': 'allitems',
   }
 

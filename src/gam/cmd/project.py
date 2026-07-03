@@ -1,4 +1,4 @@
-"""_getMain().GAM GCP project and service account management.
+"""GAM GCP project and service account management.
 
 Extracted from gam/__init__.py. Provides GCP project creation/deletion,
 service account management, key operations, and API enablement.
@@ -80,7 +80,7 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import convertUIDtoEmailAddress, getEntityArgument, getEntityList, getEntityToModify
+from gam.util.entity import convertUIDtoEmailAddress, getEntityArgument, getEntityList, getEntityToModify, setTrueCustomerId
 from gam.util.errors import (
     USAGE_ERROR_RC,
     entityActionFailedExit,
@@ -104,6 +104,7 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
+from gam.constants import API_ACCESS_DENIED_RC, GAM, GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID, GOOGLE_TIMECHECK_LOCATION, JSON_ALREADY_EXISTS_RC, MAX_LOCAL_GOOGLE_TIME_OFFSET, MULTIPLE_PROJECT_FOLDERS_FOUND_RC, SCOPES_NOT_AUTHORIZED_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -111,25 +112,14 @@ Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 from cryptography.hazmat.backends import default_backend
 import string
 LOWERNUMERIC_CHARS = string.ascii_lowercase + string.digits
 
 def getCRMService(login_hint):
   scopes = [API.CLOUD_PLATFORM_SCOPE]
-  client_id = _getMain().GAM_PROJECT_CREATION_CLIENT_ID
+  client_id = GAM_PROJECT_CREATION_CLIENT_ID
   client_secret = 'qM3dP8f_4qedwzWQE1VR4zzU'
   credentials = Credentials.from_client_secrets(
     client_id,
@@ -204,6 +194,7 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
 
 # gam enable apis [auto|manual]
 def doEnableAPIs():
+  from gam.cmd.oauth import _getValidateLoginHint
   automatic = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -228,7 +219,7 @@ def doEnableAPIs():
       break
     writeStdout(Msg.PLEASE_ENTER_A_OR_M)
   if automatic:
-    login_hint = _getMain()._getValidateLoginHint(None)
+    login_hint = _getValidateLoginHint(None)
     httpObj, _ = getCRMService(login_hint)
     enableGAMProjectAPIs(httpObj, projectId, login_hint, True)
   else:
@@ -350,7 +341,7 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
     }}
 }}'''
   writeFile(GC.Values[GC.CLIENT_SECRETS_JSON], cs_data, continueOnError=False)
-  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(_getMain().GAM, client_id))
+  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM, client_id))
   readStdin('')
   if not _createOauth2serviceJSON(httpObj, projectInfo, svcAcctInfo, create_key):
     return
@@ -400,7 +391,7 @@ def convertGCPFolderNameToID(parent, crm):
       j += 1
       printKeyValueListWithCount(['Name', folder['name'], 'ID', folder['displayName']], j, jcount)
     Ind.Decrement()
-    systemErrorExit(_getMain().MULTIPLE_PROJECT_FOLDERS_FOUND_RC, None)
+    systemErrorExit(MULTIPLE_PROJECT_FOLDERS_FOUND_RC, None)
   return folders[0]['name']
 
 PROJECTID_PATTERN = re.compile(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$')
@@ -442,6 +433,7 @@ def _generateProjectSvcAcctId(prefix):
   return f'{prefix}-{"".join(random.choice(LOWERNUMERIC_CHARS) for _ in range(5))}'
 
 def _getLoginHintProjectInfo(createCmd):
+  from gam.cmd.oauth import _getValidateLoginHint
   login_hint = None
   create_key = True
   appInfo = {'applicationTitle': '', 'supportEmail': ''}
@@ -497,7 +489,7 @@ def _getLoginHintProjectInfo(createCmd):
     svcAcctInfo['displayName'] = projectInfo['name']
   if not svcAcctInfo['description']:
     svcAcctInfo['description'] = svcAcctInfo['displayName']
-  login_hint = _getMain()._getValidateLoginHint(login_hint, projectInfo['projectId'])
+  login_hint = _getValidateLoginHint(login_hint, projectInfo['projectId'])
   if not appInfo['applicationTitle']:
     appInfo['applicationTitle'] = 'GAM' if not GC.Values[GC.USE_PROJECTID_AS_NAME] else projectInfo['projectId']
   if not appInfo['supportEmail']:
@@ -538,6 +530,7 @@ PROJECTS_DELETESVCACCT_OPTIONS = {'saemail', 'saname', 'sauniqueid'}
 PROJECTS_PRINTSHOW_OPTIONS = {'showsakeys', 'showiampolicies', 'onememberperrow', 'states', 'todrive', 'delimiter', 'formatjson', 'quotechar'}
 
 def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printShowCmd=False, readOnly=False):
+  from gam.cmd.oauth import _getValidateLoginHint
   if checkArgumentPresent(['admin']):
     login_hint = getEmailAddress(noUid=True)
   else:
@@ -585,7 +578,7 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
       projectId = _getCurrentProjectId()
     else:
       projectId = f'filter {pfilter or "all"}'
-  login_hint = _getMain()._getValidateLoginHint(login_hint, projectId)
+  login_hint = _getValidateLoginHint(login_hint, projectId)
   crm = None
   if readOnly:
     _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
@@ -610,11 +603,11 @@ def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printS
 def _checkForExistingProjectFiles(projectFiles):
   for a_file in projectFiles:
     if os.path.exists(a_file):
-      systemErrorExit(_getMain().JSON_ALREADY_EXISTS_RC, Msg.AUTHORIZATION_FILE_ALREADY_EXISTS.format(a_file, Act.ToPerform()))
+      systemErrorExit(JSON_ALREADY_EXISTS_RC, Msg.AUTHORIZATION_FILE_ALREADY_EXISTS.format(a_file, Act.ToPerform()))
 
 def getCRMOrgId(forceSearch=False):
   if not GC.Values[GC.GCP_ORG_ID] or forceSearch:
-    _getMain().setTrueCustomerId()
+    setTrueCustomerId()
     _, crm = buildGAPIServiceObject(API.CLOUDRESOURCEMANAGER, None)
     results = callGAPI(crm.organizations(), 'search',
                        query=f'directorycustomerid:{GC.Values[GC.CUSTOMER_ID]}',
@@ -630,7 +623,7 @@ def getCRMOrgId(forceSearch=False):
 # gam info customerid
 def doInfoCustomerId():
   checkForExtraneousArguments()
-  _getMain().setTrueCustomerId(cd=None, forceUpdate=True)
+  setTrueCustomerId(cd=None, forceUpdate=True)
   writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')
 
 # gam info gcporgid
@@ -655,6 +648,7 @@ def getGCPOrgId(crm, login_hint, login_domain):
 # gam create gcpfolder <String>
 # gam create gcpfolder [admin <EmailAddress] folder <String>
 def doCreateGCPFolder():
+  from gam.cmd.oauth import _getValidateLoginHint
   login_hint = None
   if not Cmd.PeekArgumentPresent(['admin', 'folder']):
     name = getString(Cmd.OB_STRING)
@@ -671,7 +665,7 @@ def doCreateGCPFolder():
         unknownArgumentExit()
     if not name:
       missingChoiceExit('folder')
-  login_hint = _getMain()._getValidateLoginHint(login_hint)
+  login_hint = _getValidateLoginHint(login_hint)
   login_domain = getEmailAddressDomain(login_hint)
   _, crm = getCRMService(login_hint)
   organization = getGCPOrgId(crm, login_hint, login_domain)
@@ -694,7 +688,7 @@ def doCreateGCPFolder():
 #	 nokey]
 def doCreateProject():
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON], GC.Values[GC.CLIENT_SECRETS_JSON]])
-  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(_getMain().GAM_PROJECT_CREATION, _getMain().GAM_PROJECT_CREATION_CLIENT_ID))
+  sys.stdout.write(Msg.TRUST_GAM_CLIENT_ID.format(GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID))
   readStdin('')
   crm, httpObj, login_hint, appInfo, projectInfo, svcAcctInfo, create_key = _getLoginHintProjectInfo(True)
   login_domain = getEmailAddressDomain(login_hint)
@@ -1079,6 +1073,7 @@ def _getSvcAcctKeyProjectClientFields():
 # gam <UserTypeEntity> check serviceaccount (scope|scopes <APIScopeURLList>)* [usecolor]
 # gam <UserTypeEntity> update serviceaccount (scope|scopes <APIScopeURLList>)* [usecolor]
 def checkServiceAccount(users):
+  from gam.cmd.oauth import getScopesFromUser
   def printMessage(message):
     writeStdout(Ind.Spaces()+message+'\n')
 
@@ -1134,7 +1129,7 @@ def checkServiceAccount(users):
   else:
     if not checkScopesSet:
       scopesList = API.getSvcAcctScopesList(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], True)
-      selectedScopes = _getMain().getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
+      selectedScopes = getScopesFromUser(scopesList, False, GM.Globals[GM.SVCACCT_SCOPES] if GM.Globals[GM.SVCACCT_SCOPES_DEFINED] else None)
       if selectedScopes is None:
         return False
       i = 0
@@ -1166,12 +1161,12 @@ def checkServiceAccount(users):
   jcount = len(checkScopes)
   printMessage(Msg.SYSTEM_TIME_STATUS)
   offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset()
-  if offsetSeconds <= _getMain().MAX_LOCAL_GOOGLE_TIME_OFFSET:
+  if offsetSeconds <= MAX_LOCAL_GOOGLE_TIME_OFFSET:
     timeStatus = testPass
   else:
     timeStatus = testFail
   Ind.Increment()
-  printPassFail(Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(_getMain().GOOGLE_TIMECHECK_LOCATION, offsetFormatted), timeStatus)
+  printPassFail(Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(GOOGLE_TIMECHECK_LOCATION, offsetFormatted), timeStatus)
   Ind.Decrement()
   oa2 = buildGAPIObject(API.OAUTH2)
   printMessage(Msg.SERVICE_ACCOUNT_PRIVATE_KEY_AUTHENTICATION)
@@ -1306,7 +1301,7 @@ def checkServiceAccount(users):
     else:
       # Tack on email scope for more accurate checking
       checkScopes.append(API.USERINFO_EMAIL_SCOPE)
-      setSysExitRC(_getMain().SCOPES_NOT_AUTHORIZED_RC)
+      setSysExitRC(SCOPES_NOT_AUTHORIZED_RC)
       authorizeScopes(Msg.SCOPE_AUTHORIZATION_FAILED)
     printBlankLine()
 
@@ -1498,7 +1493,7 @@ def _generatePrivateKeyAndPublicCert(projectId, clientEmail, name, key_size, b64
   return (private_pem, publicKeyData)
 
 def _formatOAuth2ServiceData(service_data):
-  quotedEmail = _getMain().quote(service_data.get('client_email', ''))
+  quotedEmail = quote(service_data.get('client_email', ''))
   service_data['auth_provider_x509_cert_url'] = API.GOOGLE_AUTH_PROVIDER_X509_CERT_URL
   service_data['auth_uri'] = API.GOOGLE_OAUTH2_ENDPOINT
   service_data['client_x509_cert_url'] = f'https://www.googleapis.com/robot/v1/metadata/x509/{quotedEmail}'
@@ -1802,7 +1797,7 @@ def doCreateGCPServiceAccount():
   try:
     credentials, sa_info['project_id'] = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
-    systemErrorExit(_getMain().API_ACCESS_DENIED_RC, str(e))
+    systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   credentials.refresh(request)
   sa_info['client_email'] = credentials.service_account_email
   oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
@@ -1811,7 +1806,7 @@ def doCreateGCPServiceAccount():
                           throwReasons=[GAPI.INVALID],
                           access_token=credentials.token)
   except GAPI.invalid as e:
-    systemErrorExit(_getMain().API_ACCESS_DENIED_RC, str(e))
+    systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']
   sa_output = json.dumps(sa_info, ensure_ascii=False, indent=2, sort_keys=True)
   writeStdout(f'Writing SignJWT service account data:\n\n{sa_output}\n')

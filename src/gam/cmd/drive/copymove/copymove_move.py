@@ -9,7 +9,6 @@ Part of the drive sub-package, extracted from drive.py."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 import re
-import sys
 
 from gam.cmd.drive.core import DFA_SEARCHARGS
 
@@ -35,8 +34,12 @@ from gam.util.display import (
     entityPerformActionModifierItemValueList,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+)
 from gam.util.errors import unknownArgumentExit
+from gam.constants import ANY_NON_TRASHED_WITH_PARENTS, WITH_PARENTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -71,16 +74,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 MY_DRIVE = 'My Drive'
 TEAM_DRIVE = 'Drive'
@@ -274,7 +267,7 @@ def _recursiveUpdateMovePermissions(drive, user, i, count,
   sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
                                  throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                  retryReasons=[GAPI.UNKNOWN_ERROR],
-                                 q=_getMain().WITH_PARENTS.format(fileId),
+                                 q=WITH_PARENTS.format(fileId),
                                  orderBy='folder desc,name,modifiedTime desc',
                                  fields='nextPageToken,files(id,name,mimeType)',
                                  pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **sourceSearchArgs)
@@ -595,7 +588,7 @@ def moveDriveFile(users):
     sourceChildren = callGAPIpages(drive.files(), 'list', 'files',
                                    throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                    retryReasons=[GAPI.UNKNOWN_ERROR],
-                                   q=_getMain().WITH_PARENTS.format(folderId),
+                                   q=WITH_PARENTS.format(folderId),
                                    orderBy='folder desc,name,modifiedTime desc',
                                    fields='nextPageToken,files(id,name,parents,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
                                      'description,folderColorRgb,mimeType,modifiedTime,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare)',
@@ -606,7 +599,7 @@ def moveDriveFile(users):
         subTargetChildren = callGAPIpages(drive.files(), 'list', 'files',
                                           throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                           retryReasons=[GAPI.UNKNOWN_ERROR],
-                                          q=_getMain().ANY_NON_TRASHED_WITH_PARENTS.format(newFolderId),
+                                          q=ANY_NON_TRASHED_WITH_PARENTS.format(newFolderId),
                                           orderBy='folder desc,name,modifiedTime desc',
                                           fields='nextPageToken,files(id,name,capabilities,mimeType,modifiedTime)',
                                           **parentParms[DFA_SEARCHARGS])
@@ -623,7 +616,7 @@ def moveDriveFile(users):
           continue
         trashed = child.pop('trashed', False)
         if (childId == newFolderId) or (copyMoveOptions['destDriveId'] and trashed):
-          entityActionNotPerformedWarning([Ent.USER, user, _getMain()._getEntityMimeType(child), childNameId],
+          entityActionNotPerformedWarning([Ent.USER, user, _getEntityMimeType(child), childNameId],
                                           [Msg.NOT_MOVABLE, Msg.NOT_MOVABLE_IN_TRASH][trashed], k, kcount)
           _incrStatistic(statistics, STAT_FILE_NOT_COPYABLE_MOVABLE)
           continue
@@ -722,7 +715,7 @@ def moveDriveFile(users):
         sourceName = source['name']
         sourceNameId = f"{sourceName}({source['id']})"
         copyMoveOptions['sourceDriveId'] = source.get('driveId')
-        kvList = [Ent.USER, user, _getMain()._getEntityMimeType(source), sourceNameId]
+        kvList = [Ent.USER, user, _getEntityMimeType(source), sourceNameId]
         if fileId in movedFiles:
           entityActionNotPerformedWarning(kvList, Msg.DUPLICATE, j, jcount)
           _incrStatistic(statistics, STAT_FILE_DUPLICATE)

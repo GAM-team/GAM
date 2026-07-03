@@ -5,7 +5,6 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 import re
-import sys
 
 from gam.util.args import formatLocalTimestamp
 
@@ -94,23 +93,21 @@ from gam.util.fileio import (
     writeFileReturnError,
 )
 from gam.util.output import executeBatch, setSysExitRC, stderrWarningMsg
+from gam.constants import IS08601_TIME_FORMAT, NO_ENTITIES_FOUND_RC, RFC2822_TIME_FORMAT
+from gam.util.tags import (
+    _getTagReplacement,
+    _getTagReplacementFieldValues,
+    _initTagReplacements,
+    _processTagReplacements,
+    _substituteForUser,
+    getRecipients,
+)
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from email.header import decode_header
 from email import message_from_string
@@ -289,7 +286,7 @@ def archiveMessages(users):
     jcount = len(messageIds)
     if jcount == 0:
       entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
@@ -487,7 +484,7 @@ def _processMessagesThreads(users, entityType):
     jcount = len(messageIds)
     if jcount == 0:
       entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
@@ -597,10 +594,10 @@ def exportMessagesThreads(users, entityType):
     if not gmail:
       continue
     _, userName, _ = splitEmailAddressOrUID(user)
-    targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
+    targetFolder = _substituteForUser(targetFolderPattern, user, userName)
     if not os.path.isdir(targetFolder):
       os.makedirs(targetFolder)
-    targetName = _getMain()._substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
+    targetName = _substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
     service = gmail.users().messages() if entityType == Ent.MESSAGE else gmail.users().threads()
     try:
       if parameters['messageEntity'] is None:
@@ -621,7 +618,7 @@ def exportMessagesThreads(users, entityType):
     jcount = len(entityIds)
     if jcount == 0:
       entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
@@ -712,7 +709,7 @@ def _decodeHeader(header):
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
   checkArgumentPresent({'recipient', 'recipients', 'to'})
-  recipients = _getMain().getRecipients()
+  recipients = getRecipients()
   parameters = _initMessageThreadParameters(entityType, False, 1)
   addOriginalFieldsToSubject = includeSpamTrash = False
   subject = ''
@@ -757,7 +754,7 @@ def forwardMessagesThreads(users, entityType):
     jcount = len(entityIds)
     if jcount == 0:
       entityNumEntitiesActionNotPerformedWarning([Ent.USER, user], entityType, jcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(entityType)), i, count)
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
       continue
     if parameters['messageEntity'] is None:
       if parameters['maxToProcess'] and jcount > parameters['maxToProcess']:
@@ -973,7 +970,7 @@ def _draftImportInsertMessage(users, operation):
   addLabelNames = []
   msgHTML = msgText = ''
   msgHeaders = {}
-  tagReplacements = _getMain()._initTagReplacements()
+  tagReplacements = _initTagReplacements()
   attachments = []
   embeddedImages = []
   internalDateSource = 'receivedTime'
@@ -1020,7 +1017,7 @@ def _draftImportInsertMessage(users, operation):
       internalDateSource = 'dateHeader'
       if checkArgumentPresent('emlutf8'):
         emlEncoding = UTF8
-    elif _getMain()._getTagReplacement(myarg, tagReplacements, True):
+    elif _getTagReplacement(myarg, tagReplacements, True):
       pass
     elif operation in IMPORT_INSERT and myarg == 'addlabel':
       addLabelNames.append(getString(Cmd.OB_LABEL_NAME, minLen=1))
@@ -1074,9 +1071,9 @@ def _draftImportInsertMessage(users, operation):
     if not emlFile:
       if tagReplacements['tags']:
         if tagReplacements['subs']:
-          _getMain()._getTagReplacementFieldValues(user, i, count, tagReplacements)
-        tmpText = _getMain()._processTagReplacements(tagReplacements, msgText)
-        tmpHTML = _getMain()._processTagReplacements(tagReplacements, msgHTML)
+          _getTagReplacementFieldValues(user, i, count, tagReplacements)
+        tmpText = _processTagReplacements(tagReplacements, msgText)
+        tmpHTML = _processTagReplacements(tagReplacements, msgHTML)
       if attachments or embeddedImages:
         if tmpText and tmpHTML:
           message = MIMEMultipart('alternative')
@@ -1107,7 +1104,7 @@ def _draftImportInsertMessage(users, operation):
           message = MIMEText(tmpText, 'plain', UTF8)
       for header, value in msgHeaders.items():
         if substituteForUserInHeaders:
-          value = _getMain()._substituteForUser(value, user, userName)
+          value = _substituteForUser(value, user, userName)
         message[header] = Header()
         if header in SMTP_ADDRESS_HEADERS:
           match = SMTP_NAME_ADDRESS_PATTERN.match(value.strip())
@@ -1127,7 +1124,7 @@ def _draftImportInsertMessage(users, operation):
     else:
       for header, value in msgHeaders.items():
         if substituteForUserInHeaders:
-          value = _getMain()._substituteForUser(value, user, userName)
+          value = _substituteForUser(value, user, userName)
         msgText = re.sub(fr'(?sm)\n{header}:.+?(?=[\r\n]+[a-zA-Z0-9-]+:)', f'\n{header}: {value}', msgText, 1)
       message_bytes = msgText.encode(emlEncoding)
       base64_bytes = base64.b64encode(message_bytes)
@@ -1191,6 +1188,7 @@ def insertMessage(users):
 
 def printShowMessagesThreads(users, entityType):
 
+  from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   def _getBodyData(payload, getOrigMsg):
     data = headers = ''
     for part in payload.get('parts', []):
@@ -1384,7 +1382,7 @@ def printShowMessagesThreads(users, entityType):
     if pLoc > 0:
       dateTimeValue = dateTimeValue[:pLoc]
     try:
-      dateTimeValue = arrow.Arrow.strptime(dateTimeValue, _getMain().RFC2822_TIME_FORMAT)
+      dateTimeValue = arrow.Arrow.strptime(dateTimeValue, RFC2822_TIME_FORMAT)
       if dateHeaderConvertTimezone:
         dateTimeValue = dateTimeValue.to(GC.Values[GC.TIMEZONE])
       return dateTimeValue.strftime(dateHeaderFormat)
@@ -1704,7 +1702,7 @@ def printShowMessagesThreads(users, entityType):
   dateHeaderConvertTimezone = False
   uploadAttachmentBody = {}
   addCSVData = {}
-  parentParms = _getMain().initDriveFileAttributes()
+  parentParms = initDriveFileAttributes()
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -1744,7 +1742,7 @@ def printShowMessagesThreads(users, entityType):
       overwrite = getBoolean()
     elif showMode and myarg == 'uploadattachments':
       upload_attachments = True
-    elif showMode and _getMain().getDriveFileParentAttribute(myarg, parentParms):
+    elif showMode and getDriveFileParentAttribute(myarg, parentParms):
       pass
     elif myarg == 'includespamtrash':
       includeSpamTrash = True
@@ -1757,13 +1755,13 @@ def printShowMessagesThreads(users, entityType):
     elif myarg == 'dateheaderformat':
       dateHeaderFormat = getString(Cmd.OB_STRING, minLen=0)
       if dateHeaderFormat == 'iso':
-        dateHeaderFormat = _getMain().IS08601_TIME_FORMAT
+        dateHeaderFormat = IS08601_TIME_FORMAT
       elif dateHeaderFormat == 'rfc2822':
-        dateHeaderFormat = _getMain().RFC2822_TIME_FORMAT
+        dateHeaderFormat = RFC2822_TIME_FORMAT
     elif myarg == 'dateheaderconverttimezone':
       dateHeaderConvertTimezone = getBoolean()
       if not dateHeaderFormat:
-        dateHeaderFormat = _getMain().RFC2822_TIME_FORMAT
+        dateHeaderFormat = RFC2822_TIME_FORMAT
     elif csvPF and myarg == 'addcsvdata':
       getAddCSVData(addCSVData)
     else:
@@ -1831,7 +1829,7 @@ def printShowMessagesThreads(users, entityType):
       _, drive = buildGAPIServiceObject(API.DRIVE3, user, i, count)
       if not drive:
         continue
-      if not _getMain()._getDriveFileParentInfo(drive, user, i, count, uploadAttachmentBody, parentParms):
+      if not _getDriveFileParentInfo(drive, user, i, count, uploadAttachmentBody, parentParms):
         continue
     if show_labels or labelMatchPattern:
       labels = _getUserGmailLabels(gmail, user, i, count, 'labels(id,name,type)')
@@ -1846,7 +1844,7 @@ def printShowMessagesThreads(users, entityType):
     senderCounts = {}
     if save_attachments:
       _, userName, _ = splitEmailAddressOrUID(user)
-      targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
+      targetFolder = _substituteForUser(targetFolderPattern, user, userName)
       if not os.path.isdir(targetFolder):
         os.makedirs(targetFolder)
     try:
@@ -1872,7 +1870,7 @@ def printShowMessagesThreads(users, entityType):
       continue
     jcount = len(messageIds)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     if countsOnly and not show_labels and not senderMatchPattern and not show_size:
       if not positiveCountsOnly or jcount > 0:
         if not csvPF:

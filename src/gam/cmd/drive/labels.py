@@ -6,7 +6,6 @@ Part of the drive sub-package, extracted from drive.py."""
 
 import re
 import json
-import sys
 
 from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
@@ -60,6 +59,7 @@ from gam.util.entity import (
     getUserObjectEntity,
 )
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.constants import ADMIN_ACCESS_OPTIONS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -94,23 +94,13 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getDisplayDriveLabelsParameters(myarg, parameters):
   if myarg in DRIVELABELS_PROJECTION_CHOICE_MAP:
     parameters['view'] = DRIVELABELS_PROJECTION_CHOICE_MAP[myarg]
   elif myarg == 'language':
     parameters['languageCode'] = getLanguageCode(BCP47_LANGUAGE_CODES_MAP)
-  elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+  elif myarg in ADMIN_ACCESS_OPTIONS:
     parameters['useAdminAccess'] = True
   elif myarg == 'publishedonly':
     parameters['publishedOnly'] = getBoolean()
@@ -297,7 +287,7 @@ def createDriveLabelPermissions(users, useAdminAccess=False):
   showDetails = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    if myarg in ADMIN_ACCESS_OPTIONS:
       parameters['useAdminAccess'] = True
     elif myarg == 'role':
       body['role'] = getChoice(DRIVELABELS_PERMISSION_ROLE_MAP, mapChoice=True)
@@ -374,7 +364,7 @@ def deleteDriveLabelPermissions(users, useAdminAccess=False):
   labelperm = ''
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    if myarg in ADMIN_ACCESS_OPTIONS:
       parameters['useAdminAccess'] = True
     elif doDelete and myarg in {'user', 'group'}:
       labelperm = ['people/', 'groups/'][myarg == 'group']+convertEmailAddressToUID(getEmailAddress(), cd=None, emailType=myarg, savedLocation=None)
@@ -439,7 +429,7 @@ def printShowDriveLabelPermissions(users, useAdminAccess=False):
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif myarg in _getMain().ADMIN_ACCESS_OPTIONS:
+    elif myarg in ADMIN_ACCESS_OPTIONS:
       parameters['useAdminAccess'] = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)

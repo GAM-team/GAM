@@ -51,10 +51,17 @@ from gam.util.display import (
     setGettingAllEntityItemsForWhom,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+    getEntityList,
+    getEntityToModify,
+)
 from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import formatKeyValueList, printWarningMessage, systemErrorExit
+from gam.constants import MY_DRIVE, MY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS, NON_TRASHED, TARGET_DRIVE_SPACE_ERROR_RC, WITH_PARENTS
+from gam.util.tags import _substituteForUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -89,16 +96,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def transferDrive(users):
 
@@ -123,7 +120,7 @@ def transferDrive(users):
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.BAD_REQUEST],
                              retryReasons=[GAPI.UNKNOWN_ERROR],
                              orderBy=OBY.orderBy,
-                             q=_getMain().MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS.format(escapeDriveFileName(folderName), folderParentId),
+                             q=MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS.format(escapeDriveFileName(folderName), folderParentId),
                              fields='nextPageToken,files(id)')
       if result:
         return result[0]['id']
@@ -141,13 +138,13 @@ def transferDrive(users):
     return None
 
   def _buildTargetUserFolder():
-    folderName = _getMain()._substituteForUser(targetUserFolderPattern, sourceUser, sourceUserName)
+    folderName = _substituteForUser(targetUserFolderPattern, sourceUser, sourceUserName)
     if not folderName:
       return targetFolderId
     return _buildTargetFile(folderName, targetFolderId)
 
   def _buildTargetUserOrphansFolder():
-    folderName = _getMain()._substituteForUser(targetUserOrphansFolderPattern, sourceUser, sourceUserName)
+    folderName = _substituteForUser(targetUserOrphansFolderPattern, sourceUser, sourceUserName)
     if folderName:
       targetIds[TARGET_ORPHANS_PARENT_ID] = _buildTargetFile(folderName, targetIds[TARGET_PARENT_ID])
       if targetIds[TARGET_ORPHANS_PARENT_ID] is None:
@@ -240,7 +237,7 @@ def transferDrive(users):
     childEntryInfo = childEntry['info']
     childFileId = childEntryInfo['id']
     childFileName = childEntryInfo['name']
-    childFileType = _getMain()._getEntityMimeType(childEntryInfo)
+    childFileType = _getEntityMimeType(childEntryInfo)
 # Owned files
     if childEntryInfo['ownedByMe']:
       childEntryInfo['sourcePermission'] = {'role': 'owner'}
@@ -462,7 +459,7 @@ def transferDrive(users):
     childEntryInfo = childEntry['info']
     childFileId = childEntryInfo['id']
     childFileName = childEntryInfo['name']
-    childFileType = _getMain()._getEntityMimeType(childEntryInfo)
+    childFileType = _getEntityMimeType(childEntryInfo)
     if childEntryInfo['mimeType'] == MIMETYPE_GA_SHORTCUT:
       if showRetentionMessages:
         entityActionNotPerformedWarning([Ent.USER, sourceUser, childFileType, childFileName, Ent.ROLE, ownerRetainRoleBody['role']], Msg.NOT_APPROPRIATE, j, jcount)
@@ -586,7 +583,7 @@ def transferDrive(users):
       if not childEntry or childFileId in filesTransferred:
         continue
       if childFileId in skipFileIdEntity['list']:
-        entityActionNotPerformedWarning([Ent.USER, sourceUser, _getMain()._getEntityMimeType(childEntry['info']), f'{childEntry["info"]["name"]} ({childFileId})'],
+        entityActionNotPerformedWarning([Ent.USER, sourceUser, _getEntityMimeType(childEntry['info']), f'{childEntry["info"]["name"]} ({childFileId})'],
                                         Msg.IN_SKIPIDS, j, jcount)
         continue
       filesTransferred.add(childFileId)
@@ -623,7 +620,7 @@ def transferDrive(users):
       children = callGAPIpages(sourceDrive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                retryReasons=[GAPI.UNKNOWN_ERROR],
-                               orderBy=OBY.orderBy, q=_getMain().WITH_PARENTS.format(fileId),
+                               orderBy=OBY.orderBy, q=WITH_PARENTS.format(fileId),
                                fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,trashed,owners(emailAddress,permissionId),permissions(id,role),shortcutDetails)',
                                pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
@@ -633,7 +630,7 @@ def transferDrive(users):
       if not childEntry['trashed']:
         childId = childEntry['id']
         if childId in skipFileIdEntity['list']:
-          entityActionNotPerformedWarning([Ent.USER, sourceUser, _getMain()._getEntityMimeType(childEntry), f'{childEntry["name"]} ({childId})'],
+          entityActionNotPerformedWarning([Ent.USER, sourceUser, _getEntityMimeType(childEntry), f'{childEntry["name"]} ({childId})'],
                                           Msg.IN_SKIPIDS)
           continue
         fileTree[fileId]['children'].append(childId)
@@ -643,7 +640,7 @@ def transferDrive(users):
     fileId = fileEntry['info']['id']
     if fileId in filesTransferred:
       return
-    if fileEntry['info']['name'] != _getMain().MY_DRIVE:
+    if fileEntry['info']['name'] != MY_DRIVE:
       filesTransferred.add(fileId)
       if not atSelectTop or not mergeWithTarget:
         _transferFile(fileEntry, i, count, j, jcount, atSelectTop)
@@ -663,7 +660,7 @@ def transferDrive(users):
     fileId = fileEntry['info']['id']
     if fileId in filesTransferred:
       return
-    if fileEntry['info']['name'] != _getMain().MY_DRIVE:
+    if fileEntry['info']['name'] != MY_DRIVE:
       filesTransferred.add(fileId)
       if not atSelectTop or not mergeWithTarget:
         _manageRoleRetention(fileEntry, i, count, j, jcount, atSelectTop)
@@ -786,7 +783,7 @@ def transferDrive(users):
         result = callGAPIpages(targetDrive.files(), 'list', 'files',
                                throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                retryReasons=[GAPI.UNKNOWN_ERROR],
-                               q=_getMain().MY_NON_TRASHED_FOLDER_NAME.format(escapeDriveFileName(targetFolderName)),
+                               q=MY_NON_TRASHED_FOLDER_NAME.format(escapeDriveFileName(targetFolderName)),
                                fields='nextPageToken,files(id)')
         if not result:
           Cmd.SetLocation(targetFolderNameLocation)
@@ -830,7 +827,7 @@ def transferDrive(users):
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                               fileId=ROOT, fields='id')['id']
       if (targetDriveFree is not None) and (targetDriveFree < sourceDriveSize):
-        printWarningMessage(_getMain().TARGET_DRIVE_SPACE_ERROR_RC,
+        printWarningMessage(TARGET_DRIVE_SPACE_ERROR_RC,
                             (f'{Msg.NO_TRANSFER_LACK_OF_DISK_SPACE} '
                              f'{formatKeyValueList("", ["Source drive size", formatFileSize(sourceDriveSize), "Target drive free", formatFileSize(targetDriveFree)], "")}'))
         continue
@@ -853,7 +850,7 @@ def transferDrive(users):
                              pageMessage=getPageMessageForWhom(),
                              throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                              retryReasons=[GAPI.UNKNOWN_ERROR],
-                             orderBy=OBY.orderBy, q=_getMain().NON_TRASHED,
+                             orderBy=OBY.orderBy, q=NON_TRASHED,
                              fields='nextPageToken,files(id,name,parents,mimeType,ownedByMe,owners(emailAddress,permissionId),permissions(id,role),shortcutDetails)',
                              pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
         fileTree = buildFileTree(feed, sourceDrive)
@@ -882,7 +879,7 @@ def transferDrive(users):
                                  throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                                  fileId=fileId,
                                  fields='id,name,parents,mimeType,ownedByMe,trashed,owners(emailAddress,permissionId),permissions(id,role),shortcutDetails')
-            entityType = _getMain()._getEntityMimeType(fileEntry)
+            entityType = _getEntityMimeType(fileEntry)
             if fileId in skipFileIdEntity['list']:
               entityActionNotPerformedWarning([Ent.USER, sourceUser, entityType, f'{fileEntry["name"]} ({fileId})'],
                                               Msg.IN_SKIPIDS, j, jcount)
@@ -958,12 +955,12 @@ def transferOwnership(users):
         childEntryInfo = childEntry['info']
         if includeTrashed or not childEntryInfo['trashed']:
           if childEntryInfo['ownedByMe']:
-            filesToTransfer[childFileId] = {'name': childEntryInfo['name'], 'type': _getMain()._getEntityMimeType(childEntryInfo)}
+            filesToTransfer[childFileId] = {'name': childEntryInfo['name'], 'type': _getEntityMimeType(childEntryInfo)}
           if childEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER:
             _identifyFilesToTransfer(childEntry)
 
   def _identifyChildrenToTransfer(fileEntry, user, i, count):
-    q = _getMain().WITH_PARENTS.format(fileEntry['id'])
+    q = WITH_PARENTS.format(fileEntry['id'])
     setGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, query=q)
     pageMessage = getPageMessageForWhom(clearLastGotMsgLen=False)
     try:
@@ -986,7 +983,7 @@ def transferOwnership(users):
       filesTransferred.add(childFileId)
       if includeTrashed or not childEntryInfo['trashed']:
         if childEntryInfo['ownedByMe']:
-          filesToTransfer[childFileId] = {'name': childEntryInfo['name'], 'type': _getMain()._getEntityMimeType(childEntryInfo)}
+          filesToTransfer[childFileId] = {'name': childEntryInfo['name'], 'type': _getEntityMimeType(childEntryInfo)}
         if childEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER:
           _identifyChildrenToTransfer(childEntryInfo, user, i, count)
 
@@ -1088,14 +1085,14 @@ def transferOwnership(users):
           break
         if filepath:
           fileTree[fileId] = {'info': fileEntryInfo}
-      entityType = _getMain()._getEntityMimeType(fileEntryInfo)
+      entityType = _getEntityMimeType(fileEntryInfo)
       entityPerformActionItemValue([Ent.USER, user], entityType, f'{fileEntryInfo["name"]} ({fileId})', j, jcount)
       if fileId in filesTransferred:
         continue
       filesTransferred.add(fileId)
       filesToTransfer = {}
       if includeTrashed or not fileEntryInfo['trashed']:
-        if fileEntryInfo['ownedByMe'] and fileEntryInfo['name'] != _getMain().MY_DRIVE:
+        if fileEntryInfo['ownedByMe'] and fileEntryInfo['name'] != MY_DRIVE:
           filesToTransfer[fileId] = {'name': fileEntryInfo['name'], 'type': entityType}
           if changeParents:
             filesToTransfer[fileId]['addParents'] = addParents
@@ -1247,12 +1244,12 @@ def claimOwnership(users):
             oldOwnerPermissionIds[owner] = childEntryInfo['owners'][0]['permissionId']
             filesToClaim.setdefault(owner, {})
             if childFileId not in filesToClaim[owner]:
-              filesToClaim[owner][childFileId] = {'name': childEntryInfo['name'], 'type': _getMain()._getEntityMimeType(childEntryInfo)}
+              filesToClaim[owner][childFileId] = {'name': childEntryInfo['name'], 'type': _getEntityMimeType(childEntryInfo)}
           if childEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER:
             _identifyFilesToClaim(childEntry)
 
   def _identifyChildrenToClaim(fileEntry, user, i, count):
-    q = _getMain().WITH_PARENTS.format(fileEntry['id'])
+    q = WITH_PARENTS.format(fileEntry['id'])
     setGettingAllEntityItemsForWhom(Ent.DRIVE_FILE_OR_FOLDER, user, query=q)
     pageMessage = getPageMessageForWhom(clearLastGotMsgLen=False)
     try:
@@ -1279,7 +1276,7 @@ def claimOwnership(users):
           oldOwnerPermissionIds[owner] = childEntryInfo['owners'][0]['permissionId']
           filesToClaim.setdefault(owner, {})
           if childFileId not in filesToClaim[owner]:
-            filesToClaim[owner][childFileId] = {'name': childEntryInfo['name'], 'type': _getMain()._getEntityMimeType(childEntryInfo)}
+            filesToClaim[owner][childFileId] = {'name': childEntryInfo['name'], 'type': _getEntityMimeType(childEntryInfo)}
         if childEntryInfo['mimeType'] == MIMETYPE_GA_FOLDER:
           _identifyChildrenToClaim(childEntryInfo, user, i, count)
 
@@ -1449,7 +1446,7 @@ def claimOwnership(users):
           break
         if filepath:
           fileTree[fileId] = {'info': fileEntryInfo}
-      entityType = _getMain()._getEntityMimeType(fileEntryInfo)
+      entityType = _getEntityMimeType(fileEntryInfo)
       if fileId in skipFileIdEntity['list']:
         entityActionNotPerformedWarning([Ent.USER, user, entityType, f'{fileEntryInfo["name"]} ({fileId})'],
                                         Msg.IN_SKIPIDS, j, jcount)

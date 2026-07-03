@@ -5,7 +5,6 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 import re
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -38,17 +37,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 UTF8 = 'utf-8'
 
@@ -90,6 +78,7 @@ def sendCreateDelegateNotification(user, delegate, basenotify, i=0, count=0, msg
 #	]
 # gam <UserTypeEntity> delete delegate|delegates [convertalias] <UserEntity>
 def processDelegates(users):
+  from gam.cmd.users.manage import getNotifyArguments
   cd = buildGAPIObject(API.DIRECTORY)
   createCmd = Act.Get() != Act.DELETE
   aliasAllowed = not checkArgumentPresent(['convertalias'])
@@ -98,7 +87,7 @@ def processDelegates(users):
   if createCmd:
     while Cmd.ArgumentsRemaining():
       myarg = getArgument()
-      if _getMain().getNotifyArguments(myarg, notify, False):
+      if getNotifyArguments(myarg, notify, False):
         pass
       else:
         unknownArgumentExit()
@@ -206,6 +195,7 @@ def updateDelegates(users):
 # gam <UserTypeEntity> print delegates|delegate [todrive <ToDriveAttribute>*] [shownames]
 # gam <UserTypeEntity> show delegates|delegate [shownames] [csv]
 def printShowDelegates(users):
+  from gam.cmd.delegates import _getDelegateName
   titlesList = ['User', 'delegateAddress', 'delegationStatus']
   csvPF = CSVPrintFile() if Act.csvFormat() else None
   cd = None
@@ -249,7 +239,7 @@ def printShowDelegates(users):
             status = delegate['verificationStatus']
             delegateEmail = delegate['delegateEmail']
             if cd:
-              printEntity([Ent.DELEGATE, _getMain()._getDelegateName(cd, delegateEmail, delegateNames)], j, jcount)
+              printEntity([Ent.DELEGATE, _getDelegateName(cd, delegateEmail, delegateNames)], j, jcount)
               Ind.Increment()
               printKeyValueList(['Status', status])
               printKeyValueList(['Delegate Email', delegateEmail])

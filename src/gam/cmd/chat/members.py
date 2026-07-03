@@ -4,7 +4,6 @@ Part of the _chat_tmp sub-package."""
 
 """GAM Google Chat management."""
 
-import sys
 import uuid
 
 from gamlib import glaction
@@ -30,6 +29,7 @@ from gam.util.args import (
     getString,
     getStringOrFile,
     normalizeEmailAddressOrUID,
+    substituteQueryTimes,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -61,17 +61,6 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _getChatMemberEmail(cd, member):
   if 'member' in member:
@@ -684,7 +673,7 @@ def printShowChatMembers(users):
   if useAdminAccess:
     if not parentList:
       kwargsCS['orderBy'] = OBY.orderBy
-      _getMain().substituteQueryTimes(queries, queryTimes)
+      substituteQueryTimes(queries, queryTimes)
       kwargsCS['query'] = queries[0]
       kwargsCS['useAdminAccess'] = True
   else:

@@ -59,7 +59,11 @@ from gam.util.display import (
     printLine,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, splitEmailAddressOrUID
+from gam.util.entity import (
+    _getEntityMimeType,
+    getEntityArgument,
+    splitEmailAddressOrUID,
+)
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit
 from gam.util.fileio import (
     cleanFilename,
@@ -69,6 +73,8 @@ from gam.util.fileio import (
     writeFile,
 )
 from gam.util.output import setSysExitRC, writeStderr
+from gam.constants import MY_NON_TRASHED_FOLDER_NAME
+from gam.util.tags import _substituteForUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -103,16 +109,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 UNKNOWN = 'Unknown'
 ORPHANS_COLLECTED_RC = 30
@@ -383,10 +379,10 @@ def getDriveFile(users):
       _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
       if not sheet:
         continue
-    targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
+    targetFolder = _substituteForUser(targetFolderPattern, user, userName)
     if not os.path.isdir(targetFolder):
       os.makedirs(targetFolder)
-    targetName = _getMain()._substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
+    targetName = _substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
     Ind.Increment()
     j = 0
     for fileId in fileIdEntity['list']:
@@ -403,7 +399,7 @@ def getDriveFile(users):
                             throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                             fileId=fileId, fields='name,fullFileExtension,mimeType,size', supportsAllDrives=True)
           mimeType = result['mimeType']
-        entityValueList = [Ent.USER, user, _getMain()._getEntityMimeType(result), result['name']]
+        entityValueList = [Ent.USER, user, _getEntityMimeType(result), result['name']]
         if mimeType in NON_DOWNLOADABLE_MIMETYPES:
           entityActionNotPerformedWarning(entityValueList, Msg.FORMAT_NOT_DOWNLOADABLE, j, jcount)
           continue
@@ -569,10 +565,10 @@ def getGoogleDocument(users):
     if not docs:
       continue
     _, userName, _ = splitEmailAddressOrUID(user)
-    targetFolder = _getMain()._substituteForUser(targetFolderPattern, user, userName)
+    targetFolder = _substituteForUser(targetFolderPattern, user, userName)
     if not os.path.isdir(targetFolder):
       os.makedirs(targetFolder)
-    targetName = _getMain()._substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
+    targetName = _substituteForUser(targetNamePattern, user, userName) if targetNamePattern else None
     Ind.Increment()
     j = 0
     for fileId in fileIdEntity['list']:
@@ -704,8 +700,8 @@ def collectOrphans(users):
                            fields='nextPageToken,files(id,name,parents,mimeType,sharedWithMeTime,capabilities(canMoveItemWithinDrive))',
                            pageSize=GC.Values[GC.DRIVE_MAX_RESULTS])
       if targetUserFolderPattern:
-        trgtUserFolderName = _getMain()._substituteForUser(targetUserFolderPattern, user, userName)
-        targetParms[DFA_PARENTQUERY] = _getMain().MY_NON_TRASHED_FOLDER_NAME.format(escapeDriveFileName(trgtUserFolderName))
+        trgtUserFolderName = _substituteForUser(targetUserFolderPattern, user, userName)
+        targetParms[DFA_PARENTQUERY] = MY_NON_TRASHED_FOLDER_NAME.format(escapeDriveFileName(trgtUserFolderName))
       else:
         targetParms[DFA_PARENTID] = targetUserFolderId
         trgtUserFolderName = targetUserFolderId
@@ -741,7 +737,7 @@ def collectOrphans(users):
         j += 1
         fileId = fileEntry['id']
         fileName = fileEntry['name']
-        fileType = _getMain()._getEntityMimeType(fileEntry)
+        fileType = _getEntityMimeType(fileEntry)
 # Deleted 6.26.16
 #        if fileType == Ent.DRIVE_FOLDER and not fileEntry['capabilities']['canAddMyDriveParent']:
 #          # Typically Google Backup & Sync images of laptops

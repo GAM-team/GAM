@@ -1,6 +1,5 @@
 """GAM user schema management."""
 
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -34,23 +33,13 @@ from gam.util.display import (
 from gam.util.entity import getEntityList
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import setSysExitRC
+from gam.constants import NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def _showSchema(schema, i=0, count=0):
   printEntity([Ent.USER_SCHEMA, schema['schemaName']], i, count)
@@ -255,7 +244,7 @@ def doPrintShowUserSchemas():
     if not csvPF:
       performActionNumItems(jcount, Ent.USER_SCHEMA)
     if jcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     else:
       if not csvPF:
         Ind.Increment()

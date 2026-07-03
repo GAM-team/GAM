@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 from gamlib import glaction
 from gamlib import glapi as API
@@ -40,24 +39,13 @@ from gam.util.display import (
     printGettingAllAccountEntities,
     printLine,
 )
-from gam.util.entity import convertUIDtoEmailAddress, getEntityArgument
+from gam.util.entity import _getCustomersCustomerIdWithC, convertUIDtoEmailAddress, getEntityArgument
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 from urllib.parse import quote_plus
 
@@ -71,7 +59,7 @@ def quotedCIUserInvitatonsEmail(customer, email):
 def _getCIUserInvitationsEntity(ci=None, email=None):
   if ci is None:
     ci = buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   if email is None:
     email = getString(Cmd.OB_EMAIL_ADDRESS)
   pattern = re.compile(rf'^{customer}/userinvitations/(.+)$')
@@ -198,7 +186,7 @@ def doPrintShowCIUserInvitations():
                                                  ensure_ascii=False, sort_keys=True)})
 
   ci = buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['email']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   OBY = OrderBy(CI_USERINVITATION_ORDERBY_CHOICE_MAP)
@@ -244,7 +232,7 @@ def doPrintShowCIUserInvitations():
 # Current serial implementation will be SLOW...
 def checkCIUserIsInvitable(users):
   ci = buildGAPIObject(API.CLOUDIDENTITY_USERINVITATIONS)
-  customer = _getMain()._getCustomersCustomerIdWithC()
+  customer = _getCustomersCustomerIdWithC()
   csvPF = CSVPrintFile(['invitableUsers'])
   getTodriveOnly(csvPF)
   i, count, users = getEntityArgument(users)

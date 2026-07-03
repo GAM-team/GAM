@@ -2,7 +2,6 @@
 
 import re
 import json
-import sys
 
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM, FormatJSONQuoteChar
 import uuid
@@ -95,23 +94,13 @@ from gam.util.errors import (
 )
 from gam.util.fileio import UNKNOWN
 from gam.util.output import executeBatch, setSysExitRC
+from gam.constants import DAYS_OF_WEEK, GOOGLE_MEETID_FORMAT_REQUIRED, GOOGLE_MEETID_PATTERN, NO_ENTITIES_FOUND_RC
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
-
-def _getMain():
-  return sys.modules['gam']
-
-def __getattr__(name):
-  """Fall back to gam module for any undefined names."""
-  main = _getMain()
-  try:
-    return getattr(main, name)
-  except AttributeError:
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def normalizeCalendarId(calId, user):
   if not user or calId.lower() != 'primary':
@@ -239,15 +228,16 @@ def _normalizeCalIdGetRuleIds(origUser, user, origCal, calId, j, jcount, ACLScop
     return (calId, cal, None, 0)
   kcount = len(ruleIds)
   if kcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if showAction:
     entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.CALENDAR_ACL, j, jcount)
   return (calId, cal, ruleIds, kcount)
 
 def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount, role, ruleId, sendNotifications):
+  from gam import formatACLScopeRole, makeRoleRuleIdBody
   result = True
   if function == 'insert':
-    kwargs = {'body': _getMain().makeRoleRuleIdBody(role, ruleId), 'fields': '', 'sendNotifications': sendNotifications}
+    kwargs = {'body': makeRoleRuleIdBody(role, ruleId), 'fields': '', 'sendNotifications': sendNotifications}
   elif function == 'patch':
     kwargs = {'ruleId': ruleId, 'body': {'role': role}, 'fields': '', 'sendNotifications': sendNotifications}
   else: # elif function == 'delete':
@@ -259,26 +249,27 @@ def _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount,
                            GAPI.CANNOT_CHANGE_OWNER_ACL, GAPI.CANNOT_MODIFY_ACL_OF_CALENDAR_OWNER,
                            GAPI.FORBIDDEN, GAPI.AUTH_ERROR, GAPI.CONDITION_NOT_MET],
              calendarId=calId, **kwargs)
-    entityActionPerformed([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], k, kcount)
+    entityActionPerformed([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], k, kcount)
   except GAPI.notFound as e:
     if not checkCalendarExists(cal, calId, j, jcount):
       entityUnknownWarning(entityType, calId, j, jcount)
       result = False
     else:
-      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], str(e), k, kcount)
+      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], str(e), k, kcount)
   except (GAPI.invalid, GAPI.invalidParameter, GAPI.invalidScopeValue,
           GAPI.illegalAccessRoleForDefault, GAPI.cannotChangeOwnAcl,
           GAPI.cannotChangeOwnerAcl, GAPI.cannotModifyAclOfCalendarOwner,
           GAPI.forbidden, GAPI.authError, GAPI.conditionNotMet) as e:
-    entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, role)], str(e), k, kcount)
+    entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, role)], str(e), k, kcount)
   return result
 
 def _createCalendarACLs(cal, entityType, calId, j, jcount, role, ruleIds, kcount, sendNotifications):
+  from gam import normalizeRuleId
   Ind.Increment()
   k = 0
   for ruleId in ruleIds:
     k += 1
-    ruleId = _getMain().normalizeRuleId(ruleId)
+    ruleId = normalizeRuleId(ruleId)
     if not _processCalendarACLs(cal, 'insert', entityType, calId, j, jcount, k, kcount, role, ruleId, sendNotifications):
       break
   Ind.Decrement()
@@ -303,11 +294,12 @@ def doCalendarsCreateACLs(calIds):
   _doCalendarsCreateACLs(None, None, None, calIds, len(calIds), role, ACLScopeEntity, sendNotifications)
 
 def _updateDeleteCalendarACLs(cal, function, entityType, calId, j, jcount, role, ruleIds, kcount, sendNotifications):
+  from gam import normalizeRuleId
   Ind.Increment()
   k = 0
   for ruleId in ruleIds:
     k += 1
-    ruleId = _getMain().normalizeRuleId(ruleId)
+    ruleId = normalizeRuleId(ruleId)
     if not _processCalendarACLs(cal, function, entityType, calId, j, jcount, k, kcount, role, ruleId, sendNotifications):
       break
   Ind.Decrement()
@@ -342,6 +334,7 @@ def doCalendarsDeleteACLs(calIds):
   _doUpdateDeleteCalendarACLs(None, None, None, 'delete', calIds, len(calIds), ACLScopeEntity, role, False)
 
 def _showCalendarACL(user, entityType, calId, acl, k, kcount, FJQC):
+  from gam import ACLRuleKeyValueList
   if FJQC.formatJSON:
     if entityType == Ent.CALENDAR:
       if user:
@@ -354,14 +347,15 @@ def _showCalendarACL(user, entityType, calId, acl, k, kcount, FJQC):
       printLine(json.dumps(cleanJSON({'resourceId': user, 'resourceEmail': calId, 'acl': acl}),
                            ensure_ascii=False, sort_keys=True))
   else:
-    printKeyValueListWithCount(_getMain().ACLRuleKeyValueList(acl), k, kcount)
+    printKeyValueListWithCount(ACLRuleKeyValueList(acl), k, kcount)
 
 def _infoCalendarACLs(cal, user, entityType, calId, j, jcount, ruleIds, kcount, FJQC):
+  from gam import formatACLScopeRole, normalizeRuleId
   Ind.Increment()
   k = 0
   for ruleId in ruleIds:
     k += 1
-    ruleId = _getMain().normalizeRuleId(ruleId)
+    ruleId = normalizeRuleId(ruleId)
     try:
       result = callGAPI(cal.acl(), 'get',
                         throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID, GAPI.INVALID_SCOPE_VALUE, GAPI.FORBIDDEN, GAPI.AUTH_ERROR],
@@ -371,9 +365,9 @@ def _infoCalendarACLs(cal, user, entityType, calId, j, jcount, ruleIds, kcount, 
       if not checkCalendarExists(cal, calId, j, jcount):
         entityUnknownWarning(entityType, calId, j, jcount)
         break
-      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, None)], str(e), k, kcount)
+      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, None)], str(e), k, kcount)
     except (GAPI.invalidScopeValue, GAPI.forbidden, GAPI.authError) as e:
-      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, _getMain().formatACLScopeRole(ruleId, None)], str(e), k, kcount)
+      entityActionFailedWarning([entityType, calId, Ent.CALENDAR_ACL, formatACLScopeRole(ruleId, None)], str(e), k, kcount)
   Ind.Decrement()
 
 def _doInfoCalendarACLs(origUser, user, origCal, calIds, count, ACLScopeEntity, FJQC):
@@ -410,7 +404,7 @@ def _printShowCalendarACLs(cal, user, entityType, calId, i, count, csvPF, FJQC, 
     return
   jcount = len(acls)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if not csvPF:
     if not FJQC.formatJSON:
       if not noSelfOwner:
@@ -810,8 +804,8 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
   elif myarg == 'conferencedata':
     checkArgumentPresent(['meet'], True)
     epLabel = getString(Cmd.OB_MEET_ID)
-    if not _getMain().GOOGLE_MEETID_PATTERN.match(epLabel):
-      invalidArgumentExit(_getMain().GOOGLE_MEETID_FORMAT_REQUIRED)
+    if not GOOGLE_MEETID_PATTERN.match(epLabel):
+      invalidArgumentExit(GOOGLE_MEETID_FORMAT_REQUIRED)
     body['conferenceData'] = {"conferenceId": epLabel,
 	                      "conferenceSolution": {"key": {"type": "hangoutsMeet"}},
 	                      "entryPoints": [{"entryPointType": "video", "label": f'meet.google.com/{epLabel}',
@@ -1076,7 +1070,7 @@ def _validateCalendarGetEventIDs(origUser, user, origCal, calId, j, jcount, cale
       kcount = len(calEventIds)
       if kcount == 0:
         entityNumEntitiesActionNotPerformedWarning([Ent.CALENDAR, calId], Ent.EVENT, kcount, Msg.NO_ENTITIES_MATCHED.format(Ent.Plural(Ent.EVENT)), j, jcount)
-        setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+        setSysExitRC(NO_ENTITIES_FOUND_RC)
         return (calId, cal, None, 0)
     except GAPI.notFound:
       entityUnknownWarning(Ent.CALENDAR, calId, j, jcount)
@@ -1090,7 +1084,7 @@ def _validateCalendarGetEventIDs(origUser, user, origCal, calId, j, jcount, cale
   else:
     kcount = len(calEventIds)
   if kcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   if not doIt:
     if showAction:
       entityNumEntitiesActionNotPerformedWarning([Ent.CALENDAR, calId], Ent.EVENT, kcount, Msg.USE_DOIT_ARGUMENT_TO_PERFORM_ACTION, j, jcount)
@@ -1162,7 +1156,7 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
     if showAction:
       entityPerformActionNumItems([Ent.CALENDAR, calId], kcount, Ent.EVENT, j, jcount)
     if kcount == 0:
-      setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+      setSysExitRC(NO_ENTITIES_FOUND_RC)
     return (calId, cal, eventsList, kcount)
   except (GAPI.notFound, GAPI.deleted) as e:
     if not checkCalendarExists(cal, calId, j, jcount):
@@ -1222,13 +1216,13 @@ def _getEventDaysOfWeek(event):
       if 'date' in event[attr]:
         try:
           dateTime = arrow.Arrow.strptime(event[attr]['date'], YYYYMMDD_FORMAT)
-          event[attr]['dayOfWeek'] = _getMain().DAYS_OF_WEEK[dateTime.weekday()]
+          event[attr]['dayOfWeek'] = DAYS_OF_WEEK[dateTime.weekday()]
         except ValueError:
           pass
       elif 'dateTime' in event[attr]:
         try:
           dateTime = arrow.get(event[attr]['dateTime'])
-          event[attr]['dayOfWeek'] = _getMain().DAYS_OF_WEEK[dateTime.weekday()]
+          event[attr]['dayOfWeek'] = DAYS_OF_WEEK[dateTime.weekday()]
         except (arrow.parser.ParserError, OverflowError):
           pass
 
@@ -2216,7 +2210,7 @@ def _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, sho
   if showAction:
     entityPerformActionNumItems([Ent.RESOURCE_CALENDAR, resourceId], jcount, Ent.CALENDAR_ACL, i, count)
   if jcount == 0:
-    setSysExitRC(_getMain().NO_ENTITIES_FOUND_RC)
+    setSysExitRC(NO_ENTITIES_FOUND_RC)
   return (calId, ruleIds, jcount)
 
 # gam resource <ResourceID> create calendaracls <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
