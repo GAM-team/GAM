@@ -7,6 +7,10 @@ Part of the _users_tmp sub-package."""
 import re
 import sys
 
+from gam.util.args import DEFAULT_CHOICE
+
+from gam.util.entity import GROUP_ROLES_MAP
+
 from gamlib import gluprop as UProp
 import base64
 import time

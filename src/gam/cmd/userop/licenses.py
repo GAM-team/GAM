@@ -7,6 +7,8 @@ Part of the _userop_tmp sub-package."""
 import re
 import sys
 
+from gam.cmd.userop.usergroups import LICENSE_PREVIEW_TITLES
+
 from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
 
 from gamlib import glaction

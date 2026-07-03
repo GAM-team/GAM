@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.util.csv_pf import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

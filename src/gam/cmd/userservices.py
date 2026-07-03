@@ -3,6 +3,20 @@
 import json
 import sys
 
+from gam.cmd.calendar import (
+    CALENDAR_ACL_ROLES_MAP,
+    CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP,
+    CALENDAR_ATTENDEE_STATUS_CHOICE_MAP,
+    CALENDAR_MAX_COLOR_INDEX,
+    CALENDAR_MIN_COLOR_INDEX,
+    EVENT_TIME_OBJECTS,
+    EVENT_TYPE_ENTITY_MAP,
+    EVENT_TYPE_FOCUSTIME,
+    EVENT_TYPE_OUTOFOFFICE,
+    EVENT_TYPE_PROPERTIES_NAME_MAP,
+    EVENT_TYPE_WORKINGLOCATION,
+)
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

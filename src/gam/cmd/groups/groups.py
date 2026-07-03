@@ -6,6 +6,10 @@ Part of the _groups_tmp sub-package."""
 
 import re
 import sys
+
+from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+
+from gam.util.entity import GROUP_ROLES_MAP
 import time
 
 from gamlib import glaction

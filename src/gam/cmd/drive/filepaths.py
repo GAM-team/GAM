@@ -8,6 +8,8 @@ import re
 import json
 import sys
 
+from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC

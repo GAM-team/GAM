@@ -2,6 +2,8 @@
 
 import json
 import sys
+
+from gam.util.csv_pf import RI_J, RI_JCOUNT, RI_ITEM
 import os
 import time
 

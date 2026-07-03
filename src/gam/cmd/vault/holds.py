@@ -7,6 +7,14 @@ Part of the _vault_tmp sub-package."""
 import re
 import json
 import sys
+
+from gam.cmd.vault.matters import (
+    VAULT_CORPUS_ARGUMENT_MAP,
+    VAULT_CORPUS_QUERY_MAP,
+    VAULT_COUNTS_CORPUS_ARGUMENT_MAP,
+    VAULT_QUERY_ARGS,
+    VAULT_VOICE_COVERED_DATA_MAP,
+)
 import time
 
 from gamlib import glaction

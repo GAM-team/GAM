@@ -7,6 +7,8 @@ Part of the _cigroups_tmp sub-package."""
 import re
 import sys
 
+from gam.util.entity import GROUP_ROLES_MAP
+
 from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
