@@ -112,6 +112,7 @@ from gam.util.errors import (
 )
 from gam.util.orgunits import getAllParentOrgUnitsForUser, getOrgUnitId
 from gam.util.output import setSysExitRC, writeStdout
+from gam.cmd.drive.core import _getSharedDriveNameFromId
 
 def _cleanVaultHold(hold, cd):
   if cd is not None:
@@ -681,7 +682,6 @@ def printShowUserVaultHolds(entityList):
     printKeyValueList(['Total Holds', totalHolds])
 
 def _cleanVaultQuery(query, cd, drive):
-  from gam.cmd.drive.core import _getSharedDriveNameFromId
   if 'query' in query:
     if cd is not None and 'orgUnitInfo' in query['query']:
       query['query']['orgUnitInfo']['orgUnitPath'] = convertOrgUnitIDtoPath(cd, query['query']['orgUnitInfo']['orgUnitId'])

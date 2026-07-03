@@ -44,6 +44,8 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import writeStdout
+from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
+from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -106,7 +108,6 @@ def _getPublishSettings(myarg, pbody):
 #	[drivefilename <DriveFileName>] [<DriveFileParentAttribute>]
 #	[(csv [todrive <ToDriveAttribute>*]) | returnidonly]
 def createForm(users):
-  from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   csvPF = None
   returnIdOnly = False
   title = ''
@@ -198,7 +199,6 @@ def createForm(users):
 #	[title <String>] [description <String>] [isquiz [Boolean>]] [<JSONData>]
 #	[ispublished [<Boolean>] isacceptingresponses [<Boolean>]]
 def updateForm(users):
-  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   ubody = {'includeFormInResponse': False, 'requests': []}
   pbody = _initPublishSettings()
   fileIdEntity = getDriveFileEntity()
@@ -253,7 +253,6 @@ def updateForm(users):
 # gam <UserTypeEntity> show forms <DriveFileEntity>
 #	[formatjson]
 def printShowForms(users):
-  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   csvPF = CSVPrintFile(['User', 'formId', 'name', 'title', 'description'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fileIdEntity = getDriveFileEntity()
@@ -330,7 +329,6 @@ FORM_RESPONSE_TIME_OBJECTS = {'createTime', 'lastSubmittedTime'}
 #	[filter <String> (filtertime<String> <Time>)*]
 #	[countsonly|formatjson]
 def printShowFormResponses(users):
-  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   csvPF = CSVPrintFile(['User', 'formId', 'responseId', 'createTime', 'lastSubmittedTime', 'respondentEmail', 'totalScore'],
                        'sortall', indexedTitles=['answers']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)

@@ -115,6 +115,7 @@ from gam.util.output import (
     writeStdout,
 )
 from gam.constants import PROJECTION_CHOICE_MAP
+from gam.cmd.orgunits import _batchMoveCrOSesToOrgUnit, checkOrgUnitPathExists
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -180,7 +181,6 @@ CROS_ACTION_NAME_MAP = {
 # gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
 #	[actionbatchsize <Integer>] [maxtodeprov <Integer>]
 def updateCrOSDevices(entityList):
-  from gam.cmd.orgunits import _batchMoveCrOSesToOrgUnit, checkOrgUnitPathExists
   cd = buildGAPIObject(API.DIRECTORY)
   noBatchUpdate = False
   update_body = {}

@@ -40,6 +40,7 @@ from gam.util.entity import getEntityArgument
 from gam.util.errors import entityActionFailedExit, missingArgumentExit, unknownArgumentExit
 from gam.util.output import setSysExitRC, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
+from gam.cmd.chat.spaces import getSpaceName
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -179,7 +180,6 @@ def createMeetSpace(users):
 #	<MeetSpaceOptions>*
 #	[formatjson]
 def updateMeetSpace(users):
-  from gam.cmd.chat.spaces import getSpaceName
   FJQC = FormatJSONQuoteChar()
   name = None
   body = {'config': {}}
@@ -214,7 +214,6 @@ def updateMeetSpace(users):
 # gam <UserTypeEntity> info meetspace <MeetSpaceName>
 #	[formatjson]
 def infoMeetSpace(users):
-  from gam.cmd.chat.spaces import getSpaceName
   FJQC = FormatJSONQuoteChar()
   name = None
   while Cmd.ArgumentsRemaining():
@@ -245,7 +244,6 @@ def infoMeetSpace(users):
 
 # gam <UserTypeEntity> end meetconference <MeetSpaceName>
 def endMeetConference(users):
-  from gam.cmd.chat.spaces import getSpaceName
   name = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -304,7 +302,6 @@ def _printMeetConfItem(user, citem, csvPF, FJQC):
 #	[andquery|orquery <String>] [querytime<String> <Time>]
 #	[formatjson [quotechar <Character>]]
 def printShowMeetConferences(users):
-  from gam.cmd.chat.spaces import getSpaceName
   def _updateQuery(conjunction, clause):
     if queries[0]:
       queries[0] += f' {conjunction} '

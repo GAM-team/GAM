@@ -1,7 +1,7 @@
 """GAM GCP project and service account management.
 
-Extracted from gam/__init__.py. Provides GCP project creation/deletion,
-service account management, key operations, and API enablement.
+GCP project creation/deletion, service account management,
+key operations, and API enablement.
 """
 
 import base64
@@ -105,6 +105,8 @@ from gam.util.output import (
     writeStdout,
 )
 from gam.constants import API_ACCESS_DENIED_RC, GAM, GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID, GOOGLE_TIMECHECK_LOCATION, JSON_ALREADY_EXISTS_RC, MAX_LOCAL_GOOGLE_TIME_OFFSET, MULTIPLE_PROJECT_FOLDERS_FOUND_RC, SCOPES_NOT_AUTHORIZED_RC
+from gam.cmd.oauth import _getValidateLoginHint
+from gam.cmd.oauth import getScopesFromUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -194,7 +196,6 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
 
 # gam enable apis [auto|manual]
 def doEnableAPIs():
-  from gam.cmd.oauth import _getValidateLoginHint
   automatic = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -433,7 +434,6 @@ def _generateProjectSvcAcctId(prefix):
   return f'{prefix}-{"".join(random.choice(LOWERNUMERIC_CHARS) for _ in range(5))}'
 
 def _getLoginHintProjectInfo(createCmd):
-  from gam.cmd.oauth import _getValidateLoginHint
   login_hint = None
   create_key = True
   appInfo = {'applicationTitle': '', 'supportEmail': ''}
@@ -530,7 +530,6 @@ PROJECTS_DELETESVCACCT_OPTIONS = {'saemail', 'saname', 'sauniqueid'}
 PROJECTS_PRINTSHOW_OPTIONS = {'showsakeys', 'showiampolicies', 'onememberperrow', 'states', 'todrive', 'delimiter', 'formatjson', 'quotechar'}
 
 def _getLoginHintProjects(createSvcAcctCmd=False, deleteSvcAcctCmd=False, printShowCmd=False, readOnly=False):
-  from gam.cmd.oauth import _getValidateLoginHint
   if checkArgumentPresent(['admin']):
     login_hint = getEmailAddress(noUid=True)
   else:
@@ -648,7 +647,6 @@ def getGCPOrgId(crm, login_hint, login_domain):
 # gam create gcpfolder <String>
 # gam create gcpfolder [admin <EmailAddress] folder <String>
 def doCreateGCPFolder():
-  from gam.cmd.oauth import _getValidateLoginHint
   login_hint = None
   if not Cmd.PeekArgumentPresent(['admin', 'folder']):
     name = getString(Cmd.OB_STRING)
@@ -1073,7 +1071,6 @@ def _getSvcAcctKeyProjectClientFields():
 # gam <UserTypeEntity> check serviceaccount (scope|scopes <APIScopeURLList>)* [usecolor]
 # gam <UserTypeEntity> update serviceaccount (scope|scopes <APIScopeURLList>)* [usecolor]
 def checkServiceAccount(users):
-  from gam.cmd.oauth import getScopesFromUser
   def printMessage(message):
     writeStdout(Ind.Spaces()+message+'\n')
 

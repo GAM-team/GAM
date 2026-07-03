@@ -1,9 +1,7 @@
 """GAM shared constants.
 
-This module provides constants that are shared across cmd/ modules. These
-constants are defined here (rather than in gam/__init__.py) to avoid circular
-import issues—gam/__init__.py imports from cmd/ modules, so cmd/ modules
-cannot safely import from gam at module level.
+Return codes, Drive query fragments, choice maps, and other constants
+shared across cmd/ modules.
 """
 
 import re

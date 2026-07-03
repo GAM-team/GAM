@@ -102,6 +102,7 @@ from gam.util.tags import (
     _substituteForUser,
     getRecipients,
 )
+from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -1188,7 +1189,6 @@ def insertMessage(users):
 
 def printShowMessagesThreads(users, entityType):
 
-  from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   def _getBodyData(payload, getOrigMsg):
     data = headers = ''
     for part in payload.get('parts', []):

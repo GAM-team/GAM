@@ -4,7 +4,7 @@ Part of the copymove sub-package."""
 
 """File copy/move operations with permission handling.
 
-Part of the drive sub-package, extracted from drive.py."""
+"""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 

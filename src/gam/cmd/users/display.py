@@ -129,10 +129,12 @@ from gam.util.errors import entityActionFailedExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import ERROR, executeBatch, writeStdout
+from gam.cmd.groups.members import addJsonGroupParents, getGroupParents, showGroupParents
+from gam.cmd.resources import _getBuildingNameById
+from gam.cmd.aliases import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters, userFilters
+from gam.cmd.licenses import doPrintLicenses
 
 def infoUsers(entityList):
-  from gam.cmd.groups.members import addJsonGroupParents, getGroupParents, showGroupParents
-  from gam.cmd.resources import _getBuildingNameById
   def printUserCIGroupMap(parent, group_name_mappings, seen_group_count, edges, direction):
     for a_parent, a_child in edges:
       if a_parent == parent:
@@ -659,9 +661,6 @@ USERS_INDEXED_TITLES = ['addresses', 'aliases', 'nonEditableAliases', 'emails', 
 #	[issuspended <Boolean>] [isarchived <Boolean>]
 # 	[showitemcountonly]
 def doPrintUsers(entityList=None):
-  from gam.cmd.aliases import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters, userFilters
-  from gam.cmd.licenses import doPrintLicenses
-  from gam.cmd.resources import _getBuildingNameById
   def _writeUserEntity(userEntity):
     row = flattenJSON(userEntity, skipObjects=USER_SKIP_OBJECTS, timeObjects=USER_TIME_OBJECTS)
     if not FJQC.formatJSON:

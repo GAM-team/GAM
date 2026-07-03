@@ -1,8 +1,4 @@
-"""Error, exit, and argument validation functions.
-
-Extracted from gam/__init__.py to reduce monolith size.
-Functions here depend only on gamlib modules and util/output.
-"""
+"""Error, exit, and argument validation functions."""
 
 import os
 import sys

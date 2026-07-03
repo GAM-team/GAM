@@ -1,7 +1,4 @@
-"""Network diagnostics, version display, and usage functions.
-
-Extracted from gam/__init__.py to reduce monolith size.
-"""
+"""Network diagnostics, version display, and usage functions."""
 
 import logging
 import os

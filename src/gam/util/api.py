@@ -1,7 +1,6 @@
 """GAM API utility functions.
 
-Extracted from gam/__init__.py lines 2206-3636.
-Provides HTTP transport, OAuth credential management, Google API service
+HTTP transport, OAuth credential management, Google API service
 construction, and GAPI/GData call wrappers with retry logic.
 """
 

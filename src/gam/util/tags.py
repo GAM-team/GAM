@@ -1,7 +1,4 @@
-"""Tag replacement, user substitution, and email notification utilities.
-
-Extracted from gam/cmd/send_email.py to eliminate circular imports.
-"""
+"""Tag replacement, user substitution, and email notification utilities."""
 
 import re
 

@@ -46,6 +46,12 @@ from gam.util.entity import (
     setTrueCustomerId,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC
+from gam.cmd.domains import CUSTOMER_LICENSE_MAP
+from gam.cmd.reports import _adjustTryDate, _checkDataRequiredServices
+from gam.cmd.reseller import _showCustomerAddressPhoneNumber
+from gam.cmd.reseller import ADDRESS_FIELDS_ARGUMENT_MAP
+from gam.cmd.domains import DOMAIN_ALIAS_SKIP_OBJECTS, DOMAIN_TIME_OBJECTS, _showDomainAlias
+from gam.cmd.domains import DOMAIN_TIME_OBJECTS, _printDomain
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -54,8 +60,6 @@ Cmd = glclargs.GamCLArgs()
 
 
 def _showCustomerLicenseInfo(customerInfo, FJQC):
-  from gam.cmd.domains import CUSTOMER_LICENSE_MAP
-  from gam.cmd.reports import _adjustTryDate, _checkDataRequiredServices
   def numUsersAvailable(result):
     usageReports = result.get('usageReports', [])
     if usageReports:
@@ -109,7 +113,6 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
 
 # gam info customer [formatjson]
 def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
-  from gam.cmd.reseller import _showCustomerAddressPhoneNumber
   cd = buildGAPIObject(API.DIRECTORY)
   customerId = _getCustomerId()
   if FJQC is None:
@@ -165,7 +168,6 @@ def doInfoCustomer(returnCustomerInfo=None, FJQC=None):
 #	[address1|addressline1 <String>] [address2|addressline2 <String>] [address3|addressline3 <String>]
 #	[locality <String>] [region <String>] [postalcode <String>] [country|countrycode <String>]
 def doUpdateCustomer():
-  from gam.cmd.reseller import ADDRESS_FIELDS_ARGUMENT_MAP
   cd = buildGAPIObject(API.DIRECTORY)
   customerId = _getCustomerId()
   body = {}
@@ -212,7 +214,6 @@ DOMAIN_PRINT_ORDER = ['customerDomain', 'creationTime', 'isPrimary', 'verified']
 DOMAIN_SKIP_OBJECTS = {'domainName', 'domainAliases'}
 
 def _showDomain(result, FJQC, i=0, count=0):
-  from gam.cmd.domains import DOMAIN_ALIAS_SKIP_OBJECTS, DOMAIN_TIME_OBJECTS, _showDomainAlias
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(result, timeObjects=DOMAIN_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
     return
@@ -266,7 +267,6 @@ DOMAIN_SORT_TITLES = ['domainName', 'parentDomainName', 'creationTime', 'type', 
 #	[formatjson]
 #	[showitemcountonly]
 def doPrintShowDomains():
-  from gam.cmd.domains import DOMAIN_TIME_OBJECTS, _printDomain
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['domainName'], DOMAIN_SORT_TITLES) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)

@@ -54,6 +54,9 @@ from gam.util.entity import (
     getEntityToModify,
 )
 from gam.util.errors import unknownArgumentExit
+from gam.cmd.groups.groups import doCreateGroup
+from gam.cmd.groups.groups import GROUP_ACCESS_TYPE_CHOICE_MAP, GROUP_CIGROUP_FIELDS_MAP, GROUP_JSON_SKIP_FIELDS, GROUP_PREVIEW_TITLES, GroupIsAbuseOrPostmaster, UPDATE_GROUP_SUBCMDS, checkReplyToCustom, getGroupAttrValue, getSettingsFromGroup, getSyncOperation, mapGroupEmailForSettings
+from gam.cmd.groups.groups import doDeleteGroups
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -71,7 +74,6 @@ NEVER_TIME = '1970-01-01T00:00:00.000Z'
 
 
 def doCreateCIGroup():
-  from gam.cmd.groups.groups import doCreateGroup
   doCreateGroup(ciGroupsAPI=True)
 
 # gam update cigroups <GroupEntity> [email <EmailAddress>]
@@ -107,7 +109,6 @@ def doCreateCIGroup():
 #	[preview] [actioncsv]
 def doUpdateCIGroups():
 
-  from gam.cmd.groups.groups import GROUP_ACCESS_TYPE_CHOICE_MAP, GROUP_CIGROUP_FIELDS_MAP, GROUP_JSON_SKIP_FIELDS, GROUP_PREVIEW_TITLES, GroupIsAbuseOrPostmaster, UPDATE_GROUP_SUBCMDS, checkReplyToCustom, getGroupAttrValue, getSettingsFromGroup, getSyncOperation, mapGroupEmailForSettings
   def _getExpireTime(role):
     if role == Ent.ROLE_MEMBER and checkArgumentPresent(['expire', 'expires']):
       return getTimeOrDeltaFromNow()
@@ -800,7 +801,6 @@ def doUpdateCIGroups():
 
 # gam delete cigroups <GroupEntity>
 def doDeleteCIGroups():
-  from gam.cmd.groups.groups import doDeleteGroups
   doDeleteGroups(ciGroupsAPI=True)
 
 CIGROUP_MEMBER_TYPES_MAP = {

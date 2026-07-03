@@ -1,7 +1,7 @@
 """GAM OAuth flows and credential management.
 
-Extracted from gam/__init__.py. Provides OAuth2 authentication flows,
-credential creation/deletion/info/update/refresh/export commands.
+OAuth2 authentication flows and credential
+creation/deletion/info/update/refresh/export commands.
 """
 
 import ipaddress

@@ -1,4 +1,7 @@
-"""GAM audit monitor commands (GDATA).\n\nExtracted from gam/__init__.py. Provides mailbox monitor\ncreation/deletion/listing and doWhatIs command."""
+"""GAM audit monitor commands (GDATA).
+
+Mailbox monitor creation/deletion/listing and the doWhatIs command.
+"""
 
 import re
 

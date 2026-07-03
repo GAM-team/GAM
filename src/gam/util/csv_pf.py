@@ -1,8 +1,7 @@
 """GAM CSV Print Framework utilities.
 
-Extracted from gam/__init__.py. Provides CSV output formatting,
-row/header filtering, JSON flattening, and Google Drive upload
-(todrive) functionality for GAM's print/show commands.
+CSV output formatting, row/header filtering, JSON flattening,
+and Google Drive upload (todrive) for print/show commands.
 """
 
 import csv

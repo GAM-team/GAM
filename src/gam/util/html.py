@@ -1,6 +1,6 @@
 """GAM HTML utilities.
 
-Extracted from gam/__init__.py. Provides HTML-to-plain-text conversion.
+HTML-to-plain-text conversion.
 """
 
 import re

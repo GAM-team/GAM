@@ -1,6 +1,6 @@
 """Drive labels and label permissions.
 
-Part of the drive sub-package, extracted from drive.py."""
+"""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 

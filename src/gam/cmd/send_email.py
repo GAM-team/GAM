@@ -95,6 +95,8 @@ from gam.util.tags import (  # noqa: F401  # re-export
     sendCreateUpdateUserNotification,
 )
 from gam.constants import NO_ENTITIES_FOUND_RC
+from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP
+from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP, _decodeHeader
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -140,7 +142,6 @@ from email.utils import formatdate
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	[threadid <String>]
 def doSendEmail(users=None):
-  from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP
   body = {}
   notify = {'subject': '', 'message': '', 'html': False, 'charset': UTF8, 'password': ''}
   msgFroms = [_getAdminEmail()]
@@ -264,7 +265,6 @@ def doSendEmail(users=None):
 #	(embedimage <FileName> <String>)*
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 def doSendReply(users):
-  from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP, _decodeHeader
   def _getHeaderValue(name):
     for header in messageInfo['payload']['headers']:
       if name == header['name']:

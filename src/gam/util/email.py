@@ -1,7 +1,6 @@
 """GAM email utilities.
 
-Extracted from gam/__init__.py. Provides email attachment handling
-and email sending via Gmail API or SMTP.
+Email attachment handling and sending via Gmail API or SMTP.
 """
 
 import base64

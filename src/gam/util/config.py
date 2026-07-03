@@ -1,7 +1,6 @@
 """GAM configuration — SetGlobalVariables.
 
-Extracted from gam/__init__.py. The massive SetGlobalVariables function
-reads gam.cfg config file and initializes all global runtime state.
+Reads gam.cfg and initializes all global runtime state.
 """
 
 import collections

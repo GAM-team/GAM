@@ -75,6 +75,9 @@ from gam.util.entity import (
 )
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit
 from gam.util.output import writeStderr
+from gam.cmd.mobile import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_BASIC_ATTRIBUTES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
+from gam.cmd.mobile import GROUP_FIELDS_WITH_CRS_NLS
+from gam.cmd.ciuserinvitations import _getIsInvitableUser
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -85,7 +88,6 @@ Cmd = glclargs.GamCLArgs()
 WARNING_PREFIX = 'WARNING: '
 
 def getGroupAttrProperties(myarg):
-  from gam.cmd.mobile import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_BASIC_ATTRIBUTES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
   attrProperties = GROUP_BASIC_ATTRIBUTES.get(myarg)
   if attrProperties is not None:
     return attrProperties
@@ -116,7 +118,6 @@ def getGroupAttrProperties(myarg):
   return None
 
 def getGroupAttrValue(argument, gs_body):
-  from gam.cmd.mobile import GROUP_FIELDS_WITH_CRS_NLS
   if argument == 'copyfrom':
     gs_body[argument] = getEmailAddress()
     return
@@ -224,7 +225,6 @@ GROUP_ACCESS_TYPE_CHOICE_MAP = {
 #	[verifyduplicateretries <Integer>] [verifyduplicateretrydelay <Integer>]
 #	[verifycreationretries <Integer>] [verifycreationinitialdelay <Integer>] [verifycreationretrydelay <Integer>]
 def doCreateGroup(ciGroupsAPI=False):
-  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def waitingForCreationToComplete(sleep_time):
     writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.GROUP), sleep_time))
     time.sleep(sleep_time)
@@ -434,7 +434,6 @@ GROUP_PREVIEW_TITLES = ['group', 'email', 'role', 'action', 'message']
 #	[preview] [actioncsv]
 def doUpdateGroups():
 
-  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def _getPreviewActionCSV():
     preview = checkArgumentPresent('preview')
     if checkArgumentPresent('actioncsv'):

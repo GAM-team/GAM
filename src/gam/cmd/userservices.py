@@ -130,6 +130,34 @@ from gam.util.fileio import UNKNOWN, closeFile
 from gam.util.gdoc import openCSVFileReader
 from gam.util.output import setSysExitRC, stderrErrorMsg, systemErrorExit
 from gam.constants import NO_ENTITIES_FOUND_RC
+from gam.cmd.courses.courses import _getCourseStates
+from gam.cmd.calendar import checkCalendarExists, validateCalendar
+from gam.cmd.courses.courses import _getCoursesInfo
+from gam.cmd.calendar import _showCalendarSettings
+from gam.cmd.calendar import normalizeCalendarId
+from gam.cmd.calendar import getCalendarSettings
+from gam.cmd.calendar import validateCalendar
+from gam.cmd.calendar import _doCalendarsCreateACLs, getCalendarCreateUpdateACLsOptions
+from gam.cmd.calendar import _doUpdateDeleteCalendarACLs
+from gam.cmd.calendar import getCalendarCreateUpdateACLsOptions
+from gam.cmd.calendar import getCalendarDeleteACLsOptions
+from gam.cmd.calendar import _doInfoCalendarACLs, _getCalendarInfoACLOptions, getCalendarSiteACLScopeEntity
+from gam.cmd.calendar import _getCalendarPrintShowACLOptions, _printShowCalendarACLs
+from gam.cmd.calendar import _createCalendarEvents, _getCalendarCreateImportUpdateEventOptions
+from gam.cmd.calendar import _getCalendarCreateImportUpdateEventOptions, _updateCalendarEvents, getCalendarEventEntity
+from gam.cmd.calendar import _deleteCalendarEvents, _getCalendarDeleteEventOptions, getCalendarEventEntity
+from gam.cmd.calendar import _getCalendarDeleteEventOptions, _purgeCalendarEvents, getCalendarEventEntity
+from gam.cmd.calendar import _wipeCalendarEvents
+from gam.cmd.calendar import _getCalendarMoveEventsOptions, _moveCalendarEvents, checkCalendarExists, getCalendarEventEntity
+from gam.cmd.calendar import _emptyCalendarTrash
+from gam.cmd.calendar import _getCalendarSendUpdates, _validateCalendarGetEvents, checkCalendarExists, getCalendarEventEntity
+from gam.cmd.calendar import _getCalendarInfoEventOptions, _infoCalendarEvents, getCalendarEventEntity
+from gam.cmd.calendar import _getCalendarPrintShowEventOptions, _printShowCalendarEvents, getCalendarEventEntity
+from gam.cmd.calendar import _getCalendarEventReminders
+from gam.cmd.resources import _getBuildingByNameOrId
+from gam.cmd.calendar import _setEventRecurrenceTimeZone
+from gam.cmd.calendar import checkCalendarExists
+from gam.cmd.calendar import _getEventDaysOfWeek, _printCalendarEvent
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -391,7 +419,6 @@ def initUserCalendarEntity():
 
 def getUserCalendarEntity(default='primary', noSelectionKwargs=None):
 
-  from gam.cmd.courses.courses import _getCourseStates
   def _initCourseCalendarSelectionParameters():
     return {'courseIds': [], 'teacherId': None, 'myCoursesAsTeacher': False,
             'studentId': None, 'myCoursesAsStudent': False, 'courseStates': []}
@@ -472,8 +499,6 @@ def getUserCalendarEntity(default='primary', noSelectionKwargs=None):
 
 def _validateUserGetCalendarIds(user, i, count, calendarEntity,
                                 itemType=None, modifier=None, showAction=True, setRC=True, newCalId=None, secondaryCalendarsOnly=False):
-  from gam.cmd.calendar import checkCalendarExists, validateCalendar
-  from gam.cmd.courses.courses import _getCoursesInfo
   if user and calendarEntity['dict']:
     calIds = calendarEntity['dict'][user][:]
   else:
@@ -586,7 +611,6 @@ def _getCalendarAttributes(body, returnOnUnknownArgument=False):
 
 def _showCalendar(calendar, j, jcount, FJQC, acls=None):
   from gam import ACLRuleKeyValueList
-  from gam.cmd.calendar import _showCalendarSettings
   if FJQC.formatJSON:
     if acls:
       calendar['acls'] = [{'id': rule['id'], 'role': rule['role']} for rule in acls]
@@ -649,7 +673,6 @@ def _processCalendarList(user, i, count, calId, j, jcount, cal, function, **kwar
 
 # gam <UserTypeEntity> add calendars <UserCalendarAddEntity> <CalendarAttribute>*
 def addCalendars(users):
-  from gam.cmd.calendar import normalizeCalendarId
   calendarEntity = getUserCalendarEntity()
   body = {'selected': True, 'hidden': False}
   _getCalendarAttributes(body)
@@ -670,7 +693,6 @@ def addCalendars(users):
     Ind.Decrement()
 
 def _updateDeleteCalendars(users, calendarEntity, function, **kwargs):
-  from gam.cmd.calendar import normalizeCalendarId
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -703,7 +725,6 @@ def deleteCalendars(users):
 
 # gam <UserTypeEntity> create calendars <CalendarSettings>
 def createCalendar(users):
-  from gam.cmd.calendar import getCalendarSettings
   calendarEntity = initUserCalendarEntity()
   body = getCalendarSettings(summaryRequired=True)
   i, count, users = getEntityArgument(users)
@@ -729,7 +750,6 @@ def addCreateCalendars(users):
     createCalendar(users)
 
 def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
-  from gam.cmd.calendar import normalizeCalendarId
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -756,7 +776,6 @@ def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
 
 # gam <UserTypeEntity> modify calendars <UserCalendarEntity> <CalendarSettings>
 def modifyCalendars(users):
-  from gam.cmd.calendar import getCalendarSettings
   calendarEntity = getUserCalendarEntity()
   body = getCalendarSettings(summaryRequired=False)
   _modifyRemoveCalendars(users, calendarEntity, 'patch', body=body)
@@ -804,7 +823,6 @@ CALENDAR_LIST_FIELDS_CHOICE_MAP = {
 #	[fields <CalendarFieldList>]  [permissions]
 #	[formatjson]
 def infoCalendars(users):
-  from gam.cmd.calendar import normalizeCalendarId
   calendarEntity = getUserCalendarEntity()
   FJQC = FormatJSONQuoteChar()
   fieldsList = []
@@ -864,7 +882,6 @@ CALENDAR_EXCLUDE_DOMAINS = {
 #	[fields <CalendarFieldList>] [permissions]
 #	[formatjson]
 def printShowCalendars(users):
-  from gam.cmd.calendar import validateCalendar
   acls = []
   getCalPermissions = oneItemPerRow = noPrimary = primaryOnly = False
   excludes = set()
@@ -1012,7 +1029,6 @@ USER_CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
 # gam <UserTypeEntity> show calsettings
 #	[formatjson]
 def printShowCalSettings(users):
-  from gam.cmd.calendar import validateCalendar
   csvPF = CSVPrintFile(['User'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   fieldsList = []
@@ -1061,7 +1077,6 @@ def printShowCalSettings(users):
 
 # gam <UserTypeEntity> create calendaracls <UserCalendarEntity> <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def createCalendarACLs(users):
-  from gam.cmd.calendar import _doCalendarsCreateACLs, getCalendarCreateUpdateACLsOptions
   calendarEntity = getUserCalendarEntity()
   role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   i, count, users = getEntityArgument(users)
@@ -1076,7 +1091,6 @@ def createCalendarACLs(users):
     Ind.Decrement()
 
 def updateDeleteCalendarACLs(users, calendarEntity, function, modifier, ACLScopeEntity, role, sendNotifications):
-  from gam.cmd.calendar import _doUpdateDeleteCalendarACLs
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -1090,14 +1104,12 @@ def updateDeleteCalendarACLs(users, calendarEntity, function, modifier, ACLScope
 
 # gam <UserTypeEntity> update calendaracls <UserCalendarEntity> <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def updateCalendarACLs(users):
-  from gam.cmd.calendar import getCalendarCreateUpdateACLsOptions
   calendarEntity = getUserCalendarEntity()
   role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   updateDeleteCalendarACLs(users, calendarEntity, 'patch', Act.MODIFIER_IN, ACLScopeEntity, role, sendNotifications)
 
 # gam <UserTypeEntity> delete calendaracls <UserCalendarEntity> [<CalendarACLRole>] <CalendarACLScopeEntity>
 def deleteCalendarACLs(users):
-  from gam.cmd.calendar import getCalendarDeleteACLsOptions
   calendarEntity = getUserCalendarEntity()
   role, ACLScopeEntity = getCalendarDeleteACLsOptions(True)
   updateDeleteCalendarACLs(users, calendarEntity, 'delete', Act.MODIFIER_FROM, ACLScopeEntity, role, False)
@@ -1105,7 +1117,6 @@ def deleteCalendarACLs(users):
 # gam <UserTypeEntity> info calendaracls <UserCalendarEntity> <CalendarACLScopeEntity>
 #	[formatjson]
 def infoCalendarACLs(users):
-  from gam.cmd.calendar import _doInfoCalendarACLs, _getCalendarInfoACLOptions, getCalendarSiteACLScopeEntity
   calendarEntity = getUserCalendarEntity()
   ACLScopeEntity = getCalendarSiteACLScopeEntity()
   FJQC = _getCalendarInfoACLOptions()
@@ -1127,7 +1138,6 @@ def infoCalendarACLs(users):
 #	[noselfowner]
 #	[formatjson]
 def printShowCalendarACLs(users):
-  from gam.cmd.calendar import _getCalendarPrintShowACLOptions, _printShowCalendarACLs
   calendarEntity = getUserCalendarEntity(default='all')
   csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['primaryEmail', 'calendarId'])
   i, count, users = getEntityArgument(users)
@@ -1148,7 +1158,6 @@ def printShowCalendarACLs(users):
 
 # gam <CalendarEntity> transfer ownership <UserItem>
 def doCalendarsTransferOwnership(calIds):
-  from gam.cmd.calendar import validateCalendar
   Act.Set(Act.TRANSFER_OWNERSHIP)
   newDataOwner = getEmailAddress()
   checkForExtraneousArguments()
@@ -1173,7 +1182,6 @@ def doCalendarsTransferOwnership(calIds):
       return
 
 def _createImportCalendarEvent(users, function):
-  from gam.cmd.calendar import _createCalendarEvents, _getCalendarCreateImportUpdateEventOptions
   calendarEntity = getUserCalendarEntity()
   body, parameters = _getCalendarCreateImportUpdateEventOptions(function, Ent.USER)
   i, count, users = getEntityArgument(users)
@@ -1202,7 +1210,6 @@ def importCalendarEvent(users):
 #	[showdayofweek]
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def updateCalendarEvents(users):
-  from gam.cmd.calendar import _getCalendarCreateImportUpdateEventOptions, _updateCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   body, parameters = _getCalendarCreateImportUpdateEventOptions('update', Ent.USER)
@@ -1220,7 +1227,6 @@ def updateCalendarEvents(users):
 # gam <UserTypeEntity> delete events <UserCalendarEntity> <EventEntity>
 #	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def deleteCalendarEvents(users):
-  from gam.cmd.calendar import _deleteCalendarEvents, _getCalendarDeleteEventOptions, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   parameters = _getCalendarDeleteEventOptions()
@@ -1238,7 +1244,6 @@ def deleteCalendarEvents(users):
 # gam <UserTypeEntity> purge events <UserCalendarEntity> <EventEntity>
 #	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def purgeCalendarEvents(users):
-  from gam.cmd.calendar import _getCalendarDeleteEventOptions, _purgeCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   parameters = _getCalendarDeleteEventOptions()
@@ -1255,7 +1260,6 @@ def purgeCalendarEvents(users):
 
 # gam <UserTypeEntity> wipe events <UserCalendarEntity>
 def wipeCalendarEvents(users):
-  from gam.cmd.calendar import _wipeCalendarEvents
   calendarEntity = getUserCalendarEntity()
   checkForExtraneousArguments()
   i, count, users = getEntityArgument(users)
@@ -1270,7 +1274,6 @@ def wipeCalendarEvents(users):
 
 # gam <UserTypeEntity> move events <UserCalendarEntity> <EventEntity> to|destination <CalendarItem> [<EventNotificationAttribute>]
 def moveCalendarEvents(users):
-  from gam.cmd.calendar import _getCalendarMoveEventsOptions, _moveCalendarEvents, checkCalendarExists, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   checkArgumentPresent(['to', 'destination'])
@@ -1291,7 +1294,6 @@ def moveCalendarEvents(users):
 
 # gam <UserTypeEntity> empty calendartrash <UserCalendarEntity>
 def emptyCalendarTrash(users):
-  from gam.cmd.calendar import _emptyCalendarTrash
   calendarEntity = getUserCalendarEntity()
   checkForExtraneousArguments()
   i, count, users = getEntityArgument(users)
@@ -1319,7 +1321,6 @@ def emptyCalendarTrash(users):
 #	(updatestatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddress>)*
 #	(updateentitystatus [<AttendeeAttendance>] [<AttendeeStatus>] <EmailAddressEntity>)*
 def updateCalendarAttendees(users):
-  from gam.cmd.calendar import _getCalendarSendUpdates, _validateCalendarGetEvents, checkCalendarExists, getCalendarEventEntity
   def getStatus(option):
     if option.endswith('status'):
       return(getChoice(CALENDAR_ATTENDEE_OPTIONAL_CHOICE_MAP, defaultChoice=None, mapChoice=True),
@@ -1567,7 +1568,6 @@ def updateCalendarAttendees(users):
 #	[fields <EventFieldNameList>] [showdayofweek]
 #	[formatjson]
 def infoCalendarEvents(users):
-  from gam.cmd.calendar import _getCalendarInfoEventOptions, _infoCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   FJQC, fieldsList = _getCalendarInfoEventOptions(calendarEventEntity)
@@ -1591,7 +1591,6 @@ def infoCalendarEvents(users):
 #	[fields <EventFieldNameList>] [showdayofweek]
 #	~[countsonly|formatjson]
 def printShowCalendarEvents(users):
-  from gam.cmd.calendar import _getCalendarPrintShowEventOptions, _printShowCalendarEvents, getCalendarEventEntity
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   csvPF, FJQC, fieldsList, addCSVData, attendeesList = _getCalendarPrintShowEventOptions(calendarEventEntity, Ent.USER)
@@ -1667,7 +1666,6 @@ def getStatusEventDateTime(dateType, dateList):
 STATUS_EVENTS_DATETIME_CHOICES = {'date', 'allday', 'range', 'daily', 'weekly', 'timerange'}
 
 def getStatusEventProperties(myarg, body, parameters, dateList):
-  from gam.cmd.calendar import _getCalendarEventReminders
   if myarg in STATUS_EVENTS_DATETIME_CHOICES:
     getStatusEventDateTime(myarg, dateList)
   elif myarg == 'timezone':
@@ -1721,7 +1719,6 @@ WORKING_LOCATION_CHOICE_MAP = {
   }
 
 def getWorkingLocationProperties(body, parameters, dateList):
-  from gam.cmd.resources import _getBuildingByNameOrId
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[EVENT_TYPE_WORKINGLOCATION]
   body.update({'eventType': EVENT_TYPE_WORKINGLOCATION, eventProperties: {},
                'visibility': 'public', 'transparency':'transparent'})
@@ -1795,7 +1792,6 @@ def getWorkingLocationProperties(body, parameters, dateList):
 #	[timezone <String>]
 #	(noreminders|(reminder email|popup <Number>)+)
 def createStatusEvent(users, eventType):
-  from gam.cmd.calendar import _setEventRecurrenceTimeZone
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   body = {'start': {}, 'end': {}, 'recurrence': None}
@@ -1895,7 +1891,6 @@ def createWorkingLocation(users):
 #	 (weekly yyyy-mm-dd N)|
 #	 (timerange <Time> <Time>))+
 def deleteStatusEvent(users, eventType):
-  from gam.cmd.calendar import checkCalendarExists
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   kwargs = {'eventTypes': [eventType], 'showDeleted': False, 'singleEvents': True,
@@ -2017,7 +2012,6 @@ def _showCalendarStatusEvent(primaryEmail, calId, eventEntityType, event, k, kco
 #	[showdayofweek]
 #	[formatjson [quotechar <Character>]] [todrive <ToDriveAttribute>*]
 def printShowStatusEvent(users, eventType):
-  from gam.cmd.calendar import _getEventDaysOfWeek, _printCalendarEvent
   eventProperties = EVENT_TYPE_PROPERTIES_NAME_MAP[eventType]
   entityType = EVENT_TYPE_ENTITY_MAP[eventType]
   csvPF = CSVPrintFile(['primaryEmail', 'calendarId', 'id'], 'sortall') if Act.csvFormat() else None

@@ -41,6 +41,7 @@ from gam.util.errors import INVALID_JSON_RC, deprecatedCommandExit, unknownArgum
 from gam.util.fileio import writeFile
 from gam.util.output import ERROR, systemErrorExit
 from gam.constants import NETWORK_ERROR_RC
+from gam.cmd.sso import SITEVERIFICATION_METHOD_CHOICE_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -119,7 +120,6 @@ DNS_ERROR_CODES_MAP = {
 
 # gam update verify|verification <DomainName> cname|txt|text|file|site
 def doUpdateSiteVerification():
-  from gam.cmd.sso import SITEVERIFICATION_METHOD_CHOICE_MAP
   def showDNSrecords():
     try:
       verify_data = callGAPI(verif.webResource(), 'getToken',

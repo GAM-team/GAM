@@ -1,6 +1,6 @@
 """File tree building, permission matching, file entity selection.
 
-Part of the drive sub-package, extracted from drive.py."""
+"""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 

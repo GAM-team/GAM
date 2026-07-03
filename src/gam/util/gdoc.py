@@ -1,7 +1,7 @@
 """GAM GDoc/GSheet/Cloud Storage data retrieval utilities.
 
-Extracted from gam/__init__.py. Provides functions for reading data from
-Google Docs, Google Sheets, Cloud Storage buckets, and CSV files.
+Reading data from Google Docs, Google Sheets, Cloud Storage
+buckets, and CSV files.
 """
 
 import csv

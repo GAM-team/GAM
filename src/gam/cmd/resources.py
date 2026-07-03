@@ -58,6 +58,7 @@ from gam.util.entity import getEntityList, shlexSplitList
 from gam.util.errors import entityDoesNotExistExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import printErrorMessage, writeStdout
 from gam.constants import BUILDING_ADDRESS_FIELD_MAP
+from gam.cmd.calendar import _showCalendarSettings
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -673,7 +674,6 @@ RESOURCE_FIELDS_WITH_CRS_NLS = {'resourceDescription'}
 def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
 
   from gam import ACLRuleKeyValueList
-  from gam.cmd.calendar import _showCalendarSettings
   def _showResourceField(title, resource, field):
     if field in resource:
       if field not in RESOURCE_FIELDS_WITH_CRS_NLS:

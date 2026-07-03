@@ -1,7 +1,6 @@
 """GAM OrgUnit helper utilities.
 
-Extracted from gam/__init__.py. Provides OrgUnit path/ID resolution
-and parent OrgUnit traversal.
+OrgUnit path/ID resolution and parent OrgUnit traversal.
 """
 
 import sys

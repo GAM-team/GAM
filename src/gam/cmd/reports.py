@@ -63,6 +63,10 @@ from gam.util.output import (
     systemErrorExit,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC, DAYS_OF_WEEK, ENTITY_IS_AN_UNMANAGED_ACCOUNT_RC, ENTITY_IS_A_GROUP_ALIAS_RC, ENTITY_IS_A_GROUP_RC, ENTITY_IS_A_USER_ALIAS_RC, ENTITY_IS_A_USER_RC, ENTITY_IS_UKNOWN_RC, GOOGLE_API_ERROR_RC
+from gam.cmd.aliases import infoAliases
+from gam.cmd.ciuserinvitations import _getCIUserInvitationsEntity, _getIsInvitableUser, infoCIUserInvitations
+from gam.cmd.groups.members import infoGroups
+from gam.cmd.users.display import infoUsers
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -71,10 +75,6 @@ Cmd = glclargs.GamCLArgs()
 
 
 def doWhatIs():
-  from gam.cmd.aliases import infoAliases
-  from gam.cmd.ciuserinvitations import _getCIUserInvitationsEntity, _getIsInvitableUser, infoCIUserInvitations
-  from gam.cmd.groups.members import infoGroups
-  from gam.cmd.users.display import infoUsers
   def _showPrimaryType(entityType, email):
     printEntity([entityType, email])
 

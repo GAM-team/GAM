@@ -62,6 +62,7 @@ from gam.util.entity import ALL_GROUP_ROLES, getEntityArgument, getEntityList, g
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.output import setSysExitRC
 from gam.constants import CHECK_USER_GROUPS_ERROR_RC
+from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermissions, _validateUserGetLookerStudioAssetIds, getLookerStudioAssetSelectionParameters, initLookerStudioAssetSelectionParameters
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -70,7 +71,6 @@ Cmd = glclargs.GamCLArgs()
 
 
 def processLookerStudioPermissions(users):
-  from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermissions, _validateUserGetLookerStudioAssetIds, getLookerStudioAssetSelectionParameters, initLookerStudioAssetSelectionParameters
   action = Act.Get()
   if action == Act.CREATE:
     action = Act.ADD
@@ -153,7 +153,6 @@ def processLookerStudioPermissions(users):
 #	[role editor|owner|viewer]
 #	[formatjson]
 def printShowLookerStudioPermissions(users):
-  from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermissions, _validateUserGetLookerStudioAssetIds, getLookerStudioAssetSelectionParameters, initLookerStudioAssetSelectionParameters
   def _printLookerStudioPermissions(user, asset, permissions):
     row = flattenJSON(permissions, flattened={'User': user, 'assetId': asset['name']},
                       simpleLists=['members'], delimiter=delimiter)

@@ -31,6 +31,7 @@ from gam.util.display import (
 )
 from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit
+from gam.cmd.reseller import ANALYTIC_ENTITY_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -39,7 +40,6 @@ Cmd = glclargs.GamCLArgs()
 
 
 def printShowAnalyticItems(users, entityType):
-  from gam.cmd.reseller import ANALYTIC_ENTITY_MAP
   analyticEntityMap = ANALYTIC_ENTITY_MAP[entityType]
   csvPF = CSVPrintFile(analyticEntityMap['titles'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)

@@ -1,6 +1,6 @@
 """File counts, comments, paths, disk usage, share counts, tree printing.
 
-Part of the drive sub-package, extracted from drive.py."""
+"""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
@@ -107,6 +107,7 @@ from gam.util.entity import (
 )
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import writeStdout
+from gam.cmd.groups.members import finalizeInternalDomains
 
 
 SHARED_DRIVE_MAX_FILES_FOLDERS = 500000
@@ -679,7 +680,6 @@ FILESHARECOUNTS_CATEGORIES = {
 #	[internaldomains all|primary|<DomainNameList>]
 #	[summary none|only|plus] [summaryuser <String>]
 def printShowFileShareCounts(users):
-  from gam.cmd.groups.members import finalizeInternalDomains
   def incrementCounter(counter):
     if not counterSet[counter]:
       userShareCounts[counter] += 1

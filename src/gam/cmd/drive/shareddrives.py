@@ -1,6 +1,6 @@
 """Shared drive management, ownership, organizers.
 
-Part of the drive sub-package, extracted from drive.py."""
+"""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
@@ -94,6 +94,7 @@ from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import setSysExitRC, systemErrorExit, writeStderr, writeStdout
 from gam.constants import ADMIN_ACCESS_OPTIONS, GOOGLE_API_ERROR_RC, NO_ENTITIES_FOUND_RC
+from gam.cmd.orgunits import getOrgUnitIdToPathMap
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -800,7 +801,6 @@ SHOWWEBVIEWLINK_CHOICES = {'text', 'hyperlink'}
 #	[guiroles [<Boolean>]] [formatjson]
 # 	[showitemcountonly]
 def printShowSharedDrives(users, useDomainAdminAccess=False):
-  from gam.cmd.orgunits import getOrgUnitIdToPathMap
   def stripNonShowFields(shareddrive):
     if orgUnitIdToPathMap:
       td_ouid = shareddrive.get('orgUnitId')

@@ -1,7 +1,7 @@
 """GAM entity resolution utilities.
 
-Extracted from gam/__init__.py. Provides UID-to-email conversion,
-entity list expansion, group member checking, and entity selectors.
+UID-to-email conversion, entity list expansion, group member
+checking, entity selectors, and customer ID helpers.
 """
 
 import csv

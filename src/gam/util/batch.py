@@ -1,7 +1,7 @@
 """GAM batch/multiprocess/thread/loop/list infrastructure.
 
-Extracted from gam/__init__.py. Provides multi-process and thread-based
-batch command execution, CSV command processing, loop handling, and list/count commands.
+Multi-process and thread-based batch command execution, CSV command
+processing, loop handling, and list/count commands.
 """
 
 import logging

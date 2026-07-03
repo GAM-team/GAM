@@ -1,6 +1,6 @@
 """File path resolution, Drive info mapping, field handling.
 
-Part of the drive sub-package, extracted from drive.py."""
+"""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 

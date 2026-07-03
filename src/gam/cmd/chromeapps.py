@@ -51,6 +51,8 @@ from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, g
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
+from gam.cmd.printers import CHROME_APPS_TIME_OBJECTS, CHROME_APPS_TYPE_CHOICES
+from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -59,7 +61,6 @@ Cmd = glclargs.GamCLArgs()
 
 
 def doInfoChromeApp():
-  from gam.cmd.printers import CHROME_APPS_TIME_OBJECTS, CHROME_APPS_TYPE_CHOICES
   cm = buildGAPIObject(API.CHROMEMANAGEMENT_APPDETAILS)
   app_type = getChoice(CHROME_APPS_TYPE_CHOICES)
   app_id = getString(Cmd.OB_APP_ID)
@@ -128,7 +129,6 @@ CHROME_APPS_TITLES = [
 #	[orderby appname|apptype|installtype|numberofpermissions|totalinstallcount]
 #	[formatjson]
 def doPrintShowChromeApps():
-  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printApp(app):
     if showOrgUnit:
       app['orgUnitPath'] = orgUnitPath
@@ -255,7 +255,6 @@ CHROME_APP_DEVICES_TITLES = ['appType', 'deviceId', 'machine']
 #	[orderby deviceid|machine]
 #	[formatjson]
 def doPrintShowChromeAppDevices():
-  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printDevice(device):
     device['appId'] = appId
     device['appType'] = appType
@@ -391,7 +390,6 @@ CHROME_AUE_TITLES = ['aueMonth', 'aueYear', 'expired']
 #	[minauedate <Date>] [maxauedate <Date>]
 #	[formatjson]
 def doPrintShowChromeAues():
-  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printAue(aue):
     if showOrgUnit:
       aue['orgUnitPath'] = orgUnitPath
@@ -507,7 +505,6 @@ CHROME_NEEDSATTN_TITLES = ['noRecentPolicySyncCount', 'noRecentUserActivityCount
 #	 (ous <OrgUnitList>)|(ous_and_children <OrgUnitList>)]
 #	[formatjson]
 def doPrintShowChromeNeedsAttn():
-  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _printNeedsAttn(needsattn):
     if showOrgUnit:
       needsattn['orgUnitPath'] = orgUnitPath
@@ -689,7 +686,6 @@ CHROME_VERSIONS_TITLES = ['channel', 'system', 'deviceOsVersion']
 #	[recentfirst [<Boolean>]]
 #	[formatjson]
 def doPrintShowChromeVersions():
-  from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
   def _getVersionKey(v):
     if 'version' not in v:
       return (0, 0, 0, 0)

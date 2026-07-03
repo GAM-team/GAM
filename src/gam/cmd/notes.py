@@ -61,6 +61,7 @@ from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUs
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import closeFile, openFile, setFilePath, uniqueFilename
 from gam.util.tags import _substituteForUser
+from gam.cmd.drive.core import _driveFileParentSpecified, _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -523,7 +524,6 @@ GET_NOTE_HTTP_ERROR_PATTERN = re.compile(r'^.*\'description\': \'(.*)\'')
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 #	[<DriveFileParentAttribute>]
 def getNoteAttachments(users):
-  from gam.cmd.drive.core import _driveFileParentSpecified, _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   noteNameEntity = getUserObjectEntity(Cmd.OB_NAME, Ent.NOTE)
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
   targetNamePattern = None

@@ -1,7 +1,4 @@
-"""Argument parsing, getters, and validators.
-
-Extracted from gam/__init__.py to reduce monolith size.
-"""
+"""Argument parsing, getters, and validators."""
 
 __all__ = [
   # Private functions used by __init__.py

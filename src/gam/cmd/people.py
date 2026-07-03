@@ -131,6 +131,11 @@ from gam.util.errors import deprecatedArgument, invalidChoiceExit, missingArgume
 from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
 from gam.util.output import setSysExitRC, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
+from gam.cmd.contacts import normalizeContactGroupResourceName
+from gam.cmd.contacts import PeopleManager
+from gam.cmd.contacts import normalizePeopleResourceName
+from gam.cmd.contacts import normalizeOtherContactsResourceName
+from gam.cmd.contacts import PeopleManager, normalizeOtherContactsResourceName
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -413,7 +418,6 @@ def getPeopleContactGroupsInfo(people, entityType, entityName, i, count):
 
 def validatePeopleContactGroup(people, contactGroupName,
                                contactGroupIDs, contactGroupNames, entityType, entityName, i, count):
-  from gam.cmd.contacts import normalizeContactGroupResourceName
   if not contactGroupNames:
     contactGroupIDs, contactGroupNames = getPeopleContactGroupsInfo(people, entityType, entityName, i, count)
     if contactGroupNames is False:
@@ -459,7 +463,6 @@ def validatePeopleContactGroupsList(people, contactId,
 #	(contactgroup <ContactGroupItem>)*
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def createUserPeopleContact(users):
-  from gam.cmd.contacts import PeopleManager
   entityType = Ent.USER
   peopleManager = PeopleManager()
   peopleEntityType = Ent.CONTACT
@@ -544,7 +547,6 @@ def clearPeopleEmailAddressMatches(contactClear, contact):
   return updateRequired
 
 def _clearUpdatePeopleContacts(users, updateContacts):
-  from gam.cmd.contacts import PeopleManager
   action = Act.Get()
   entityType = Ent.USER
   peopleManager = PeopleManager()
@@ -821,7 +823,6 @@ def dedupReplaceDomainUserPeopleContacts(users):
 
 # gam <UserTypeEntity> delete contacts <PeopleResourceNameEntity>|<PeopleUserContactSelection>
 def deleteUserPeopleContacts(users):
-  from gam.cmd.contacts import normalizePeopleResourceName
   entityType = Ent.USER
   peopleEntityType = Ent.PEOPLE_CONTACT
   entityList, resourceNameLists, contactQuery, queriedContacts = _getPeopleContactEntityList(entityType, -1)
@@ -1103,7 +1104,6 @@ def _getPersonFields(fieldsChoiceMap, defaultFields, fieldsList, parameters):
   return ','.join(fieldsList)
 
 def _infoPeople(users, entityType, source):
-  from gam.cmd.contacts import normalizePeopleResourceName
   if entityType == Ent.DOMAIN:
     people = buildGAPIObject(API.PEOPLE)
   peopleEntityType = Ent.DOMAIN_PROFILE if source == 'profile' else Ent.PEOPLE_CONTACT
@@ -1305,7 +1305,6 @@ CONTACTGROUPS_MYCONTACTS_NAME = 'My Contacts'
 # gam <UserTypeEntity> copy othercontacts
 #	<OtherContactResourceNameEntity>|<OtherContactSelection>
 def copyUserPeopleOtherContacts(users):
-  from gam.cmd.contacts import normalizeOtherContactsResourceName
   entityType = Ent.USER
   peopleEntityType = Ent.OTHER_CONTACT
   sources = [PEOPLE_READ_SOURCES_CHOICE_MAP['contact']]
@@ -1361,7 +1360,6 @@ def copyUserPeopleOtherContacts(users):
 #	<PeopleContactAttribute>*
 #	(contactgroup <ContactGroupItem>)*
 def processUserPeopleOtherContacts(users):
-  from gam.cmd.contacts import PeopleManager, normalizeOtherContactsResourceName
   action = Act.Get()
   entityType = Ent.USER
   peopleEntityType = Ent.OTHER_CONTACT
@@ -1709,7 +1707,6 @@ def printShowUserPeopleProfiles(users):
     csvPF.writeCSVfile('People Profiles')
 
 def _processPeopleContactPhotos(users, function):
-  from gam.cmd.contacts import normalizePeopleResourceName
   def _makeFilenameFromPattern(resourceName):
     filename = filenamePattern[:]
     if subForContactId:
@@ -1892,7 +1889,6 @@ def doDeleteDomainContactPhoto():
 # gam <UserTypeEntity> create contactgroup <ContactGroupAttribute>+
 #	[(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*))| returnidonly]
 def createUserPeopleContactGroup(users):
-  from gam.cmd.contacts import PeopleManager
   peopleManager = PeopleManager()
   entityType = Ent.USER
   parameters = {'csvPF': None, 'titles': ['User', 'resourceName'], 'addCSVData': {}, 'returnIdOnly': False}
@@ -1940,7 +1936,6 @@ def createUserPeopleContactGroup(users):
 
 # gam <UserTypeEntity> update contactgroups <ContactGroupItem> <ContactAttribute>+
 def updateUserPeopleContactGroup(users):
-  from gam.cmd.contacts import PeopleManager
   peopleManager = PeopleManager()
   entityType = Ent.USER
   entityList = getStringReturnInList(Cmd.OB_CONTACT_GROUP_ITEM)

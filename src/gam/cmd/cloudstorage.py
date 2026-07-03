@@ -52,6 +52,7 @@ from gam.util.output import (
     writeStdout,
 )
 from gam.constants import GOOGLE_API_ERROR_RC
+from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -175,7 +176,6 @@ def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
     systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None, zipToStdout=False, j=0, jcount=0):
-  from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
   if not zipToStdout:
     localFilename = cleanFilepath(localFilename)
     entityValueList = [Ent.DRIVE_FILE, localFilename]
@@ -291,7 +291,6 @@ def doDownloadCloudStorageBucket():
 # gam download storagefile <StorageBucketObjectName>
 #	[targetfolder <FilePath>] [overwrite [<Boolean>]] [nogcspath [Boolean>]]
 def doDownloadCloudStorageFile():
-  from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
   bucket, s_object, bucketObject = getBucketObjectName()
   targetFolder = GC.Values[GC.DRIVE_DIR]
   overwrite = nogcspath = False

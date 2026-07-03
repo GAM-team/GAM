@@ -79,6 +79,8 @@ from gam.util.output import (
     writeStdout,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC, NO_ENTITIES_FOUND_RC
+from gam.cmd.cloudstorage import _copyStorageObjects
+from gam.cmd.cloudstorage import _getCloudStorageObject
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -776,7 +778,6 @@ def doPrintShowVaultExports():
 #	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[copyattempts <Integer>] [retryinterval <Integer>]
 def doCopyVaultExport():
-  from gam.cmd.cloudstorage import _copyStorageObjects
   v = buildGAPIObject(API.VAULT)
   if not Cmd.ArgumentIsAhead('matter'):
     matterId, matterNameId = getMatterItem(v)
@@ -847,7 +848,6 @@ ZIP_EXTENSION_PATTERN = re.compile(r'^.*\.zip$', re.IGNORECASE)
 #	[bucketmatchpattern <REMatchPattern>] [objectmatchpattern <REMatchPattern>]
 #	[downloadattempts <Integer>] [retryinterval <Integer>]
 def doDownloadVaultExport():
-  from gam.cmd.cloudstorage import _getCloudStorageObject
   def extract_nested_zip(zippedFile):
     """ Extract a zip file including any nested zip files
         Delete the zip file(s) after extraction

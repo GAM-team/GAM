@@ -1,7 +1,7 @@
 """GAM access-error and entity-warning utilities.
 
-Extracted from gam/__init__.py. Provides access-error diagnostics,
-API access denied handlers, and entity warning functions.
+Access-error diagnostics, API access denied handlers,
+and entity warning functions.
 """
 
 import sys

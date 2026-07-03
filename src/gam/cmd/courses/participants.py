@@ -44,6 +44,7 @@ from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import executeBatch, writeStdout
 from gam.constants import OWNER_ACCESS_OPTIONS
+from gam.cmd.groups.groups import getSyncOperation
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -641,7 +642,6 @@ def doCourseClearParticipants(courseIdList, _):
 # gam courses <CourseEntity> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 # gam course <CourseID> sync teachers [addonly|removeonly] [makefirstteacherowner] <UserTypeEntity>
 def doCourseSyncParticipants(courseIdList, _):
-  from gam.cmd.groups.groups import getSyncOperation
   croom = buildGAPIObject(API.CLASSROOM)
   role = getChoice(CLEAR_SYNC_PARTICIPANT_TYPES_MAP, mapChoice=True)
   if role == Ent.TEACHER:

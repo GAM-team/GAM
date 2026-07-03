@@ -61,10 +61,10 @@ from gam.util.display import (
 from gam.util.entity import getEntityList
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import setSysExitRC, writeStdout
+from gam.cmd.users.manage import ADDRESS_ARGUMENT_TO_FIELD_MAP, ORGANIZATION_ARGUMENT_TO_FIELD_MAP
 
 
 def _getCreateContactReturnOptions(parameters):
-  from gam.cmd.users.manage import ADDRESS_ARGUMENT_TO_FIELD_MAP, ORGANIZATION_ARGUMENT_TO_FIELD_MAP
   myarg = getArgument()
   if myarg == 'returnidonly':
     parameters['returnIdOnly'] = True
@@ -1605,7 +1605,6 @@ def normalizeContactGroupResourceName(resourceName):
   return f'contactGroups/{resourceName}'
 
 def normalizeOtherContactsResourceName(resourceName):
-  from gam.cmd.users.manage import ADDRESS_ARGUMENT_TO_FIELD_MAP, ORGANIZATION_ARGUMENT_TO_FIELD_MAP
   if resourceName.startswith('otherContacts/'):
     return resourceName
   return f'otherContacts/{resourceName}'

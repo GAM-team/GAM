@@ -42,6 +42,9 @@ from gam.util.entity import convertEntityToList, getEntityArgument
 from gam.util.errors import invalidChoiceExit, usageErrorExit
 from gam.util.output import writeStdout
 from gam.constants import ROOT
+from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
+from gam.cmd.drive.core import _validateUserGetFileIDs
+from gam.cmd.drive.core import getDriveFileEntity
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -52,7 +55,6 @@ Cmd = glclargs.GamCLArgs()
 ERROR_PREFIX = 'ERROR: '
 
 def createSheet(users):
-  from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
   parameters = initDriveFileAttributes()
   parentBody = {}
   changeParents = returnIdOnly = False
@@ -130,7 +132,6 @@ def createSheet(users):
       userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
 def _validateUserGetSpreadsheetIDs(user, i, count, fileIdEntity, showEntityType):
-  from gam.cmd.drive.core import _validateUserGetFileIDs
   user, _, jcount = _validateUserGetFileIDs(user, i, count, fileIdEntity, entityType=Ent.SPREADSHEET if showEntityType else None)
   if jcount == 0:
     return (user, None, 0)
@@ -144,7 +145,6 @@ def _validateUserGetSpreadsheetIDs(user, i, count, fileIdEntity, showEntityType)
 #	 (json file <FileName> [charset <Charset>]))
 #	[formatjson]
 def updateSheets(users):
-  from gam.cmd.drive.core import getDriveFileEntity
   spreadsheetIdEntity = getDriveFileEntity()
   body = {}
   FJQC = FormatJSONQuoteChar()
@@ -222,7 +222,6 @@ SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP = {
 #	[includegriddata [<Boolean>]] [shownames]
 #	[formatjson [quotechar <Character>]]
 def infoPrintShowSheets(users):
-  from gam.cmd.drive.core import getDriveFileEntity
   csvPF = CSVPrintFile(['User', 'spreadsheetId'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   spreadsheetIdEntity = getDriveFileEntity()
@@ -424,7 +423,6 @@ def _showUpdateValuesResponse(result, k, kcount):
 #	[raw|userentered] [serialnumber|formattedstring] [formula|formattedvalue|unformattedvalue]
 #	[includevaluesinresponse [<Boolean>]] [formatjson]
 def appendSheetRanges(users):
-  from gam.cmd.drive.core import getDriveFileEntity
   spreadsheetIdEntity = getDriveFileEntity()
   kwargs, spreadsheetRangesValues, FJQC = _getSpreadsheetRangesValues(True)
   kcount = len(spreadsheetRangesValues)
@@ -470,7 +468,6 @@ def appendSheetRanges(users):
 #	[raw|userentered] [serialnumber|formattedstring] [formula|formattedvalue|unformattedvalue]
 #	[includevaluesinresponse [<Boolean>]] [formatjson]
 def updateSheetRanges(users):
-  from gam.cmd.drive.core import getDriveFileEntity
   spreadsheetIdEntity = getDriveFileEntity()
   body, spreadsheetRangesValues, FJQC = _getSpreadsheetRangesValues(False)
   body['data'] = spreadsheetRangesValues
@@ -515,7 +512,6 @@ def updateSheetRanges(users):
 #	(range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
 #	[formatjson]
 def clearSheetRanges(users):
-  from gam.cmd.drive.core import getDriveFileEntity
   spreadsheetIdEntity = getDriveFileEntity()
   body = {'ranges': []}
   FJQC = FormatJSONQuoteChar()
@@ -571,7 +567,6 @@ def clearSheetRanges(users):
 #	[rows|columns] [serialnumber|formattedstring] [formula|formattedvalue|unformattedvalue]
 #	[formatjson [valuerangesonly [<Boolean>]]]
 def printShowSheetRanges(users):
-  from gam.cmd.drive.core import getDriveFileEntity
   csvPF = CSVPrintFile(['User', 'spreadsheetId'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   spreadsheetIdEntity = getDriveFileEntity()

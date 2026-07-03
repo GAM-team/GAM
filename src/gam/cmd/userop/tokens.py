@@ -43,6 +43,8 @@ from gam.util.display import (
 )
 from gam.util.entity import checkUserSuspended, getEntityArgument, getEntityToModify, getItemsToModify
 from gam.util.errors import unknownArgumentExit
+from gam.cmd.project import getGCPOrgId
+from gam.cmd.gmail.settings import _imapDefaults, _popDefaults, _setImap, _setPop
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -95,7 +97,6 @@ TOKENS_TITLE_MAP = {
   }
 
 def _printShowTokens(entityType, users):
-  from gam.cmd.project import getGCPOrgId
   def _printToken(token):
     row = {}
     for item in token:
@@ -320,7 +321,6 @@ def doPrintShowTokens():
 
 # gam <UserTypeEntity> deprovision|deprov [popimap] [signout] [turnoff2sv]
 def deprovisionUser(users):
-  from gam.cmd.gmail.settings import _imapDefaults, _popDefaults, _setImap, _setPop
   cd = buildGAPIObject(API.DIRECTORY)
   disablePopImap = signout = turnoff2sv = False
   while Cmd.ArgumentsRemaining():

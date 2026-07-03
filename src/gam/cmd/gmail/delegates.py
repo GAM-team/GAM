@@ -31,6 +31,8 @@ from gam.util.display import (
 from gam.util.entity import _validateUserGetObjectList, convertUIDtoEmailAddress, getEntityArgument, getUserObjectEntity
 from gam.util.errors import unknownArgumentExit
 from gam.util.output import writeStdout
+from gam.cmd.users.manage import getNotifyArguments
+from gam.cmd.delegates import _getDelegateName
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -78,7 +80,6 @@ def sendCreateDelegateNotification(user, delegate, basenotify, i=0, count=0, msg
 #	]
 # gam <UserTypeEntity> delete delegate|delegates [convertalias] <UserEntity>
 def processDelegates(users):
-  from gam.cmd.users.manage import getNotifyArguments
   cd = buildGAPIObject(API.DIRECTORY)
   createCmd = Act.Get() != Act.DELETE
   aliasAllowed = not checkArgumentPresent(['convertalias'])
@@ -195,7 +196,6 @@ def updateDelegates(users):
 # gam <UserTypeEntity> print delegates|delegate [todrive <ToDriveAttribute>*] [shownames]
 # gam <UserTypeEntity> show delegates|delegate [shownames] [csv]
 def printShowDelegates(users):
-  from gam.cmd.delegates import _getDelegateName
   titlesList = ['User', 'delegateAddress', 'delegationStatus']
   csvPF = CSVPrintFile() if Act.csvFormat() else None
   cd = None

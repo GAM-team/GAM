@@ -46,6 +46,7 @@ from gam.util.errors import entityDoesNotExistExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
 from gam.util.output import writeStdout
 from gam.util.tags import _substituteForUser
+from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -56,7 +57,6 @@ Cmd = glclargs.GamCLArgs()
 from tempfile import TemporaryFile
 
 def updatePhoto(users):
-  from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
   cd = buildGAPIObject(API.DIRECTORY)
   baseFileIdEntity = drive = owner = None
   sourceFolder = os.getcwd()

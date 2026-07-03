@@ -39,6 +39,8 @@ from gam.util.display import (
 from gam.util.errors import expectedArgumentExit, invalidChoiceExit, unknownArgumentExit
 from gam.util.output import systemErrorExit
 from gam.constants import ACCESS_POLICY_ERROR_RC, NO_SA_ACCESS_CONTEXT_MANAGER_EDITOR_ROLE_RC
+from gam.cmd.project import getCRMOrgId
+from gam.cmd.notes import NOTES_TIME_OBJECTS
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -56,7 +58,6 @@ def buildCAAServiceObject():
   return caa
 
 def getAccessPolicy(caa=None):
-  from gam.cmd.project import getCRMOrgId
   if not caa:
     caa = buildCAAServiceObject()
   parent = getCRMOrgId()
@@ -282,7 +283,6 @@ def doDeleteCAALevel():
 # gam show caalevels
 #	[formatjson]
 def doPrintShowCAALevels():
-  from gam.cmd.notes import NOTES_TIME_OBJECTS
   caa = buildCAAServiceObject()
   ap_name = getAccessPolicy(caa)
   csvPF = CSVPrintFile(['name', 'title']) if Act.csvFormat() else None
