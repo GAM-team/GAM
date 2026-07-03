@@ -3207,3 +3207,62 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
 # Process GAM command
 def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
   return ProcessGAMCommand(args, processGamCfg=processGamCfg, inLoop=inLoop, closeSTD=closeSTD)
+
+# Re-export util names for _gam().X access by util/ modules.
+# This block runs AFTER all modules are fully loaded (no circular import risk).
+# Only names actually referenced via _gam() are included.
+from gamlib import glskus as SKU  # noqa: E402,F811
+from tempfile import TemporaryFile  # noqa: E402,F401
+from util.access import (  # noqa: E402,F401
+    APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, accessErrorExit,
+    accessErrorExitNonDirectory, checkEntityAFDNEorAccessErrorExit,
+    checkEntityDNEorAccessErrorExit, entityUnknownWarning,
+)
+from util.api import (  # noqa: E402,F401,F811
+    _getAdminEmail, _getSvcAcctData, buildGAPIObject, buildGAPIServiceObject,
+    callGAPI, callGAPIitems, callGAPIpages, chooseSaAPI, yieldGAPIpages,
+)
+from util.args import (  # noqa: E402,F401,F811
+    ARCHIVED_ARGUMENTS, ISOformatTimeStamp, LOCALE_CODES_MAP, NAME_EMAIL_ADDRESS_PATTERN,
+    SUSPENDED_ARGUMENTS, YYYYMMDDTHHMMSSZ_FORMAT, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN,
+    _getIsArchived, _getIsSuspended, checkDataField, checkForExtraneousArguments,
+    checkMatchSkipFields, checkSubkeyField, encodeOrgUnitPath, escapeCRsNLs,
+    formatLocalTime, formatLocalTimestamp, getBoolean, getCharSet, getCharacter,
+    getDelimiter, getEmailAddress, getEmailAddressDomain, getLanguageCode,
+    getMatchSkipFields, getPhraseDNEorSNA, getREPattern, getString,
+    getSheetEntity, getSheetIdFromSheetEntity, makeOrgUnitPathAbsolute,
+    makeOrgUnitPathRelative, orgUnitPathQuery, protectedSheetId, removeCourseIdScope,
+    shlexSplitList, splitEmailAddress, todaysTime, validateEmailAddressOrUID,
+)
+from util.csv_pf import CheckInputRowFilterHeaders  # noqa: E402,F401
+from util.display import (  # noqa: E402,F401
+    FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER, actionPerformedNumItems,
+    entityActionFailedWarning, entityActionNotPerformedWarning, entityActionPerformed,
+    entityActionPerformedMessage, entityDoesNotExistWarning, entityPerformActionNumItems,
+    entityServiceNotApplicableWarning, getPageMessage, getPageMessageForWhom, printBlankLine,
+    printGettingAllAccountEntities, printGettingAllEntityItemsForWhom,
+    printGotEntityItemsForWhom, printJSONKey, printJSONValue, printKeyValueList,
+    setGettingAllEntityItemsForWhom, userDriveServiceNotEnabledWarning,
+    userServiceNotEnabledWarning,
+)
+from util.email import send_email  # noqa: E402,F401,F811
+from util.entity import checkUserExists, convertUIDtoEmailAddress  # noqa: E402,F401,F811
+from util.errors import (  # noqa: E402,F401,F811
+    csvDataAlreadySavedErrorExit, csvFieldErrorExit, entityActionFailedExit,
+    entityDoesNotExistExit, expiredRevokedOauth2TxtExit, formatChoiceList,
+    invalidArgumentExit, invalidChoiceExit, invalidDiscoveryJsonExit,
+    invalidOauth2TxtExit, invalidOauth2serviceJsonExit, missingArgumentExit,
+)
+from util.fileio import (  # noqa: E402,F401,F811
+    StringIOobject, checkAPICallsRate, closeFile, fdErrorMessage, fileErrorMessage,
+    getGDocSheetDataFailedExit, getGDocSheetDataRetryWarning, incrAPICallsRetryData,
+    openFile, readFile, writeFile,
+)
+from util.gdoc import (  # noqa: E402,F401
+    getGDocData, getStorageFileData, openCSVFileReader,
+)
+from util.output import (  # noqa: E402,F401,F811
+    currentCountNL, flushStderr, flushStdout,
+    printWarningMessage, readStdin, stderrWarningMsg, writeStdout,
+)
+

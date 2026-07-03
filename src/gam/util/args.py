@@ -115,8 +115,7 @@ def _getEnt():
   return sys.modules['gam'].Ent
 
 # Lazy accessor for main module
-def _getMain():
-  return sys.modules['gam']
+_gam = lambda: sys.modules['gam']
 
 # --- Constants duplicated from __init__.py ---
 # These are simple literals that never change, duplicated to avoid

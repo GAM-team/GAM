@@ -21,8 +21,7 @@ from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 
 
-def _getMain():
-  return sys.modules['gam']
+_gam = lambda: sys.modules['gam']
 
 def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
   fields = fieldsChoiceMap[fieldName.lower()]
@@ -32,10 +31,10 @@ def addFieldToFieldsList(fieldName, fieldsChoiceMap, fieldsList):
     fieldsList.append(fields)
 
 def _getFieldsList():
-  return _getMain().getString(_getMain().Cmd.OB_FIELD_NAME_LIST).lower().replace('_', '').replace(',', ' ').split()
+  return _gam().getString(_gam().Cmd.OB_FIELD_NAME_LIST).lower().replace('_', '').replace(',', ' ').split()
 
 def _getRawFields(requiredField=None):
-  rawFields = _getMain().getString(_getMain().Cmd.OB_FIELDS)
+  rawFields = _gam().getString(_gam().Cmd.OB_FIELDS)
   if requiredField is None or requiredField in rawFields:
     return rawFields
   return f'{requiredField},{rawFields}'
@@ -45,15 +44,15 @@ def CheckInputRowFilterHeaders(titlesList, rowFilter, rowDropFilter):
   for filterVal in rowFilter:
     columns = [t for t in titlesList if filterVal[0].match(t)]
     if not columns:
-      _getMain().stderrErrorMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_INPUT_COLUMNS.format(GC.CSV_INPUT_ROW_FILTER, filterVal[0].pattern))
+      _gam().stderrErrorMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_INPUT_COLUMNS.format(GC.CSV_INPUT_ROW_FILTER, filterVal[0].pattern))
       status = False
   for filterVal in rowDropFilter:
     columns = [t for t in titlesList if filterVal[0].match(t)]
     if not columns:
-      _getMain().stderrErrorMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_INPUT_COLUMNS.format(GC.CSV_INPUT_ROW_DROP_FILTER, filterVal[0].pattern))
+      _gam().stderrErrorMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_INPUT_COLUMNS.format(GC.CSV_INPUT_ROW_DROP_FILTER, filterVal[0].pattern))
       status = False
   if not status:
-    sys.exit(_getMain().USAGE_ERROR_RC)
+    sys.exit(_gam().USAGE_ERROR_RC)
 
 def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, rowDropFilterModeAll):
   def rowRegexFilterMatch(filterPattern):
@@ -80,9 +79,9 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
     return False
 
   def stripTimeFromDateTime(rowDate):
-    if _getMain().YYYYMMDD_PATTERN.match(rowDate):
+    if _gam().YYYYMMDD_PATTERN.match(rowDate):
       try:
-        rowTime = arrow.Arrow.strptime(rowDate, _getMain().YYYYMMDD_FORMAT)
+        rowTime = arrow.Arrow.strptime(rowDate, _gam().YYYYMMDD_FORMAT)
       except ValueError:
         return None
     else:
@@ -90,14 +89,14 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
         rowTime = arrow.get(rowDate)
       except (arrow.parser.ParserError, OverflowError):
         return None
-    return _getMain().ISOformatTimeStamp(arrow.Arrow(rowTime.year, rowTime.month, rowTime.day, tzinfo='UTC'))
+    return _gam().ISOformatTimeStamp(arrow.Arrow(rowTime.year, rowTime.month, rowTime.day, tzinfo='UTC'))
 
   def rowDateTimeFilterMatch(dateMode, op, filterDate):
     def checkMatch(rowDate):
       if not rowDate or not isinstance(rowDate, str):
         return False
       if rowDate == GC.Values[GC.NEVER_TIME]:
-        rowDate = _getMain().NEVER_TIME
+        rowDate = _gam().NEVER_TIME
       if dateMode:
         rowDate = stripTimeFromDateTime(rowDate)
         if not rowDate:
@@ -129,7 +128,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
       if not rowDate or not isinstance(rowDate, str):
         return False
       if rowDate == GC.Values[GC.NEVER_TIME]:
-        rowDate = _getMain().NEVER_TIME
+        rowDate = _gam().NEVER_TIME
       if dateMode:
         rowDate = stripTimeFromDateTime(rowDate)
         if not rowDate:
@@ -149,7 +148,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
     return True
 
   def getHourMinuteFromDateTime(rowDate):
-    if _getMain().YYYYMMDD_PATTERN.match(rowDate):
+    if _gam().YYYYMMDD_PATTERN.match(rowDate):
       return None
     try:
       rowTime = arrow.get(rowDate)
@@ -284,7 +283,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
       if isinstance(rowBoolean, bool):
         return rowBoolean == filterBoolean
       if isinstance(rowBoolean, str):
-        if rowBoolean.lower() in _getMain().TRUE_FALSE:
+        if rowBoolean.lower() in _gam().TRUE_FALSE:
           return rowBoolean.capitalize() == str(filterBoolean)
 ##### Blank = False
         if not rowBoolean:
@@ -477,7 +476,7 @@ def getFieldsList(myarg, fieldsChoiceMap, fieldsList, initialField=None, fieldsA
       if field in fieldsChoiceMap:
         addMappedFields(fieldsChoiceMap[field])
       else:
-        _getMain().invalidChoiceExit(field, fieldsChoiceMap, True)
+        _gam().invalidChoiceExit(field, fieldsChoiceMap, True)
   else:
     return False
   return True
@@ -669,7 +668,7 @@ class CSVPrintFile():
         if field in fieldsChoiceMap:
           self.AddField(field, fieldsChoiceMap, fieldsList)
         else:
-          _getMain().invalidChoiceExit(field, fieldsChoiceMap, True)
+          _gam().invalidChoiceExit(field, fieldsChoiceMap, True)
     else:
       return False
     return True
@@ -688,52 +687,52 @@ class CSVPrintFile():
 
   def GetTodriveParameters(self):
     def invalidTodriveFileIdExit(entityValueList, message, location):
-      _getMain().Cmd.SetLocation(location-1)
-      _getMain().usageErrorExit(_getMain().formatKeyValueList('', _getMain().Ent.FormatEntityValueList([_getMain().Ent.DRIVE_FILE_ID, self.todrive['fileId']]+entityValueList)+[message], ''))
+      _gam().Cmd.SetLocation(location-1)
+      _gam().usageErrorExit(_gam().formatKeyValueList('', _gam().Ent.FormatEntityValueList([_gam().Ent.DRIVE_FILE_ID, self.todrive['fileId']]+entityValueList)+[message], ''))
 
     def invalidTodriveParentExit(entityType, message):
-      _getMain().Cmd.SetLocation(tdparentLocation-1)
+      _gam().Cmd.SetLocation(tdparentLocation-1)
       if not localParent:
-        _getMain().usageErrorExit(Msg.INVALID_ENTITY.format(_getMain().Ent.Singular(entityType),
-                                                 _getMain().formatKeyValueList('',
-                                                                    [_getMain().Ent.Singular(_getMain().Ent.CONFIG_FILE), GM.Globals[GM.GAM_CFG_FILE],
-                                                                     _getMain().Ent.Singular(_getMain().Ent.ITEM), GC.TODRIVE_PARENT,
-                                                                     _getMain().Ent.Singular(_getMain().Ent.VALUE), self.todrive['parent'],
+        _gam().usageErrorExit(Msg.INVALID_ENTITY.format(_gam().Ent.Singular(entityType),
+                                                 _gam().formatKeyValueList('',
+                                                                    [_gam().Ent.Singular(_gam().Ent.CONFIG_FILE), GM.Globals[GM.GAM_CFG_FILE],
+                                                                     _gam().Ent.Singular(_gam().Ent.ITEM), GC.TODRIVE_PARENT,
+                                                                     _gam().Ent.Singular(_gam().Ent.VALUE), self.todrive['parent'],
                                                                      message],
                                                                     '')))
       else:
-        _getMain().usageErrorExit(Msg.INVALID_ENTITY.format(_getMain().Ent.Singular(entityType), message))
+        _gam().usageErrorExit(Msg.INVALID_ENTITY.format(_gam().Ent.Singular(entityType), message))
 
     def invalidTodriveUserExit(entityType, message):
-      _getMain().Cmd.SetLocation(tduserLocation-1)
+      _gam().Cmd.SetLocation(tduserLocation-1)
       if not localUser:
-        _getMain().usageErrorExit(Msg.INVALID_ENTITY.format(_getMain().Ent.Singular(entityType),
-                                                 _getMain().formatKeyValueList('',
-                                                                    [_getMain().Ent.Singular(_getMain().Ent.CONFIG_FILE), GM.Globals[GM.GAM_CFG_FILE],
-                                                                     _getMain().Ent.Singular(_getMain().Ent.ITEM), GC.TODRIVE_USER,
-                                                                     _getMain().Ent.Singular(_getMain().Ent.VALUE), self.todrive['user'],
+        _gam().usageErrorExit(Msg.INVALID_ENTITY.format(_gam().Ent.Singular(entityType),
+                                                 _gam().formatKeyValueList('',
+                                                                    [_gam().Ent.Singular(_gam().Ent.CONFIG_FILE), GM.Globals[GM.GAM_CFG_FILE],
+                                                                     _gam().Ent.Singular(_gam().Ent.ITEM), GC.TODRIVE_USER,
+                                                                     _gam().Ent.Singular(_gam().Ent.VALUE), self.todrive['user'],
                                                                      message],
                                                                     '')))
       else:
-        _getMain().usageErrorExit(Msg.INVALID_ENTITY.format(_getMain().Ent.Singular(entityType), message))
+        _gam().usageErrorExit(Msg.INVALID_ENTITY.format(_gam().Ent.Singular(entityType), message))
 
     def getDriveObject():
       if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-        _, drive = _getMain().buildGAPIServiceObject(_getMain().chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
+        _, drive = _gam().buildGAPIServiceObject(_gam().chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
         if not drive:
-          invalidTodriveUserExit(_getMain().Ent.USER, Msg.NOT_FOUND)
+          invalidTodriveUserExit(_gam().Ent.USER, Msg.NOT_FOUND)
       else:
-        drive = _getMain().buildGAPIObject(API.DRIVE3)
+        drive = _gam().buildGAPIObject(API.DRIVE3)
       return drive
 
     CELL_WRAP_MAP = {'clip': 'CLIP', 'overflow': 'OVERFLOW_CELL', 'overflowcell': 'OVERFLOW_CELL', 'wrap': 'WRAP'}
     CELL_NUMBER_FORMAT_MAP = {'text': 'TEXT', 'number': 'NUMBER'}
 
     localUser = localParent = False
-    tdfileidLocation = tdparentLocation = tdaddsheetLocation = tdupdatesheetLocation = tduserLocation = _getMain().Cmd.Location()
+    tdfileidLocation = tdparentLocation = tdaddsheetLocation = tdupdatesheetLocation = tduserLocation = _gam().Cmd.Location()
     tdsheetLocation = {}
     for sheetEntity in self.TDSHEET_ENTITY_MAP.values():
-      tdsheetLocation[sheetEntity] = _getMain().Cmd.Location()
+      tdsheetLocation[sheetEntity] = _gam().Cmd.Location()
     self.todrive = {'user': GC.Values[GC.TODRIVE_USER], 'title': None, 'description': None,
                     'sheetEntity': None, 'addsheet': False, 'updatesheet': False, 'sheettitle': None,
                     'cellwrap': None, 'cellnumberformat': None, 'clearfilter': GC.Values[GC.TODRIVE_CLEARFILTER],
@@ -748,150 +747,150 @@ class CSVPrintFile():
                     'localcopy': GC.Values[GC.TODRIVE_LOCALCOPY], 'uploadnodata': GC.Values[GC.TODRIVE_UPLOAD_NODATA],
                     'nobrowser': GC.Values[GC.TODRIVE_NOBROWSER], 'noemail': GC.Values[GC.TODRIVE_NOEMAIL], 'returnidonly': False,
                     'alert': [], 'share': [], 'notify': False, 'subject': None, 'from': None}
-    while _getMain().Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+    while _gam().Cmd.ArgumentsRemaining():
+      myarg = _gam().getArgument()
       if myarg == 'tduser':
-        self.todrive['user'] = _getMain().getString(_getMain().Cmd.OB_EMAIL_ADDRESS)
-        tduserLocation = _getMain().Cmd.Location()
+        self.todrive['user'] = _gam().getString(_gam().Cmd.OB_EMAIL_ADDRESS)
+        tduserLocation = _gam().Cmd.Location()
         localUser = True
       elif myarg == 'tdtitle':
-        self.todrive['title'] = _getMain().getString(_getMain().Cmd.OB_STRING, minLen=0)
+        self.todrive['title'] = _gam().getString(_gam().Cmd.OB_STRING, minLen=0)
       elif myarg == 'tddescription':
-        self.todrive['description'] = _getMain().getString(_getMain().Cmd.OB_STRING)
+        self.todrive['description'] = _gam().getString(_gam().Cmd.OB_STRING)
       elif myarg in self.TDSHEET_ENTITY_MAP:
         sheetEntity = self.TDSHEET_ENTITY_MAP[myarg]
-        tdsheetLocation[sheetEntity] = _getMain().Cmd.Location()
-        self.todrive[sheetEntity] = _getMain().getSheetEntity(True)
+        tdsheetLocation[sheetEntity] = _gam().Cmd.Location()
+        self.todrive[sheetEntity] = _gam().getSheetEntity(True)
       elif myarg == 'tdaddsheet':
-        tdaddsheetLocation = _getMain().Cmd.Location()
-        self.todrive['addsheet'] = _getMain().getBoolean()
+        tdaddsheetLocation = _gam().Cmd.Location()
+        self.todrive['addsheet'] = _gam().getBoolean()
         if self.todrive['addsheet']:
           self.todrive['updatesheet'] = False
       elif myarg == 'tdupdatesheet':
-        tdupdatesheetLocation = _getMain().Cmd.Location()
-        self.todrive['updatesheet'] = _getMain().getBoolean()
+        tdupdatesheetLocation = _gam().Cmd.Location()
+        self.todrive['updatesheet'] = _gam().getBoolean()
         if self.todrive['updatesheet']:
           self.todrive['addsheet'] = False
       elif myarg == 'tdcellwrap':
-        self.todrive['cellwrap'] = _getMain().getChoice(CELL_WRAP_MAP, mapChoice=True)
+        self.todrive['cellwrap'] = _gam().getChoice(CELL_WRAP_MAP, mapChoice=True)
       elif myarg == 'tdcellnumberformat':
-        self.todrive['cellnumberformat'] = _getMain().getChoice(CELL_NUMBER_FORMAT_MAP, mapChoice=True)
+        self.todrive['cellnumberformat'] = _gam().getChoice(CELL_NUMBER_FORMAT_MAP, mapChoice=True)
       elif myarg == 'tdclearfilter':
-        self.todrive['clearfilter'] = _getMain().getBoolean()
+        self.todrive['clearfilter'] = _gam().getBoolean()
       elif myarg == 'tdlocale':
-        self.todrive['locale'] = _getMain().getLanguageCode(_getMain().LOCALE_CODES_MAP)
+        self.todrive['locale'] = _gam().getLanguageCode(_gam().LOCALE_CODES_MAP)
       elif myarg == 'tdtimezone':
-        self.todrive['timeZone'] = _getMain().getString(_getMain().Cmd.OB_STRING, minLen=0)
+        self.todrive['timeZone'] = _gam().getString(_gam().Cmd.OB_STRING, minLen=0)
       elif myarg == 'tdtimestamp':
-        self.todrive['timestamp'] = _getMain().getBoolean()
+        self.todrive['timestamp'] = _gam().getBoolean()
       elif myarg == 'tdtimeformat':
-        self.todrive['timeformat'] = _getMain().getString(_getMain().Cmd.OB_STRING, minLen=0)
+        self.todrive['timeformat'] = _gam().getString(_gam().Cmd.OB_STRING, minLen=0)
       elif myarg == 'tdsheettitle':
-        self.todrive['sheettitle'] = _getMain().getString(_getMain().Cmd.OB_STRING, minLen=0)
+        self.todrive['sheettitle'] = _gam().getString(_gam().Cmd.OB_STRING, minLen=0)
       elif myarg == 'tdsheettimestamp':
-        self.todrive['sheettimestamp'] = _getMain().getBoolean()
+        self.todrive['sheettimestamp'] = _gam().getBoolean()
       elif myarg == 'tdsheettimeformat':
-        self.todrive['sheettimeformat'] = _getMain().getString(_getMain().Cmd.OB_STRING, minLen=0)
+        self.todrive['sheettimeformat'] = _gam().getString(_gam().Cmd.OB_STRING, minLen=0)
       elif myarg == 'tddaysoffset':
-        self.todrive['daysoffset'] = _getMain().getInteger(minVal=0)
+        self.todrive['daysoffset'] = _gam().getInteger(minVal=0)
       elif myarg == 'tdhoursoffset':
-        self.todrive['hoursoffset'] = _getMain().getInteger(minVal=0)
+        self.todrive['hoursoffset'] = _gam().getInteger(minVal=0)
       elif myarg == 'tdsheetdaysoffset':
-        self.todrive['sheetdaysoffset'] = _getMain().getInteger(minVal=0)
+        self.todrive['sheetdaysoffset'] = _gam().getInteger(minVal=0)
       elif myarg == 'tdsheethoursoffset':
-        self.todrive['sheethoursoffset'] = _getMain().getInteger(minVal=0)
+        self.todrive['sheethoursoffset'] = _gam().getInteger(minVal=0)
       elif myarg == 'tdfileid':
-        self.todrive['fileId'] = _getMain().getString(_getMain().Cmd.OB_DRIVE_FILE_ID)
-        tdfileidLocation = _getMain().Cmd.Location()
+        self.todrive['fileId'] = _gam().getString(_gam().Cmd.OB_DRIVE_FILE_ID)
+        tdfileidLocation = _gam().Cmd.Location()
       elif myarg == 'tdretaintitle':
-        self.todrive['retaintitle'] = _getMain().getBoolean()
+        self.todrive['retaintitle'] = _gam().getBoolean()
       elif myarg == 'tdparent':
-        self.todrive['parent'] = _getMain().escapeDriveFileName(_getMain().getString(_getMain().Cmd.OB_DRIVE_FOLDER_NAME, minLen=0))
-        tdparentLocation = _getMain().Cmd.Location()
+        self.todrive['parent'] = _gam().escapeDriveFileName(_gam().getString(_gam().Cmd.OB_DRIVE_FOLDER_NAME, minLen=0))
+        tdparentLocation = _gam().Cmd.Location()
         localParent = True
       elif myarg == 'tdlocalcopy':
-        self.todrive['localcopy'] = _getMain().getBoolean()
+        self.todrive['localcopy'] = _gam().getBoolean()
       elif myarg == 'tduploadnodata':
-        self.todrive['uploadnodata'] = _getMain().getBoolean()
+        self.todrive['uploadnodata'] = _gam().getBoolean()
       elif myarg == 'tdnobrowser':
-        self.todrive['nobrowser'] = _getMain().getBoolean()
+        self.todrive['nobrowser'] = _gam().getBoolean()
       elif myarg == 'tdnoemail':
-        self.todrive['noemail'] = _getMain().getBoolean()
+        self.todrive['noemail'] = _gam().getBoolean()
       elif myarg == 'tdreturnidonly':
-        self.todrive['returnidonly'] = _getMain().getBoolean()
+        self.todrive['returnidonly'] = _gam().getBoolean()
       elif myarg == 'tdnoescapechar':
-        self.todrive['noescapechar'] = _getMain().getBoolean()
+        self.todrive['noescapechar'] = _gam().getBoolean()
       elif myarg == 'tdalert':
-        self.todrive['alert'].append({'emailAddress': _getMain().normalizeEmailAddressOrUID(_getMain().getString(_getMain().Cmd.OB_EMAIL_ADDRESS))})
+        self.todrive['alert'].append({'emailAddress': _gam().normalizeEmailAddressOrUID(_gam().getString(_gam().Cmd.OB_EMAIL_ADDRESS))})
       elif myarg == 'tdshare':
-        self.todrive['share'].append({'emailAddress': _getMain().normalizeEmailAddressOrUID(_getMain().getString(_getMain().Cmd.OB_EMAIL_ADDRESS)),
+        self.todrive['share'].append({'emailAddress': _gam().normalizeEmailAddressOrUID(_gam().getString(_gam().Cmd.OB_EMAIL_ADDRESS)),
                                       'type': 'user',
-                                      'role': _getMain().getChoice(self.TDSHARE_ACL_ROLES_MAP, mapChoice=True)})
+                                      'role': _gam().getChoice(self.TDSHARE_ACL_ROLES_MAP, mapChoice=True)})
       elif myarg == 'tdnotify':
-        self.todrive['notify'] = _getMain().getBoolean()
+        self.todrive['notify'] = _gam().getBoolean()
       elif myarg == 'tdsubject':
-        self.todrive['subject'] = _getMain().getString(_getMain().Cmd.OB_STRING, minLen=0)
+        self.todrive['subject'] = _gam().getString(_gam().Cmd.OB_STRING, minLen=0)
       elif myarg == 'tdfrom':
-        self.todrive['from'] = _getMain().getString(_getMain().Cmd.OB_EMAIL_ADDRESS)
+        self.todrive['from'] = _gam().getString(_gam().Cmd.OB_EMAIL_ADDRESS)
       else:
-        _getMain().Cmd.Backup()
+        _gam().Cmd.Backup()
         break
     if self.todrive['addsheet']:
       if not self.todrive['fileId']:
-        _getMain().Cmd.SetLocation(tdaddsheetLocation-1)
-        _getMain().missingArgumentExit('tdfileid')
+        _gam().Cmd.SetLocation(tdaddsheetLocation-1)
+        _gam().missingArgumentExit('tdfileid')
       if self.todrive['sheetEntity'] and self.todrive['sheetEntity']['sheetId']:
-        _getMain().Cmd.SetLocation(tdsheetLocation[sheetEntity]-1)
-        _getMain().invalidArgumentExit('tdsheet <String>')
+        _gam().Cmd.SetLocation(tdsheetLocation[sheetEntity]-1)
+        _gam().invalidArgumentExit('tdsheet <String>')
     if self.todrive['updatesheet'] and (not self.todrive['fileId'] or not self.todrive['sheetEntity']):
-      _getMain().Cmd.SetLocation(tdupdatesheetLocation-1)
-      _getMain().missingArgumentExit('tdfileid and tdsheet')
+      _gam().Cmd.SetLocation(tdupdatesheetLocation-1)
+      _gam().missingArgumentExit('tdfileid and tdsheet')
     if self.todrive['sheetEntity'] and self.todrive['sheetEntity']['sheetId'] and (not self.todrive['fileId'] or not self.todrive['updatesheet']):
-      _getMain().Cmd.SetLocation(tdsheetLocation['sheetEntity']-1)
-      _getMain().missingArgumentExit('tdfileid and tdupdatesheet')
+      _gam().Cmd.SetLocation(tdsheetLocation['sheetEntity']-1)
+      _gam().missingArgumentExit('tdfileid and tdupdatesheet')
     if not self.todrive['user'] or GC.Values[GC.TODRIVE_CLIENTACCESS]:
-      self.todrive['user'] = _getMain()._getAdminEmail()
+      self.todrive['user'] = _gam()._getAdminEmail()
     if not GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY] and not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-      user = _getMain().checkUserExists(_getMain().buildGAPIObject(API.DIRECTORY), self.todrive['user'])
+      user = _gam().checkUserExists(_gam().buildGAPIObject(API.DIRECTORY), self.todrive['user'])
       if not user:
-        invalidTodriveUserExit(_getMain().Ent.USER, Msg.NOT_FOUND)
+        invalidTodriveUserExit(_gam().Ent.USER, Msg.NOT_FOUND)
       self.todrive['user'] = user
     else:
-      self.todrive['user'] = _getMain().normalizeEmailAddressOrUID(self.todrive['user'])
+      self.todrive['user'] = _gam().normalizeEmailAddressOrUID(self.todrive['user'])
     if self.todrive['fileId']:
       drive = getDriveObject()
       try:
-        result = _getMain().callGAPI(drive.files(), 'get',
+        result = _gam().callGAPI(drive.files(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
                           fileId=self.todrive['fileId'], fields='id,mimeType,capabilities(canEdit)', supportsAllDrives=True)
-        if result['mimeType'] == _getMain().MIMETYPE_GA_FOLDER:
-          invalidTodriveFileIdExit([], Msg.NOT_AN_ENTITY.format(_getMain().Ent.Singular(_getMain().Ent.DRIVE_FILE)), tdfileidLocation)
+        if result['mimeType'] == _gam().MIMETYPE_GA_FOLDER:
+          invalidTodriveFileIdExit([], Msg.NOT_AN_ENTITY.format(_gam().Ent.Singular(_gam().Ent.DRIVE_FILE)), tdfileidLocation)
         if not result['capabilities']['canEdit']:
           invalidTodriveFileIdExit([], Msg.NOT_WRITABLE, tdfileidLocation)
         if self.todrive['sheetEntity']:
-          if result['mimeType'] != _getMain().MIMETYPE_GA_SPREADSHEET:
-            invalidTodriveFileIdExit([], f'{Msg.NOT_A} {_getMain().Ent.Singular(_getMain().Ent.SPREADSHEET)}', tdfileidLocation)
+          if result['mimeType'] != _gam().MIMETYPE_GA_SPREADSHEET:
+            invalidTodriveFileIdExit([], f'{Msg.NOT_A} {_gam().Ent.Singular(_gam().Ent.SPREADSHEET)}', tdfileidLocation)
           if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-            _, sheet = _getMain().buildGAPIServiceObject(_getMain().chooseSaAPI(API.SHEETSTD, API.SHEETS), self.todrive['user'])
+            _, sheet = _gam().buildGAPIServiceObject(_gam().chooseSaAPI(API.SHEETSTD, API.SHEETS), self.todrive['user'])
             if sheet is None:
-              invalidTodriveUserExit(_getMain().Ent.USER, Msg.NOT_FOUND)
+              invalidTodriveUserExit(_gam().Ent.USER, Msg.NOT_FOUND)
           else:
-            sheet = _getMain().buildGAPIObject(API.SHEETS)
+            sheet = _gam().buildGAPIObject(API.SHEETS)
           try:
-            spreadsheet = _getMain().callGAPI(sheet.spreadsheets(), 'get',
+            spreadsheet = _gam().callGAPI(sheet.spreadsheets(), 'get',
                                    throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                    spreadsheetId=self.todrive['fileId'],
                                    fields='spreadsheetUrl,sheets(properties(sheetId,title),protectedRanges(range(sheetId),requestingUserCanEdit))')
             for sheetEntity in self.TDSHEET_ENTITY_MAP.values():
               if self.todrive[sheetEntity]:
-                sheetId = _getMain().getSheetIdFromSheetEntity(spreadsheet, self.todrive[sheetEntity])
+                sheetId = _gam().getSheetIdFromSheetEntity(spreadsheet, self.todrive[sheetEntity])
                 if sheetId is None:
-                  if not self.todrive['addsheet'] and ((sheetEntity != 'sheetEntity') or (self.todrive[sheetEntity]['sheetType'] == _getMain().Ent.SHEET_ID)):
+                  if not self.todrive['addsheet'] and ((sheetEntity != 'sheetEntity') or (self.todrive[sheetEntity]['sheetType'] == _gam().Ent.SHEET_ID)):
                     invalidTodriveFileIdExit([self.todrive[sheetEntity]['sheetType'], self.todrive[sheetEntity]['sheetValue']], Msg.NOT_FOUND, tdsheetLocation[sheetEntity])
                 else:
                   if self.todrive['addsheet']:
                     invalidTodriveFileIdExit([self.todrive[sheetEntity]['sheetType'], self.todrive[sheetEntity]['sheetValue']], Msg.ALREADY_EXISTS, tdsheetLocation[sheetEntity])
-                  if _getMain().protectedSheetId(spreadsheet, sheetId):
+                  if _gam().protectedSheetId(spreadsheet, sheetId):
                     invalidTodriveFileIdExit([self.todrive[sheetEntity]['sheetType'], self.todrive[sheetEntity]['sheetValue']], Msg.NOT_WRITABLE, tdsheetLocation[sheetEntity])
                 self.todrive[sheetEntity]['sheetId'] = sheetId
           except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied,
@@ -901,45 +900,45 @@ class CSVPrintFile():
       except GAPI.fileNotFound:
         invalidTodriveFileIdExit([], Msg.NOT_FOUND, tdfileidLocation)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-        invalidTodriveUserExit(_getMain().Ent.USER, str(e))
-    elif not self.todrive['parent'] or self.todrive['parent'] == _getMain().ROOT:
-      self.todrive['parentId'] = _getMain().ROOT
+        invalidTodriveUserExit(_gam().Ent.USER, str(e))
+    elif not self.todrive['parent'] or self.todrive['parent'] == _gam().ROOT:
+      self.todrive['parentId'] = _gam().ROOT
     else:
       drive = getDriveObject()
       if self.todrive['parent'].startswith('id:'):
         try:
-          result = _getMain().callGAPI(drive.files(), 'get',
+          result = _gam().callGAPI(drive.files(), 'get',
                             throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FILE_NOT_FOUND, GAPI.INVALID],
                             fileId=self.todrive['parent'][3:], fields='id,mimeType,capabilities(canEdit)', supportsAllDrives=True)
         except GAPI.fileNotFound:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_ID, Msg.NOT_FOUND)
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_ID, Msg.NOT_FOUND)
         except GAPI.invalid as e:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_ID, str(e))
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_ID, str(e))
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          invalidTodriveUserExit(_getMain().Ent.USER, str(e))
-        if result['mimeType'] != _getMain().MIMETYPE_GA_FOLDER:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_ID, Msg.NOT_AN_ENTITY.format(_getMain().Ent.Singular(_getMain().Ent.DRIVE_FOLDER)))
+          invalidTodriveUserExit(_gam().Ent.USER, str(e))
+        if result['mimeType'] != _gam().MIMETYPE_GA_FOLDER:
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_ID, Msg.NOT_AN_ENTITY.format(_gam().Ent.Singular(_gam().Ent.DRIVE_FOLDER)))
         if not result['capabilities']['canEdit']:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_ID, Msg.NOT_WRITABLE)
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_ID, Msg.NOT_WRITABLE)
         self.todrive['parentId'] = result['id']
       else:
         try:
-          results = _getMain().callGAPIpages(drive.files(), 'list', 'files',
+          results = _gam().callGAPIpages(drive.files(), 'list', 'files',
                                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY],
                                   retryReasons=[GAPI.UNKNOWN_ERROR],
                                   q=f"name = '{self.todrive['parent']}'",
                                   fields='nextPageToken,files(id,mimeType,capabilities(canEdit))',
                                   pageSize=1, supportsAllDrives=True)
         except GAPI.invalidQuery:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_NAME, Msg.NOT_FOUND)
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_NAME, Msg.NOT_FOUND)
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          invalidTodriveUserExit(_getMain().Ent.USER, str(e))
+          invalidTodriveUserExit(_gam().Ent.USER, str(e))
         if not results:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_NAME, Msg.NOT_FOUND)
-        if results[0]['mimeType'] != _getMain().MIMETYPE_GA_FOLDER:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_NAME, Msg.NOT_AN_ENTITY.format(_getMain().Ent.Singular(_getMain().Ent.DRIVE_FOLDER)))
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_NAME, Msg.NOT_FOUND)
+        if results[0]['mimeType'] != _gam().MIMETYPE_GA_FOLDER:
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_NAME, Msg.NOT_AN_ENTITY.format(_gam().Ent.Singular(_gam().Ent.DRIVE_FOLDER)))
         if not results[0]['capabilities']['canEdit']:
-          invalidTodriveParentExit(_getMain().Ent.DRIVE_FOLDER_NAME, Msg.NOT_WRITABLE)
+          invalidTodriveParentExit(_gam().Ent.DRIVE_FOLDER_NAME, Msg.NOT_WRITABLE)
         self.todrive['parentId'] = results[0]['id']
 
   def SortTitles(self):
@@ -1069,9 +1068,9 @@ class CSVPrintFile():
   def SetTimestampColumn(self, timestampColumn):
     self.timestampColumn = timestampColumn
     if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
-      self.todaysTime = _getMain().ISOformatTimeStamp(_getMain().todaysTime())
+      self.todaysTime = _gam().ISOformatTimeStamp(_gam().todaysTime())
     else:
-      self.todaysTime = _getMain().todaysTime().strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+      self.todaysTime = _gam().todaysTime().strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
   def SetSortHeaders(self, sortHeaders):
     self.sortHeaders = sortHeaders
@@ -1207,11 +1206,11 @@ class CSVPrintFile():
     for filterVal in self.rowFilter:
       columns = [t for t in self.titlesList if filterVal[0].match(t)]
       if not columns:
-        _getMain().stderrWarningMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_OUTPUT_COLUMNS.format(GC.CSV_OUTPUT_ROW_FILTER, filterVal[0].pattern))
+        _gam().stderrWarningMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_OUTPUT_COLUMNS.format(GC.CSV_OUTPUT_ROW_FILTER, filterVal[0].pattern))
     for filterVal in self.rowDropFilter:
       columns = [t for t in self.titlesList if filterVal[0].match(t)]
       if not columns:
-        _getMain().stderrWarningMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_OUTPUT_COLUMNS.format(GC.CSV_OUTPUT_ROW_DROP_FILTER, filterVal[0].pattern))
+        _gam().stderrWarningMsg(Msg.COLUMN_DOES_NOT_MATCH_ANY_OUTPUT_COLUMNS.format(GC.CSV_OUTPUT_ROW_DROP_FILTER, filterVal[0].pattern))
 
   def SetHeaderFilter(self, headerFilter):
     self.headerFilter = headerFilter
@@ -1250,7 +1249,7 @@ class CSVPrintFile():
       self.titlesList = [t for t in self.titlesList if self.HeaderFilterMatch(self.headerFilter, t)]
     self.titlesSet = set(self.titlesList)
     if not self.titlesSet:
-      _getMain().systemErrorExit(_getMain().USAGE_ERROR_RC, Msg.NO_COLUMNS_SELECTED_WITH_CSV_OUTPUT_HEADER_FILTER.format(GC.CSV_OUTPUT_HEADER_FILTER, GC.CSV_OUTPUT_HEADER_DROP_FILTER))
+      _gam().systemErrorExit(_gam().USAGE_ERROR_RC, Msg.NO_COLUMNS_SELECTED_WITH_CSV_OUTPUT_HEADER_FILTER.format(GC.CSV_OUTPUT_HEADER_FILTER, GC.CSV_OUTPUT_HEADER_DROP_FILTER))
 
   def FilterJSONHeaders(self):
     if self.headerDropFilter:
@@ -1259,14 +1258,14 @@ class CSVPrintFile():
       self.JSONtitlesList = [t for t in self.JSONtitlesList if self.HeaderFilterMatch(self.headerFilter, t)]
     self.JSONtitlesSet = set(self.JSONtitlesList)
     if not self.JSONtitlesSet:
-      _getMain().systemErrorExit(_getMain().USAGE_ERROR_RC, Msg.NO_COLUMNS_SELECTED_WITH_CSV_OUTPUT_HEADER_FILTER.format(GC.CSV_OUTPUT_HEADER_FILTER, GC.CSV_OUTPUT_HEADER_DROP_FILTER))
+      _gam().systemErrorExit(_gam().USAGE_ERROR_RC, Msg.NO_COLUMNS_SELECTED_WITH_CSV_OUTPUT_HEADER_FILTER.format(GC.CSV_OUTPUT_HEADER_FILTER, GC.CSV_OUTPUT_HEADER_DROP_FILTER))
 
   def writeCSVfile(self, list_type, clearRowFilters=False):
 
     def todriveCSVErrorExit(entityValueList, errMsg):
-      _getMain().systemErrorExit(_getMain().ACTION_FAILED_RC, _getMain().formatKeyValueList(_getMain().Ind.Spaces(),
-                                                           _getMain().Ent.FormatEntityValueList(entityValueList)+[_getMain().Act.NotPerformed(), errMsg],
-                                                           _getMain().currentCountNL(0, 0)))
+      _gam().systemErrorExit(_gam().ACTION_FAILED_RC, _gam().formatKeyValueList(_gam().Ind.Spaces(),
+                                                           _gam().Ent.FormatEntityValueList(entityValueList)+[_gam().Act.NotPerformed(), errMsg],
+                                                           _gam().currentCountNL(0, 0)))
 
     @staticmethod
     def itemgetter(*items):
@@ -1293,7 +1292,7 @@ class CSVPrintFile():
           writer.writerows(self.rows)
         return True
       except IOError as e:
-        _getMain().stderrErrorMsg(e)
+        _gam().stderrErrorMsg(e)
         return False
 
     def setDialect(lineterminator, noEscapeChar):
@@ -1316,40 +1315,40 @@ class CSVPrintFile():
         self.sortHeaders = [writerKeyMap[k.lower()] for k in self.sortHeaders if k.lower() in writerKeyMap]
 
     def writeCSVToStdout():
-      csvFile = _getMain().StringIOobject()
+      csvFile = _gam().StringIOobject()
       writerDialect = setDialect('\n', self.noEscapeChar)
       writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
       if writeCSVData(writer):
         try:
           GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].write(csvFile.getvalue())
         except IOError as e:
-          _getMain().stderrErrorMsg(_getMain().fdErrorMessage(GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD], 'stdout', e))
-          _getMain().setSysExitRC(_getMain().FILE_ERROR_RC)
-      _getMain().closeFile(csvFile)
+          _gam().stderrErrorMsg(_gam().fdErrorMessage(GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD], 'stdout', e))
+          _gam().setSysExitRC(_gam().FILE_ERROR_RC)
+      _gam().closeFile(csvFile)
 
     def writeCSVToFile():
       csvFile = GM.Globals[GM.CSVFILE].get(GM.REDIRECT_FD, None)
       if not csvFile:
-        csvFile = _getMain().openFile(GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME], GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE], newline='',
+        csvFile = _gam().openFile(GM.Globals[GM.CSVFILE][GM.REDIRECT_NAME], GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE], newline='',
                            encoding=GM.Globals[GM.CSVFILE][GM.REDIRECT_ENCODING], errors='backslashreplace',
                            continueOnError=True)
       if csvFile:
         writerDialect = setDialect(str(GC.Values[GC.CSV_OUTPUT_LINE_TERMINATOR]), self.noEscapeChar)
         writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
         writeCSVData(writer)
-        _getMain().closeFile(csvFile)
+        _gam().closeFile(csvFile)
 
     def writeCSVToDrive():
       numRows = len(self.rows)
       numColumns = len(titlesList)
       if numRows == 0 and not self.todrive['uploadnodata']:
-        _getMain().printKeyValueList([Msg.NO_CSV_DATA_TO_UPLOAD])
-        _getMain().setSysExitRC(_getMain().NO_CSV_DATA_TO_UPLOAD_RC)
+        _gam().printKeyValueList([Msg.NO_CSV_DATA_TO_UPLOAD])
+        _gam().setSysExitRC(_gam().NO_CSV_DATA_TO_UPLOAD_RC)
         return
       if self.todrive['addsheet'] or self.todrive['updatesheet']:
-        csvFile = _getMain().TemporaryFile(mode='w+', encoding=_getMain().UTF8)
+        csvFile = _gam().TemporaryFile(mode='w+', encoding=_gam().UTF8)
       else:
-        csvFile = _getMain().StringIOobject()
+        csvFile = _gam().StringIOobject()
       writerDialect = setDialect('\n', self.todrive['noescapechar'])
       writer = csv.DictWriter(csvFile, titlesList, extrasaction=extrasaction, **writerDialect)
       if writeCSVData(writer):
@@ -1375,7 +1374,7 @@ class CSVPrintFile():
           if title:
             title += ' - '
           if not self.todrive['timeformat']:
-            title += _getMain().ISOformatTimeStamp(tdtime)
+            title += _gam().ISOformatTimeStamp(tdtime)
           else:
             title += tdtime.strftime(self.todrive['timeformat'])
         if self.todrive['sheettimestamp']:
@@ -1385,73 +1384,73 @@ class CSVPrintFile():
           if sheetTitle:
             sheetTitle += ' - '
           if not self.todrive['sheettimeformat']:
-            sheetTitle += _getMain().ISOformatTimeStamp(tdtime)
+            sheetTitle += _gam().ISOformatTimeStamp(tdtime)
           else:
             sheetTitle += tdtime.strftime(self.todrive['sheettimeformat'])
-        action = _getMain().Act.Get()
+        action = _gam().Act.Get()
         if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-          user, drive = _getMain().buildGAPIServiceObject(_getMain().chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
+          user, drive = _gam().buildGAPIServiceObject(_gam().chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
           if not drive:
-            _getMain().closeFile(csvFile)
+            _gam().closeFile(csvFile)
             return
         else:
           user = self.todrive['user']
-          drive = _getMain().buildGAPIObject(API.DRIVE3)
+          drive = _gam().buildGAPIObject(API.DRIVE3)
         importSize = csvFile.tell()
 # Add/Update sheet
         try:
           if self.todrive['addsheet'] or self.todrive['updatesheet']:
-            _getMain().Act.Set(_getMain().Act.CREATE if self.todrive['addsheet'] else _getMain().Act.UPDATE)
-            result = _getMain().callGAPI(drive.about(), 'get',
+            _gam().Act.Set(_gam().Act.CREATE if self.todrive['addsheet'] else _gam().Act.UPDATE)
+            result = _gam().callGAPI(drive.about(), 'get',
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                               fields='maxImportSizes')
-            if numRows*numColumns > _getMain().MAX_GOOGLE_SHEET_CELLS or importSize > int(result['maxImportSizes'][_getMain().MIMETYPE_GA_SPREADSHEET]):
-              todriveCSVErrorExit([_getMain().Ent.USER, user], Msg.RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
+            if numRows*numColumns > _gam().MAX_GOOGLE_SHEET_CELLS or importSize > int(result['maxImportSizes'][_gam().MIMETYPE_GA_SPREADSHEET]):
+              todriveCSVErrorExit([_gam().Ent.USER, user], Msg.RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET)
             fields = ','.join(['id', 'mimeType', 'webViewLink', 'name', 'capabilities(canEdit)'])
             body = {'description': self.todrive['description']}
             if body['description'] is None:
-              body['description'] = _getMain().Cmd.QuotedArgumentList(_getMain().Cmd.AllArguments())
+              body['description'] = _gam().Cmd.QuotedArgumentList(_gam().Cmd.AllArguments())
             if not self.todrive['retaintitle']:
               body['name'] = title
-            result = _getMain().callGAPI(drive.files(), 'update',
+            result = _gam().callGAPI(drive.files(), 'update',
                               throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                           GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR],
                               fileId=self.todrive['fileId'], body=body, fields=fields, supportsAllDrives=True)
-            entityValueList = [_getMain().Ent.USER, user, _getMain().Ent.DRIVE_FILE_ID, self.todrive['fileId']]
+            entityValueList = [_gam().Ent.USER, user, _gam().Ent.DRIVE_FILE_ID, self.todrive['fileId']]
             if not result['capabilities']['canEdit']:
               todriveCSVErrorExit(entityValueList, Msg.NOT_WRITABLE)
-            if result['mimeType'] != _getMain().MIMETYPE_GA_SPREADSHEET:
-              todriveCSVErrorExit(entityValueList, f'{Msg.NOT_A} {_getMain().Ent.Singular(_getMain().Ent.SPREADSHEET)}')
+            if result['mimeType'] != _gam().MIMETYPE_GA_SPREADSHEET:
+              todriveCSVErrorExit(entityValueList, f'{Msg.NOT_A} {_gam().Ent.Singular(_gam().Ent.SPREADSHEET)}')
             if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-              _, sheet = _getMain().buildGAPIServiceObject(_getMain().chooseSaAPI(API.SHEETSTD, API.SHEETS), user)
+              _, sheet = _gam().buildGAPIServiceObject(_gam().chooseSaAPI(API.SHEETSTD, API.SHEETS), user)
               if sheet is None:
                 return
             else:
-              sheet = _getMain().buildGAPIObject(API.SHEETS)
+              sheet = _gam().buildGAPIObject(API.SHEETS)
             csvFile.seek(0)
             spreadsheet = None
             if self.todrive['updatesheet']:
               for sheetEntity in self.TDSHEET_ENTITY_MAP.values():
                 if self.todrive[sheetEntity]:
-                  entityValueList = [_getMain().Ent.USER, user, _getMain().Ent.SPREADSHEET, title, self.todrive[sheetEntity]['sheetType'], self.todrive[sheetEntity]['sheetValue']]
+                  entityValueList = [_gam().Ent.USER, user, _gam().Ent.SPREADSHEET, title, self.todrive[sheetEntity]['sheetType'], self.todrive[sheetEntity]['sheetValue']]
                   if spreadsheet is None:
-                    spreadsheet = _getMain().callGAPI(sheet.spreadsheets(), 'get',
+                    spreadsheet = _gam().callGAPI(sheet.spreadsheets(), 'get',
                                            throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                            spreadsheetId=self.todrive['fileId'],
                                            fields='spreadsheetUrl,sheets(properties(sheetId,title),protectedRanges(range(sheetId),requestingUserCanEdit))')
-                  sheetId = _getMain().getSheetIdFromSheetEntity(spreadsheet, self.todrive[sheetEntity])
+                  sheetId = _gam().getSheetIdFromSheetEntity(spreadsheet, self.todrive[sheetEntity])
                   if sheetId is None:
-                    if ((sheetEntity != 'sheetEntity') or (self.todrive[sheetEntity]['sheetType'] == _getMain().Ent.SHEET_ID)):
+                    if ((sheetEntity != 'sheetEntity') or (self.todrive[sheetEntity]['sheetType'] == _gam().Ent.SHEET_ID)):
                       todriveCSVErrorExit(entityValueList, Msg.NOT_FOUND)
                     self.todrive['addsheet'] = True
                   else:
-                    if _getMain().protectedSheetId(spreadsheet, sheetId):
+                    if _gam().protectedSheetId(spreadsheet, sheetId):
                       todriveCSVErrorExit(entityValueList, Msg.NOT_WRITABLE)
                     self.todrive[sheetEntity]['sheetId'] = sheetId
             if self.todrive['addsheet']:
               body = {'requests': [{'addSheet': {'properties': {'title': sheetTitle, 'sheetType': 'GRID'}}}]}
               try:
-                addresult = _getMain().callGAPI(sheet.spreadsheets(), 'batchUpdate',
+                addresult = _gam().callGAPI(sheet.spreadsheets(), 'batchUpdate',
                                      throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                      spreadsheetId=self.todrive['fileId'], body=body)
                 self.todrive['sheetEntity'] = {'sheetId': addresult['replies'][0]['addSheet']['properties']['sheetId']}
@@ -1484,38 +1483,38 @@ class CSVPrintFile():
               body['requests'].append({'copyPaste': {'source': {'sheetId': self.todrive['sheetEntity']['sheetId']},
                                                      'destination': {'sheetId': self.todrive['copySheetEntity']['sheetId']}, 'pasteType': 'PASTE_NORMAL'}})
             try:
-              _getMain().callGAPI(sheet.spreadsheets(), 'batchUpdate',
+              _gam().callGAPI(sheet.spreadsheets(), 'batchUpdate',
                        throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                        spreadsheetId=self.todrive['fileId'], body=body)
             except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied,
                     GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
                     GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
               todriveCSVErrorExit(entityValueList, str(e))
-            _getMain().closeFile(csvFile)
+            _gam().closeFile(csvFile)
 # Create/update file
           else:
             if GC.Values[GC.TODRIVE_CONVERSION]:
-              result = _getMain().callGAPI(drive.about(), 'get',
+              result = _gam().callGAPI(drive.about(), 'get',
                                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS,
                                 fields='maxImportSizes')
-              if numRows*len(titlesList) > _getMain().MAX_GOOGLE_SHEET_CELLS or importSize > int(result['maxImportSizes'][_getMain().MIMETYPE_GA_SPREADSHEET]):
-                _getMain().printKeyValueList([_getMain().WARNING, Msg.RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET])
+              if numRows*len(titlesList) > _gam().MAX_GOOGLE_SHEET_CELLS or importSize > int(result['maxImportSizes'][_gam().MIMETYPE_GA_SPREADSHEET]):
+                _gam().printKeyValueList([_gam().WARNING, Msg.RESULTS_TOO_LARGE_FOR_GOOGLE_SPREADSHEET])
                 mimeType = 'text/csv'
               else:
-                mimeType = _getMain().MIMETYPE_GA_SPREADSHEET
+                mimeType = _gam().MIMETYPE_GA_SPREADSHEET
             else:
               mimeType = 'text/csv'
             fields = ','.join(['id', 'mimeType', 'webViewLink'])
             body = {'description': self.todrive['description'], 'mimeType': mimeType}
             if body['description'] is None:
-              body['description'] = _getMain().Cmd.QuotedArgumentList(_getMain().Cmd.AllArguments())
+              body['description'] = _gam().Cmd.QuotedArgumentList(_gam().Cmd.AllArguments())
             if not self.todrive['fileId'] or not self.todrive['retaintitle']:
               body['name'] = title
             try:
               if not self.todrive['fileId']:
-                _getMain().Act.Set(_getMain().Act.CREATE)
+                _gam().Act.Set(_gam().Act.CREATE)
                 body['parents'] = [self.todrive['parentId']]
-                result = _getMain().callGAPI(drive.files(), 'create',
+                result = _gam().callGAPI(drive.files(), 'create',
                                   bailOnInternalError=True,
                                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.FORBIDDEN, GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                               GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR, GAPI.INTERNAL_ERROR, GAPI.STORAGE_QUOTA_EXCEEDED,
@@ -1524,8 +1523,8 @@ class CSVPrintFile():
                                   media_body=googleapiclient.http.MediaIoBaseUpload(io.BytesIO(csvFile.getvalue().encode()), mimetype='text/csv', resumable=True),
                                   fields=fields, supportsAllDrives=True)
               else:
-                _getMain().Act.Set(_getMain().Act.UPDATE)
-                result = _getMain().callGAPI(drive.files(), 'update',
+                _gam().Act.Set(_gam().Act.UPDATE)
+                result = _gam().callGAPI(drive.files(), 'update',
                                   bailOnInternalError=True,
                                   throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INSUFFICIENT_PERMISSIONS, GAPI.INSUFFICIENT_PARENT_PERMISSIONS,
                                                                               GAPI.FILE_NOT_FOUND, GAPI.UNKNOWN_ERROR, GAPI.INTERNAL_ERROR],
@@ -1535,21 +1534,21 @@ class CSVPrintFile():
                                   fields=fields, supportsAllDrives=True)
               spreadsheetId = result['id']
             except GAPI.internalError as e:
-              _getMain().entityActionFailedWarning([_getMain().Ent.DRIVE_FILE, body['name']], Msg.UPLOAD_CSV_FILE_INTERNAL_ERROR.format(str(e), str(numRows)))
-              _getMain().closeFile(csvFile)
+              _gam().entityActionFailedWarning([_gam().Ent.DRIVE_FILE, body['name']], Msg.UPLOAD_CSV_FILE_INTERNAL_ERROR.format(str(e), str(numRows)))
+              _gam().closeFile(csvFile)
               return
-            _getMain().closeFile(csvFile)
+            _gam().closeFile(csvFile)
             if not self.todrive['fileId'] and self.todrive['share']:
-              _getMain().Act.Set(_getMain().Act.SHARE)
+              _gam().Act.Set(_gam().Act.SHARE)
               for share in self.todrive['share']:
                 if share['emailAddress'] != user:
                   try:
-                    _getMain().callGAPI(drive.permissions(), 'create',
+                    _gam().callGAPI(drive.permissions(), 'create',
                              bailOnInternalError=True,
                              throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_CREATE_ACL_THROW_REASONS,
                              fileId=spreadsheetId, sendNotificationEmail=False, body=share, fields='', supportsAllDrives=True)
-                    _getMain().entityActionPerformed([_getMain().Ent.USER, user, _getMain().Ent.SPREADSHEET, title,
-                                           _getMain().Ent.TARGET_USER, share['emailAddress'], _getMain().Ent.ROLE, share['role']])
+                    _gam().entityActionPerformed([_gam().Ent.USER, user, _gam().Ent.SPREADSHEET, title,
+                                           _gam().Ent.TARGET_USER, share['emailAddress'], _gam().Ent.ROLE, share['role']])
                   except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                           GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                           GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
@@ -1564,22 +1563,22 @@ class CSVPrintFile():
                           GAPI.cannotModifyInheritedPermission,
                           GAPI.teamDrivesFolderSharingNotSupported, GAPI.invalidLinkVisibility,
                           GAPI.invalidSharingRequest, GAPI.fileNeverWritable, GAPI.abusiveContentRestriction) as e:
-                    _getMain().entityActionFailedWarning([_getMain().Ent.USER, user, _getMain().Ent.SPREADSHEET, title,
-                                               _getMain().Ent.TARGET_USER, share['emailAddress'], _getMain().Ent.ROLE, share['role']],
+                    _gam().entityActionFailedWarning([_gam().Ent.USER, user, _gam().Ent.SPREADSHEET, title,
+                                               _gam().Ent.TARGET_USER, share['emailAddress'], _gam().Ent.ROLE, share['role']],
                                               str(e))
-            if ((result['mimeType'] == _getMain().MIMETYPE_GA_SPREADSHEET) and
+            if ((result['mimeType'] == _gam().MIMETYPE_GA_SPREADSHEET) and
                 (self.todrive['sheetEntity'] or self.todrive['locale'] or self.todrive['timeZone'] or
                  self.todrive['sheettitle'] or self.todrive['cellwrap'] or self.todrive['cellnumberformat'])):
               if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
-                _, sheet = _getMain().buildGAPIServiceObject(_getMain().chooseSaAPI(API.SHEETSTD, API.SHEETS), user)
+                _, sheet = _gam().buildGAPIServiceObject(_gam().chooseSaAPI(API.SHEETSTD, API.SHEETS), user)
                 if sheet is None:
                   return
               else:
-                sheet = _getMain().buildGAPIObject(API.SHEETS)
+                sheet = _gam().buildGAPIObject(API.SHEETS)
               try:
                 body = {'requests': []}
                 if self.todrive['sheetEntity'] or self.todrive['sheettitle'] or self.todrive['cellwrap']:
-                  spreadsheet = _getMain().callGAPI(sheet.spreadsheets(), 'get',
+                  spreadsheet = _gam().callGAPI(sheet.spreadsheets(), 'get',
                                          throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                                          spreadsheetId=spreadsheetId, fields='sheets/properties')
                   spreadsheet['sheets'][0]['properties']['title'] = sheetTitle
@@ -1596,47 +1595,47 @@ class CSVPrintFile():
                   body['requests'].append({'updateSpreadsheetProperties':
                                              {'properties': {'timeZone': self.todrive['timeZone']}, 'fields': 'timeZone'}})
                 if body['requests']:
-                  _getMain().callGAPI(sheet.spreadsheets(), 'batchUpdate',
+                  _gam().callGAPI(sheet.spreadsheets(), 'batchUpdate',
                            throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
                            spreadsheetId=spreadsheetId, body=body)
               except (GAPI.notFound, GAPI.forbidden, GAPI.permissionDenied,
                       GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
                       GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition,
                       GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep) as e:
-                todriveCSVErrorExit([_getMain().Ent.USER, user, _getMain().Ent.SPREADSHEET, title], str(e))
-          _getMain().Act.Set(action)
+                todriveCSVErrorExit([_gam().Ent.USER, user, _gam().Ent.SPREADSHEET, title], str(e))
+          _gam().Act.Set(action)
           file_url = result['webViewLink']
           msg_txt = f'{Msg.DATA_UPLOADED_TO_DRIVE_FILE}:\n{file_url}'
           if not self.todrive['returnidonly']:
-            _getMain().printKeyValueList([msg_txt])
+            _gam().printKeyValueList([msg_txt])
           else:
             if self.todrive['fileId']:
-              _getMain().writeStdout(f'{self.todrive["fileId"]}\n')
+              _gam().writeStdout(f'{self.todrive["fileId"]}\n')
             else:
-              _getMain().writeStdout(f'{spreadsheetId}\n')
+              _gam().writeStdout(f'{spreadsheetId}\n')
           if not self.todrive['subject']:
             subject = title
           else:
             subject = self.todrive['subject'].replace('#file#', title).replace('#sheet#', sheetTitle)
           if not self.todrive['noemail']:
-            _getMain().send_email(subject, msg_txt, user, clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS], msgFrom=self.todrive['from'])
+            _gam().send_email(subject, msg_txt, user, clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS], msgFrom=self.todrive['from'])
           if self.todrive['notify']:
             for recipient in self.todrive['share']+self.todrive['alert']:
               if recipient['emailAddress'] != user:
-                _getMain().send_email(subject, msg_txt, recipient['emailAddress'], clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS], msgFrom=self.todrive['from'])
+                _gam().send_email(subject, msg_txt, recipient['emailAddress'], clientAccess=GC.Values[GC.TODRIVE_CLIENTACCESS], msgFrom=self.todrive['from'])
           if not self.todrive['nobrowser']:
             webbrowser.open(file_url)
         except (GAPI.forbidden, GAPI.insufficientPermissions):
-          _getMain().printWarningMessage(_getMain().INSUFFICIENT_PERMISSIONS_RC, Msg.INSUFFICIENT_PERMISSIONS_TO_PERFORM_TASK)
+          _gam().printWarningMessage(_gam().INSUFFICIENT_PERMISSIONS_RC, Msg.INSUFFICIENT_PERMISSIONS_TO_PERFORM_TASK)
         except (GAPI.fileNotFound, GAPI.unknownError, GAPI.internalError, GAPI.storageQuotaExceeded) as e:
           if not self.todrive['fileId']:
-            _getMain().entityActionFailedWarning([_getMain().Ent.DRIVE_FOLDER, self.todrive['parentId']], str(e))
+            _gam().entityActionFailedWarning([_gam().Ent.DRIVE_FOLDER, self.todrive['parentId']], str(e))
           else:
-            _getMain().entityActionFailedWarning([_getMain().Ent.DRIVE_FILE, self.todrive['fileId']], str(e))
+            _gam().entityActionFailedWarning([_gam().Ent.DRIVE_FILE, self.todrive['fileId']], str(e))
         except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
-          _getMain().userDriveServiceNotEnabledWarning(user, str(e), 0, 0)
+          _gam().userDriveServiceNotEnabledWarning(user, str(e), 0, 0)
       else:
-        _getMain().closeFile(csvFile)
+        _gam().closeFile(csvFile)
 
     if GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE] is not None:
       GM.Globals[GM.CSVFILE][GM.REDIRECT_QUEUE].put((GM.REDIRECT_QUEUE_NAME, list_type))
@@ -1743,28 +1742,28 @@ class CSVPrintFile():
         writeCSVToFile()
     if self.todrive:
       writeCSVToDrive()
-    if GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE] == _getMain().DEFAULT_FILE_APPEND_MODE:
+    if GM.Globals[GM.CSVFILE][GM.REDIRECT_MODE] == _gam().DEFAULT_FILE_APPEND_MODE:
       GM.Globals[GM.CSVFILE][GM.REDIRECT_WRITE_HEADER] = False
 
 def writeEntityNoHeaderCSVFile(entityType, entityList):
   csvPF = CSVPrintFile(entityType)
-  _, _, entityList = _getMain().getEntityArgument(entityList)
-  if entityType == _getMain().Ent.USER:
+  _, _, entityList = _gam().getEntityArgument(entityList)
+  if entityType == _gam().Ent.USER:
     for entity in entityList:
-      csvPF.WriteRowNoFilter({entityType: _getMain().normalizeEmailAddressOrUID(entity)})
+      csvPF.WriteRowNoFilter({entityType: _gam().normalizeEmailAddressOrUID(entity)})
   else:
     for entity in entityList:
       csvPF.WriteRowNoFilter({entityType: entity})
   GM.Globals[GM.CSVFILE][GM.REDIRECT_WRITE_HEADER] = False
-  csvPF.writeCSVfile(_getMain().Ent.Plural(entityType))
+  csvPF.writeCSVfile(_gam().Ent.Plural(entityType))
 
 def getTodriveOnly(csvPF):
-  while _getMain().Cmd.ArgumentsRemaining():
-    myarg = _getMain().getArgument()
+  while _gam().Cmd.ArgumentsRemaining():
+    myarg = _gam().getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
-      _getMain().unknownArgumentExit()
+      _gam().unknownArgumentExit()
 
 DEFAULT_SKIP_OBJECTS = {'kind', 'etag', 'etags', '@type'}
 
@@ -1774,11 +1773,11 @@ def cleanJSON(topStructure, listLimit=None, skipObjects=None, timeObjects=None):
     if not isinstance(structure, (dict, list)):
       if key not in timeObjects:
         if isinstance(structure, str) and GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]:
-          return _getMain().escapeCRsNLs(structure)
+          return _gam().escapeCRsNLs(structure)
         return structure
       if isinstance(structure, str) and not structure.isdigit():
-        return _getMain().formatLocalTime(structure)
-      return _getMain().formatLocalTimestamp(structure)
+        return _gam().formatLocalTime(structure)
+      return _gam().formatLocalTimestamp(structure)
     if isinstance(structure, list):
       listLen = len(structure)
       listLen = min(listLen, listLimit or listLen)
@@ -1796,16 +1795,16 @@ def flattenJSON(topStructure, flattened=None,
       if key not in timeObjects:
         if isinstance(structure, str):
           if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (structure.find('\n') >= 0 or structure.find('\r') >= 0):
-            flattened[path] = _getMain().escapeCRsNLs(structure)
+            flattened[path] = _gam().escapeCRsNLs(structure)
           else:
             flattened[path] = structure
         else:
           flattened[path] = structure
       else:
         if isinstance(structure, str) and not structure.isdigit():
-          flattened[path] = _getMain().formatLocalTime(structure)
+          flattened[path] = _gam().formatLocalTime(structure)
         else:
-          flattened[path] = _getMain().formatLocalTimestamp(structure)
+          flattened[path] = _gam().formatLocalTimestamp(structure)
     elif isinstance(structure, list):
       listLen = len(structure)
       listLen = min(listLen, listLimit or listLen)
@@ -1841,35 +1840,35 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
     if objectName in subSkipObjects:
       return
     if objectName is not None:
-      _getMain().printJSONKey(objectName)
+      _gam().printJSONKey(objectName)
     subObjectKey = dictObjectsKey.get(objectName)
     if isinstance(objectValue, list):
       if objectName in simpleLists:
-        _getMain().printJSONValue(' '.join(objectValue))
+        _gam().printJSONValue(' '.join(objectValue))
         return
       if len(objectValue) == 1 and isinstance(objectValue[0], (str, bool, float, int)):
         if objectName is not None:
-          _getMain().printJSONValue(objectValue[0])
+          _gam().printJSONValue(objectValue[0])
         else:
-          _getMain().printKeyValueList([objectValue[0]])
+          _gam().printKeyValueList([objectValue[0]])
         return
       if objectName is not None:
-        _getMain().printBlankLine()
-        _getMain().Ind.Increment()
+        _gam().printBlankLine()
+        _gam().Ind.Increment()
       for subValue in objectValue:
         if isinstance(subValue, (str, bool, float, int)):
-          _getMain().printKeyValueList([subValue])
+          _gam().printKeyValueList([subValue])
         else:
           _show(None, subValue, subObjectKey, objectName, level+1, DEFAULT_SKIP_OBJECTS)
       if objectName is not None:
-        _getMain().Ind.Decrement()
+        _gam().Ind.Decrement()
     elif isinstance(objectValue, dict):
       if not subObjectKey:
         subObjectKey = dictObjectsKey.get(subObjectName)
       indentAfterFirst = unindentAfterLast = False
       if objectName is not None:
-        _getMain().printBlankLine()
-        _getMain().Ind.Increment()
+        _gam().printBlankLine()
+        _gam().Ind.Increment()
       elif level > 0:
         indentAfterFirst = unindentAfterLast = True
       subObjects = sorted(objectValue) if sortDictKeys else objectValue.keys()
@@ -1891,27 +1890,27 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
         if subObject not in subSkipObjects:
           _show(subObject, objectValue[subObject], subObjectKey, None, level+1, DEFAULT_SKIP_OBJECTS)
           if indentAfterFirst:
-            _getMain().Ind.Increment()
+            _gam().Ind.Increment()
             indentAfterFirst = False
       if objectName is not None or ((not indentAfterFirst) and unindentAfterLast):
-        _getMain().Ind.Decrement()
+        _gam().Ind.Decrement()
     else:
       if objectName not in timeObjects:
         if isinstance(objectValue, str) and (objectValue.find('\n') >= 0 or objectValue.find('\r') >= 0):
           if GC.Values[GC.SHOW_CONVERT_CR_NL]:
-            _getMain().printJSONValue(_getMain().escapeCRsNLs(objectValue))
+            _gam().printJSONValue(_gam().escapeCRsNLs(objectValue))
           else:
-            _getMain().printBlankLine()
-            _getMain().Ind.Increment()
-            _getMain().printKeyValueList([_getMain().Ind.MultiLineText(objectValue)])
-            _getMain().Ind.Decrement()
+            _gam().printBlankLine()
+            _gam().Ind.Increment()
+            _gam().printKeyValueList([_gam().Ind.MultiLineText(objectValue)])
+            _gam().Ind.Decrement()
         else:
-          _getMain().printJSONValue(objectValue if objectValue is not None else '')
+          _gam().printJSONValue(objectValue if objectValue is not None else '')
       else:
         if isinstance(objectValue, str) and not objectValue.isdigit():
-          _getMain().printJSONValue(_getMain().formatLocalTime(objectValue))
+          _gam().printJSONValue(_gam().formatLocalTime(objectValue))
         else:
-          _getMain().printJSONValue(_getMain().formatLocalTimestamp(objectValue))
+          _gam().printJSONValue(_gam().formatLocalTimestamp(objectValue))
 
   timeObjects = timeObjects or set()
   simpleLists = simpleLists or set()
@@ -1926,12 +1925,12 @@ class FormatJSONQuoteChar():
     self.SetQuoteChar(GM.Globals.get(GM.CSV_OUTPUT_QUOTE_CHAR, GC.Values.get(GC.CSV_OUTPUT_QUOTE_CHAR, '"')))
     if not formatJSONOnly:
       return
-    while _getMain().Cmd.ArgumentsRemaining():
-      myarg = _getMain().getArgument()
+    while _gam().Cmd.ArgumentsRemaining():
+      myarg = _gam().getArgument()
       if myarg == 'formatjson':
         self.SetFormatJSON(True)
         return
-      _getMain().unknownArgumentExit()
+      _gam().unknownArgumentExit()
 
   def SetCsvPF(self, csvPF):
     self.csvPF = csvPF
@@ -1945,7 +1944,7 @@ class FormatJSONQuoteChar():
     if myarg == 'formatjson':
       self.SetFormatJSON(True)
       return
-    _getMain().unknownArgumentExit()
+    _gam().unknownArgumentExit()
 
   def SetQuoteChar(self, quoteChar):
     self.quoteChar = quoteChar
@@ -1954,9 +1953,9 @@ class FormatJSONQuoteChar():
 
   def GetQuoteChar(self, myarg):
     if self.csvPF and myarg == 'quotechar':
-      self.SetQuoteChar(_getMain().getCharacter())
+      self.SetQuoteChar(_gam().getCharacter())
       return
-    _getMain().unknownArgumentExit()
+    _gam().unknownArgumentExit()
 
   def GetFormatJSONQuoteChar(self, myarg, addTitle=False, noExit=False):
     if myarg == 'formatjson':
@@ -1965,11 +1964,11 @@ class FormatJSONQuoteChar():
         self.csvPF.AddJSONTitles('JSON')
       return True
     if self.csvPF and myarg == 'quotechar':
-      self.SetQuoteChar(_getMain().getCharacter())
+      self.SetQuoteChar(_gam().getCharacter())
       return True
     if noExit:
       return False
-    _getMain().unknownArgumentExit()
+    _gam().unknownArgumentExit()
 
 # Batch processing request_id fields
 RI_ENTITY = 0
