@@ -116,9 +116,9 @@ def _showVacation(user, i, count, result, showDisabled, sigReplyFormat):
     Ind.Decrement()
   else: # SIG_REPLY_COMPACT
     if result.get('responseBodyPlainText'):
-      _getMain().printKeyValueList(['Message', escapeCRsNLs(result['responseBodyPlainText'])])
+      _getMain().printKeyValueList(['Message', _getMain().escapeCRsNLs(result['responseBodyPlainText'])])
     elif result.get('responseBodyHtml'):
-      _getMain().printKeyValueList(['Message', escapeCRsNLs(result['responseBodyHtml'])])
+      _getMain().printKeyValueList(['Message', _getMain().escapeCRsNLs(result['responseBodyHtml'])])
     else:
       _getMain().printKeyValueList(['Message', 'None'])
   Ind.Decrement()
@@ -222,11 +222,11 @@ def printShowVacation(users):
     row['subject'] = result.get('responseSubject', 'None')
     if result.get('responseBodyPlainText'):
       row['html'] = False
-      row['message'] = escapeCRsNLs(result['responseBodyPlainText'])
+      row['message'] = _getMain().escapeCRsNLs(result['responseBodyPlainText'])
     elif result.get('responseBodyHtml'):
       row['html'] = True
       if sigReplyFormat == SIG_REPLY_HTML:
-        row['message'] = escapeCRsNLs(result['responseBodyHtml'])
+        row['message'] = _getMain().escapeCRsNLs(result['responseBodyHtml'])
       else:
         row['message'] = result['responseBodyHtml'].replace('\r', '').replace('\n', '')
     else:

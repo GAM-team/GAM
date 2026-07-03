@@ -1419,7 +1419,7 @@ def printShowMessagesThreads(users, entityType):
       if not convertCRNL:
         row['Body'] = _getMessageBody(result['payload'])
       else:
-        row['Body'] = escapeCRsNLs(_getMessageBody(result['payload']))
+        row['Body'] = _getMain().escapeCRsNLs(_getMessageBody(result['payload']))
     if show_attachments:
       attachments = []
       _getAttachments(result['id'], result['payload'], attachmentNamePattern, attachments)

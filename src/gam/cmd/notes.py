@@ -139,7 +139,7 @@ def _showNote(note, j=0, jcount=0, FJQC=None, compact=False):
       _getMain().printKeyValueList([Ind.MultiLineText(body['text']['text'])])
       Ind.Decrement()
     else:
-      _getMain().printKeyValueList(['text', escapeCRsNLs(body['text']['text'])])
+      _getMain().printKeyValueList(['text', _getMain().escapeCRsNLs(body['text']['text'])])
   elif 'list' in body and 'listItems' in body['list']:
     _showNoteListItems(body['list']['listItems'])
   Ind.Decrement()
@@ -153,7 +153,7 @@ def createNote(users):
   def fixTextItem(item):
     if 'text' in item:
       if item['text']:
-        item['text'] = unescapeCRsNLs(item['text'])
+        item['text'] = un_getMain().escapeCRsNLs(item['text'])
         return
     if missingTextValue:
       item['text'] = missingTextValue

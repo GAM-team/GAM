@@ -465,7 +465,7 @@ SMTPMSA_DISPLAY_FIELDS = ['host', 'port', 'securityMode']
 
 def _showSendAs(result, j, jcount, sigReplyFormat, verifyOnly=False):
   if sigReplyFormat == SIG_REPLY_TEMPLATE:
-    _getMain().writeStdout(f"{escapeCRsNLs(result.get('signature', 'None'))}\n")
+    _getMain().writeStdout(f"{_getMain().escapeCRsNLs(result.get('signature', 'None'))}\n")
     return
   if result['displayName']:
     _getMain().printEntity([Ent.SENDAS_ADDRESS, f'{result["displayName"]} <{result["sendAsEmail"]}>'], j, jcount)

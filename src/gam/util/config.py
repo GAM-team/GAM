@@ -19,7 +19,8 @@ import time
 import httplib2
 import arrow
 
-from gamlib import glaction as Act
+from gamlib import glaction
+Act = glaction.GamAction()
 from gamlib import glapi as API
 from gamlib import glcfg as GC
 from gamlib import glentity as Ent

@@ -1103,7 +1103,7 @@ def doPrintCrOSDevices(entityList=None):
         csvPF.WriteRowNoFilter(row)
       return
     if 'notes' in cros:
-      cros['notes'] = escapeCRsNLs(cros['notes'])
+      cros['notes'] = _getMain().escapeCRsNLs(cros['notes'])
     if addCSVData:
       cros.update(addCSVData)
     for cpuStatusReport in cros.get('cpuStatusReports', []):

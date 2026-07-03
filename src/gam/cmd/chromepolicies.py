@@ -646,7 +646,7 @@ def doUpdateChromePolicy():
         elif vtype == 'TYPE_LIST':
           value = value.split(',') if value else []
         elif vtype == 'TYPE_STRING' and convertCRsNLs:
-          value = _getMain().unescapeCRsNLs(value)
+          value = _getMain().un_getMain().escapeCRsNLs(value)
         if myarg == 'chrome.users.chromebrowserupdates' and casedField == 'targetVersionPrefixSetting':
           mg = CHROME_TARGET_VERSION_CHANNEL_MINUS_PATTERN.match(value)
           if mg:

@@ -778,7 +778,7 @@ def doReport():
             if noAuthorizedApps:
               continue
             for app in item['msgValue']:
-              appName = f'App: {escapeCRsNLs(app["client_name"])}'
+              appName = f'App: {_getMain().escapeCRsNLs(app["client_name"])}'
               for key in ['num_users', 'client_id']:
                 title = f'{appName}{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{key}'
                 csvPF.AddTitles(title)
@@ -851,7 +851,7 @@ def doReport():
                 app.update(addCSVData)
               for an_item in subitem:
                 if an_item == 'client_name':
-                  app['name'] = f'App: {escapeCRsNLs(subitem[an_item])}'
+                  app['name'] = f'App: {_getMain().escapeCRsNLs(subitem[an_item])}'
                 elif an_item == 'num_users':
                   app['value'] = f'{subitem[an_item]} users'
                 elif an_item == 'client_id':
