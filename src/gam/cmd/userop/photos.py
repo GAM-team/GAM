@@ -6,6 +6,8 @@ Part of the _userop_tmp sub-package."""
 
 import re
 import sys
+
+import googleapiclient.http
 import base64
 import os
 

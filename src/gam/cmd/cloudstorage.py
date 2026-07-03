@@ -2,6 +2,8 @@
 
 import re
 import sys
+
+import googleapiclient.http
 import hashlib
 import copy
 import base64

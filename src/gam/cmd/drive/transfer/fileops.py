@@ -12,6 +12,8 @@ import re
 import json
 import sys
 
+import googleapiclient.http
+
 from gam.cmd.drive.core import DFA_PARENTID, DFA_PARENTQUERY, _validateUserGetFileIDs, getDriveFileEntity
 import os
 import time
