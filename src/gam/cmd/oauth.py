@@ -659,7 +659,6 @@ def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
 # gam oauth|oauth2 create|request [<EmailAddress>]
 # gam oauth|oauth2 create|request [admin <EmailAddress>] [scope|scopes <APIScopeURLList>]
 def doOAuthCreate():
-  Cmd = Cmd
   if not Cmd.PeekArgumentPresent(['admin', 'scope', 'scopes']):
     login_hint = getEmailAddress(noUid=True, optional=True)
     scopes = None
@@ -729,8 +728,6 @@ def doOAuthDelete():
 
 # gam oauth|oauth2 info|verify [showsecret] [accesstoken <AccessToken> idtoken <IDToken>] [showdetails]
 def doOAuthInfo():
-  Cmd = Cmd
-  Ind = Ind
   credentials = access_token = id_token = None
   showDetails = showSecret = False
   while Cmd.ArgumentsRemaining():
@@ -781,7 +778,6 @@ def doOAuthInfo():
 # gam oauth|oauth2 update [<EmailAddress>]
 # gam oauth|oauth2 update [admin <EmailAddress>]
 def doOAuthUpdate():
-  Cmd = Cmd
   if Cmd.PeekArgumentPresent(['admin']):
     Cmd.Advance()
     login_hint = getEmailAddress(noUid=True)
@@ -818,7 +814,6 @@ def doOAuthRefresh():
 
 # gam oauth|oauth2 export [<FileName>]
 def doOAuthExport():
-  Cmd = Cmd
   if Cmd.ArgumentsRemaining():
     filename = getString(Cmd.OB_FILE_NAME)
     checkForExtraneousArguments()
