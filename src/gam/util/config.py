@@ -23,9 +23,11 @@ from gamlib import glaction
 Act = glaction.GamAction()
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glentity as Ent
+from gamlib import glentity
+Ent = glentity.GamEntity()
 from gamlib import glglobals as GM
-from gamlib import glindent as Ind
+from gamlib import glindent
+Ind = glindent.GamIndent()
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
 

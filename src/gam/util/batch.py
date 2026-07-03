@@ -19,7 +19,8 @@ import time
 from gamlib import glapi as API
 from gamlib import glclargs
 from gamlib import glcfg as GC
-from gamlib import glentity as Ent
+from gamlib import glentity
+Ent = glentity.GamEntity()
 from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 

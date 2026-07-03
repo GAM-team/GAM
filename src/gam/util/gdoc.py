@@ -17,7 +17,8 @@ import google.auth.exceptions
 
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glentity as Ent
+from gamlib import glentity
+Ent = glentity.GamEntity()
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
