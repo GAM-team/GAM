@@ -84,6 +84,7 @@ import sys
 import arrow
 
 from gamlib import glcfg as GC
+from gam.util.fileio import setFilePath
 from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU

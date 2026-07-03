@@ -23,6 +23,7 @@ from gamlib import glaction
 Act = glaction.GamAction()
 from gamlib import glapi as API
 from gamlib import glcfg as GC
+from gam.util.fileio import setFilePath, readFile, writeFile, openFile
 from gamlib import glentity
 Ent = glentity.GamEntity()
 from gamlib import glglobals as GM
