@@ -110,7 +110,7 @@ def ACLRuleDict(rule):
 def ACLRuleKeyValueList(rule):
   if rule['scope']['type'] != 'default':
     return ['Scope', f'{rule["scope"]["type"]}:{rule["scope"]["value"]}', 'Role', rule['role']]
-  return ['Scope', f'{rule["scope"]["type"]}', 'Role', rule['role']}
+  return ['Scope', f'{rule["scope"]["type"]}', 'Role', rule['role']]
 
 def formatACLRule(rule):
   return formatKeyValueList('(', ACLRuleKeyValueList(rule), ')')
