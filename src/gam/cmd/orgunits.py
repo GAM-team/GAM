@@ -1151,7 +1151,7 @@ def doCheckOrgUnit():
   if not empty and GM.Globals[GM.SYSEXITRC] == 0:
     setSysExitRC(ORGUNIT_NOT_EMPTY_RC)
 
-ALIAS_TARGET_TYPES = ['user', 'group', 'target']
+from gam.constants import ALIAS_TARGET_TYPES  # noqa: F401 - re-exported
 
 # gam create aliases|nicknames <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
 #	[verifynotinvitable]

@@ -80,12 +80,11 @@ Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
 Cmd = glclargs.GamCLArgs()
 
+from gam.constants import DFA_URL
 
-def _getOrgunitsOrgUnitIdPath(cd, orgUnit):
-  if orgUnit.startswith('orgunits/'):
-    orgUnit = f'id:{orgUnit[9:]}'
-  orgUnitPath, orgUnitId = getOrgUnitId(cd, orgUnit)
-  return (orgUnitPath, f'orgunits/{orgUnitId[3:]}')
+
+from gam.util.orgunits import _getOrgunitsOrgUnitIdPath  # noqa: F401 - re-exported
+
 
 def _getChromePolicySchemaName():
   name = getString(Cmd.OB_SCHEMA_NAME)
@@ -1021,7 +1020,7 @@ CHROME_IMAGE_SCHEMAS_MAP = {
 
 # gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 def doCreateChromePolicyImage():
-  from gam.cmd.drive.core import DFA_URL, getMediaBody
+  from gam.cmd.drive.core import getMediaBody
   cp = buildGAPIObject(API.CHROMEPOLICY)
   parent = _getCustomersCustomerIdWithC()
   schema = getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)

@@ -615,7 +615,7 @@ DFA_MODIFIED_TIME = 'modifiedTime'
 DFA_PRESERVE_FILE_TIMES = 'preserveFileTimes'
 DFA_IGNORE_DEFAULT_VISIBILITY = 'ignoreDefaultVisibility'
 DFA_KEEP_REVISION_FOREVER = 'keepRevisionForever'
-DFA_URL = 'url'
+from gam.constants import DFA_URL  # noqa: F401 - re-exported
 DFA_LOCALFILEPATH = 'localFilepath'
 DFA_LOCALFILENAME = 'localFilename'
 DFA_LOCALMIMETYPE = 'localMimeType'

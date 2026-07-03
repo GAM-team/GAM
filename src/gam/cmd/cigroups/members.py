@@ -103,6 +103,7 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import UNKNOWN
+from gam.util.orgunits import _getOrgunitsOrgUnitIdPath
 from gam.util.output import systemErrorExit, writeStdout
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
 
@@ -432,7 +433,6 @@ def _checkPoliciesWithDASA():
 #	json <JSONData>
 #	[(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
 def doCreateUpdateCIPolicy():
-  from gam.cmd.chromepolicies import _getOrgunitsOrgUnitIdPath
   _checkPoliciesWithDASA()
   ci = buildGAPIObject(API.CLOUDIDENTITY_POLICY)
   cd = buildGAPIObject(API.DIRECTORY)

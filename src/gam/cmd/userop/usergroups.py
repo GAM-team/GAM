@@ -64,6 +64,8 @@ from gam.util.output import setSysExitRC
 from gam.constants import CHECK_USER_GROUPS_ERROR_RC
 from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermissions, _validateUserGetLookerStudioAssetIds, getLookerStudioAssetSelectionParameters, initLookerStudioAssetSelectionParameters
 
+from gam.util.group_parents import addJsonGroupParents, getGroupParents, printGroupParents, showGroupParents
+
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
 Ind = glindent.GamIndent()
@@ -332,15 +334,7 @@ def _getUserGroupOptionalDomainCustomerId():
     return {'customer': getString(Cmd.OB_CUSTOMER_ID)}
   return {}
 
-def _setUserGroupArgs(user, kwargs):
-  if 'customer' in kwargs:
-    if "'" not in user:
-      kwargs['query'] = f'memberKey={user}'
-    else:
-      quser = user.replace("'", "\\'")
-      kwargs['query'] = f'memberKey={quser}'
-  else:
-    kwargs['userKey'] = user
+from gam.util.domain_filters import _setUserGroupArgs  # noqa: F401 - re-exported
 
 def checkUserGroupMatchPattern(groupEmail, matchPattern):
   if not matchPattern['not']:
@@ -876,7 +870,6 @@ def printShowUserGroups(users):
 #	[roles <GroupRoleList>]
 #	[formatjson]
 def printShowGroupTree(users):
-  from gam.cmd.groups.members import addJsonGroupParents, getGroupParents, printGroupParents, showGroupParents
   cd = buildGAPIObject(API.DIRECTORY)
   kwargs = {'customer': GC.Values[GC.CUSTOMER_ID]}
   csvPF = CSVPrintFile(['User', 'Group', 'Name']) if Act.csvFormat() else None
@@ -1033,6 +1026,6 @@ def printUserGroupsList(users):
   csvPF.writeCSVfile('User GroupsList')
 
 # License command utilities
-LICENSE_PRODUCT_SKUIDS = 'productSkuIds'
+from gam.constants import LICENSE_PRODUCT_SKUIDS  # noqa: F401 - re-exported
 LICENSE_PREVIEW_TITLES = ['user', 'productId', 'skuId', 'action', 'message']
 

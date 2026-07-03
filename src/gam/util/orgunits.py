@@ -130,3 +130,9 @@ def getAllParentOrgUnitsForUser(cd, user):
     except (GAPI.badRequest, GAPI.invalidCustomerId, GAPI.loginRequired):
       _getMain().accessErrorExit(cd)
   return orgUnits
+
+def _getOrgunitsOrgUnitIdPath(cd, orgUnit):
+  if orgUnit.startswith('orgunits/'):
+    orgUnit = f'id:{orgUnit[9:]}'
+  orgUnitPath, orgUnitId = getOrgUnitId(cd, orgUnit)
+  return (orgUnitPath, f'orgunits/{orgUnitId[3:]}')

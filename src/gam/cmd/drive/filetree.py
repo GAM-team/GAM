@@ -223,35 +223,6 @@ def buildFileTree(feed, drive):
       fileTree[parentId]['children'].append(fileId)
   return fileTree
 
-def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row,
-                      fullpath=False, showDepth=False, folderPathOnly=False, parentPathOnly=False):
-  from gam.cmd.drive.filepaths import getFilePaths  # lazy import to avoid circular dependency
-  _, paths, maxDepth = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo,
-                                    fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
-  kcount = len(paths)
-  if showDepth:
-    row['depth'] = maxDepth
-  row['paths'] = kcount
-  k = 0
-  for path in sorted(paths):
-    key = f'path{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'
-    csvPF.AddTitles(key)
-    if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
-      row[key] = escapeCRsNLs(path)
-    else:
-      row[key] = path
-    k += 1
-
-def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=False, folderPathOnly=False, parentPathOnly=False):
-  from gam.cmd.drive.filepaths import getFilePaths  # lazy import to avoid circular dependency
-  _, paths, _ = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=addParentsToTree,
-                             showDepth=False, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
-  fileEntryInfo['paths'] = []
-  for path in sorted(paths):
-    if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
-      fileEntryInfo['paths'].append(escapeCRsNLs(path))
-    else:
-      fileEntryInfo['paths'].append(path)
 
 def _validateACLOwnerType(location, body):
   if body.get('role', '') == 'owner' and body['type'] != 'user':

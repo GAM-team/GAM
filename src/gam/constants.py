@@ -7,6 +7,8 @@ shared across cmd/ modules.
 import re
 import string
 
+from gamlib import glcfg as GC
+
 # Time formats
 IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%:z'
 RFC2822_TIME_FORMAT = '%a, %d %b %Y %H:%M:%S %z'
@@ -160,3 +162,254 @@ BUILDING_ADDRESS_FIELD_MAP = {
   'sublocality': 'sublocality',
   'zipcode': 'postalCode',
 }
+
+# Alias target types (moved from cmd/orgunits.py)
+ALIAS_TARGET_TYPES = ['user', 'group', 'target']
+
+# Info/display option sets (moved from cmd/groups/members.py, cmd/users/manage.py)
+INFO_GROUP_OPTIONS = {'nousers', 'groups'}
+INFO_USER_OPTIONS = {'noaliases', 'nobuildingnames', 'nogroups', 'nolicenses', 'nolicences', 'noschemas', 'schemas', 'userview'}
+USER_SKIP_OBJECTS = {'thumbnailPhotoEtag'}
+USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime', 'suspensionTime', 'archivalTime', 'disabledTime'}
+
+# License constants (moved from cmd/userop/usergroups.py)
+LICENSE_PRODUCT_SKUIDS = 'productSkuIds'
+
+# Drive file attribute keys (moved from cmd/drive/core.py)
+DFA_URL = 'url'
+
+# User fields choice map (moved from cmd/users/manage.py)
+USER_FIELDS_CHOICE_MAP = {
+  'address': 'addresses',
+  'addresses': 'addresses',
+  'admin': ['isAdmin', 'isDelegatedAdmin'],
+  'agreed2terms': 'agreedToTerms',
+  'agreedtoterms': 'agreedToTerms',
+  'aliases': ['aliases', 'nonEditableAliases'],
+  'archived': ['archived', 'archivalTime'],
+  'changepassword': 'changePasswordAtNextLogin',
+  'changepasswordatnextlogin': 'changePasswordAtNextLogin',
+  'creationtime': 'creationTime',
+  'customerid': 'customerId',
+  'deletiontime': 'deletionTime',
+  'displayname': 'name.displayName',
+  'email': 'emails',
+  'emails': 'emails',
+  'employeeid': 'externalIds',
+  'externalid': 'externalIds',
+  'externalids': 'externalIds',
+  'familyname': 'name.familyName',
+  'firstname': 'name.givenName',
+  'fullname': 'name.fullName',
+  'gal': 'includeInGlobalAddressList',
+  'gender': ['gender.type', 'gender.customGender', 'gender.addressMeAs'],
+  'givenname': 'name.givenName',
+  'guestaccountinfo': ['guestAccountInfo.primaryGuestEmail'],
+  'id': 'id',
+  'im': 'ims',
+  'ims': 'ims',
+  'includeinglobaladdresslist': 'includeInGlobalAddressList',
+  'ipwhitelisted': 'ipWhitelisted',
+  'isadmin': ['isAdmin', 'isDelegatedAdmin'],
+  'isdelegatedadmin': ['isAdmin', 'isDelegatedAdmin'],
+  'isenforcedin2sv': 'isEnforcedIn2Sv',
+  'isenrolledin2sv': 'isEnrolledIn2Sv',
+  'isguestuser': 'isGuestUser',
+  'is2svenforced': 'isEnforcedIn2Sv',
+  'is2svenrolled': 'isEnrolledIn2Sv',
+  'ismailboxsetup': 'isMailboxSetup',
+  'keyword': 'keywords',
+  'keywords': 'keywords',
+  'language': 'languages',
+  'languages': 'languages',
+  'lastlogintime': 'lastLoginTime',
+  'lastname': 'name.familyName',
+  'location': 'locations',
+  'locations': 'locations',
+  'manager': 'relations',
+  'name': ['name.givenName', 'name.familyName', 'name.fullName', 'name.displayName'],
+  'nicknames': ['aliases', 'nonEditableAliases'],
+  'noneditablealiases': ['aliases', 'nonEditableAliases'],
+  'note': 'notes',
+  'notes': 'notes',
+  'org': 'orgUnitPath',
+  'organization': 'organizations',
+  'organizations': 'organizations',
+  'organisation': 'organizations',
+  'organisations': 'organizations',
+  'orgunit': 'orgUnitPath',
+  'orgunitpath': 'orgUnitPath',
+  'otheremail': 'emails',
+  'otheremails': 'emails',
+  'ou': 'orgUnitPath',
+  'phone': 'phones',
+  'phones': 'phones',
+  'photo': 'thumbnailPhotoUrl',
+  'photourl': 'thumbnailPhotoUrl',
+  'posix': 'posixAccounts',
+  'posixaccounts': 'posixAccounts',
+  'primaryemail': 'primaryEmail',
+  'recoveryemail': 'recoveryEmail',
+  'recoveryphone': 'recoveryPhone',
+  'relation': 'relations',
+  'relations': 'relations',
+  'ssh': 'sshPublicKeys',
+  'sshkeys': 'sshPublicKeys',
+  'sshpublickeys': 'sshPublicKeys',
+  'suspended': ['suspended', 'suspensionReason', 'suspensionTime'],
+  'thumbnailphotourl': 'thumbnailPhotoUrl',
+  'username': 'primaryEmail',
+  'website': 'websites',
+  'websites': 'websites',
+  }
+
+# Group settings choice maps (moved from cmd/mobile.py)
+GROUP_DISCOVER_CHOICES = {
+  'allmemberscandiscover': 'ALL_MEMBERS_CAN_DISCOVER',
+  'allindomaincandiscover': 'ALL_IN_DOMAIN_CAN_DISCOVER',
+  'anyonecandiscover': 'ANYONE_CAN_DISCOVER',
+  }
+GROUP_ASSIST_CONTENT_CHOICES = {
+  'allmembers': 'ALL_MEMBERS',
+  'ownersandmanagers': 'OWNERS_AND_MANAGERS',
+  'managersonly': 'MANAGERS_ONLY',
+  'ownersonly': 'OWNERS_ONLY',
+  'none': 'NONE',
+  }
+GROUP_MODERATE_CONTENT_CHOICES = {
+  'allmembers': 'ALL_MEMBERS',
+  'ownersandmanagers': 'OWNERS_AND_MANAGERS',
+  'ownersonly': 'OWNERS_ONLY',
+  'none': 'NONE',
+  }
+GROUP_MODERATE_MEMBERS_CHOICES = {
+  'allmembers': 'ALL_MEMBERS',
+  'ownersandmanagers': 'OWNERS_AND_MANAGERS',
+  'ownersonly': 'OWNERS_ONLY',
+  'none': 'NONE',
+  }
+
+# Group settings attribute maps (moved from cmd/mobile.py)
+GROUP_DEPRECATED_ATTRIBUTES = {
+  'allowgooglecommunication': ['allowGoogleCommunication', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'favoriterepliesontop': ['favoriteRepliesOnTop', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'maxmessagebytes': ['maxMessageBytes', {GC.VAR_TYPE: GC.TYPE_INTEGER, GC.VAR_LIMITS: (1024, 1048576)}],
+  'messagedisplayfont': ['messageDisplayFont', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                'choices': {'defaultfont': 'DEFAULT_FONT', 'fixedwidthfont': 'FIXED_WIDTH_FONT'}}],
+  'whocanaddreferences': ['whoCanAddReferences', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmarkfavoritereplyonowntopic': ['whoCanMarkFavoriteReplyOnOwnTopic', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  }
+GROUP_DISCOVER_ATTRIBUTES = {
+  'showingroupdirectory': ['showInGroupDirectory', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  }
+GROUP_ASSIST_CONTENT_ATTRIBUTES = {
+  'whocanassigntopics': ['whoCanAssignTopics', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanenterfreeformtags': ['whoCanEnterFreeFormTags', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanhideabuse': ['whoCanHideAbuse', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmaketopicssticky': ['whoCanMakeTopicsSticky', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmarkduplicate': ['whoCanMarkDuplicate', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmarkfavoritereplyonanytopic': ['whoCanMarkFavoriteReplyOnAnyTopic', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmarknoresponseneeded': ['whoCanMarkNoResponseNeeded', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmodifytagsandcategories': ['whoCanModifyTagsAndCategories', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocantaketopics': ['whoCanTakeTopics', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanunassigntopic': ['whoCanUnassignTopic', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanunmarkfavoritereplyonanytopic': ['whoCanUnmarkFavoriteReplyOnAnyTopic', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  }
+GROUP_MODERATE_CONTENT_ATTRIBUTES = {
+  'whocanapprovemessages': ['whoCanApproveMessages', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocandeleteanypost': ['whoCanDeleteAnyPost', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocandeletetopics': ['whoCanDeleteTopics', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocanlocktopics': ['whoCanLockTopics', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocanmovetopicsin': ['whoCanMoveTopicsIn', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocanmovetopicsout': ['whoCanMoveTopicsOut', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocanpostannouncements': ['whoCanPostAnnouncements', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  }
+GROUP_MODERATE_MEMBERS_ATTRIBUTES = {
+  'whocanadd': ['whoCanAdd', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                              'choices': {'allmanagerscanadd': 'ALL_MANAGERS_CAN_ADD', 'allownerscanadd': 'ALL_OWNERS_CAN_ADD',
+                                          'allmemberscanadd': 'ALL_MEMBERS_CAN_ADD', 'nonecanadd': 'NONE_CAN_ADD'}}],
+  'whocanapprovemembers': ['whoCanApproveMembers', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                    'choices': {'allownerscanapprove': 'ALL_OWNERS_CAN_APPROVE', 'allmanagerscanapprove': 'ALL_MANAGERS_CAN_APPROVE',
+                                                                'allmemberscanapprove': 'ALL_MEMBERS_CAN_APPROVE', 'nonecanapprove': 'NONE_CAN_APPROVE'}}],
+  'whocanbanusers': ['whoCanBanUsers', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_MEMBERS_CHOICES}],
+  'whocaninvite': ['whoCanInvite', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                    'choices': {'allmemberscaninvite': 'ALL_MEMBERS_CAN_INVITE', 'allmanagerscaninvite': 'ALL_MANAGERS_CAN_INVITE',
+                                                'allownerscaninvite': 'ALL_OWNERS_CAN_INVITE', 'nonecaninvite': 'NONE_CAN_INVITE'}}],
+  'whocanmodifymembers': ['whoCanModifyMembers', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_MEMBERS_CHOICES}],
+  }
+GROUP_BASIC_ATTRIBUTES = {
+  'description': ['description', {GC.VAR_TYPE: GC.TYPE_STRING}],
+  'name': ['name', {GC.VAR_TYPE: GC.TYPE_STRING}],
+  'displayname': ['name', {GC.VAR_TYPE: GC.TYPE_STRING}],
+  }
+GROUP_SETTINGS_ATTRIBUTES = {
+  'allowexternalmembers': ['allowExternalMembers', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'allowwebposting': ['allowWebPosting', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'archiveonly': ['archiveOnly', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'customfootertext': ['customFooterText', {GC.VAR_TYPE: GC.TYPE_STRING}],
+  'customreplyto': ['customReplyTo', {GC.VAR_TYPE: GC.TYPE_EMAIL_OPTIONAL}],
+  'customrolesenabledforsettingstobemerged': ['customRolesEnabledForSettingsToBeMerged', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'defaultmessagedenynotificationtext': ['defaultMessageDenyNotificationText', {GC.VAR_TYPE: GC.TYPE_STRING}],
+  'defaultsender': ['defaultSender', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                      'choices': {'self': 'DEFAULT_SELF', 'defaultself': 'DEFAULT_SELF', 'group': 'GROUP'}}],
+  'enablecollaborativeinbox': ['enableCollaborativeInbox', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'includecustomfooter': ['includeCustomFooter', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'includeinglobaladdresslist': ['includeInGlobalAddressList', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'isarchived': ['isArchived', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'memberscanpostasthegroup': ['membersCanPostAsTheGroup', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'messagemoderationlevel': ['messageModerationLevel', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                        'choices': {'moderateallmessages': 'MODERATE_ALL_MESSAGES', 'moderatenonmembers': 'MODERATE_NON_MEMBERS',
+                                                                    'moderatenewmembers': 'MODERATE_NEW_MEMBERS', 'moderatenone': 'MODERATE_NONE'}}],
+  'primarylanguage': ['primaryLanguage', {GC.VAR_TYPE: GC.TYPE_LANGUAGE}],
+  'replyto': ['replyTo', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                          'choices': {'replytocustom': 'REPLY_TO_CUSTOM', 'replytosender': 'REPLY_TO_SENDER', 'replytolist': 'REPLY_TO_LIST',
+                                      'replytoowner': 'REPLY_TO_OWNER', 'replytoignore': 'REPLY_TO_IGNORE', 'replytomanagers': 'REPLY_TO_MANAGERS'}}],
+  'sendmessagedenynotification': ['sendMessageDenyNotification', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'spammoderationlevel': ['spamModerationLevel', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                  'choices': {'allow': 'ALLOW', 'moderate': 'MODERATE', 'silentlymoderate': 'SILENTLY_MODERATE', 'reject': 'REJECT'}}],
+  'whocanaddexternalmembers': ['whoCanAddExternalMembers', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                            'choices': {'onlyadminscanaddexternalmembers': 'ONLY_ADMINS_CAN_ADD_EXTERNAL_MEMBERS',
+                                                                        'enduserscanaddexternalmembers': 'END_USERS_CAN_ADD_EXTERNAL_MEMBERS'}}],
+  'whocancontactowner': ['whoCanContactOwner', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                'choices': {'anyonecancontact': 'ANYONE_CAN_CONTACT', 'allindomaincancontact': 'ALL_IN_DOMAIN_CAN_CONTACT',
+                                                            'allmemberscancontact': 'ALL_MEMBERS_CAN_CONTACT', 'allmanagerscancontact': 'ALL_MANAGERS_CAN_CONTACT',
+                                                            'allownerscancontact': 'ALL_OWNERS_CAN_CONTACT'}}],
+  'whocanjoin': ['whoCanJoin', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                'choices': {'anyonecanjoin': 'ANYONE_CAN_JOIN', 'allindomaincanjoin': 'ALL_IN_DOMAIN_CAN_JOIN',
+                                            'invitedcanjoin': 'INVITED_CAN_JOIN', 'canrequesttojoin': 'CAN_REQUEST_TO_JOIN'}}],
+  'whocanleavegroup': ['whoCanLeaveGroup', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                            'choices': {'allmanagerscanleave': 'ALL_MANAGERS_CAN_LEAVE', 'allownerscanleave': 'ALL_OWNERS_CAN_LEAVE',
+                                                        'allmemberscanleave': 'ALL_MEMBERS_CAN_LEAVE', 'nonecanleave': 'NONE_CAN_LEAVE'}}],
+  'whocanpostmessage': ['whoCanPostMessage', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                              'choices': {'nonecanpost': 'NONE_CAN_POST', 'allmanagerscanpost': 'ALL_MANAGERS_CAN_POST',
+                                                          'allmemberscanpost': 'ALL_MEMBERS_CAN_POST', 'allownerscanpost': 'ALL_OWNERS_CAN_POST',
+                                                          'allindomaincanpost': 'ALL_IN_DOMAIN_CAN_POST', 'anyonecanpost': 'ANYONE_CAN_POST'}}],
+  'whocanviewgroup': ['whoCanViewGroup', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                          'choices': {'anyonecanview': 'ANYONE_CAN_VIEW', 'allindomaincanview': 'ALL_IN_DOMAIN_CAN_VIEW',
+                                                      'allmemberscanview': 'ALL_MEMBERS_CAN_VIEW', 'allmanagerscanview': 'ALL_MANAGERS_CAN_VIEW',
+                                                      'allownerscanview': 'ALL_OWNERS_CAN_VIEW'}}],
+  'whocanviewmembership': ['whoCanViewMembership', {GC.VAR_TYPE: GC.TYPE_CHOICE,
+                                                    'choices': {'allindomaincanview': 'ALL_IN_DOMAIN_CAN_VIEW', 'allmemberscanview': 'ALL_MEMBERS_CAN_VIEW',
+                                                                'allmanagerscanview': 'ALL_MANAGERS_CAN_VIEW', 'allownerscanview': 'ALL_OWNERS_CAN_VIEW'}}],
+  }
+GROUP_ALIAS_ATTRIBUTES = {
+  'collaborative': ['enableCollaborativeInbox', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  'gal': ['includeInGlobalAddressList', {GC.VAR_TYPE: GC.TYPE_BOOLEAN}],
+  }
+GROUP_MERGED_ATTRIBUTES = {
+  'whocandiscovergroup': ['whoCanDiscoverGroup', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_DISCOVER_CHOICES}],
+  'whocanassistcontent': ['whoCanAssistContent', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_ASSIST_CONTENT_CHOICES}],
+  'whocanmoderatecontent': ['whoCanModerateContent', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_CONTENT_CHOICES}],
+  'whocanmoderatemembers': ['whoCanModerateMembers', {GC.VAR_TYPE: GC.TYPE_CHOICE, 'choices': GROUP_MODERATE_MEMBERS_CHOICES}],
+  }
+GROUP_MERGED_ATTRIBUTES_PRINT_ORDER = ['whoCanDiscoverGroup', 'whoCanAssistContent', 'whoCanModerateContent', 'whoCanModerateMembers']
+GROUP_MERGED_TO_COMPONENT_MAP = {
+  'whoCanDiscoverGroup': GROUP_DISCOVER_ATTRIBUTES,
+  'whoCanAssistContent': GROUP_ASSIST_CONTENT_ATTRIBUTES,
+  'whoCanModerateContent': GROUP_MODERATE_CONTENT_ATTRIBUTES,
+  'whoCanModerateMembers': GROUP_MODERATE_MEMBERS_ATTRIBUTES,
+  }
+GROUP_ATTRIBUTES_SET = set(list(GROUP_BASIC_ATTRIBUTES)+list(GROUP_SETTINGS_ATTRIBUTES)+list(GROUP_ALIAS_ATTRIBUTES)+
+                           list(GROUP_ASSIST_CONTENT_ATTRIBUTES)+list(GROUP_MODERATE_CONTENT_ATTRIBUTES)+list(GROUP_MODERATE_MEMBERS_ATTRIBUTES)+
+                           list(GROUP_MERGED_ATTRIBUTES)+list(GROUP_DEPRECATED_ATTRIBUTES))
+GROUP_FIELDS_WITH_CRS_NLS = {'customFooterText', 'defaultMessageDenyNotificationText', 'description'}

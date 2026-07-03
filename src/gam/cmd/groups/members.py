@@ -113,6 +113,18 @@ from gam.util.entity import (
 )
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
+from gam.constants import (
+    GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_ATTRIBUTES_SET, GROUP_DEPRECATED_ATTRIBUTES,
+    GROUP_DISCOVER_ATTRIBUTES, GROUP_FIELDS_WITH_CRS_NLS, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER,
+    GROUP_MERGED_TO_COMPONENT_MAP, GROUP_MODERATE_CONTENT_ATTRIBUTES,
+    GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES,
+    INFO_USER_OPTIONS, USER_FIELDS_CHOICE_MAP, USER_SKIP_OBJECTS, USER_TIME_OBJECTS,
+)
+from gam.util.domain_filters import (
+    getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters,
+    makeUserGroupDomainQueryFilters, _setUserGroupArgs,
+)
+from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList
 from gam.util.output import executeBatch, writeStderr, writeStdout
 
 
@@ -249,7 +261,7 @@ GROUP_FIELDS_CHOICE_MAP = {
   'name': 'name',
   }
 GROUP_INFO_PRINT_ORDER = ['id', 'name', 'description', 'directMembersCount', 'adminCreated']
-INFO_GROUP_OPTIONS = {'nousers', 'groups'}
+from gam.constants import INFO_GROUP_OPTIONS  # noqa: F401 - re-exported
 
 CIGROUP_FIELDS_CHOICE_MAP = {
   'additionalgroupkeys': 'additionalGroupKeys',
@@ -309,8 +321,6 @@ def _showCIGroup(group, groupEmail, i=0, count=0):
   Ind.Decrement()
 
 def infoGroups(entityList):
-  from gam.cmd.mobile import GROUP_ATTRIBUTES_SET, GROUP_DEPRECATED_ATTRIBUTES, GROUP_FIELDS_WITH_CRS_NLS, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_SETTINGS_ATTRIBUTES
-  from gam.cmd.users.manage import INFO_USER_OPTIONS
   def initGroupFieldsLists():
     if not groupFieldsLists['cd']:
       groupFieldsLists['cd'] = ['email']
@@ -586,18 +596,9 @@ def infoGroups(entityList):
 def doInfoGroups():
   infoGroups(getEntityList(Cmd.OB_GROUP_ENTITY))
 
-def groupFilters(kwargs, query):
-  queryTitle = ''
-  if kwargs.get('domain'):
-    queryTitle += f'domain={kwargs["domain"]}, '
-  if query is not None:
-    queryTitle += f'query="{query}", '
-  if queryTitle:
-    return query, queryTitle[:-2]
-  return query, queryTitle
+from gam.util.domain_filters import groupFilters  # noqa: F401 - re-exported
 
 def getGroupFilters(myarg, kwargsDict, showOwnedBy):
-  from gam.cmd.aliases import getUserGroupDomainQueryFilters
   if getUserGroupDomainQueryFilters(myarg, kwargsDict):
     pass
   elif myarg in {'member', 'showownedby'}:
@@ -810,8 +811,6 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintGroups():
-  from gam.cmd.aliases import initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
-  from gam.cmd.mobile import GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_ATTRIBUTES_SET, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_FIELDS_WITH_CRS_NLS, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
   def _printGroupRow(groupEntity, groupSettings, groupMembers):
     nonlocal itemCount
     row = {}
@@ -1378,7 +1377,6 @@ def doInfoGroupMembers():
   infoGroupMembers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1], False)
 
 def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsDict):
-  from gam.cmd.aliases import makeUserGroupDomainQueryFilters
   if entityList is None:
     updateFieldsForGroupMatchPatterns(matchPatterns, fieldsList)
     entityList = []
@@ -1565,8 +1563,6 @@ GROUPMEMBERS_SORT_FIELDS = ['type', 'role', 'id', 'status', 'email']
 #	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def doPrintGroupMembers():
-  from gam.cmd.aliases import initUserGroupDomainQueryFilters
-  from gam.cmd.users.manage import USER_FIELDS_CHOICE_MAP, USER_SKIP_OBJECTS, USER_TIME_OBJECTS, _getSchemaNameList, _initSchemaParms
   def getNameFromPeople(memberId):
     try:
       info = callGAPI(people.people(), 'get',
@@ -1898,7 +1894,6 @@ def doPrintGroupMembers():
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[includederivedmembership]
 def doShowGroupMembers():
-  from gam.cmd.aliases import initUserGroupDomainQueryFilters
   def _roleOrder(key):
     return {Ent.ROLE_OWNER: 0, Ent.ROLE_MANAGER: 1, Ent.ROLE_MEMBER: 2}.get(key, 3)
 
@@ -2001,58 +1996,7 @@ def doShowGroupMembers():
     if checkGroupMatchPatterns(groupEmail, group, matchPatterns):
       _showGroup(groupEmail, 0)
 
-def getGroupParents(cd, groupParents, groupEmail, groupName, kwargs):
-  from gam.cmd.userop.usergroups import _setUserGroupArgs
-  groupParents[groupEmail] = {'name': groupName, 'parents': []}
-  _setUserGroupArgs(groupEmail, kwargs)
-  try:
-    entityList = callGAPIpages(cd.groups(), 'list', 'groups',
-                               throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
-                               retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                               orderBy='email', fields='nextPageToken,groups(email,name)', **kwargs)
-    for parentGroup in entityList:
-      groupParents[groupEmail]['parents'].append(parentGroup['email'])
-      if parentGroup['email'] not in groupParents:
-        getGroupParents(cd, groupParents, parentGroup['email'], parentGroup['name'], kwargs)
-  except (GAPI.invalidMember, GAPI.invalidInput):
-    badRequestWarning(Ent.GROUP, Ent.MEMBER, groupEmail)
-  except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
-    accessErrorExit(cd)
-
-def showGroupParents(groupParents, groupEmail, role, i, count):
-  kvList = [groupEmail, f'{groupParents[groupEmail]["name"]}']
-  if role:
-    kvList.extend([Ent.Singular(Ent.ROLE), role])
-  printKeyValueListWithCount(kvList, i, count)
-  Ind.Increment()
-  for parentEmail in groupParents[groupEmail]['parents']:
-    showGroupParents(groupParents, parentEmail, None, 0, 0)
-  Ind.Decrement()
-
-def addJsonGroupParents(groupParents, userGroup, groupEmail):
-  userGroup.setdefault('parents', [])
-  for parentEmail in groupParents[groupEmail]['parents']:
-    userGroup['parents'].append({'email': parentEmail, 'name': groupParents[parentEmail]['name'], 'parents': []})
-    addJsonGroupParents(groupParents, userGroup['parents'][-1], parentEmail)
-
-def printGroupParents(groupParents, groupEmail, row, csvPF, delimiter, showParentsAsList):
-  if groupParents[groupEmail]['parents']:
-    for parentEmail in groupParents[groupEmail]['parents']:
-      row['parents'].append({'email': parentEmail, 'name': groupParents[parentEmail]['name']})
-      printGroupParents(groupParents, parentEmail, row, csvPF, delimiter, showParentsAsList)
-      del row['parents'][-1]
-  else:
-    if not showParentsAsList:
-      csvPF.WriteRowTitles(flattenJSON(row))
-    else:
-      crow = row.copy()
-      if 'Role' in row:
-        crow['Role'] = row['Role']
-      parents = crow.pop('parents')
-      crow['ParentsCount'] = len(parents)
-      crow['Parents'] = delimiter.join([parent['email'] for parent in parents])
-      crow['ParentsName'] = delimiter.join([parent['name'] for parent in parents])
-      csvPF.WriteRow(flattenJSON(crow))
+from gam.util.group_parents import getGroupParents, showGroupParents, addJsonGroupParents, printGroupParents  # noqa: F401 - re-exported
 
 # gam print grouptree <GroupEntity> [todrive <ToDriveAttribute>*]
 #	[showparentsaslist [<Boolean>]] [delimiter <Character>]

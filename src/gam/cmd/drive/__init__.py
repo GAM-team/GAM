@@ -93,6 +93,8 @@ from gam.cmd.drive.activity import (  # noqa: F401
     showSharedDriveThemes,
 )
 from gam.cmd.drive.filepaths import (  # noqa: F401
+    addFilePathsToInfo,
+    addFilePathsToRow,
     DRIVEFILE_BASIC_PERMISSION_FIELDS,
     DRIVEFILE_ORDERBY_CHOICE_MAP,
     DRIVEFILE_PERMISSIONS_FOR_VIEW_CHOICES,
@@ -168,8 +170,6 @@ from gam.cmd.drive.filetree import (  # noqa: F401
     _validateACLOwnerType,
     _validatePermissionAttributes,
     _validatePermissionOwnerType,
-    addFilePathsToInfo,
-    addFilePathsToRow,
     buildFileTree,
     extendFileTree,
     extendFileTreeParents,

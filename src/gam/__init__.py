@@ -816,819 +816,867 @@ from util.batch import _showCount  # noqa: E402
 from util.batch import showCountCrOS  # noqa: E402
 from util.batch import showCountUser  # noqa: E402
 
-class _CmdRef:
-    """Lazy reference to a command function, resolved on first call.
-
-    Allows routing tables to reference cmd/ functions without importing
-    them at module load time, breaking circular import chains.
-    """
-    __slots__ = ('_module', '_name', '_func')
-
-    def __init__(self, module, name):
-        self._module = module
-        self._name = name
-        self._func = None
-
-    def __call__(self, *args, **kwargs):
-        if self._func is None:
-            import importlib
-            mod = importlib.import_module(self._module)
-            self._func = getattr(mod, self._name)
-        return self._func(*args, **kwargs)
-
-    def __repr__(self):
-        return f'_CmdRef({self._module!r}, {self._name!r})'
-
-def _cmd(module, name):
-    """Create a lazy reference to a command function."""
-    return _CmdRef(module, name)
-
 # Command module re-exports for routing tables
 # Command function references (lazy-loaded at first call)
 # These replace the old `from gam.cmd.X import func` re-exports
 # gam.cmd.admin
-doCreateAdmin = _cmd('gam.cmd.admin', 'doCreateAdmin')
-doCreateUpdateAdminRoles = _cmd('gam.cmd.admin', 'doCreateUpdateAdminRoles')
-doDeleteAdmin = _cmd('gam.cmd.admin', 'doDeleteAdmin')
-doDeleteAdminRole = _cmd('gam.cmd.admin', 'doDeleteAdminRole')
-doInfoPrintShowAdminRoles = _cmd('gam.cmd.admin', 'doInfoPrintShowAdminRoles')
-doPrintShowAdmins = _cmd('gam.cmd.admin', 'doPrintShowAdmins')
-doPrintShowPrivileges = _cmd('gam.cmd.admin', 'doPrintShowPrivileges')
+
+# Command module imports
+from gam.cmd.admin import (
+    doCreateAdmin,
+    doCreateUpdateAdminRoles,
+    doDeleteAdmin,
+    doDeleteAdminRole,
+    doInfoPrintShowAdminRoles,
+    doPrintShowAdmins,
+    doPrintShowPrivileges,
+)
+from gam.cmd.alerts import (
+    doClearAlertSettings,
+    doCreateAlertFeedback,
+    doDeleteOrUndeleteAlert,
+    doInfoAlert,
+    doPrintShowAlertFeedback,
+    doPrintShowAlerts,
+    doShowAlertSettings,
+    doUpdateAlertSettings,
+)
+from gam.cmd.aliases import (
+    deleteUsersAliases,
+    doCreateUpdateAliases,
+    doDeleteAliases,
+    doInfoAliases,
+    doPrintAddresses,
+    doPrintAliases,
+    doRemoveAliases,
+)
+from gam.cmd.analytics import (
+    printShowAnalyticAccountSummaries,
+    printShowAnalyticAccounts,
+    printShowAnalyticDatastreams,
+    printShowAnalyticProperties,
+)
+from gam.cmd.audit import doCreateMonitor, doDeleteMonitor, doShowMonitors
+from gam.cmd.browsers import (
+    doCreateBrowserToken,
+    doCreateChromeProfileCommand,
+    doDeleteBrowsers,
+    doDeleteChromeProfile,
+    doInfoBrowsers,
+    doInfoChromeProfile,
+    doInfoChromeProfileCommand,
+    doMoveBrowsers,
+    doPrintShowBrowserTokens,
+    doPrintShowBrowsers,
+    doPrintShowChromeProfileCommands,
+    doPrintShowChromeProfiles,
+    doRevokeBrowserToken,
+    doUpdateBrowsers,
+)
+from gam.cmd.caa import (
+    doCreateCAALevel,
+    doDeleteCAALevel,
+    doPrintShowCAALevels,
+    doUpdateCAALevel,
+)
+from gam.cmd.calendar import (
+    doCalendarsCreateACL,
+    doCalendarsCreateACLs,
+    doCalendarsCreateEvent,
+    doCalendarsDeleteACL,
+    doCalendarsDeleteACLs,
+    doCalendarsDeleteEvents,
+    doCalendarsDeleteEventsOld,
+    doCalendarsEmptyTrash,
+    doCalendarsImportEvent,
+    doCalendarsInfoACLs,
+    doCalendarsInfoEvents,
+    doCalendarsModifySettings,
+    doCalendarsMoveEvents,
+    doCalendarsMoveEventsOld,
+    doCalendarsPrintShowACLs,
+    doCalendarsPrintShowEvents,
+    doCalendarsPrintShowSettings,
+    doCalendarsPurgeEvents,
+    doCalendarsUpdateACL,
+    doCalendarsUpdateACLs,
+    doCalendarsUpdateEvents,
+    doCalendarsUpdateEventsOld,
+    doCalendarsWipeEvents,
+    doResourceCreateCalendarACLs,
+    doResourceDeleteCalendarACLs,
+    doResourceInfoCalendarACLs,
+    doResourcePrintShowCalendarACLs,
+    doResourceUpdateCalendarACLs,
+)
+from gam.cmd.chat import (
+    createChatEmoji,
+    createChatMember,
+    createChatMessage,
+    createChatSpace,
+    createUpdateChatSection,
+    deleteChatEmoji,
+    deleteChatMessage,
+    deleteChatSection,
+    deleteChatSpace,
+    deleteUpdateChatMember,
+    doCreateChatMessage,
+    doDeleteChatMessage,
+    doInfoChatEvent,
+    doInfoChatMember,
+    doInfoChatMessage,
+    doInfoChatSpace,
+    doPrintShowChatMembers,
+    doPrintShowChatSpaces,
+    doSetupChat,
+    doUpdateChatMessage,
+    infoChatEmoji,
+    infoChatEvent,
+    infoChatMember,
+    infoChatMessage,
+    infoChatSpace,
+    infoChatSpaceDM,
+    moveShowChatSectionItem,
+    printShowChatEmojis,
+    printShowChatEvents,
+    printShowChatMembers,
+    printShowChatMessages,
+    printShowChatSearchMessages,
+    printShowChatSectionItems,
+    printShowChatSections,
+    printShowChatSpaces,
+    syncChatMembers,
+    updateChatMessage,
+    updateChatSpace,
+)
+from gam.cmd.chromeapps import (
+    doInfoChromeApp,
+    doPrintChromeSnValidity,
+    doPrintShowChromeAppDevices,
+    doPrintShowChromeApps,
+    doPrintShowChromeAues,
+    doPrintShowChromeDeviceCounts,
+    doPrintShowChromeHistory,
+    doPrintShowChromeNeedsAttn,
+    doPrintShowChromeVersions,
+)
+from gam.cmd.chromepolicies import (
+    doCreateChromeNetwork,
+    doCreateChromePolicyImage,
+    doDeleteChromeNetwork,
+    doDeleteChromePolicy,
+    doInfoChromePolicySchemas,
+    doPrintShowChromePolicies,
+    doPrintShowChromePolicySchemas,
+    doUpdateChromePolicy,
+)
+from gam.cmd.cidevices import (
+    doApproveCIDeviceUser,
+    doBlockCIDeviceUser,
+    doCancelWipeCIDevice,
+    doCancelWipeCIDeviceUser,
+    doCreateCIDevice,
+    doDeleteCIDevice,
+    doDeleteCIDeviceUser,
+    doInfoCIDevice,
+    doInfoCIDeviceUser,
+    doInfoCIDeviceUserState,
+    doPrintCIDeviceUsers,
+    doPrintCIDevices,
+    doSyncCIDevices,
+    doUpdateCIDevice,
+    doUpdateCIDeviceUser,
+    doUpdateCIDeviceUserState,
+    doWipeCIDevice,
+    doWipeCIDeviceUser,
+)
+from gam.cmd.cigroups import (
+    doCreateCIGroup,
+    doCreateUpdateCIPolicy,
+    doDeleteCIGroups,
+    doDeleteCIPolicies,
+    doInfoCIGroupMembers,
+    doInfoCIGroups,
+    doInfoCIPolicies,
+    doPrintCIGroupMembers,
+    doPrintCIGroups,
+    doPrintShowCIPolicies,
+    doShowCIGroupMembers,
+    doUpdateCIGroups,
+    infoCIGroupMembers,
+)
+from gam.cmd.ciuserinvitations import (
+    checkCIUserIsInvitable,
+    doCIUserInvitationsAction,
+    doCheckCIUserInvitations,
+    doInfoCIUserInvitations,
+    doPrintShowCIUserInvitations,
+)
+from gam.cmd.cloudstorage import doCopyCloudStorageBucket, doDownloadCloudStorageBucket, doDownloadCloudStorageFile
+from gam.cmd.contacts import (
+    doClearDomainContacts,
+    doCreateDomainContact,
+    doDedupDomainContacts,
+    doDeleteDomainContacts,
+    doInfoDomainContacts,
+    doPrintShowDomainContacts,
+    doUpdateDomainContacts,
+)
+from gam.cmd.courses import (
+    acceptClassroomInvitations,
+    cancelGuardianInvitations,
+    clearGuardians,
+    createClassroomInvitations,
+    deleteClassroomInvitations,
+    deleteGuardians,
+    doCancelGuardianInvitation,
+    doClearCourseStudentGroups,
+    doCourseAddItems,
+    doCourseClearParticipants,
+    doCourseRemoveItems,
+    doCourseSyncParticipants,
+    doCourseUpdateItems,
+    doCreateCourse,
+    doCreateCourseStudentGroups,
+    doDeleteClassroomInvitations,
+    doDeleteCourse,
+    doDeleteCourseStudentGroups,
+    doDeleteCourses,
+    doDeleteGuardian,
+    doInfoCourse,
+    doInfoCourses,
+    doInviteGuardian,
+    doPrintCourseAnnouncements,
+    doPrintCourseCounts,
+    doPrintCourseMaterials,
+    doPrintCourseParticipants,
+    doPrintCourseStudentGroupMembers,
+    doPrintCourseStudentGroups,
+    doPrintCourseSubmissions,
+    doPrintCourseTopics,
+    doPrintCourseWork,
+    doPrintCourses,
+    doPrintShowClassroomInvitations,
+    doPrintShowGuardians,
+    doProcessCourseStudentGroupMembers,
+    doUpdateCourse,
+    doUpdateCourseStudentGroups,
+    doUpdateCourses,
+    inviteGuardians,
+    printShowClassroomInvitations,
+    printShowClassroomProfile,
+    printShowGuardians,
+    syncGuardians,
+)
+from gam.cmd.cros import (
+    doGetCommandResultCrOSDevices,
+    doGetCrOSDeviceFiles,
+    doInfoCrOSDevices,
+    doInfoPrintShowCrOSTelemetry,
+    doIssueCommandCrOSDevices,
+    doPrintCrOSActivity,
+    doPrintCrOSDevices,
+    doPrintCrOSEntity,
+    doUpdateCrOSDevices,
+    getCommandResultCrOSDevices,
+    getCrOSDeviceFiles,
+    infoCrOSDevices,
+    issueCommandCrOSDevices,
+    updateCrOSDevices,
+)
+from gam.cmd.customer import (
+    doInfoCustomer,
+    doInfoDomain,
+    doInfoInstance,
+    doPrintShowDomains,
+    doUpdateCustomer,
+)
+from gam.cmd.datatransfer import (
+    doCreateDataTransfer,
+    doInfoDataTransfer,
+    doPrintShowDataTransfers,
+    doShowTransferApps,
+)
+from gam.cmd.delegates import printShowContactDelegates, processContactDelegates
+from gam.cmd.domains import (
+    doCreateDomain,
+    doCreateDomainAlias,
+    doDeleteDomain,
+    doDeleteDomainAlias,
+    doInfoDomainAlias,
+    doPrintShowDomainAliases,
+    doUpdateDomain,
+)
+from gam.cmd.drive import (
+    checkDriveFileShortcut,
+    claimOwnership,
+    collectOrphans,
+    copyDriveFile,
+    copySyncSharedDriveACLs,
+    createDriveFile,
+    createDriveFileACL,
+    createDriveFilePermissions,
+    createDriveFileShortcut,
+    createDriveFolderPath,
+    createDriveLabelPermissions,
+    createSharedDrive,
+    deleteDriveFile,
+    deleteDriveFileACLs,
+    deleteDriveLabelPermissions,
+    deleteEmptyDriveFolders,
+    deleteFileRevisions,
+    deletePermissions,
+    deleteSharedDrive,
+    doCopySyncSharedDriveACLs,
+    doCreateDriveFileACL,
+    doCreateDriveLabelPermissions,
+    doCreatePermissions,
+    doCreateSharedDrive,
+    doDeleteDriveFileACLs,
+    doDeleteDriveLabelPermissions,
+    doDeletePermissions,
+    doDeleteSharedDrive,
+    doHideUnhideSharedDrive,
+    doInfoDriveFileACLs,
+    doInfoDriveLabels,
+    doInfoSharedDrive,
+    doPrintSharedDriveOrganizers,
+    doPrintShowDriveFileACLs,
+    doPrintShowDriveLabelPermissions,
+    doPrintShowDriveLabels,
+    doPrintShowOrgunitSharedDrives,
+    doPrintShowOwnership,
+    doPrintShowSharedDriveACLs,
+    doPrintShowSharedDrives,
+    doShowSharedDriveThemes,
+    doUpdateDriveFileACLs,
+    doUpdateSharedDrive,
+    emptyDriveTrash,
+    getDriveFile,
+    getGoogleDocument,
+    hideUnhideSharedDrive,
+    infoDriveFileACLs,
+    infoDriveLabels,
+    infoSharedDrive,
+    moveDriveFile,
+    printDiskUsage,
+    printDriveActivity,
+    printEmptyDriveFolders,
+    printFileList,
+    printFileParentTree,
+    printSharedDriveOrganizers,
+    printShowDriveFileACLs,
+    printShowDriveLabelPermissions,
+    printShowDriveLabels,
+    printShowDriveSettings,
+    printShowDrivelastModifications,
+    printShowFileComments,
+    printShowFileCounts,
+    printShowFilePaths,
+    printShowFileRevisions,
+    printShowFileShareCounts,
+    printShowFileTree,
+    printShowLookerStudioAssets,
+    printShowSharedDriveACLs,
+    printShowSharedDrives,
+    processFileDriveLabels,
+    purgeDriveFile,
+    showFileInfo,
+    showSharedDriveThemes,
+    transferDrive,
+    transferOwnership,
+    trashDriveFile,
+    untrashDriveFile,
+    updateDriveFile,
+    updateDriveFileACLs,
+    updateFileRevisions,
+    updateGoogleDocument,
+    updateSharedDrive,
+)
+from gam.cmd.gmail import (
+    archiveMessages,
+    createCSEKeyPair,
+    createFilter,
+    createForm,
+    createForwardingAddresses,
+    createLabel,
+    createLabelList,
+    createSmime,
+    createUpdateCSEIdentity,
+    createUpdateSendAs,
+    delegateTo,
+    deleteFilters,
+    deleteForwardingAddresses,
+    deleteInfoSendAs,
+    deleteLabel,
+    deleteLabelId,
+    deleteLabelIdList,
+    deleteLabelList,
+    deleteSmime,
+    draftMessage,
+    exportMessages,
+    exportThreads,
+    importMessage,
+    infoFilters,
+    infoForwardingAddresses,
+    insertMessage,
+    printShowCSEIdentities,
+    printShowCSEKeyPairs,
+    printShowDelegates,
+    printShowFilters,
+    printShowFormResponses,
+    printShowForms,
+    printShowForward,
+    printShowForwardingAddresses,
+    printShowGmailProfile,
+    printShowImap,
+    printShowLabels,
+    printShowLanguage,
+    printShowMessages,
+    printShowPop,
+    printShowSendAs,
+    printShowSignature,
+    printShowSmimes,
+    printShowThreads,
+    printShowVacation,
+    processCSEIdentity,
+    processCSEKeyPair,
+    processDelegates,
+    processMessages,
+    processThreads,
+    setForward,
+    setImap,
+    setLanguage,
+    setPop,
+    setSignature,
+    setVacation,
+    updateDelegates,
+    updateForm,
+    updateLabelSettings,
+    updateLabelSettingsById,
+    updateLabels,
+    updateSmime,
+    watchGmail,
+)
+from gam.cmd.groups import (
+    doCreateGroup,
+    doDeleteGroups,
+    doInfoGroupMembers,
+    doInfoGroups,
+    doPrintGroupMembers,
+    doPrintGroups,
+    doPrintShowGroupTree,
+    doShowGroupMembers,
+    doUpdateGroups,
+    infoGroupMembers,
+)
+from gam.cmd.licenses import doPrintLicenses, doShowLicenses
+from gam.cmd.meet import (
+    createMeetSpace,
+    endMeetConference,
+    infoMeetSpace,
+    printShowMeetConferences,
+    printShowMeetParticipants,
+    printShowMeetRecordings,
+    printShowMeetTranscripts,
+    updateMeetSpace,
+)
+from gam.cmd.mobile import (
+    doDeleteMobileDevices,
+    doInfoMobileDevices,
+    doPrintMobileDevices,
+    doUpdateMobileDevices,
+)
+from gam.cmd.notes import (
+    createNote,
+    createNotesACLs,
+    deleteInfoNotes,
+    deleteNotesACLs,
+    getNoteAttachments,
+    printShowNotes,
+)
+from gam.cmd.oauth import (
+    Credentials,
+    doOAuthCreate,
+    doOAuthDelete,
+    doOAuthExport,
+    doOAuthInfo,
+    doOAuthRefresh,
+    doOAuthUpdate,
+)
+from gam.cmd.orgunits import (
+    doCheckOrgUnit,
+    doCreateOrg,
+    doDeleteOrg,
+    doDeleteOrgs,
+    doInfoOrg,
+    doInfoOrgs,
+    doPrintOrgs,
+    doShowOrgTree,
+    doUpdateOrg,
+    doUpdateOrgs,
+)
+from gam.cmd.people import (
+    clearUserPeopleContacts,
+    copyUserPeopleOtherContacts,
+    createUserPeopleContact,
+    createUserPeopleContactGroup,
+    dedupReplaceDomainUserPeopleContacts,
+    deleteUserPeopleContactGroups,
+    deleteUserPeopleContactPhoto,
+    deleteUserPeopleContacts,
+    doDeleteDomainContactPhoto,
+    doGetDomainContactPhoto,
+    doInfoDomainPeopleContacts,
+    doInfoDomainPeopleProfile,
+    doPrintShowDomainPeopleContacts,
+    doPrintShowDomainPeopleProfiles,
+    doUpdateDomainContactPhoto,
+    getUserPeopleContactPhoto,
+    infoUserPeopleContactGroups,
+    infoUserPeopleContacts,
+    printShowUserPeopleContactGroups,
+    printShowUserPeopleContacts,
+    printShowUserPeopleOtherContacts,
+    printShowUserPeopleProfiles,
+    processUserPeopleOtherContacts,
+    updateUserPeopleContactGroup,
+    updateUserPeopleContactPhoto,
+    updateUserPeopleContacts,
+)
+from gam.cmd.printers import (
+    doCreatePrinter,
+    doDeletePrinter,
+    doInfoPrinter,
+    doPrintShowPrinterModels,
+    doPrintShowPrinters,
+    doUpdatePrinter,
+)
+from gam.cmd.project import (
+    checkServiceAccount,
+    doCheckUpdateSvcAcct,
+    doCreateGCPFolder,
+    doCreateGCPServiceAccount,
+    doCreateProject,
+    doCreateSvcAcct,
+    doCreateSvcAcctKeys,
+    doDeleteProject,
+    doDeleteSvcAcct,
+    doDeleteSvcAcctKeys,
+    doEnableAPIs,
+    doInfoCurrentProjectId,
+    doInfoCustomerId,
+    doInfoGCPOrgId,
+    doPrintShowProjects,
+    doPrintShowSvcAccts,
+    doProcessSvcAcctKeys,
+    doReplaceSvcAcctKeys,
+    doShowSvcAcctKeys,
+    doUpdateProject,
+    doUpdateSvcAcctKeys,
+    doUploadSvcAcctKeys,
+    doUseProject,
+)
+from gam.cmd.reports import doReport, doWhatIs
+from gam.cmd.reseller import (
+    doCreateResoldCustomer,
+    doCreateResoldSubscription,
+    doDeleteResoldSubscription,
+    doInfoResoldCustomer,
+    doInfoResoldSubscription,
+    doPrintShowChannelCustomerEntitlements,
+    doPrintShowChannelCustomers,
+    doPrintShowChannelOffers,
+    doPrintShowChannelProducts,
+    doPrintShowChannelSKUs,
+    doPrintShowResoldSubscriptions,
+    doUpdateResoldCustomer,
+    doUpdateResoldSubscription,
+)
+from gam.cmd.resources import (
+    doCreateBuilding,
+    doCreateFeature,
+    doCreateResourceCalendar,
+    doDeleteBuilding,
+    doDeleteFeature,
+    doDeleteResourceCalendar,
+    doDeleteResourceCalendars,
+    doInfoBuilding,
+    doInfoResourceCalendar,
+    doInfoResourceCalendars,
+    doPrintShowBuildings,
+    doPrintShowFeatures,
+    doPrintShowResourceCalendars,
+    doUpdateBuilding,
+    doUpdateFeature,
+    doUpdateResourceCalendar,
+    doUpdateResourceCalendars,
+)
+from gam.cmd.schemas import (
+    doCreateUpdateUserSchemas,
+    doDeleteUserSchemas,
+    doInfoUserSchemas,
+    doPrintShowUserSchemas,
+)
+from gam.cmd.send_email import doSendEmail, doSendReply
+from gam.cmd.sites import (
+    deprecatedDomainSites,
+    deprecatedUserSites,
+    doCreateSiteVerification,
+    doInfoSiteVerification,
+    doUpdateSiteVerification,
+    printShowBusinessProfileAccounts,
+    printShowWebMasterSites,
+    printShowWebResources,
+)
+from gam.cmd.sso import (
+    doCreateInboundSSOAssignment,
+    doCreateInboundSSOCredential,
+    doCreateInboundSSOProfile,
+    doDeleteInboundSSOAssignment,
+    doDeleteInboundSSOCredential,
+    doDeleteInboundSSOProfile,
+    doInfoInboundSSOAssignment,
+    doInfoInboundSSOCredential,
+    doInfoInboundSSOProfile,
+    doPrintShowInboundSSOAssignments,
+    doPrintShowInboundSSOCredentials,
+    doPrintShowInboundSSOProfiles,
+    doUpdateInboundSSOAssignment,
+    doUpdateInboundSSOProfile,
+)
+from gam.cmd.tasks import (
+    importTasklist,
+    printShowTagManagerAccounts,
+    printShowTagManagerContainers,
+    printShowTagManagerPermissions,
+    printShowTagManagerTags,
+    printShowTagManagerWorkspaces,
+    printShowTasklists,
+    printShowTasks,
+    processTasklists,
+    processTasks,
+)
+from gam.cmd.userop import (
+    addUserToGroups,
+    appendSheetRanges,
+    checkUserInGroups,
+    clearSheetRanges,
+    createLicense,
+    createSheet,
+    deleteLicense,
+    deletePhoto,
+    deleteTokens,
+    deleteUserFromGroups,
+    deprovisionUser,
+    doPrintShowTokens,
+    getProfilePhoto,
+    getUserPhoto,
+    infoPrintShowSheets,
+    printShowGroupTree,
+    printShowLookerStudioPermissions,
+    printShowSheetRanges,
+    printShowTokens,
+    printShowUserGroups,
+    printUserGroupsList,
+    processLookerStudioPermissions,
+    setProfile,
+    showProfile,
+    syncLicense,
+    syncUserWithGroups,
+    updateLicense,
+    updatePhoto,
+    updateSheetRanges,
+    updateSheets,
+    updateUserGroups,
+)
+from gam.cmd.users import (
+    deleteUsers,
+    doCheckUserSuspended,
+    doCreateGuestUser,
+    doCreateUser,
+    doDeleteUser,
+    doDeleteUsers,
+    doInfoUser,
+    doInfoUsers,
+    doPrintUserCountsByOrgUnit,
+    doPrintUserEntity,
+    doPrintUserList,
+    doPrintUsers,
+    doSuspendUnsuspendUser,
+    doSuspendUnsuspendUsers,
+    doUndeleteUser,
+    doUndeleteUsers,
+    doUpdateUser,
+    doUpdateUsers,
+    infoUsers,
+    signoutTurnoff2SVUsers,
+    suspendUnsuspendUsers,
+    undeleteUsers,
+    updateUsers,
+    waitForMailbox,
+)
+from gam.cmd.userservices import (
+    addCreateCalendars,
+    createCalendarACLs,
+    createCalendarEvent,
+    createFocusTime,
+    createOutOfOffice,
+    createWorkingLocation,
+    deleteASP,
+    deleteBackupCodes,
+    deleteCalendarACLs,
+    deleteCalendarEvents,
+    deleteCalendars,
+    deleteFocusTime,
+    deleteOutOfOffice,
+    deleteWorkingLocation,
+    doCalendarsTransferOwnership,
+    emptyCalendarTrash,
+    importCalendarEvent,
+    infoCalendarACLs,
+    infoCalendarEvents,
+    infoCalendars,
+    modifyCalendars,
+    moveCalendarEvents,
+    printShowASPs,
+    printShowBackupCodes,
+    printShowCalSettings,
+    printShowCalendarACLs,
+    printShowCalendarEvents,
+    printShowCalendars,
+    printShowFocusTime,
+    printShowOutOfOffice,
+    printShowWorkingLocation,
+    printShowYouTubeChannel,
+    purgeCalendarEvents,
+    removeCalendars,
+    updateBackupCodes,
+    updateCalendarACLs,
+    updateCalendarAttendees,
+    updateCalendarEvents,
+    updateCalendars,
+    wipeCalendarEvents,
+)
+from gam.cmd.vault import (
+    doCloseVaultMatter,
+    doCopyVaultExport,
+    doCopyVaultQuery,
+    doCreateVaultExport,
+    doCreateVaultHold,
+    doCreateVaultMatter,
+    doCreateVaultQuery,
+    doDeleteVaultExport,
+    doDeleteVaultHold,
+    doDeleteVaultMatter,
+    doDeleteVaultQuery,
+    doDownloadVaultExport,
+    doInfoVaultExport,
+    doInfoVaultHold,
+    doInfoVaultMatter,
+    doInfoVaultQuery,
+    doPrintShowVaultExports,
+    doPrintShowVaultHolds,
+    doPrintShowVaultMatters,
+    doPrintShowVaultQueries,
+    doPrintVaultCounts,
+    doReopenVaultMatter,
+    doUndeleteVaultMatter,
+    doUpdateVaultHold,
+    doUpdateVaultMatter,
+    printShowUserVaultHolds,
+)
+
 
 # gam.cmd.alerts
-doClearAlertSettings = _cmd('gam.cmd.alerts', 'doClearAlertSettings')
-doCreateAlertFeedback = _cmd('gam.cmd.alerts', 'doCreateAlertFeedback')
-doDeleteOrUndeleteAlert = _cmd('gam.cmd.alerts', 'doDeleteOrUndeleteAlert')
-doInfoAlert = _cmd('gam.cmd.alerts', 'doInfoAlert')
-doPrintShowAlertFeedback = _cmd('gam.cmd.alerts', 'doPrintShowAlertFeedback')
-doPrintShowAlerts = _cmd('gam.cmd.alerts', 'doPrintShowAlerts')
-doShowAlertSettings = _cmd('gam.cmd.alerts', 'doShowAlertSettings')
-doUpdateAlertSettings = _cmd('gam.cmd.alerts', 'doUpdateAlertSettings')
 
 # gam.cmd.aliases
-deleteUsersAliases = _cmd('gam.cmd.aliases', 'deleteUsersAliases')
-doCreateUpdateAliases = _cmd('gam.cmd.aliases', 'doCreateUpdateAliases')
-doDeleteAliases = _cmd('gam.cmd.aliases', 'doDeleteAliases')
-doInfoAliases = _cmd('gam.cmd.aliases', 'doInfoAliases')
-doPrintAddresses = _cmd('gam.cmd.aliases', 'doPrintAddresses')
-doPrintAliases = _cmd('gam.cmd.aliases', 'doPrintAliases')
-doRemoveAliases = _cmd('gam.cmd.aliases', 'doRemoveAliases')
 
 # gam.cmd.analytics
-printShowAnalyticAccountSummaries = _cmd('gam.cmd.analytics', 'printShowAnalyticAccountSummaries')
-printShowAnalyticAccounts = _cmd('gam.cmd.analytics', 'printShowAnalyticAccounts')
-printShowAnalyticDatastreams = _cmd('gam.cmd.analytics', 'printShowAnalyticDatastreams')
-printShowAnalyticProperties = _cmd('gam.cmd.analytics', 'printShowAnalyticProperties')
 
 # gam.cmd.audit
-doCreateMonitor = _cmd('gam.cmd.audit', 'doCreateMonitor')
-doDeleteMonitor = _cmd('gam.cmd.audit', 'doDeleteMonitor')
-doShowMonitors = _cmd('gam.cmd.audit', 'doShowMonitors')
 
 # gam.cmd.browsers
-doCreateBrowserToken = _cmd('gam.cmd.browsers', 'doCreateBrowserToken')
-doCreateChromeProfileCommand = _cmd('gam.cmd.browsers', 'doCreateChromeProfileCommand')
-doDeleteBrowsers = _cmd('gam.cmd.browsers', 'doDeleteBrowsers')
-doDeleteChromeProfile = _cmd('gam.cmd.browsers', 'doDeleteChromeProfile')
-doInfoBrowsers = _cmd('gam.cmd.browsers', 'doInfoBrowsers')
-doInfoChromeProfile = _cmd('gam.cmd.browsers', 'doInfoChromeProfile')
-doInfoChromeProfileCommand = _cmd('gam.cmd.browsers', 'doInfoChromeProfileCommand')
-doMoveBrowsers = _cmd('gam.cmd.browsers', 'doMoveBrowsers')
-doPrintShowBrowserTokens = _cmd('gam.cmd.browsers', 'doPrintShowBrowserTokens')
-doPrintShowBrowsers = _cmd('gam.cmd.browsers', 'doPrintShowBrowsers')
-doPrintShowChromeProfileCommands = _cmd('gam.cmd.browsers', 'doPrintShowChromeProfileCommands')
-doPrintShowChromeProfiles = _cmd('gam.cmd.browsers', 'doPrintShowChromeProfiles')
-doRevokeBrowserToken = _cmd('gam.cmd.browsers', 'doRevokeBrowserToken')
-doUpdateBrowsers = _cmd('gam.cmd.browsers', 'doUpdateBrowsers')
 
 # gam.cmd.caa
-doCreateCAALevel = _cmd('gam.cmd.caa', 'doCreateCAALevel')
-doDeleteCAALevel = _cmd('gam.cmd.caa', 'doDeleteCAALevel')
-doPrintShowCAALevels = _cmd('gam.cmd.caa', 'doPrintShowCAALevels')
-doUpdateCAALevel = _cmd('gam.cmd.caa', 'doUpdateCAALevel')
 
 # gam.cmd.calendar
-doCalendarsCreateACL = _cmd('gam.cmd.calendar', 'doCalendarsCreateACL')
-doCalendarsCreateACLs = _cmd('gam.cmd.calendar', 'doCalendarsCreateACLs')
-doCalendarsCreateEvent = _cmd('gam.cmd.calendar', 'doCalendarsCreateEvent')
-doCalendarsDeleteACL = _cmd('gam.cmd.calendar', 'doCalendarsDeleteACL')
-doCalendarsDeleteACLs = _cmd('gam.cmd.calendar', 'doCalendarsDeleteACLs')
-doCalendarsDeleteEvents = _cmd('gam.cmd.calendar', 'doCalendarsDeleteEvents')
-doCalendarsDeleteEventsOld = _cmd('gam.cmd.calendar', 'doCalendarsDeleteEventsOld')
-doCalendarsEmptyTrash = _cmd('gam.cmd.calendar', 'doCalendarsEmptyTrash')
-doCalendarsImportEvent = _cmd('gam.cmd.calendar', 'doCalendarsImportEvent')
-doCalendarsInfoACLs = _cmd('gam.cmd.calendar', 'doCalendarsInfoACLs')
-doCalendarsInfoEvents = _cmd('gam.cmd.calendar', 'doCalendarsInfoEvents')
-doCalendarsModifySettings = _cmd('gam.cmd.calendar', 'doCalendarsModifySettings')
-doCalendarsMoveEvents = _cmd('gam.cmd.calendar', 'doCalendarsMoveEvents')
-doCalendarsMoveEventsOld = _cmd('gam.cmd.calendar', 'doCalendarsMoveEventsOld')
-doCalendarsPrintShowACLs = _cmd('gam.cmd.calendar', 'doCalendarsPrintShowACLs')
-doCalendarsPrintShowEvents = _cmd('gam.cmd.calendar', 'doCalendarsPrintShowEvents')
-doCalendarsPrintShowSettings = _cmd('gam.cmd.calendar', 'doCalendarsPrintShowSettings')
-doCalendarsPurgeEvents = _cmd('gam.cmd.calendar', 'doCalendarsPurgeEvents')
-doCalendarsUpdateACL = _cmd('gam.cmd.calendar', 'doCalendarsUpdateACL')
-doCalendarsUpdateACLs = _cmd('gam.cmd.calendar', 'doCalendarsUpdateACLs')
-doCalendarsUpdateEvents = _cmd('gam.cmd.calendar', 'doCalendarsUpdateEvents')
-doCalendarsUpdateEventsOld = _cmd('gam.cmd.calendar', 'doCalendarsUpdateEventsOld')
-doCalendarsWipeEvents = _cmd('gam.cmd.calendar', 'doCalendarsWipeEvents')
-doResourceCreateCalendarACLs = _cmd('gam.cmd.calendar', 'doResourceCreateCalendarACLs')
-doResourceDeleteCalendarACLs = _cmd('gam.cmd.calendar', 'doResourceDeleteCalendarACLs')
-doResourceInfoCalendarACLs = _cmd('gam.cmd.calendar', 'doResourceInfoCalendarACLs')
-doResourcePrintShowCalendarACLs = _cmd('gam.cmd.calendar', 'doResourcePrintShowCalendarACLs')
-doResourceUpdateCalendarACLs = _cmd('gam.cmd.calendar', 'doResourceUpdateCalendarACLs')
 
 # gam.cmd.chat
-createChatEmoji = _cmd('gam.cmd.chat', 'createChatEmoji')
-createChatMember = _cmd('gam.cmd.chat', 'createChatMember')
-createChatMessage = _cmd('gam.cmd.chat', 'createChatMessage')
-createChatSpace = _cmd('gam.cmd.chat', 'createChatSpace')
-createUpdateChatSection = _cmd('gam.cmd.chat', 'createUpdateChatSection')
-deleteChatEmoji = _cmd('gam.cmd.chat', 'deleteChatEmoji')
-deleteChatMessage = _cmd('gam.cmd.chat', 'deleteChatMessage')
-deleteChatSection = _cmd('gam.cmd.chat', 'deleteChatSection')
-deleteChatSpace = _cmd('gam.cmd.chat', 'deleteChatSpace')
-deleteUpdateChatMember = _cmd('gam.cmd.chat', 'deleteUpdateChatMember')
-doCreateChatMessage = _cmd('gam.cmd.chat', 'doCreateChatMessage')
-doDeleteChatMessage = _cmd('gam.cmd.chat', 'doDeleteChatMessage')
-doInfoChatEvent = _cmd('gam.cmd.chat', 'doInfoChatEvent')
-doInfoChatMember = _cmd('gam.cmd.chat', 'doInfoChatMember')
-doInfoChatMessage = _cmd('gam.cmd.chat', 'doInfoChatMessage')
-doInfoChatSpace = _cmd('gam.cmd.chat', 'doInfoChatSpace')
-doPrintShowChatMembers = _cmd('gam.cmd.chat', 'doPrintShowChatMembers')
-doPrintShowChatSpaces = _cmd('gam.cmd.chat', 'doPrintShowChatSpaces')
-doSetupChat = _cmd('gam.cmd.chat', 'doSetupChat')
-doUpdateChatMessage = _cmd('gam.cmd.chat', 'doUpdateChatMessage')
-infoChatEmoji = _cmd('gam.cmd.chat', 'infoChatEmoji')
-infoChatEvent = _cmd('gam.cmd.chat', 'infoChatEvent')
-infoChatMember = _cmd('gam.cmd.chat', 'infoChatMember')
-infoChatMessage = _cmd('gam.cmd.chat', 'infoChatMessage')
-infoChatSpace = _cmd('gam.cmd.chat', 'infoChatSpace')
-infoChatSpaceDM = _cmd('gam.cmd.chat', 'infoChatSpaceDM')
-moveShowChatSectionItem = _cmd('gam.cmd.chat', 'moveShowChatSectionItem')
-printShowChatEmojis = _cmd('gam.cmd.chat', 'printShowChatEmojis')
-printShowChatEvents = _cmd('gam.cmd.chat', 'printShowChatEvents')
-printShowChatMembers = _cmd('gam.cmd.chat', 'printShowChatMembers')
-printShowChatMessages = _cmd('gam.cmd.chat', 'printShowChatMessages')
-printShowChatSearchMessages = _cmd('gam.cmd.chat', 'printShowChatSearchMessages')
-printShowChatSectionItems = _cmd('gam.cmd.chat', 'printShowChatSectionItems')
-printShowChatSections = _cmd('gam.cmd.chat', 'printShowChatSections')
-printShowChatSpaces = _cmd('gam.cmd.chat', 'printShowChatSpaces')
-syncChatMembers = _cmd('gam.cmd.chat', 'syncChatMembers')
-updateChatMessage = _cmd('gam.cmd.chat', 'updateChatMessage')
-updateChatSpace = _cmd('gam.cmd.chat', 'updateChatSpace')
 
 # gam.cmd.chromeapps
-doInfoChromeApp = _cmd('gam.cmd.chromeapps', 'doInfoChromeApp')
-doPrintChromeSnValidity = _cmd('gam.cmd.chromeapps', 'doPrintChromeSnValidity')
-doPrintShowChromeAppDevices = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeAppDevices')
-doPrintShowChromeApps = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeApps')
-doPrintShowChromeAues = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeAues')
-doPrintShowChromeDeviceCounts = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeDeviceCounts')
-doPrintShowChromeHistory = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeHistory')
-doPrintShowChromeNeedsAttn = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeNeedsAttn')
-doPrintShowChromeVersions = _cmd('gam.cmd.chromeapps', 'doPrintShowChromeVersions')
 
 # gam.cmd.chromepolicies
-doCreateChromeNetwork = _cmd('gam.cmd.chromepolicies', 'doCreateChromeNetwork')
-doCreateChromePolicyImage = _cmd('gam.cmd.chromepolicies', 'doCreateChromePolicyImage')
-doDeleteChromeNetwork = _cmd('gam.cmd.chromepolicies', 'doDeleteChromeNetwork')
-doDeleteChromePolicy = _cmd('gam.cmd.chromepolicies', 'doDeleteChromePolicy')
-doInfoChromePolicySchemas = _cmd('gam.cmd.chromepolicies', 'doInfoChromePolicySchemas')
-doPrintShowChromePolicies = _cmd('gam.cmd.chromepolicies', 'doPrintShowChromePolicies')
-doPrintShowChromePolicySchemas = _cmd('gam.cmd.chromepolicies', 'doPrintShowChromePolicySchemas')
-doUpdateChromePolicy = _cmd('gam.cmd.chromepolicies', 'doUpdateChromePolicy')
 
 # gam.cmd.cidevices
-doApproveCIDeviceUser = _cmd('gam.cmd.cidevices', 'doApproveCIDeviceUser')
-doBlockCIDeviceUser = _cmd('gam.cmd.cidevices', 'doBlockCIDeviceUser')
-doCancelWipeCIDevice = _cmd('gam.cmd.cidevices', 'doCancelWipeCIDevice')
-doCancelWipeCIDeviceUser = _cmd('gam.cmd.cidevices', 'doCancelWipeCIDeviceUser')
-doCreateCIDevice = _cmd('gam.cmd.cidevices', 'doCreateCIDevice')
-doDeleteCIDevice = _cmd('gam.cmd.cidevices', 'doDeleteCIDevice')
-doDeleteCIDeviceUser = _cmd('gam.cmd.cidevices', 'doDeleteCIDeviceUser')
-doInfoCIDevice = _cmd('gam.cmd.cidevices', 'doInfoCIDevice')
-doInfoCIDeviceUser = _cmd('gam.cmd.cidevices', 'doInfoCIDeviceUser')
-doInfoCIDeviceUserState = _cmd('gam.cmd.cidevices', 'doInfoCIDeviceUserState')
-doPrintCIDeviceUsers = _cmd('gam.cmd.cidevices', 'doPrintCIDeviceUsers')
-doPrintCIDevices = _cmd('gam.cmd.cidevices', 'doPrintCIDevices')
-doSyncCIDevices = _cmd('gam.cmd.cidevices', 'doSyncCIDevices')
-doUpdateCIDevice = _cmd('gam.cmd.cidevices', 'doUpdateCIDevice')
-doUpdateCIDeviceUser = _cmd('gam.cmd.cidevices', 'doUpdateCIDeviceUser')
-doUpdateCIDeviceUserState = _cmd('gam.cmd.cidevices', 'doUpdateCIDeviceUserState')
-doWipeCIDevice = _cmd('gam.cmd.cidevices', 'doWipeCIDevice')
-doWipeCIDeviceUser = _cmd('gam.cmd.cidevices', 'doWipeCIDeviceUser')
 
 # gam.cmd.cigroups
-doCreateCIGroup = _cmd('gam.cmd.cigroups', 'doCreateCIGroup')
-doCreateUpdateCIPolicy = _cmd('gam.cmd.cigroups', 'doCreateUpdateCIPolicy')
-doDeleteCIGroups = _cmd('gam.cmd.cigroups', 'doDeleteCIGroups')
-doDeleteCIPolicies = _cmd('gam.cmd.cigroups', 'doDeleteCIPolicies')
-doInfoCIGroupMembers = _cmd('gam.cmd.cigroups', 'doInfoCIGroupMembers')
-doInfoCIGroups = _cmd('gam.cmd.cigroups', 'doInfoCIGroups')
-doInfoCIPolicies = _cmd('gam.cmd.cigroups', 'doInfoCIPolicies')
-doPrintCIGroupMembers = _cmd('gam.cmd.cigroups', 'doPrintCIGroupMembers')
-doPrintCIGroups = _cmd('gam.cmd.cigroups', 'doPrintCIGroups')
-doPrintShowCIPolicies = _cmd('gam.cmd.cigroups', 'doPrintShowCIPolicies')
-doShowCIGroupMembers = _cmd('gam.cmd.cigroups', 'doShowCIGroupMembers')
-doUpdateCIGroups = _cmd('gam.cmd.cigroups', 'doUpdateCIGroups')
-infoCIGroupMembers = _cmd('gam.cmd.cigroups', 'infoCIGroupMembers')
 
 # gam.cmd.ciuserinvitations
-checkCIUserIsInvitable = _cmd('gam.cmd.ciuserinvitations', 'checkCIUserIsInvitable')
-doCIUserInvitationsAction = _cmd('gam.cmd.ciuserinvitations', 'doCIUserInvitationsAction')
-doCheckCIUserInvitations = _cmd('gam.cmd.ciuserinvitations', 'doCheckCIUserInvitations')
-doInfoCIUserInvitations = _cmd('gam.cmd.ciuserinvitations', 'doInfoCIUserInvitations')
-doPrintShowCIUserInvitations = _cmd('gam.cmd.ciuserinvitations', 'doPrintShowCIUserInvitations')
 
 # gam.cmd.cloudstorage
-doCopyCloudStorageBucket = _cmd('gam.cmd.cloudstorage', 'doCopyCloudStorageBucket')
-doDownloadCloudStorageBucket = _cmd('gam.cmd.cloudstorage', 'doDownloadCloudStorageBucket')
-doDownloadCloudStorageFile = _cmd('gam.cmd.cloudstorage', 'doDownloadCloudStorageFile')
 
 # gam.cmd.contacts
-doClearDomainContacts = _cmd('gam.cmd.contacts', 'doClearDomainContacts')
-doCreateDomainContact = _cmd('gam.cmd.contacts', 'doCreateDomainContact')
-doDedupDomainContacts = _cmd('gam.cmd.contacts', 'doDedupDomainContacts')
-doDeleteDomainContacts = _cmd('gam.cmd.contacts', 'doDeleteDomainContacts')
-doInfoDomainContacts = _cmd('gam.cmd.contacts', 'doInfoDomainContacts')
-doPrintShowDomainContacts = _cmd('gam.cmd.contacts', 'doPrintShowDomainContacts')
-doUpdateDomainContacts = _cmd('gam.cmd.contacts', 'doUpdateDomainContacts')
 
 # gam.cmd.courses
-acceptClassroomInvitations = _cmd('gam.cmd.courses', 'acceptClassroomInvitations')
-cancelGuardianInvitations = _cmd('gam.cmd.courses', 'cancelGuardianInvitations')
-clearGuardians = _cmd('gam.cmd.courses', 'clearGuardians')
-createClassroomInvitations = _cmd('gam.cmd.courses', 'createClassroomInvitations')
-deleteClassroomInvitations = _cmd('gam.cmd.courses', 'deleteClassroomInvitations')
-deleteGuardians = _cmd('gam.cmd.courses', 'deleteGuardians')
-doCancelGuardianInvitation = _cmd('gam.cmd.courses', 'doCancelGuardianInvitation')
-doClearCourseStudentGroups = _cmd('gam.cmd.courses', 'doClearCourseStudentGroups')
-doCourseAddItems = _cmd('gam.cmd.courses', 'doCourseAddItems')
-doCourseClearParticipants = _cmd('gam.cmd.courses', 'doCourseClearParticipants')
-doCourseRemoveItems = _cmd('gam.cmd.courses', 'doCourseRemoveItems')
-doCourseSyncParticipants = _cmd('gam.cmd.courses', 'doCourseSyncParticipants')
-doCourseUpdateItems = _cmd('gam.cmd.courses', 'doCourseUpdateItems')
-doCreateCourse = _cmd('gam.cmd.courses', 'doCreateCourse')
-doCreateCourseStudentGroups = _cmd('gam.cmd.courses', 'doCreateCourseStudentGroups')
-doDeleteClassroomInvitations = _cmd('gam.cmd.courses', 'doDeleteClassroomInvitations')
-doDeleteCourse = _cmd('gam.cmd.courses', 'doDeleteCourse')
-doDeleteCourseStudentGroups = _cmd('gam.cmd.courses', 'doDeleteCourseStudentGroups')
-doDeleteCourses = _cmd('gam.cmd.courses', 'doDeleteCourses')
-doDeleteGuardian = _cmd('gam.cmd.courses', 'doDeleteGuardian')
-doInfoCourse = _cmd('gam.cmd.courses', 'doInfoCourse')
-doInfoCourses = _cmd('gam.cmd.courses', 'doInfoCourses')
-doInviteGuardian = _cmd('gam.cmd.courses', 'doInviteGuardian')
-doPrintCourseAnnouncements = _cmd('gam.cmd.courses', 'doPrintCourseAnnouncements')
-doPrintCourseCounts = _cmd('gam.cmd.courses', 'doPrintCourseCounts')
-doPrintCourseMaterials = _cmd('gam.cmd.courses', 'doPrintCourseMaterials')
-doPrintCourseParticipants = _cmd('gam.cmd.courses', 'doPrintCourseParticipants')
-doPrintCourseStudentGroupMembers = _cmd('gam.cmd.courses', 'doPrintCourseStudentGroupMembers')
-doPrintCourseStudentGroups = _cmd('gam.cmd.courses', 'doPrintCourseStudentGroups')
-doPrintCourseSubmissions = _cmd('gam.cmd.courses', 'doPrintCourseSubmissions')
-doPrintCourseTopics = _cmd('gam.cmd.courses', 'doPrintCourseTopics')
-doPrintCourseWork = _cmd('gam.cmd.courses', 'doPrintCourseWork')
-doPrintCourses = _cmd('gam.cmd.courses', 'doPrintCourses')
-doPrintShowClassroomInvitations = _cmd('gam.cmd.courses', 'doPrintShowClassroomInvitations')
-doPrintShowGuardians = _cmd('gam.cmd.courses', 'doPrintShowGuardians')
-doProcessCourseStudentGroupMembers = _cmd('gam.cmd.courses', 'doProcessCourseStudentGroupMembers')
-doUpdateCourse = _cmd('gam.cmd.courses', 'doUpdateCourse')
-doUpdateCourseStudentGroups = _cmd('gam.cmd.courses', 'doUpdateCourseStudentGroups')
-doUpdateCourses = _cmd('gam.cmd.courses', 'doUpdateCourses')
-inviteGuardians = _cmd('gam.cmd.courses', 'inviteGuardians')
-printShowClassroomInvitations = _cmd('gam.cmd.courses', 'printShowClassroomInvitations')
-printShowClassroomProfile = _cmd('gam.cmd.courses', 'printShowClassroomProfile')
-printShowGuardians = _cmd('gam.cmd.courses', 'printShowGuardians')
-syncGuardians = _cmd('gam.cmd.courses', 'syncGuardians')
 
 # gam.cmd.cros
-doGetCommandResultCrOSDevices = _cmd('gam.cmd.cros', 'doGetCommandResultCrOSDevices')
-doGetCrOSDeviceFiles = _cmd('gam.cmd.cros', 'doGetCrOSDeviceFiles')
-doInfoCrOSDevices = _cmd('gam.cmd.cros', 'doInfoCrOSDevices')
-doInfoPrintShowCrOSTelemetry = _cmd('gam.cmd.cros', 'doInfoPrintShowCrOSTelemetry')
-doIssueCommandCrOSDevices = _cmd('gam.cmd.cros', 'doIssueCommandCrOSDevices')
-doPrintCrOSActivity = _cmd('gam.cmd.cros', 'doPrintCrOSActivity')
-doPrintCrOSDevices = _cmd('gam.cmd.cros', 'doPrintCrOSDevices')
-doPrintCrOSEntity = _cmd('gam.cmd.cros', 'doPrintCrOSEntity')
-doUpdateCrOSDevices = _cmd('gam.cmd.cros', 'doUpdateCrOSDevices')
-getCommandResultCrOSDevices = _cmd('gam.cmd.cros', 'getCommandResultCrOSDevices')
-getCrOSDeviceFiles = _cmd('gam.cmd.cros', 'getCrOSDeviceFiles')
-infoCrOSDevices = _cmd('gam.cmd.cros', 'infoCrOSDevices')
-issueCommandCrOSDevices = _cmd('gam.cmd.cros', 'issueCommandCrOSDevices')
-updateCrOSDevices = _cmd('gam.cmd.cros', 'updateCrOSDevices')
 
 # gam.cmd.customer
-doInfoCustomer = _cmd('gam.cmd.customer', 'doInfoCustomer')
-doInfoDomain = _cmd('gam.cmd.customer', 'doInfoDomain')
-doInfoInstance = _cmd('gam.cmd.customer', 'doInfoInstance')
-doPrintShowDomains = _cmd('gam.cmd.customer', 'doPrintShowDomains')
-doUpdateCustomer = _cmd('gam.cmd.customer', 'doUpdateCustomer')
 
 # gam.cmd.datatransfer
-doCreateDataTransfer = _cmd('gam.cmd.datatransfer', 'doCreateDataTransfer')
-doInfoDataTransfer = _cmd('gam.cmd.datatransfer', 'doInfoDataTransfer')
-doPrintShowDataTransfers = _cmd('gam.cmd.datatransfer', 'doPrintShowDataTransfers')
-doShowTransferApps = _cmd('gam.cmd.datatransfer', 'doShowTransferApps')
 
 # gam.cmd.delegates
-printShowContactDelegates = _cmd('gam.cmd.delegates', 'printShowContactDelegates')
-processContactDelegates = _cmd('gam.cmd.delegates', 'processContactDelegates')
 
 # gam.cmd.domains
-doCreateDomain = _cmd('gam.cmd.domains', 'doCreateDomain')
-doCreateDomainAlias = _cmd('gam.cmd.domains', 'doCreateDomainAlias')
-doDeleteDomain = _cmd('gam.cmd.domains', 'doDeleteDomain')
-doDeleteDomainAlias = _cmd('gam.cmd.domains', 'doDeleteDomainAlias')
-doInfoDomainAlias = _cmd('gam.cmd.domains', 'doInfoDomainAlias')
-doPrintShowDomainAliases = _cmd('gam.cmd.domains', 'doPrintShowDomainAliases')
-doUpdateDomain = _cmd('gam.cmd.domains', 'doUpdateDomain')
 
 # gam.cmd.drive
-checkDriveFileShortcut = _cmd('gam.cmd.drive', 'checkDriveFileShortcut')
-claimOwnership = _cmd('gam.cmd.drive', 'claimOwnership')
-collectOrphans = _cmd('gam.cmd.drive', 'collectOrphans')
-copyDriveFile = _cmd('gam.cmd.drive', 'copyDriveFile')
-copySyncSharedDriveACLs = _cmd('gam.cmd.drive', 'copySyncSharedDriveACLs')
-createDriveFile = _cmd('gam.cmd.drive', 'createDriveFile')
-createDriveFileACL = _cmd('gam.cmd.drive', 'createDriveFileACL')
-createDriveFilePermissions = _cmd('gam.cmd.drive', 'createDriveFilePermissions')
-createDriveFileShortcut = _cmd('gam.cmd.drive', 'createDriveFileShortcut')
-createDriveFolderPath = _cmd('gam.cmd.drive', 'createDriveFolderPath')
-createDriveLabelPermissions = _cmd('gam.cmd.drive', 'createDriveLabelPermissions')
-createSharedDrive = _cmd('gam.cmd.drive', 'createSharedDrive')
-deleteDriveFile = _cmd('gam.cmd.drive', 'deleteDriveFile')
-deleteDriveFileACLs = _cmd('gam.cmd.drive', 'deleteDriveFileACLs')
-deleteDriveLabelPermissions = _cmd('gam.cmd.drive', 'deleteDriveLabelPermissions')
-deleteEmptyDriveFolders = _cmd('gam.cmd.drive', 'deleteEmptyDriveFolders')
-deleteFileRevisions = _cmd('gam.cmd.drive', 'deleteFileRevisions')
-deletePermissions = _cmd('gam.cmd.drive', 'deletePermissions')
-deleteSharedDrive = _cmd('gam.cmd.drive', 'deleteSharedDrive')
-doCopySyncSharedDriveACLs = _cmd('gam.cmd.drive', 'doCopySyncSharedDriveACLs')
-doCreateDriveFileACL = _cmd('gam.cmd.drive', 'doCreateDriveFileACL')
-doCreateDriveLabelPermissions = _cmd('gam.cmd.drive', 'doCreateDriveLabelPermissions')
-doCreatePermissions = _cmd('gam.cmd.drive', 'doCreatePermissions')
-doCreateSharedDrive = _cmd('gam.cmd.drive', 'doCreateSharedDrive')
-doDeleteDriveFileACLs = _cmd('gam.cmd.drive', 'doDeleteDriveFileACLs')
-doDeleteDriveLabelPermissions = _cmd('gam.cmd.drive', 'doDeleteDriveLabelPermissions')
-doDeletePermissions = _cmd('gam.cmd.drive', 'doDeletePermissions')
-doDeleteSharedDrive = _cmd('gam.cmd.drive', 'doDeleteSharedDrive')
-doHideUnhideSharedDrive = _cmd('gam.cmd.drive', 'doHideUnhideSharedDrive')
-doInfoDriveFileACLs = _cmd('gam.cmd.drive', 'doInfoDriveFileACLs')
-doInfoDriveLabels = _cmd('gam.cmd.drive', 'doInfoDriveLabels')
-doInfoSharedDrive = _cmd('gam.cmd.drive', 'doInfoSharedDrive')
-doPrintSharedDriveOrganizers = _cmd('gam.cmd.drive', 'doPrintSharedDriveOrganizers')
-doPrintShowDriveFileACLs = _cmd('gam.cmd.drive', 'doPrintShowDriveFileACLs')
-doPrintShowDriveLabelPermissions = _cmd('gam.cmd.drive', 'doPrintShowDriveLabelPermissions')
-doPrintShowDriveLabels = _cmd('gam.cmd.drive', 'doPrintShowDriveLabels')
-doPrintShowOrgunitSharedDrives = _cmd('gam.cmd.drive', 'doPrintShowOrgunitSharedDrives')
-doPrintShowOwnership = _cmd('gam.cmd.drive', 'doPrintShowOwnership')
-doPrintShowSharedDriveACLs = _cmd('gam.cmd.drive', 'doPrintShowSharedDriveACLs')
-doPrintShowSharedDrives = _cmd('gam.cmd.drive', 'doPrintShowSharedDrives')
-doShowSharedDriveThemes = _cmd('gam.cmd.drive', 'doShowSharedDriveThemes')
-doUpdateDriveFileACLs = _cmd('gam.cmd.drive', 'doUpdateDriveFileACLs')
-doUpdateSharedDrive = _cmd('gam.cmd.drive', 'doUpdateSharedDrive')
-emptyDriveTrash = _cmd('gam.cmd.drive', 'emptyDriveTrash')
-getDriveFile = _cmd('gam.cmd.drive', 'getDriveFile')
-getGoogleDocument = _cmd('gam.cmd.drive', 'getGoogleDocument')
-hideUnhideSharedDrive = _cmd('gam.cmd.drive', 'hideUnhideSharedDrive')
-infoDriveFileACLs = _cmd('gam.cmd.drive', 'infoDriveFileACLs')
-infoDriveLabels = _cmd('gam.cmd.drive', 'infoDriveLabels')
-infoSharedDrive = _cmd('gam.cmd.drive', 'infoSharedDrive')
-moveDriveFile = _cmd('gam.cmd.drive', 'moveDriveFile')
-printDiskUsage = _cmd('gam.cmd.drive', 'printDiskUsage')
-printDriveActivity = _cmd('gam.cmd.drive', 'printDriveActivity')
-printEmptyDriveFolders = _cmd('gam.cmd.drive', 'printEmptyDriveFolders')
-printFileList = _cmd('gam.cmd.drive', 'printFileList')
-printFileParentTree = _cmd('gam.cmd.drive', 'printFileParentTree')
-printSharedDriveOrganizers = _cmd('gam.cmd.drive', 'printSharedDriveOrganizers')
-printShowDriveFileACLs = _cmd('gam.cmd.drive', 'printShowDriveFileACLs')
-printShowDriveLabelPermissions = _cmd('gam.cmd.drive', 'printShowDriveLabelPermissions')
-printShowDriveLabels = _cmd('gam.cmd.drive', 'printShowDriveLabels')
-printShowDriveSettings = _cmd('gam.cmd.drive', 'printShowDriveSettings')
-printShowDrivelastModifications = _cmd('gam.cmd.drive', 'printShowDrivelastModifications')
-printShowFileComments = _cmd('gam.cmd.drive', 'printShowFileComments')
-printShowFileCounts = _cmd('gam.cmd.drive', 'printShowFileCounts')
-printShowFilePaths = _cmd('gam.cmd.drive', 'printShowFilePaths')
-printShowFileRevisions = _cmd('gam.cmd.drive', 'printShowFileRevisions')
-printShowFileShareCounts = _cmd('gam.cmd.drive', 'printShowFileShareCounts')
-printShowFileTree = _cmd('gam.cmd.drive', 'printShowFileTree')
-printShowLookerStudioAssets = _cmd('gam.cmd.drive', 'printShowLookerStudioAssets')
-printShowSharedDriveACLs = _cmd('gam.cmd.drive', 'printShowSharedDriveACLs')
-printShowSharedDrives = _cmd('gam.cmd.drive', 'printShowSharedDrives')
-processFileDriveLabels = _cmd('gam.cmd.drive', 'processFileDriveLabels')
-purgeDriveFile = _cmd('gam.cmd.drive', 'purgeDriveFile')
-showFileInfo = _cmd('gam.cmd.drive', 'showFileInfo')
-showSharedDriveThemes = _cmd('gam.cmd.drive', 'showSharedDriveThemes')
-transferDrive = _cmd('gam.cmd.drive', 'transferDrive')
-transferOwnership = _cmd('gam.cmd.drive', 'transferOwnership')
-trashDriveFile = _cmd('gam.cmd.drive', 'trashDriveFile')
-untrashDriveFile = _cmd('gam.cmd.drive', 'untrashDriveFile')
-updateDriveFile = _cmd('gam.cmd.drive', 'updateDriveFile')
-updateDriveFileACLs = _cmd('gam.cmd.drive', 'updateDriveFileACLs')
-updateFileRevisions = _cmd('gam.cmd.drive', 'updateFileRevisions')
-updateGoogleDocument = _cmd('gam.cmd.drive', 'updateGoogleDocument')
-updateSharedDrive = _cmd('gam.cmd.drive', 'updateSharedDrive')
 
 # gam.cmd.gmail
-archiveMessages = _cmd('gam.cmd.gmail', 'archiveMessages')
-createCSEKeyPair = _cmd('gam.cmd.gmail', 'createCSEKeyPair')
-createFilter = _cmd('gam.cmd.gmail', 'createFilter')
-createForm = _cmd('gam.cmd.gmail', 'createForm')
-createForwardingAddresses = _cmd('gam.cmd.gmail', 'createForwardingAddresses')
-createLabel = _cmd('gam.cmd.gmail', 'createLabel')
-createLabelList = _cmd('gam.cmd.gmail', 'createLabelList')
-createSmime = _cmd('gam.cmd.gmail', 'createSmime')
-createUpdateCSEIdentity = _cmd('gam.cmd.gmail', 'createUpdateCSEIdentity')
-createUpdateSendAs = _cmd('gam.cmd.gmail', 'createUpdateSendAs')
-delegateTo = _cmd('gam.cmd.gmail', 'delegateTo')
-deleteFilters = _cmd('gam.cmd.gmail', 'deleteFilters')
-deleteForwardingAddresses = _cmd('gam.cmd.gmail', 'deleteForwardingAddresses')
-deleteInfoSendAs = _cmd('gam.cmd.gmail', 'deleteInfoSendAs')
-deleteLabel = _cmd('gam.cmd.gmail', 'deleteLabel')
-deleteLabelId = _cmd('gam.cmd.gmail', 'deleteLabelId')
-deleteLabelIdList = _cmd('gam.cmd.gmail', 'deleteLabelIdList')
-deleteLabelList = _cmd('gam.cmd.gmail', 'deleteLabelList')
-deleteSmime = _cmd('gam.cmd.gmail', 'deleteSmime')
-draftMessage = _cmd('gam.cmd.gmail', 'draftMessage')
-exportMessages = _cmd('gam.cmd.gmail', 'exportMessages')
-exportThreads = _cmd('gam.cmd.gmail', 'exportThreads')
-importMessage = _cmd('gam.cmd.gmail', 'importMessage')
-infoFilters = _cmd('gam.cmd.gmail', 'infoFilters')
-infoForwardingAddresses = _cmd('gam.cmd.gmail', 'infoForwardingAddresses')
-insertMessage = _cmd('gam.cmd.gmail', 'insertMessage')
-printShowCSEIdentities = _cmd('gam.cmd.gmail', 'printShowCSEIdentities')
-printShowCSEKeyPairs = _cmd('gam.cmd.gmail', 'printShowCSEKeyPairs')
-printShowDelegates = _cmd('gam.cmd.gmail', 'printShowDelegates')
-printShowFilters = _cmd('gam.cmd.gmail', 'printShowFilters')
-printShowFormResponses = _cmd('gam.cmd.gmail', 'printShowFormResponses')
-printShowForms = _cmd('gam.cmd.gmail', 'printShowForms')
-printShowForward = _cmd('gam.cmd.gmail', 'printShowForward')
-printShowForwardingAddresses = _cmd('gam.cmd.gmail', 'printShowForwardingAddresses')
-printShowGmailProfile = _cmd('gam.cmd.gmail', 'printShowGmailProfile')
-printShowImap = _cmd('gam.cmd.gmail', 'printShowImap')
-printShowLabels = _cmd('gam.cmd.gmail', 'printShowLabels')
-printShowLanguage = _cmd('gam.cmd.gmail', 'printShowLanguage')
-printShowMessages = _cmd('gam.cmd.gmail', 'printShowMessages')
-printShowPop = _cmd('gam.cmd.gmail', 'printShowPop')
-printShowSendAs = _cmd('gam.cmd.gmail', 'printShowSendAs')
-printShowSignature = _cmd('gam.cmd.gmail', 'printShowSignature')
-printShowSmimes = _cmd('gam.cmd.gmail', 'printShowSmimes')
-printShowThreads = _cmd('gam.cmd.gmail', 'printShowThreads')
-printShowVacation = _cmd('gam.cmd.gmail', 'printShowVacation')
-processCSEIdentity = _cmd('gam.cmd.gmail', 'processCSEIdentity')
-processCSEKeyPair = _cmd('gam.cmd.gmail', 'processCSEKeyPair')
-processDelegates = _cmd('gam.cmd.gmail', 'processDelegates')
-processMessages = _cmd('gam.cmd.gmail', 'processMessages')
-processThreads = _cmd('gam.cmd.gmail', 'processThreads')
-setForward = _cmd('gam.cmd.gmail', 'setForward')
-setImap = _cmd('gam.cmd.gmail', 'setImap')
-setLanguage = _cmd('gam.cmd.gmail', 'setLanguage')
-setPop = _cmd('gam.cmd.gmail', 'setPop')
-setSignature = _cmd('gam.cmd.gmail', 'setSignature')
-setVacation = _cmd('gam.cmd.gmail', 'setVacation')
-updateDelegates = _cmd('gam.cmd.gmail', 'updateDelegates')
-updateForm = _cmd('gam.cmd.gmail', 'updateForm')
-updateLabelSettings = _cmd('gam.cmd.gmail', 'updateLabelSettings')
-updateLabelSettingsById = _cmd('gam.cmd.gmail', 'updateLabelSettingsById')
-updateLabels = _cmd('gam.cmd.gmail', 'updateLabels')
-updateSmime = _cmd('gam.cmd.gmail', 'updateSmime')
-watchGmail = _cmd('gam.cmd.gmail', 'watchGmail')
 
 # gam.cmd.groups
-doCreateGroup = _cmd('gam.cmd.groups', 'doCreateGroup')
-doDeleteGroups = _cmd('gam.cmd.groups', 'doDeleteGroups')
-doInfoGroupMembers = _cmd('gam.cmd.groups', 'doInfoGroupMembers')
-doInfoGroups = _cmd('gam.cmd.groups', 'doInfoGroups')
-doPrintGroupMembers = _cmd('gam.cmd.groups', 'doPrintGroupMembers')
-doPrintGroups = _cmd('gam.cmd.groups', 'doPrintGroups')
-doPrintShowGroupTree = _cmd('gam.cmd.groups', 'doPrintShowGroupTree')
-doShowGroupMembers = _cmd('gam.cmd.groups', 'doShowGroupMembers')
-doUpdateGroups = _cmd('gam.cmd.groups', 'doUpdateGroups')
-infoGroupMembers = _cmd('gam.cmd.groups', 'infoGroupMembers')
 
 # gam.cmd.licenses
-doPrintLicenses = _cmd('gam.cmd.licenses', 'doPrintLicenses')
-doShowLicenses = _cmd('gam.cmd.licenses', 'doShowLicenses')
 
 # gam.cmd.meet
-createMeetSpace = _cmd('gam.cmd.meet', 'createMeetSpace')
-endMeetConference = _cmd('gam.cmd.meet', 'endMeetConference')
-infoMeetSpace = _cmd('gam.cmd.meet', 'infoMeetSpace')
-printShowMeetConferences = _cmd('gam.cmd.meet', 'printShowMeetConferences')
-printShowMeetParticipants = _cmd('gam.cmd.meet', 'printShowMeetParticipants')
-printShowMeetRecordings = _cmd('gam.cmd.meet', 'printShowMeetRecordings')
-printShowMeetTranscripts = _cmd('gam.cmd.meet', 'printShowMeetTranscripts')
-updateMeetSpace = _cmd('gam.cmd.meet', 'updateMeetSpace')
 
 # gam.cmd.mobile
-doDeleteMobileDevices = _cmd('gam.cmd.mobile', 'doDeleteMobileDevices')
-doInfoMobileDevices = _cmd('gam.cmd.mobile', 'doInfoMobileDevices')
-doPrintMobileDevices = _cmd('gam.cmd.mobile', 'doPrintMobileDevices')
-doUpdateMobileDevices = _cmd('gam.cmd.mobile', 'doUpdateMobileDevices')
 
 # gam.cmd.notes
-createNote = _cmd('gam.cmd.notes', 'createNote')
-createNotesACLs = _cmd('gam.cmd.notes', 'createNotesACLs')
-deleteInfoNotes = _cmd('gam.cmd.notes', 'deleteInfoNotes')
-deleteNotesACLs = _cmd('gam.cmd.notes', 'deleteNotesACLs')
-getNoteAttachments = _cmd('gam.cmd.notes', 'getNoteAttachments')
-printShowNotes = _cmd('gam.cmd.notes', 'printShowNotes')
 
 # gam.cmd.oauth
-Credentials = _cmd('gam.cmd.oauth', 'Credentials')
-doOAuthCreate = _cmd('gam.cmd.oauth', 'doOAuthCreate')
-doOAuthDelete = _cmd('gam.cmd.oauth', 'doOAuthDelete')
-doOAuthExport = _cmd('gam.cmd.oauth', 'doOAuthExport')
-doOAuthInfo = _cmd('gam.cmd.oauth', 'doOAuthInfo')
-doOAuthRefresh = _cmd('gam.cmd.oauth', 'doOAuthRefresh')
-doOAuthUpdate = _cmd('gam.cmd.oauth', 'doOAuthUpdate')
 
 # gam.cmd.orgunits
-doCheckOrgUnit = _cmd('gam.cmd.orgunits', 'doCheckOrgUnit')
-doCreateOrg = _cmd('gam.cmd.orgunits', 'doCreateOrg')
-doDeleteOrg = _cmd('gam.cmd.orgunits', 'doDeleteOrg')
-doDeleteOrgs = _cmd('gam.cmd.orgunits', 'doDeleteOrgs')
-doInfoOrg = _cmd('gam.cmd.orgunits', 'doInfoOrg')
-doInfoOrgs = _cmd('gam.cmd.orgunits', 'doInfoOrgs')
-doPrintOrgs = _cmd('gam.cmd.orgunits', 'doPrintOrgs')
-doShowOrgTree = _cmd('gam.cmd.orgunits', 'doShowOrgTree')
-doUpdateOrg = _cmd('gam.cmd.orgunits', 'doUpdateOrg')
-doUpdateOrgs = _cmd('gam.cmd.orgunits', 'doUpdateOrgs')
 
 # gam.cmd.people
-clearUserPeopleContacts = _cmd('gam.cmd.people', 'clearUserPeopleContacts')
-copyUserPeopleOtherContacts = _cmd('gam.cmd.people', 'copyUserPeopleOtherContacts')
-createUserPeopleContact = _cmd('gam.cmd.people', 'createUserPeopleContact')
-createUserPeopleContactGroup = _cmd('gam.cmd.people', 'createUserPeopleContactGroup')
-dedupReplaceDomainUserPeopleContacts = _cmd('gam.cmd.people', 'dedupReplaceDomainUserPeopleContacts')
-deleteUserPeopleContactGroups = _cmd('gam.cmd.people', 'deleteUserPeopleContactGroups')
-deleteUserPeopleContactPhoto = _cmd('gam.cmd.people', 'deleteUserPeopleContactPhoto')
-deleteUserPeopleContacts = _cmd('gam.cmd.people', 'deleteUserPeopleContacts')
-doDeleteDomainContactPhoto = _cmd('gam.cmd.people', 'doDeleteDomainContactPhoto')
-doGetDomainContactPhoto = _cmd('gam.cmd.people', 'doGetDomainContactPhoto')
-doInfoDomainPeopleContacts = _cmd('gam.cmd.people', 'doInfoDomainPeopleContacts')
-doInfoDomainPeopleProfile = _cmd('gam.cmd.people', 'doInfoDomainPeopleProfile')
-doPrintShowDomainPeopleContacts = _cmd('gam.cmd.people', 'doPrintShowDomainPeopleContacts')
-doPrintShowDomainPeopleProfiles = _cmd('gam.cmd.people', 'doPrintShowDomainPeopleProfiles')
-doUpdateDomainContactPhoto = _cmd('gam.cmd.people', 'doUpdateDomainContactPhoto')
-getUserPeopleContactPhoto = _cmd('gam.cmd.people', 'getUserPeopleContactPhoto')
-infoUserPeopleContactGroups = _cmd('gam.cmd.people', 'infoUserPeopleContactGroups')
-infoUserPeopleContacts = _cmd('gam.cmd.people', 'infoUserPeopleContacts')
-printShowUserPeopleContactGroups = _cmd('gam.cmd.people', 'printShowUserPeopleContactGroups')
-printShowUserPeopleContacts = _cmd('gam.cmd.people', 'printShowUserPeopleContacts')
-printShowUserPeopleOtherContacts = _cmd('gam.cmd.people', 'printShowUserPeopleOtherContacts')
-printShowUserPeopleProfiles = _cmd('gam.cmd.people', 'printShowUserPeopleProfiles')
-processUserPeopleOtherContacts = _cmd('gam.cmd.people', 'processUserPeopleOtherContacts')
-updateUserPeopleContactGroup = _cmd('gam.cmd.people', 'updateUserPeopleContactGroup')
-updateUserPeopleContactPhoto = _cmd('gam.cmd.people', 'updateUserPeopleContactPhoto')
-updateUserPeopleContacts = _cmd('gam.cmd.people', 'updateUserPeopleContacts')
 
 # gam.cmd.printers
-doCreatePrinter = _cmd('gam.cmd.printers', 'doCreatePrinter')
-doDeletePrinter = _cmd('gam.cmd.printers', 'doDeletePrinter')
-doInfoPrinter = _cmd('gam.cmd.printers', 'doInfoPrinter')
-doPrintShowPrinterModels = _cmd('gam.cmd.printers', 'doPrintShowPrinterModels')
-doPrintShowPrinters = _cmd('gam.cmd.printers', 'doPrintShowPrinters')
-doUpdatePrinter = _cmd('gam.cmd.printers', 'doUpdatePrinter')
 
 # gam.cmd.project
-checkServiceAccount = _cmd('gam.cmd.project', 'checkServiceAccount')
-doCheckUpdateSvcAcct = _cmd('gam.cmd.project', 'doCheckUpdateSvcAcct')
-doCreateGCPFolder = _cmd('gam.cmd.project', 'doCreateGCPFolder')
-doCreateGCPServiceAccount = _cmd('gam.cmd.project', 'doCreateGCPServiceAccount')
-doCreateProject = _cmd('gam.cmd.project', 'doCreateProject')
-doCreateSvcAcct = _cmd('gam.cmd.project', 'doCreateSvcAcct')
-doCreateSvcAcctKeys = _cmd('gam.cmd.project', 'doCreateSvcAcctKeys')
-doDeleteProject = _cmd('gam.cmd.project', 'doDeleteProject')
-doDeleteSvcAcct = _cmd('gam.cmd.project', 'doDeleteSvcAcct')
-doDeleteSvcAcctKeys = _cmd('gam.cmd.project', 'doDeleteSvcAcctKeys')
-doEnableAPIs = _cmd('gam.cmd.project', 'doEnableAPIs')
-doInfoCurrentProjectId = _cmd('gam.cmd.project', 'doInfoCurrentProjectId')
-doInfoCustomerId = _cmd('gam.cmd.project', 'doInfoCustomerId')
-doInfoGCPOrgId = _cmd('gam.cmd.project', 'doInfoGCPOrgId')
-doPrintShowProjects = _cmd('gam.cmd.project', 'doPrintShowProjects')
-doPrintShowSvcAccts = _cmd('gam.cmd.project', 'doPrintShowSvcAccts')
-doProcessSvcAcctKeys = _cmd('gam.cmd.project', 'doProcessSvcAcctKeys')
-doReplaceSvcAcctKeys = _cmd('gam.cmd.project', 'doReplaceSvcAcctKeys')
-doShowSvcAcctKeys = _cmd('gam.cmd.project', 'doShowSvcAcctKeys')
-doUpdateProject = _cmd('gam.cmd.project', 'doUpdateProject')
-doUpdateSvcAcctKeys = _cmd('gam.cmd.project', 'doUpdateSvcAcctKeys')
-doUploadSvcAcctKeys = _cmd('gam.cmd.project', 'doUploadSvcAcctKeys')
-doUseProject = _cmd('gam.cmd.project', 'doUseProject')
 
 # gam.cmd.reports
-doReport = _cmd('gam.cmd.reports', 'doReport')
-doWhatIs = _cmd('gam.cmd.reports', 'doWhatIs')
 
 # gam.cmd.reseller
-doCreateResoldCustomer = _cmd('gam.cmd.reseller', 'doCreateResoldCustomer')
-doCreateResoldSubscription = _cmd('gam.cmd.reseller', 'doCreateResoldSubscription')
-doDeleteResoldSubscription = _cmd('gam.cmd.reseller', 'doDeleteResoldSubscription')
-doInfoResoldCustomer = _cmd('gam.cmd.reseller', 'doInfoResoldCustomer')
-doInfoResoldSubscription = _cmd('gam.cmd.reseller', 'doInfoResoldSubscription')
-doPrintShowChannelCustomerEntitlements = _cmd('gam.cmd.reseller', 'doPrintShowChannelCustomerEntitlements')
-doPrintShowChannelCustomers = _cmd('gam.cmd.reseller', 'doPrintShowChannelCustomers')
-doPrintShowChannelOffers = _cmd('gam.cmd.reseller', 'doPrintShowChannelOffers')
-doPrintShowChannelProducts = _cmd('gam.cmd.reseller', 'doPrintShowChannelProducts')
-doPrintShowChannelSKUs = _cmd('gam.cmd.reseller', 'doPrintShowChannelSKUs')
-doPrintShowResoldSubscriptions = _cmd('gam.cmd.reseller', 'doPrintShowResoldSubscriptions')
-doUpdateResoldCustomer = _cmd('gam.cmd.reseller', 'doUpdateResoldCustomer')
-doUpdateResoldSubscription = _cmd('gam.cmd.reseller', 'doUpdateResoldSubscription')
 
 # gam.cmd.resources
-doCreateBuilding = _cmd('gam.cmd.resources', 'doCreateBuilding')
-doCreateFeature = _cmd('gam.cmd.resources', 'doCreateFeature')
-doCreateResourceCalendar = _cmd('gam.cmd.resources', 'doCreateResourceCalendar')
-doDeleteBuilding = _cmd('gam.cmd.resources', 'doDeleteBuilding')
-doDeleteFeature = _cmd('gam.cmd.resources', 'doDeleteFeature')
-doDeleteResourceCalendar = _cmd('gam.cmd.resources', 'doDeleteResourceCalendar')
-doDeleteResourceCalendars = _cmd('gam.cmd.resources', 'doDeleteResourceCalendars')
-doInfoBuilding = _cmd('gam.cmd.resources', 'doInfoBuilding')
-doInfoResourceCalendar = _cmd('gam.cmd.resources', 'doInfoResourceCalendar')
-doInfoResourceCalendars = _cmd('gam.cmd.resources', 'doInfoResourceCalendars')
-doPrintShowBuildings = _cmd('gam.cmd.resources', 'doPrintShowBuildings')
-doPrintShowFeatures = _cmd('gam.cmd.resources', 'doPrintShowFeatures')
-doPrintShowResourceCalendars = _cmd('gam.cmd.resources', 'doPrintShowResourceCalendars')
-doUpdateBuilding = _cmd('gam.cmd.resources', 'doUpdateBuilding')
-doUpdateFeature = _cmd('gam.cmd.resources', 'doUpdateFeature')
-doUpdateResourceCalendar = _cmd('gam.cmd.resources', 'doUpdateResourceCalendar')
-doUpdateResourceCalendars = _cmd('gam.cmd.resources', 'doUpdateResourceCalendars')
 
 # gam.cmd.schemas
-doCreateUpdateUserSchemas = _cmd('gam.cmd.schemas', 'doCreateUpdateUserSchemas')
-doDeleteUserSchemas = _cmd('gam.cmd.schemas', 'doDeleteUserSchemas')
-doInfoUserSchemas = _cmd('gam.cmd.schemas', 'doInfoUserSchemas')
-doPrintShowUserSchemas = _cmd('gam.cmd.schemas', 'doPrintShowUserSchemas')
 
 # gam.cmd.send_email
-doSendEmail = _cmd('gam.cmd.send_email', 'doSendEmail')
-doSendReply = _cmd('gam.cmd.send_email', 'doSendReply')
 
 # gam.cmd.sites
-deprecatedDomainSites = _cmd('gam.cmd.sites', 'deprecatedDomainSites')
-deprecatedUserSites = _cmd('gam.cmd.sites', 'deprecatedUserSites')
-doCreateSiteVerification = _cmd('gam.cmd.sites', 'doCreateSiteVerification')
-doInfoSiteVerification = _cmd('gam.cmd.sites', 'doInfoSiteVerification')
-doUpdateSiteVerification = _cmd('gam.cmd.sites', 'doUpdateSiteVerification')
-printShowBusinessProfileAccounts = _cmd('gam.cmd.sites', 'printShowBusinessProfileAccounts')
-printShowWebMasterSites = _cmd('gam.cmd.sites', 'printShowWebMasterSites')
-printShowWebResources = _cmd('gam.cmd.sites', 'printShowWebResources')
 
 # gam.cmd.sso
-doCreateInboundSSOAssignment = _cmd('gam.cmd.sso', 'doCreateInboundSSOAssignment')
-doCreateInboundSSOCredential = _cmd('gam.cmd.sso', 'doCreateInboundSSOCredential')
-doCreateInboundSSOProfile = _cmd('gam.cmd.sso', 'doCreateInboundSSOProfile')
-doDeleteInboundSSOAssignment = _cmd('gam.cmd.sso', 'doDeleteInboundSSOAssignment')
-doDeleteInboundSSOCredential = _cmd('gam.cmd.sso', 'doDeleteInboundSSOCredential')
-doDeleteInboundSSOProfile = _cmd('gam.cmd.sso', 'doDeleteInboundSSOProfile')
-doInfoInboundSSOAssignment = _cmd('gam.cmd.sso', 'doInfoInboundSSOAssignment')
-doInfoInboundSSOCredential = _cmd('gam.cmd.sso', 'doInfoInboundSSOCredential')
-doInfoInboundSSOProfile = _cmd('gam.cmd.sso', 'doInfoInboundSSOProfile')
-doPrintShowInboundSSOAssignments = _cmd('gam.cmd.sso', 'doPrintShowInboundSSOAssignments')
-doPrintShowInboundSSOCredentials = _cmd('gam.cmd.sso', 'doPrintShowInboundSSOCredentials')
-doPrintShowInboundSSOProfiles = _cmd('gam.cmd.sso', 'doPrintShowInboundSSOProfiles')
-doUpdateInboundSSOAssignment = _cmd('gam.cmd.sso', 'doUpdateInboundSSOAssignment')
-doUpdateInboundSSOProfile = _cmd('gam.cmd.sso', 'doUpdateInboundSSOProfile')
 
 # gam.cmd.tasks
-importTasklist = _cmd('gam.cmd.tasks', 'importTasklist')
-printShowTagManagerAccounts = _cmd('gam.cmd.tasks', 'printShowTagManagerAccounts')
-printShowTagManagerContainers = _cmd('gam.cmd.tasks', 'printShowTagManagerContainers')
-printShowTagManagerPermissions = _cmd('gam.cmd.tasks', 'printShowTagManagerPermissions')
-printShowTagManagerTags = _cmd('gam.cmd.tasks', 'printShowTagManagerTags')
-printShowTagManagerWorkspaces = _cmd('gam.cmd.tasks', 'printShowTagManagerWorkspaces')
-printShowTasklists = _cmd('gam.cmd.tasks', 'printShowTasklists')
-printShowTasks = _cmd('gam.cmd.tasks', 'printShowTasks')
-processTasklists = _cmd('gam.cmd.tasks', 'processTasklists')
-processTasks = _cmd('gam.cmd.tasks', 'processTasks')
 
 # gam.cmd.userop
-addUserToGroups = _cmd('gam.cmd.userop', 'addUserToGroups')
-appendSheetRanges = _cmd('gam.cmd.userop', 'appendSheetRanges')
-checkUserInGroups = _cmd('gam.cmd.userop', 'checkUserInGroups')
-clearSheetRanges = _cmd('gam.cmd.userop', 'clearSheetRanges')
-createLicense = _cmd('gam.cmd.userop', 'createLicense')
-createSheet = _cmd('gam.cmd.userop', 'createSheet')
-deleteLicense = _cmd('gam.cmd.userop', 'deleteLicense')
-deletePhoto = _cmd('gam.cmd.userop', 'deletePhoto')
-deleteTokens = _cmd('gam.cmd.userop', 'deleteTokens')
-deleteUserFromGroups = _cmd('gam.cmd.userop', 'deleteUserFromGroups')
-deprovisionUser = _cmd('gam.cmd.userop', 'deprovisionUser')
-doPrintShowTokens = _cmd('gam.cmd.userop', 'doPrintShowTokens')
-getProfilePhoto = _cmd('gam.cmd.userop', 'getProfilePhoto')
-getUserPhoto = _cmd('gam.cmd.userop', 'getUserPhoto')
-infoPrintShowSheets = _cmd('gam.cmd.userop', 'infoPrintShowSheets')
-printShowGroupTree = _cmd('gam.cmd.userop', 'printShowGroupTree')
-printShowLookerStudioPermissions = _cmd('gam.cmd.userop', 'printShowLookerStudioPermissions')
-printShowSheetRanges = _cmd('gam.cmd.userop', 'printShowSheetRanges')
-printShowTokens = _cmd('gam.cmd.userop', 'printShowTokens')
-printShowUserGroups = _cmd('gam.cmd.userop', 'printShowUserGroups')
-printUserGroupsList = _cmd('gam.cmd.userop', 'printUserGroupsList')
-processLookerStudioPermissions = _cmd('gam.cmd.userop', 'processLookerStudioPermissions')
-setProfile = _cmd('gam.cmd.userop', 'setProfile')
-showProfile = _cmd('gam.cmd.userop', 'showProfile')
-syncLicense = _cmd('gam.cmd.userop', 'syncLicense')
-syncUserWithGroups = _cmd('gam.cmd.userop', 'syncUserWithGroups')
-updateLicense = _cmd('gam.cmd.userop', 'updateLicense')
-updatePhoto = _cmd('gam.cmd.userop', 'updatePhoto')
-updateSheetRanges = _cmd('gam.cmd.userop', 'updateSheetRanges')
-updateSheets = _cmd('gam.cmd.userop', 'updateSheets')
-updateUserGroups = _cmd('gam.cmd.userop', 'updateUserGroups')
 
 # gam.cmd.users
-deleteUsers = _cmd('gam.cmd.users', 'deleteUsers')
-doCheckUserSuspended = _cmd('gam.cmd.users', 'doCheckUserSuspended')
-doCreateGuestUser = _cmd('gam.cmd.users', 'doCreateGuestUser')
-doCreateUser = _cmd('gam.cmd.users', 'doCreateUser')
-doDeleteUser = _cmd('gam.cmd.users', 'doDeleteUser')
-doDeleteUsers = _cmd('gam.cmd.users', 'doDeleteUsers')
-doInfoUser = _cmd('gam.cmd.users', 'doInfoUser')
-doInfoUsers = _cmd('gam.cmd.users', 'doInfoUsers')
-doPrintUserCountsByOrgUnit = _cmd('gam.cmd.users', 'doPrintUserCountsByOrgUnit')
-doPrintUserEntity = _cmd('gam.cmd.users', 'doPrintUserEntity')
-doPrintUserList = _cmd('gam.cmd.users', 'doPrintUserList')
-doPrintUsers = _cmd('gam.cmd.users', 'doPrintUsers')
-doSuspendUnsuspendUser = _cmd('gam.cmd.users', 'doSuspendUnsuspendUser')
-doSuspendUnsuspendUsers = _cmd('gam.cmd.users', 'doSuspendUnsuspendUsers')
-doUndeleteUser = _cmd('gam.cmd.users', 'doUndeleteUser')
-doUndeleteUsers = _cmd('gam.cmd.users', 'doUndeleteUsers')
-doUpdateUser = _cmd('gam.cmd.users', 'doUpdateUser')
-doUpdateUsers = _cmd('gam.cmd.users', 'doUpdateUsers')
-infoUsers = _cmd('gam.cmd.users', 'infoUsers')
-signoutTurnoff2SVUsers = _cmd('gam.cmd.users', 'signoutTurnoff2SVUsers')
-suspendUnsuspendUsers = _cmd('gam.cmd.users', 'suspendUnsuspendUsers')
-undeleteUsers = _cmd('gam.cmd.users', 'undeleteUsers')
-updateUsers = _cmd('gam.cmd.users', 'updateUsers')
-waitForMailbox = _cmd('gam.cmd.users', 'waitForMailbox')
 
 # gam.cmd.userservices
-addCreateCalendars = _cmd('gam.cmd.userservices', 'addCreateCalendars')
-createCalendarACLs = _cmd('gam.cmd.userservices', 'createCalendarACLs')
-createCalendarEvent = _cmd('gam.cmd.userservices', 'createCalendarEvent')
-createFocusTime = _cmd('gam.cmd.userservices', 'createFocusTime')
-createOutOfOffice = _cmd('gam.cmd.userservices', 'createOutOfOffice')
-createWorkingLocation = _cmd('gam.cmd.userservices', 'createWorkingLocation')
-deleteASP = _cmd('gam.cmd.userservices', 'deleteASP')
-deleteBackupCodes = _cmd('gam.cmd.userservices', 'deleteBackupCodes')
-deleteCalendarACLs = _cmd('gam.cmd.userservices', 'deleteCalendarACLs')
-deleteCalendarEvents = _cmd('gam.cmd.userservices', 'deleteCalendarEvents')
-deleteCalendars = _cmd('gam.cmd.userservices', 'deleteCalendars')
-deleteFocusTime = _cmd('gam.cmd.userservices', 'deleteFocusTime')
-deleteOutOfOffice = _cmd('gam.cmd.userservices', 'deleteOutOfOffice')
-deleteWorkingLocation = _cmd('gam.cmd.userservices', 'deleteWorkingLocation')
-doCalendarsTransferOwnership = _cmd('gam.cmd.userservices', 'doCalendarsTransferOwnership')
-emptyCalendarTrash = _cmd('gam.cmd.userservices', 'emptyCalendarTrash')
-importCalendarEvent = _cmd('gam.cmd.userservices', 'importCalendarEvent')
-infoCalendarACLs = _cmd('gam.cmd.userservices', 'infoCalendarACLs')
-infoCalendarEvents = _cmd('gam.cmd.userservices', 'infoCalendarEvents')
-infoCalendars = _cmd('gam.cmd.userservices', 'infoCalendars')
-modifyCalendars = _cmd('gam.cmd.userservices', 'modifyCalendars')
-moveCalendarEvents = _cmd('gam.cmd.userservices', 'moveCalendarEvents')
-printShowASPs = _cmd('gam.cmd.userservices', 'printShowASPs')
-printShowBackupCodes = _cmd('gam.cmd.userservices', 'printShowBackupCodes')
-printShowCalSettings = _cmd('gam.cmd.userservices', 'printShowCalSettings')
-printShowCalendarACLs = _cmd('gam.cmd.userservices', 'printShowCalendarACLs')
-printShowCalendarEvents = _cmd('gam.cmd.userservices', 'printShowCalendarEvents')
-printShowCalendars = _cmd('gam.cmd.userservices', 'printShowCalendars')
-printShowFocusTime = _cmd('gam.cmd.userservices', 'printShowFocusTime')
-printShowOutOfOffice = _cmd('gam.cmd.userservices', 'printShowOutOfOffice')
-printShowWorkingLocation = _cmd('gam.cmd.userservices', 'printShowWorkingLocation')
-printShowYouTubeChannel = _cmd('gam.cmd.userservices', 'printShowYouTubeChannel')
-purgeCalendarEvents = _cmd('gam.cmd.userservices', 'purgeCalendarEvents')
-removeCalendars = _cmd('gam.cmd.userservices', 'removeCalendars')
-updateBackupCodes = _cmd('gam.cmd.userservices', 'updateBackupCodes')
-updateCalendarACLs = _cmd('gam.cmd.userservices', 'updateCalendarACLs')
-updateCalendarAttendees = _cmd('gam.cmd.userservices', 'updateCalendarAttendees')
-updateCalendarEvents = _cmd('gam.cmd.userservices', 'updateCalendarEvents')
-updateCalendars = _cmd('gam.cmd.userservices', 'updateCalendars')
-wipeCalendarEvents = _cmd('gam.cmd.userservices', 'wipeCalendarEvents')
 
 # gam.cmd.vault
-doCloseVaultMatter = _cmd('gam.cmd.vault', 'doCloseVaultMatter')
-doCopyVaultExport = _cmd('gam.cmd.vault', 'doCopyVaultExport')
-doCopyVaultQuery = _cmd('gam.cmd.vault', 'doCopyVaultQuery')
-doCreateVaultExport = _cmd('gam.cmd.vault', 'doCreateVaultExport')
-doCreateVaultHold = _cmd('gam.cmd.vault', 'doCreateVaultHold')
-doCreateVaultMatter = _cmd('gam.cmd.vault', 'doCreateVaultMatter')
-doCreateVaultQuery = _cmd('gam.cmd.vault', 'doCreateVaultQuery')
-doDeleteVaultExport = _cmd('gam.cmd.vault', 'doDeleteVaultExport')
-doDeleteVaultHold = _cmd('gam.cmd.vault', 'doDeleteVaultHold')
-doDeleteVaultMatter = _cmd('gam.cmd.vault', 'doDeleteVaultMatter')
-doDeleteVaultQuery = _cmd('gam.cmd.vault', 'doDeleteVaultQuery')
-doDownloadVaultExport = _cmd('gam.cmd.vault', 'doDownloadVaultExport')
-doInfoVaultExport = _cmd('gam.cmd.vault', 'doInfoVaultExport')
-doInfoVaultHold = _cmd('gam.cmd.vault', 'doInfoVaultHold')
-doInfoVaultMatter = _cmd('gam.cmd.vault', 'doInfoVaultMatter')
-doInfoVaultQuery = _cmd('gam.cmd.vault', 'doInfoVaultQuery')
-doPrintShowVaultExports = _cmd('gam.cmd.vault', 'doPrintShowVaultExports')
-doPrintShowVaultHolds = _cmd('gam.cmd.vault', 'doPrintShowVaultHolds')
-doPrintShowVaultMatters = _cmd('gam.cmd.vault', 'doPrintShowVaultMatters')
-doPrintShowVaultQueries = _cmd('gam.cmd.vault', 'doPrintShowVaultQueries')
-doPrintVaultCounts = _cmd('gam.cmd.vault', 'doPrintVaultCounts')
-doReopenVaultMatter = _cmd('gam.cmd.vault', 'doReopenVaultMatter')
-doUndeleteVaultMatter = _cmd('gam.cmd.vault', 'doUndeleteVaultMatter')
-doUpdateVaultHold = _cmd('gam.cmd.vault', 'doUpdateVaultHold')
-doUpdateVaultMatter = _cmd('gam.cmd.vault', 'doUpdateVaultMatter')
-printShowUserVaultHolds = _cmd('gam.cmd.vault', 'printShowUserVaultHolds')
 
 
 class LazyLoader(types.ModuleType):

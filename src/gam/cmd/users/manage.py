@@ -89,6 +89,7 @@ from gam.util.gdoc import openCSVFileReader
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import readStdin, setSysExitRC, systemErrorExit, writeStderr
 from gam.constants import MULTIPLE_DELETED_USERS_FOUND_RC, NO_ENTITIES_FOUND_RC, PASSWORD_SAFE_CHARS, USER_SUSPENDED_RC
+from gam.constants import LICENSE_PRODUCT_SKUIDS
 from gam.util.tags import (
     _getTagReplacement,
     _initTagReplacements,
@@ -422,7 +423,6 @@ def getNotifyArguments(myarg, notify, userNotification):
 
 def getUserAttributes(cd, updateCmd, noUid=False):
   from gam.cmd.resources import _getBuildingByNameOrId
-  from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
   def getKeywordAttribute(keywords, attrdict, **opts):
     if Cmd.ArgumentsRemaining():
       keyword = Cmd.Current().strip().lower()
@@ -961,7 +961,6 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
   from gam.cmd.ciuserinvitations import _getIsInvitableUser
-  from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
   cd = buildGAPIObject(API.DIRECTORY)
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     _, _, _, \
@@ -1659,89 +1658,7 @@ USER_SSH_PROPERTY_PRINT_ORDER = [
   'fingerprint',
   ]
 
-USER_FIELDS_CHOICE_MAP = {
-  'address': 'addresses',
-  'addresses': 'addresses',
-  'admin': ['isAdmin', 'isDelegatedAdmin'],
-  'agreed2terms': 'agreedToTerms',
-  'agreedtoterms': 'agreedToTerms',
-  'aliases': ['aliases', 'nonEditableAliases'],
-  'archived': ['archived', 'archivalTime'],
-  'changepassword': 'changePasswordAtNextLogin',
-  'changepasswordatnextlogin': 'changePasswordAtNextLogin',
-  'creationtime': 'creationTime',
-  'customerid': 'customerId',
-  'deletiontime': 'deletionTime',
-  'displayname': 'name.displayName',
-  'email': 'emails',
-  'emails': 'emails',
-  'employeeid': 'externalIds',
-  'externalid': 'externalIds',
-  'externalids': 'externalIds',
-  'familyname': 'name.familyName',
-  'firstname': 'name.givenName',
-  'fullname': 'name.fullName',
-  'gal': 'includeInGlobalAddressList',
-  'gender': ['gender.type', 'gender.customGender', 'gender.addressMeAs'],
-  'givenname': 'name.givenName',
-  'guestaccountinfo': ['guestAccountInfo.primaryGuestEmail'],
-  'id': 'id',
-  'im': 'ims',
-  'ims': 'ims',
-  'includeinglobaladdresslist': 'includeInGlobalAddressList',
-  'ipwhitelisted': 'ipWhitelisted',
-  'isadmin': ['isAdmin', 'isDelegatedAdmin'],
-  'isdelegatedadmin': ['isAdmin', 'isDelegatedAdmin'],
-  'isenforcedin2sv': 'isEnforcedIn2Sv',
-  'isenrolledin2sv': 'isEnrolledIn2Sv',
-  'isguestuser': 'isGuestUser',
-  'is2svenforced': 'isEnforcedIn2Sv',
-  'is2svenrolled': 'isEnrolledIn2Sv',
-  'ismailboxsetup': 'isMailboxSetup',
-  'keyword': 'keywords',
-  'keywords': 'keywords',
-  'language': 'languages',
-  'languages': 'languages',
-  'lastlogintime': 'lastLoginTime',
-  'lastname': 'name.familyName',
-  'location': 'locations',
-  'locations': 'locations',
-  'manager': 'relations',
-  'name': ['name.givenName', 'name.familyName', 'name.fullName', 'name.displayName'],
-  'nicknames': ['aliases', 'nonEditableAliases'],
-  'noneditablealiases': ['aliases', 'nonEditableAliases'],
-  'note': 'notes',
-  'notes': 'notes',
-  'org': 'orgUnitPath',
-  'organization': 'organizations',
-  'organizations': 'organizations',
-  'organisation': 'organizations',
-  'organisations': 'organizations',
-  'orgunit': 'orgUnitPath',
-  'orgunitpath': 'orgUnitPath',
-  'otheremail': 'emails',
-  'otheremails': 'emails',
-  'ou': 'orgUnitPath',
-  'phone': 'phones',
-  'phones': 'phones',
-  'photo': 'thumbnailPhotoUrl',
-  'photourl': 'thumbnailPhotoUrl',
-  'posix': 'posixAccounts',
-  'posixaccounts': 'posixAccounts',
-  'primaryemail': 'primaryEmail',
-  'recoveryemail': 'recoveryEmail',
-  'recoveryphone': 'recoveryPhone',
-  'relation': 'relations',
-  'relations': 'relations',
-  'ssh': 'sshPublicKeys',
-  'sshkeys': 'sshPublicKeys',
-  'sshpublickeys': 'sshPublicKeys',
-  'suspended': ['suspended', 'suspensionReason', 'suspensionTime'],
-  'thumbnailphotourl': 'thumbnailPhotoUrl',
-  'username': 'primaryEmail',
-  'website': 'websites',
-  'websites': 'websites',
-  }
+from gam.constants import USER_FIELDS_CHOICE_MAP  # noqa: F401 - re-exported
 
 USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
   'address': 'addresses',
@@ -1770,9 +1687,7 @@ USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
   'websites': 'websites',
   }
 
-INFO_USER_OPTIONS = {'noaliases', 'nobuildingnames', 'nogroups', 'nolicenses', 'nolicences', 'noschemas', 'schemas', 'userview'}
-USER_SKIP_OBJECTS = {'thumbnailPhotoEtag'}
-USER_TIME_OBJECTS = {'creationTime', 'deletionTime', 'lastLoginTime', 'suspensionTime', 'archivalTime', 'disabledTime'}
+from gam.constants import INFO_USER_OPTIONS, USER_SKIP_OBJECTS, USER_TIME_OBJECTS  # noqa: F401 - re-exported
 
 def _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters):
   up = getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
@@ -1810,27 +1725,7 @@ def _formatLanguagesList(propertyValue, delimiter):
       languages.append(lang)
   return delimiter.join(languages)
 
-def _initSchemaParms(projection):
-  return {'projection': projection, 'customFieldMask': None, 'selectedSchemaFields': {}}
-
-def _getSchemaNameList(schemaParms):
-  customFieldMask = getString(Cmd.OB_SCHEMA_NAME_LIST).replace(' ', ',')
-  if customFieldMask.lower() == 'all':
-    schemaParms['projection'] = 'full'
-    schemaParms['customFieldMask'] = None
-    schemaParms['selectedSchemaFields'] = {}
-  else:
-    schemaParms['projection'] = 'custom'
-    customFieldMaskList = []
-    for schemaField in customFieldMask.split(','):
-      if schemaField.find('.') == -1:
-        customFieldMaskList.append(schemaField)
-      else:
-        schemaName, fieldName = schemaField.split('.', 1)
-        customFieldMaskList.append(schemaName)
-        schemaParms['selectedSchemaFields'] .setdefault(schemaName, set())
-        schemaParms['selectedSchemaFields'][schemaName].add(fieldName)
-    schemaParms['customFieldMask'] = ','.join(customFieldMaskList)
+from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList  # noqa: F401 - re-exported
 
 def _filterSchemaFields(userEntity, schemaParms):
   schemas = userEntity.pop('customSchemas', None)

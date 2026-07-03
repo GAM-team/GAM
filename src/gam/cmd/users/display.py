@@ -7,7 +7,8 @@ Part of the _users_tmp sub-package."""
 import re
 import json
 
-from gam.cmd.users.manage import _filterSchemaFields, _filterUserMultiAttributes, _formatLanguagesList, _getSchemaNameList, _getUserMultiAttributeFilters, _initSchemaParms, getUserLicenses
+from gam.cmd.users.manage import _filterSchemaFields, _filterUserMultiAttributes, _formatLanguagesList, _getUserMultiAttributeFilters, getUserLicenses
+from gam.util.schema_utils import _getSchemaNameList, _initSchemaParms
 
 from gam.util.csv_pf import RI_JCOUNT, RI_ITEM
 
@@ -129,9 +130,10 @@ from gam.util.errors import entityActionFailedExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import ERROR, executeBatch, writeStdout
-from gam.cmd.groups.members import addJsonGroupParents, getGroupParents, showGroupParents
+from gam.util.group_parents import addJsonGroupParents, getGroupParents, showGroupParents
 from gam.cmd.resources import _getBuildingNameById
-from gam.cmd.aliases import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters, userFilters
+from gam.util.domain_filters import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
+from gam.cmd.aliases import userFilters
 from gam.cmd.licenses import doPrintLicenses
 
 def infoUsers(entityList):

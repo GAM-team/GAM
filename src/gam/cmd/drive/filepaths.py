@@ -8,7 +8,7 @@ import re
 import json
 
 from gam.cmd.drive.core import _getSharedDriveNameFromId, _validateUserGetFileIDs, getDriveFileEntity
-from gam.cmd.drive.filetree import addFilePathsToInfo, extendFileTree, extendFileTreeParents, initFileTree
+from gam.cmd.drive.filetree import extendFileTree, extendFileTreeParents, initFileTree
 from gam.cmd.drive.labels import normalizeDriveLabelID
 
 from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
@@ -62,6 +62,9 @@ from gam.cmd.drive.core import DRIVE_LABEL_CHOICE_MAP  # cross-module ref
 from gam.util.api import callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
     OrderBy,
+    StartEndTime,
+    checkArgumentPresent,
+    escapeCRsNLs,
     getArgument,
     getBoolean,
     getCharacter,
@@ -177,6 +180,34 @@ def getFilePaths(drive, fileTree, initialResult, filePathInfo, addParentsToTree=
       filePaths.append(initialResult['name'])
     maxDepth = 0
   return (_getEntityMimeType(initialResult), filePaths, maxDepth)
+
+def addFilePathsToRow(drive, fileTree, fileEntryInfo, filePathInfo, csvPF, row,
+                      fullpath=False, showDepth=False, folderPathOnly=False, parentPathOnly=False):
+  _, paths, maxDepth = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo,
+                                    fullpath=fullpath, showDepth=showDepth, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
+  kcount = len(paths)
+  if showDepth:
+    row['depth'] = maxDepth
+  row['paths'] = kcount
+  k = 0
+  for path in sorted(paths):
+    key = f'path{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'
+    csvPF.AddTitles(key)
+    if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
+      row[key] = escapeCRsNLs(path)
+    else:
+      row[key] = path
+    k += 1
+
+def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=False, folderPathOnly=False, parentPathOnly=False):
+  _, paths, _ = getFilePaths(drive, fileTree, fileEntryInfo, filePathInfo, addParentsToTree=addParentsToTree,
+                             showDepth=False, folderPathOnly=folderPathOnly, parentPathOnly=parentPathOnly)
+  fileEntryInfo['paths'] = []
+  for path in sorted(paths):
+    if GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL] and (path.find('\n') >= 0 or path.find('\r') >= 0):
+      fileEntryInfo['paths'].append(escapeCRsNLs(path))
+    else:
+      fileEntryInfo['paths'].append(path)
 
 DRIVEFILE_ORDERBY_CHOICE_MAP = {
   'createddate': 'createdTime',

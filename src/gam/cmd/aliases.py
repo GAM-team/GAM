@@ -52,7 +52,8 @@ from gam.util.entity import (
 from gam.util.errors import entityActionFailedExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import setSysExitRC
-from gam.constants import ENTITY_IS_NOT_AN_ALIAS_RC, NO_ENTITIES_FOUND_RC
+from gam.constants import ALIAS_TARGET_TYPES, ENTITY_IS_NOT_AN_ALIAS_RC, INFO_GROUP_OPTIONS, INFO_USER_OPTIONS, NO_ENTITIES_FOUND_RC
+from gam.util.domain_filters import groupFilters
 
 Act = glaction.GamAction()
 Ent = glentity.GamEntity()
@@ -62,7 +63,6 @@ Cmd = glclargs.GamCLArgs()
 
 def doCreateUpdateAliases():
   from gam.cmd.ciuserinvitations import _getIsInvitableUser
-  from gam.cmd.orgunits import ALIAS_TARGET_TYPES
   def verifyAliasTargetExists():
     if targetType != 'group':
       try:
@@ -205,7 +205,6 @@ def doCreateUpdateAliases():
 
 # gam delete aliases|nicknames [user|group|target] <EmailAddressEntity>
 def doDeleteAliases():
-  from gam.cmd.orgunits import ALIAS_TARGET_TYPES
   cd = buildGAPIObject(API.DIRECTORY)
   targetType = getChoice(ALIAS_TARGET_TYPES, defaultChoice='target')
   entityList = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
@@ -370,8 +369,6 @@ def deleteUsersAliases(users):
 
 def infoAliases(entityList):
 
-  from gam.cmd.groups.members import INFO_GROUP_OPTIONS
-  from gam.cmd.users.manage import INFO_USER_OPTIONS
   def _showAliasInfo(uid, email, aliasEmail, entityType, aliasEntityType, i, count):
     if email.lower() != aliasEmail:
       printEntity([aliasEntityType, aliasEmail], i, count)
@@ -428,44 +425,7 @@ def infoAliases(entityList):
 def doInfoAliases():
   infoAliases(getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY))
 
-def initUserGroupDomainQueryFilters():
-  if not GC.Values[GC.PRINT_AGU_DOMAINS]:
-    return {'list': [{'customer': GC.Values[GC.CUSTOMER_ID]}], 'queries': [None]}
-  return {'list': [{'domain': domain.lower()} for domain in GC.Values[GC.PRINT_AGU_DOMAINS].replace(',', ' ').split()], 'queries': [None]}
-
-def getUserGroupDomainQueryFilters(myarg, kwargsDict):
-  if myarg in {'domain', 'domains'}:
-    kwargsDict['list'] = [{'domain': domain.lower()} for domain in getEntityList(Cmd.OB_DOMAIN_NAME_ENTITY)]
-  elif myarg in {'query', 'queries'}:
-    kwargsDict['queries'] = getQueries(myarg)
-  else:
-    return False
-  return True
-
-def makeUserGroupDomainQueryFilters(kwargsDict, isSuspended, isArchived, isDisabled):
-  def addToQuery(query, keyword, value):
-    pquery = query
-    if not pquery:
-      pquery = ''
-    else:
-      pquery += ' '
-    pquery += f'{keyword}={value}'
-    kwargsQueries.append((kwargs, pquery))
-
-  kwargsQueries = []
-  for kwargs in kwargsDict['list']:
-    for query in kwargsDict['queries']:
-      if isDisabled is not None:
-        addToQuery(query, 'isArchived', isDisabled)
-        addToQuery(query, 'isSuspended', isDisabled)
-      elif isSuspended is not None or isArchived is not None:
-        if isArchived is not None:
-          addToQuery(query, 'isArchived', isArchived)
-        if isSuspended is not None:
-          addToQuery(query, 'isSuspended', isSuspended)
-      else:
-        kwargsQueries.append((kwargs, query))
-  return kwargsQueries
+from gam.util.domain_filters import initUserGroupDomainQueryFilters, getUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters  # noqa: F401 - re-exported
 
 def userFilters(kwargs, query, orgUnitPath):
   queryTitle = ''
@@ -498,7 +458,6 @@ def userFilters(kwargs, query, orgUnitPath):
 #	[suppressnoaliasrows]
 #	(addcsvdata <FieldName> <String>)*
 def doPrintAliases():
-  from gam.cmd.groups.members import groupFilters
   def writeAliases(target, targetEmail, targetType):
     if not oneRowPerTarget:
       for alias in target.get('aliases', []):
