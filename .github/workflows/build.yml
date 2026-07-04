@@ -831,13 +831,15 @@ jobs:
       - name: Live API tests
         if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
+          GAM_RUN_COUNT=0
           run_gam() {
+            ((GAM_RUN_COUNT++))
             local allowed_codes="0"
             if [[ "$1" == "-a" ]]; then
               allowed_codes="$2"
               shift 2 
             fi
-            echo "::group::Executing: gam $*"
+            echo "::group::Executing: gam $* - (${GAM_RUN_COUNT})"
             local exit_code=0
             $gam "$@" || exit_code=$?
             echo "::endgroup::"
