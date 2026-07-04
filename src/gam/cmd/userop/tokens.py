@@ -8,15 +8,11 @@ import re
 
 from gam.cmd.userop.sheets import commonClientIds
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.access import ClientAPIAccessDeniedExit, entityUnknownWarning
 from gam.util.api import _getAdminEmail, buildGAPIObject, callGAPI, callGAPIitems
 from gam.util.args import (
@@ -46,11 +42,7 @@ from gam.util.errors import unknownArgumentExit
 from gam.cmd.project import getGCPOrgId
 from gam.cmd.gmail.settings import _imapDefaults, _popDefaults, _setImap, _setPop
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def deleteTokens(users):
   cd = buildGAPIObject(API.DIRECTORY)

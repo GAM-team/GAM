@@ -5,15 +5,15 @@ import json
 
 import gdata.apps.contacts
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import NO_ENTITIES_FOUND_RC
 
 
-from gamlib import glgdata as GDATA
+from gamlib import gdata as GDATA
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
 from gam.util.api import callGData, callGDataPages, getContactsObject, getContactsQuery

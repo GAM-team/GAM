@@ -8,15 +8,11 @@ import re
 
 from gam.util.entity import GROUP_ROLES_MAP
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
@@ -58,20 +54,14 @@ from gam.cmd.groups.groups import doCreateGroup
 from gam.cmd.groups.groups import GROUP_ACCESS_TYPE_CHOICE_MAP, GROUP_CIGROUP_FIELDS_MAP, GROUP_JSON_SKIP_FIELDS, GROUP_PREVIEW_TITLES, GroupIsAbuseOrPostmaster, UPDATE_GROUP_SUBCMDS, checkReplyToCustom, getGroupAttrValue, getSettingsFromGroup, getSyncOperation, mapGroupEmailForSettings
 from gam.cmd.groups.groups import doDeleteGroups
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
 CIGROUP_DYNAMIC_LABEL = 'cloudidentity.googleapis.com/groups.dynamic'
 CIGROUP_SECURITY_LABEL = 'cloudidentity.googleapis.com/groups.security'
 CIGROUP_LOCKED_LABEL = 'cloudidentity.googleapis.com/groups.locked'
 
-
 NEVER_TIME = '1970-01-01T00:00:00.000Z'
-
 
 def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)

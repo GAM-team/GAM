@@ -10,21 +10,14 @@ import platform
 from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
 import os
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import WITH_PARENTS
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -53,7 +46,6 @@ ROOT = 'root'
 ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
-
 
 from gam.cmd.drive.core import (
     MimeTypeCheck, _getSharedDriveNameFromId, _simpleFileIdEntityList,
@@ -108,7 +100,6 @@ from gam.util.entity import (
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import writeStdout
 from gam.cmd.groups.members import finalizeInternalDomains
-
 
 SHARED_DRIVE_MAX_FILES_FOLDERS = 500000
 TEAM_DRIVE = 'Drive'

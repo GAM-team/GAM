@@ -8,15 +8,11 @@ import json
 import sys
 import uuid
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
     OrderBy,
@@ -59,11 +55,7 @@ from gam.util.errors import (
 from gam.util.output import setSysExitRC, systemErrorExit, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def getSpaceName(myarg):
   if myarg == 'space':

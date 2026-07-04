@@ -19,12 +19,12 @@ import httplib2
 import arrow
 
 from gam.var import Act, Cmd, Ent, Ind
-from gamlib import glapi as API
-from gamlib import glcfg as GC
+from gamlib import api as API
+from gamlib import settings as GC
 from gam.util.fileio import setFilePath, readFile, writeFile, openFile
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
-from gamlib import glskus as SKU
+from gamlib import state as GM
+from gamlib import msgs as Msg
+from gamlib import skus as SKU
 
 from util.args import getRowFilterDateOrDeltaFromNow
 from util.args import getRowFilterTimeOrDeltaFromNow

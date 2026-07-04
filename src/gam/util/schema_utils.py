@@ -3,10 +3,10 @@
 Moved here to break circular dependencies between cmd/ modules.
 """
 
-from gamlib import glclargs
+from gamlib import clargs
 from gam.util.args import getString
 
-Cmd = glclargs.GamCLArgs()
+Cmd = clargs.GamCLArgs()
 
 
 def _initSchemaParms(projection):

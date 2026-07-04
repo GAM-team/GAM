@@ -5,11 +5,11 @@ import json
 from gam.util.csv_pf import RI_I, RI_J, RI_JCOUNT, RI_ITEM
 import time
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit
 from gam.util.api import (

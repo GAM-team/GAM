@@ -3,9 +3,9 @@
 Moved here to break circular dependencies between cmd/ modules.
 """
 
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glindent
+from gamlib import entity
+from gamlib import gapi as GAPI
+from gamlib import indent
 
 from gam.util.access import accessErrorExit
 from gam.util.api import callGAPIpages
@@ -13,8 +13,8 @@ from gam.util.csv_pf import flattenJSON
 from gam.util.display import badRequestWarning, printKeyValueListWithCount
 from gam.util.domain_filters import _setUserGroupArgs
 
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
+Ent = entity.GamEntity()
+Ind = indent.GamIndent()
 
 
 def getGroupParents(cd, groupParents, groupEmail, groupName, kwargs):

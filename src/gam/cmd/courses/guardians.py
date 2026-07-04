@@ -7,17 +7,13 @@ Part of the _courses_tmp sub-package."""
 import re
 import json
 
-from gamlib import gluprop as UProp
+from gamlib import uprop as UProp
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages
 from gam.util.args import (
@@ -64,11 +60,7 @@ from gam.util.output import (
 )
 from gam.constants import ADMIN_ACCESS_OPTIONS
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def studentUnknownWarning(studentId, errMsg, i, count):
   setSysExitRC(SERVICE_NOT_APPLICABLE_RC)

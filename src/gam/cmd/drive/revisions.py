@@ -8,15 +8,11 @@ import re
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import callGAPI, callGAPIpages
 from gam.util.args import (
     OrderBy,
@@ -51,10 +47,7 @@ from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import _stripControlCharsFromName, setSysExitRC
 from gam.constants import AND_ME_IN_OWNERS, AND_NOT_ME_IN_OWNERS, NO_ENTITIES_FOUND_RC
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -83,7 +76,6 @@ ROOT = 'root'
 ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
-
 
 def getRevisionsEntity():
   revisionsEntity = {'list': [], 'dict': None, 'count': None, 'time': None, 'range': None}

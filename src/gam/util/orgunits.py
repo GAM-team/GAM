@@ -5,10 +5,10 @@ OrgUnit path/ID resolution and parent OrgUnit traversal.
 
 import sys
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
 from util.access import accessErrorExit, checkEntityAFDNEorAccessErrorExit
 from util.api import buildGAPIObject, callGAPI
 from util.args import encodeOrgUnitPath, makeOrgUnitPathAbsolute, makeOrgUnitPathRelative

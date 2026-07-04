@@ -3,12 +3,12 @@
 Moved here to break circular dependencies between cmd/ modules.
 """
 
-from gamlib import glcfg as GC
-from gamlib import glclargs
+from gamlib import settings as GC
+from gamlib import clargs
 
 from gam.util.entity import getEntityList, getQueries
 
-Cmd = glclargs.GamCLArgs()
+Cmd = clargs.GamCLArgs()
 
 
 def initUserGroupDomainQueryFilters():

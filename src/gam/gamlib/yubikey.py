@@ -27,7 +27,7 @@ import sys
 
 from gam.util.output import systemErrorExit, readStdin, writeStdout
 
-from gam.gamlib import glmsgs as Msg
+from gam.gamlib import msgs as Msg
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding

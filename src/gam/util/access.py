@@ -6,14 +6,14 @@ and entity warning functions.
 
 import sys
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import action
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import entity
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import indent
+from gamlib import msgs as Msg
 from gam.constants import API_ACCESS_DENIED_RC, INVALID_DOMAIN_RC
 from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, callGAPI, APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, SvcAcctAPIDisabledExit
 from util.args import getEmailAddressDomain, getPhraseDNEorSNA
@@ -24,9 +24,9 @@ from util.output import currentCountNL, formatKeyValueList, setSysExitRC, stderr
 
 
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
+Act = action.GamAction()
+Ent = entity.GamEntity()
+Ind = indent.GamIndent()
 
 
 # Something's wrong with CustomerID??

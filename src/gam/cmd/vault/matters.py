@@ -11,15 +11,11 @@ import base64
 import os
 import time
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
     UID_PATTERN,
@@ -82,14 +78,9 @@ from gam.constants import DATA_NOT_AVALIABLE_RC, NO_ENTITIES_FOUND_RC
 from gam.cmd.cloudstorage import _copyStorageObjects
 from gam.cmd.cloudstorage import _getCloudStorageObject
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 WARNING_PREFIX = 'WARNING: '
-
 
 def formatVaultNameId(vaultName, vaultId):
   return f'{vaultName}({vaultId})'
@@ -441,7 +432,6 @@ def _buildVaultQuery(myarg, query, corpusArgumentMap):
       query.update(jsonData['query'])
     else:
       query.update(jsonData)
-
 
 def _validateVaultQuery(body, corpusArgumentMap):
   if 'corpus' not in body['query']:

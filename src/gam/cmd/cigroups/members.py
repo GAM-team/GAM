@@ -9,22 +9,13 @@ import json
 
 from gam.util.args import formatLocalTime
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
-
+from gam.var import Act, Cmd, Ent, Ind
 
 from gam.cmd.groups.groups import (
     MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED,
@@ -106,7 +97,6 @@ from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import _getOrgunitsOrgUnitIdPath
 from gam.util.output import systemErrorExit, writeStdout
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
-
 
 UNKNOWN = 'Unknown'
 
@@ -759,9 +749,9 @@ def doPrintCIGroups():
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'showownedby':
-      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user'])
+      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
-      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'group'])
+      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
       memberQuery = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels && parent == '{parent}'"
       entitySelection = None
       if myarg == 'ciowner':
@@ -1218,9 +1208,9 @@ def doPrintCIGroupMembers():
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'showownedby':
-      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user'])
+      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
-      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'group'])
+      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
       query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels && parent == '{parent}'"
       entityList = None
       if myarg == 'ciowner':
@@ -1473,9 +1463,9 @@ def doShowCIGroupMembers():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'showownedby':
-      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user'])
+      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
-      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'group'])
+      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
       query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels parent == '{parent}'"
       entityList = None
       if myarg == 'ciowner':

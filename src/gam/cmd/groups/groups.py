@@ -11,15 +11,11 @@ from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT,
 from gam.util.entity import GROUP_ROLES_MAP
 import time
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, checkGAPIError
 from gam.util.args import (
@@ -79,11 +75,7 @@ from gam.constants import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTE
 from gam.constants import GROUP_FIELDS_WITH_CRS_NLS
 from gam.cmd.ciuserinvitations import _getIsInvitableUser
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 WARNING_PREFIX = 'WARNING: '
 

@@ -18,9 +18,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from gam.var import Act, Ent
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
 from util.api import _getAdminEmail, buildGAPIObject, buildGAPIServiceObject, callGAPI
 from util.args import NAME_EMAIL_ADDRESS_PATTERN, UTF8, normalizeEmailAddressOrUID
 from util.display import entityActionFailedWarning, entityActionPerformed, entityActionPerformedMessage

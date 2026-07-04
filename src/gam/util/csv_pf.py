@@ -13,11 +13,11 @@ import webbrowser
 import arrow
 import googleapiclient.http
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import DEFAULT_FILE_APPEND_MODE, INSUFFICIENT_PERMISSIONS_RC, MAX_GOOGLE_SHEET_CELLS, NO_CSV_DATA_TO_UPLOAD_RC, ROOT
 from tempfile import TemporaryFile
 from util.api import _getAdminEmail, buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages, chooseSaAPI

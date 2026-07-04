@@ -14,21 +14,14 @@ from gam.cmd.drive.filepaths import _finalizeIncludeLabels, _finalizeIncludePerm
 
 from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import NO_ENTITIES_FOUND_RC, TEAM_DRIVE, WITH_PARENTS
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -58,7 +51,6 @@ ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
-
 from gam.cmd.drive.filepaths import (
     addFilePathsToInfo,
     addFilePathsToRow,
@@ -83,7 +75,6 @@ from gam.cmd.drive.core import (
     getDriveFileEntitySharedDriveOnly,
     initDriveFileEntity,
 )
-
 
 from gam.cmd.drive.filetree import (
     CHECK_LOCATION_FIELDS_TITLES,
@@ -150,7 +141,6 @@ from gam.util.output import (
     writeStderr,
     writeStdout,
 )
-
 
 MY_DRIVE = 'My Drive'
 NEVER_TIME = '1970-01-01T00:00:00.000Z'

@@ -13,15 +13,11 @@ import os
 import google.auth
 import google.auth.exceptions
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, getHttpObj
 from gam.util.args import (
@@ -48,11 +44,7 @@ from gam.util.output import writeStdout
 from gam.util.tags import _substituteForUser
 from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 from tempfile import TemporaryFile
 

@@ -19,11 +19,11 @@ from gam.cmd.calendar import (
     EVENT_TYPE_WORKINGLOCATION,
 )
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
 from gam.util.api import (
@@ -1142,7 +1142,7 @@ def printShowCalendarACLs(users):
     j = 0
     for calId in calIds:
       j += 1
-      calId = convertUIDtoEmailAddress(calId, buildGAPIObject(API.DIRECTORY))
+      calId = convertUIDtoEmailAddress(calId)
       _printShowCalendarACLs(cal, user, Ent.CALENDAR, calId, j, jcount, csvPF, FJQC, noSelfOwner, addCSVData)
     Ind.Decrement()
   if csvPF:
@@ -1269,7 +1269,7 @@ def moveCalendarEvents(users):
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   checkArgumentPresent(['to', 'destination'])
-  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM), buildGAPIObject(API.DIRECTORY))
+  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
   parameters, _ = _getCalendarMoveEventsOptions()
   if not checkCalendarExists(None, newCalId, 0, 0, True):
     return

@@ -28,28 +28,19 @@ from gam.cmd.users.manage import (
     USER_TIME_OBJECTS,
 )
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
-
-from gamlib import glskus as SKU
-from gamlib import gluprop as UProp
+from gamlib import skus as SKU
+from gamlib import uprop as UProp
 from gam.util.html import dehtml
 from gam.cmd.groups.members import INFO_GROUP_OPTIONS
 from gam.util.display import invalidQuery, invalidUserSchema
-
 
 from gam.cmd.users.manage import (  # cross-module refs
     USER_ADDRESSES_PROPERTY_PRINT_ORDER,

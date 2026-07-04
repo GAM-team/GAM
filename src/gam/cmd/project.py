@@ -22,11 +22,11 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import (
     _getAdminEmail,
@@ -1218,7 +1218,7 @@ def checkServiceAccount(users):
   for user in users:
     i += 1
     allScopesPass = True
-    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
+    user = convertUIDtoEmailAddress(user)
     printKeyValueListWithCount([Msg.DOMAIN_WIDE_DELEGATION_AUTHENTICATION, '',
                                 Ent.Singular(Ent.USER), user,
                                 Ent.Choose(Ent.SCOPE, jcount), jcount],

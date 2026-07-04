@@ -4,11 +4,11 @@ Convert UIDs to email addresses by querying the Directory/CI APIs.
 Extracted from entity.py to break the entity↔api circular dependency.
 """
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Ent
 from util.api import buildGAPIObject, callGAPI
 from util.args import normalizeEmailAddressOrUID
@@ -21,7 +21,7 @@ NON_EMAIL_MEMBER_PREFIXES = (
                               "chrome-os-device.",
                             )
 
-def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, sal=None, emailTypes=None,
+def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, emailTypes=None,
                                      checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
   if emailTypes is None:
     emailTypes = ['user']
@@ -34,6 +34,8 @@ def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, sal=None, emailTypes
     return emailAddressOrUID
   if normalizedEmailAddressOrUID.find('@') > 0 and aliasAllowed:
     return (normalizedEmailAddressOrUID, 'email')
+  if cd is None:
+    cd = buildGAPIObject(API.DIRECTORY)
   if 'user' in emailTypes and 'group' in emailTypes:
     # Google User IDs *TEND* to be integers while groups tend to have letters
     # thus we can optimize which check we try first. We'll still check
@@ -77,7 +79,7 @@ def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, sal=None, emailTypes
   return (normalizedEmailAddressOrUID, 'unknown')
 
 
-def convertUIDtoEmailAddress(emailAddressOrUID, cd, emailTypes=None,
+def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
                              checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
   if ciGroupsAPI:
     if emailAddressOrUID.startswith(NON_EMAIL_MEMBER_PREFIXES):
@@ -90,10 +92,12 @@ def convertUIDtoEmailAddress(emailAddressOrUID, cd, emailTypes=None,
   return email
 
 
-def convertEmailAddressToUID(emailAddressOrUID, cd, emailType='user', savedLocation=None):
+def convertEmailAddressToUID(emailAddressOrUID, cd=None, emailType='user', savedLocation=None):
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   if normalizedEmailAddressOrUID.find('@') == -1:
     return normalizedEmailAddressOrUID
+  if cd is None:
+    cd = buildGAPIObject(API.DIRECTORY)
   if emailType != 'group':
     try:
       return callGAPI(cd.users(), 'get',
@@ -115,15 +119,3 @@ def convertEmailAddressToUID(emailAddressOrUID, cd, emailType='user', savedLocat
     entityDoesNotExistExit([Ent.USER, Ent.GROUP][emailType == 'group'], normalizedEmailAddressOrUID, errMsg=getPhraseDNEorSNA(normalizedEmailAddressOrUID))
 
 
-def getSaUser(user):
-  """Resolve a user UID/email for service account impersonation."""
-  currentClientAPI = GM.Globals[GM.CURRENT_CLIENT_API]
-  currentClientAPIScopes = GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-  if user:
-    cd = buildGAPIObject(API.DIRECTORY)
-    userEmail = convertUIDtoEmailAddress(user, cd)
-  else:
-    userEmail = None
-  GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
-  GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
-  return userEmail

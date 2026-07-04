@@ -13,10 +13,10 @@ from logging.handlers import RotatingFileHandler
 
 from pathvalidate import sanitize_filename, sanitize_filepath
 
-from gamlib import glcfg as GC
-from gamlib import glentity
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import settings as GC
+from gamlib import entity
+from gamlib import state as GM
+from gamlib import msgs as Msg
 
 
 from gam.var import Act, Ent, Ind
@@ -45,7 +45,7 @@ WARNING_PREFIX = WARNING + ': '
 # Ent is an instance of GamEntity created in __init__.py.
 # For the default parameter value of fileErrorMessage, we use the
 # class-level constant directly.
-_ENT_FILE = glentity.GamEntity.FILE
+_ENT_FILE = entity.GamEntity.FILE
 
 
 

@@ -2,12 +2,12 @@
 
 import re
 
-from gamlib import glapi as API
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import clargs
+from gamlib import entity
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, callGAPI
 from gam.util.args import (
@@ -28,8 +28,8 @@ from gam.util.errors import (
     usageErrorExit,
 )
 
-Ent = glentity.GamEntity()
-Cmd = glclargs.GamCLArgs()
+Ent = entity.GamEntity()
+Cmd = clargs.GamCLArgs()
 
 
 def _substituteForUser(field, user, userName):

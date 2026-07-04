@@ -11,16 +11,12 @@ from gam.cmd.userop.usergroups import LICENSE_PREVIEW_TITLES
 
 from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
-from gamlib import glskus as SKU
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
+from gamlib import skus as SKU
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, callGAPI
 from gam.util.args import (
@@ -36,11 +32,7 @@ from gam.util.display import entityActionFailedWarning, entityActionPerformed, e
 from gam.util.entity import getEntityArgument, getItemsToModify
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def getLicenseParameters(operation):
   lic = buildGAPIObject(API.LICENSING)

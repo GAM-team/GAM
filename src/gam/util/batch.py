@@ -16,13 +16,13 @@ import sys
 import threading
 import time
 
-from gamlib import glapi as API
-from gamlib import glclargs
-from gamlib import glcfg as GC
-from gamlib import glentity
-Ent = glentity.GamEntity()
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import clargs
+from gamlib import settings as GC
+from gamlib import entity
+Ent = entity.GamEntity()
+from gamlib import state as GM
+from gamlib import msgs as Msg
 
 from util.csv_pf import CSVPrintFile
 from gam.constants import HARD_ERROR_RC, KEYBOARD_INTERRUPT_RC
@@ -99,7 +99,7 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
   clearRowFilters = False
   if multiprocessing.get_start_method() != 'fork':
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-    Cmd = glclargs.GamCLArgs()
+    Cmd = clargs.GamCLArgs()
   else:
     csvPF.SetColumnDelimiter(GC.Values[GC.CSV_OUTPUT_COLUMN_DELIMITER])
     csvPF.SetNoEscapeChar(GC.Values[GC.CSV_OUTPUT_NO_ESCAPE_CHAR])

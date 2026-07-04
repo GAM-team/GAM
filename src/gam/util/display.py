@@ -7,9 +7,9 @@ util.output.
 
 import sys
 
-from gamlib import glcfg as GC
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import settings as GC
+from gamlib import state as GM
+from gamlib import msgs as Msg
 
 
 from gam.var import Act, Ent, Ind

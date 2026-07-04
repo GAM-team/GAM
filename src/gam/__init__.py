@@ -132,19 +132,19 @@ from filelock import FileLock
 if platform.system() == 'Linux':
   import distro
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glgdata as GDATA
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
-from gamlib import glskus as SKU
-from gamlib import gluprop as UProp
-from gamlib import glverlibs
+from gamlib import action
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import clargs
+from gamlib import entity
+from gamlib import gapi as GAPI
+from gamlib import gdata as GDATA
+from gamlib import state as GM
+from gamlib import indent
+from gamlib import msgs as Msg
+from gamlib import skus as SKU
+from gamlib import uprop as UProp
+from gamlib import verlibs
 
 import gdata.apps.service
 import gdata.apps.audit

@@ -10,15 +10,11 @@ import sys
 import base64
 import os
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import (
     buildGAPIObject,
     buildGAPIServiceObject,
@@ -64,11 +60,7 @@ from gam.util.output import setSysExitRC, systemErrorExit, writeStdout
 from gam.constants import ADMIN_ACCESS_OPTIONS, API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NO_ENTITIES_FOUND_RC
 from gam.util.tags import _substituteForUser
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def buildChatServiceObject(api=API.CHAT, user=None, i=0, count=0, entityTypeList=None, useAdminAccess=False):
   if user is None:

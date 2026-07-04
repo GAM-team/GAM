@@ -11,9 +11,9 @@ import time
 
 import arrow
 
-from gamlib import glcfg as GC
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import settings as GC
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import DEBUG_REDACTION_PATTERNS
 from gam.var import Ind
 

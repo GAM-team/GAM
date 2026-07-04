@@ -9,15 +9,11 @@ import json
 
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject, callGAPI, checkGAPIError, waitOnFailure
 from gam.util.args import (
     SORF_TEXT_ARGUMENTS,
@@ -45,12 +41,7 @@ from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import executeBatch, writeStdout
 from gam.constants import OWNER_ACCESS_OPTIONS
 from gam.cmd.groups.groups import getSyncOperation
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def doPrintCourseParticipants():
   croom = buildGAPIObject(API.CLASSROOM)
@@ -688,10 +679,8 @@ def doCourseSyncParticipants(courseIdList, _):
     if syncOperation != 'addonly':
       _batchRemoveItemsFromCourse(courseInfo['croom'], courseId, i, count, list(currentParticipantsSet-syncParticipantsSet), role)
 
-
 # Dispatch tables and routing (moved from __init__.py)
 # Additional imports for dispatch
-from gam.var import Act, Cmd
 from gam.constants import CMD_ACTION, CMD_FUNCTION
 
 # Course command sub-commands

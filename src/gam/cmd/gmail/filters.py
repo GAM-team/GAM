@@ -10,15 +10,11 @@ import sys
 
 from gam.cmd.gmail.labels import _getLabelId, _getLabelName, _getLabelSet, _getUserGmailLabels, buildLabelPath
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems
 from gam.util.args import (
     ONE_KILO_10_BYTES,
@@ -49,11 +45,7 @@ from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUs
 from gam.util.errors import missingChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import ERROR
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 ONE_KILO_10_BYTES = 1000
 ONE_MEGA_10_BYTES = 1000 * 1000

@@ -9,7 +9,7 @@ import re
 import string
 import sys
 
-from gamlib import glcfg as GC
+from gamlib import settings as GC
 
 # Version and author (canonical source: gam/__init__.py)
 from gam import __author__, __version__, __license__

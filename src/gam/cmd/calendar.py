@@ -6,11 +6,11 @@ import json
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM, FormatJSONQuoteChar
 import uuid
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
 from gam.util.api import (
@@ -138,7 +138,7 @@ def makeRoleRuleIdBody(role, ruleId):
 
 def normalizeCalendarId(calId, user):
   if not user or calId.lower() != 'primary':
-    return convertUIDtoEmailAddress(calId, buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'resource'])
+    return convertUIDtoEmailAddress(calId, emailTypes=['user', 'resource'])
   return user
 
 def checkCalendarExists(cal, calId, i, count, showMessage=False):
@@ -1525,7 +1525,7 @@ def _getCalendarMoveEventsOptions(calendarEventEntity=None):
     elif calendarEventEntity and myarg in {'id', 'eventid'}:
       calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
     elif calendarEventEntity and myarg == 'destination':
-      newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM), buildGAPIObject(API.DIRECTORY))
+      newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
     else:
       unknownArgumentExit()
   return (parameters, newCalId)
@@ -1572,7 +1572,7 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
 def doCalendarsMoveEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
   checkArgumentPresent(['to', 'destination'])
-  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM), buildGAPIObject(API.DIRECTORY))
+  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
   parameters, _ = _getCalendarMoveEventsOptions()
   if not checkCalendarExists(None, newCalId, 0, 0, True):
     return

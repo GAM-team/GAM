@@ -18,23 +18,14 @@ from gam.cmd.vault.matters import (
 )
 import time
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import NO_ENTITIES_FOUND_RC, PROJECTION_CHOICE_MAP
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
-
+from gam.var import Act, Cmd, Ent, Ind
 
 from gam.cmd.vault.matters import (
     VAULT_CORPUS_ARGUMENT_MAP,

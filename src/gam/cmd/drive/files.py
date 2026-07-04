@@ -10,15 +10,11 @@ from gam.cmd.drive.core import DFA_IGNORE_DEFAULT_VISIBILITY, DFA_KEEP_REVISION_
 from gam.cmd.drive.fileinfo import writeReturnIdLink
 import time
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
         getAddCSVData,
@@ -54,10 +50,7 @@ from gam.util.fileio import UNKNOWN, readFile
 from gam.util.output import writeStdout
 from gam.constants import AND_NOT_SHORTCUT, ANY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS, MY_DRIVE, MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -86,7 +79,6 @@ ROOT = 'root'
 ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
-
 
 def processFilenameReplacements(name, replacements):
   for replacement in replacements:

@@ -7,15 +7,11 @@ Part of the _userop_tmp sub-package."""
 import re
 import json
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems
 from gam.util.args import getArgument, getBoolean, getJSON, getString
 from gam.util.csv_pf import (
@@ -46,11 +42,7 @@ from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttrib
 from gam.cmd.drive.core import _validateUserGetFileIDs
 from gam.cmd.drive.core import getDriveFileEntity
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 ERROR_PREFIX = 'ERROR: '
 

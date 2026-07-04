@@ -5,11 +5,11 @@ import sys
 
 from gam.util.args import formatLocalTime
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import _getAdminEmail, buildGAPIServiceObject, callGAPI, callGAPIpages
 from gam.util.args import (

@@ -15,11 +15,11 @@ from cryptography.hazmat.backends import default_backend
 from importlib.metadata import version as lib_version
 from urllib.parse import urlparse
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
-from gamlib import glverlibs
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import state as GM
+from gamlib import msgs as Msg
+from gamlib import verlibs
 
 from gam.constants import (
     FN_GAMCOMMANDS_TXT, GAM, GAM_URL, GAM_WIKI,
@@ -332,7 +332,7 @@ def doVersion(checkForArgs=True):
   if extended:
     printKeyValueList([ssl.OPENSSL_VERSION])
     tls_ver, cipher_name = _getServerTLSUsed(testLocation)
-    for lib in glverlibs.GAM_VER_LIBS:
+    for lib in verlibs.GAM_VER_LIBS:
       try:
         writeStdout(f'{lib} {lib_version(lib)}\n')
       except:

@@ -40,12 +40,12 @@ try:
 except ImportError:
   pass
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glgdata as GDATA
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import gdata as GDATA
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gamlib import yubikey
 from gam.var import Ent, Ind
 from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
@@ -1411,6 +1411,14 @@ def buildGAPIObject(api, credentials=None):
     GM.Globals[GM.OAUTH2_CLIENT_ID] = credentials.client_id
   return service
 
+def getSaUser(user):
+  currentClientAPI = GM.Globals[GM.CURRENT_CLIENT_API]
+  currentClientAPIScopes = GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
+  from util.uid import convertUIDtoEmailAddress  # local to avoid api↔uid cycle
+  userEmail = convertUIDtoEmailAddress(user) if user else None
+  GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
+  GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
+  return userEmail
 
 def chooseSaAPI(api1, api2):
   _getSvcAcctData()
@@ -1550,6 +1558,3 @@ def APIAccessDeniedExit():
   systemErrorExit(API_ACCESS_DENIED_RC, Msg.API_ACCESS_DENIED)
 
 
-# Late import: uid.py imports callGAPI/buildGAPIObject from this module,
-# so we import from uid after those are defined to avoid circular ImportError.
-from util.uid import getSaUser  # noqa: E402

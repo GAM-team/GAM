@@ -15,22 +15,14 @@ from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_COUNT
 
 from gam.util.entity import GROUP_ROLES_MAP
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.constants import ONE_KILO_BYTES, ONE_MEGA_BYTES
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 from gam.cmd.groups.groups import ALL_GROUP_MEMBER_TYPES, MEMBEROPTION_DISPLAYMATCH, MEMBEROPTION_GETDELIVERYSETTINGS, MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED, MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_MATCHPATTERN, MEMBEROPTION_MEMBERNAMES, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE, getGroupMemberTypes, GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
 from gam.util.access import entityUnknownWarning
@@ -126,7 +118,6 @@ from gam.util.domain_filters import (
 )
 from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList
 from gam.util.output import executeBatch, writeStderr, writeStdout
-
 
 def initMemberOptions():
   return [False, False, False, False, None, None, False, None, True]

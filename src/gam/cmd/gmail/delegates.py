@@ -6,15 +6,11 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
 from gam.util.args import checkArgumentPresent, checkForExtraneousArguments, getArgument
 from gam.util.csv_pf import CSVPrintFile
@@ -34,11 +30,7 @@ from gam.util.output import writeStdout
 from gam.cmd.users.manage import getNotifyArguments
 from gam.cmd.delegates import _getDelegateName
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 UTF8 = 'utf-8'
 

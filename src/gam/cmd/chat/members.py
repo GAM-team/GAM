@@ -6,15 +6,11 @@ Part of the _chat_tmp sub-package."""
 
 import uuid
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import _getAdminEmail, buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
     AND_OR_CONJUNCTION_MAP,
@@ -56,11 +52,7 @@ from gam.util.entity import (
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import stderrWarningMsg, writeStdout
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 def _getChatMemberEmail(cd, member):
   if 'member' in member:

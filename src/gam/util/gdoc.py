@@ -15,13 +15,13 @@ import googleapiclient.http
 import httplib2
 import google.auth.exceptions
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glentity
-Ent = glentity.GamEntity()
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import entity
+Ent = entity.GamEntity()
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Cmd
 from gam.constants import DEFAULT_CSV_READ_MODE, NO_ENTITIES_FOUND_RC
 from util.args import UTF8, checkArgumentPresent, getBoolean, getCharSet, getCharacter, getEmailAddress, getSheetEntity, getSheetIdFromSheetEntity, getString, shlexSplitList

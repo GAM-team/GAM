@@ -9,15 +9,11 @@ import json
 
 from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
-from gamlib import glaction
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glindent
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import _getAdminEmail, buildGAPIServiceObject, callGAPI, callGAPIpages
 from gam.util.args import (
     BCP47_LANGUAGE_CODES_MAP,
@@ -61,10 +57,7 @@ from gam.util.entity import (
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.constants import ADMIN_ACCESS_OPTIONS
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -93,7 +86,6 @@ ROOT = 'root'
 ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
-
 
 def _getDisplayDriveLabelsParameters(myarg, parameters):
   if myarg in DRIVELABELS_PROJECTION_CHOICE_MAP:

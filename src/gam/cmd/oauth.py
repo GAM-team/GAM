@@ -23,11 +23,11 @@ import google_auth_oauthlib.flow
 from filelock import FileLock
 from urllib.parse import urlparse, parse_qs, urlencode
 
-from gamlib import glapi as API
-from gamlib import glcfg as GC
-from gamlib import glgapi as GAPI
-from gamlib import glglobals as GM
-from gamlib import glmsgs as Msg
+from gamlib import api as API
+from gamlib import settings as GC
+from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import (
     buildGAPIObject,
