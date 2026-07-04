@@ -14,7 +14,7 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('spawn', force=True)
   initializeLogging()
 #
-  CallGAMCommand(['gam', 'version'])
+  CallGAMCommand(['gam', 'version', 'extended'])
   # Issue command, output goes to stdout/stderr
   rc = CallGAMCommand(['gam', 'info', 'domain'])
   # Issue command, redirect stdout/stderr

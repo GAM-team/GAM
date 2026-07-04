@@ -4458,6 +4458,7 @@ gam print licenses [todrive <ToDriveAttribute>*]
 gam show licenses
         [(products|product <ProductIDList>)|(skus|sku <SKUIDList>)|allskus|gsuite]
         [maxresults <Integer>]
+gam show configlicenseskus [quiet]
 
 # Mobile Devices
 

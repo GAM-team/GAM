@@ -895,6 +895,8 @@ class GamCLArgs():
   ARG_CLASSROOMINVITATIONS = 'classroominvitations'
   ARG_CLASSROOMOAUTH2 = 'classroomoauth2'
   ARG_CLASSROOMPROFILE = 'classroomprofile'
+  ARG_CONFIGLICENCESKUS = 'configlicenceskus'
+  ARG_CONFIGLICENSESKUS = 'configlicenseskus'
   ARG_CONTACT = 'contact'
   ARG_CONTACTS = 'contacts'
   ARG_CONTACTDELEGATE = 'contactdelegate'

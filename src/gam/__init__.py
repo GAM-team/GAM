@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.06'
+__version__ = '7.46.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -39760,6 +39760,37 @@ def doShowLicenses():
   licenseCounts = doPrintLicenses(countsOnly=True, returnCounts=True)
   for u_license in licenseCounts:
     printEntityKVList(u_license[:-2], [Ent.Plural(u_license[-2]), u_license[-1]])
+
+# gam show configlicenseskus [quiet]
+def doShowConfigLicenseSKUs():
+  lic = buildGAPIObject(API.LICENSING)
+  setTrueCustomerId()
+  customerId = _getCustomerId()
+  licenseSKUcounts = []
+  maxResults = GC.Values[GC.LICENSE_MAX_RESULTS]
+  quiet = checkArgumentPresent('quiet')
+  checkForExtraneousArguments()
+  fields = getItemFieldsFromFieldsList('items', ['userId'])
+  for sku in SKU.getAllSKUs():
+    Ent.SetGetting(Ent.LICENSE)
+    productId = sku[0]
+    skuId = sku[1]
+    productDisplay = SKU.formatProductIdDisplayName(productId)
+    skuIdDisplay = SKU.formatSKUIdDisplayName(skuId)
+    pageMessage = getPageMessageForWhom(forWhom=skuIdDisplay) if not quiet else None
+    try:
+      feed = callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items',
+                           pageMessage=pageMessage,
+                           throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                           customerId=customerId, productId=productId, skuId=skuId,
+                           maxResults=maxResults, fields=fields)
+      if len(feed) > 0:
+        licenseSKUcounts.append(skuId)
+    except (GAPI.invalid, GAPI.forbidden, GAPI.invalidArgument) as e:
+      entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay, Ent.SKU, skuIdDisplay], str(e))
+  writeStderr(Msg.CONFIG_LICENSE_SKUS)
+  flushStderr()
+  writeStdout(f"gam config license_skus \"{','.join(licenseSKUcounts)}\" save verify variables license_skus\n")
 
 # gam delete alert <AlertID>
 # gam undelete alert <AlertID>
@@ -81176,6 +81207,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
       Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
+      Cmd.ARG_CONFIGLICENSESKUS:	doShowConfigLicenseSKUs,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,
       Cmd.ARG_DATATRANSFER:	doPrintShowDataTransfers,
@@ -82454,6 +82486,7 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,
   Cmd.ARG_CIMEMBER:		Cmd.ARG_CIGROUPMEMBERS,
   Cmd.ARG_CIMEMBERS:		Cmd.ARG_CIGROUPMEMBERS,
+  Cmd.ARG_CONFIGLICENCESKUS:	Cmd.ARG_CONFIGLICENSESKUS,
   Cmd.ARG_CONTACT:		Cmd.ARG_PEOPLECONTACT,
   Cmd.ARG_CONTACTS:		Cmd.ARG_PEOPLECONTACT,
   Cmd.ARG_CONTACTDELEGATES:	Cmd.ARG_CONTACTDELEGATE,
