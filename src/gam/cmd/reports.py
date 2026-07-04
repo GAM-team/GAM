@@ -16,7 +16,6 @@ from gam.util.api import _getAdminEmail, buildGAPIObject, callGAPI, callGAPIpage
 from gam.util.args import (
     DELTA_DATE_FORMAT_REQUIRED,
     DELTA_DATE_PATTERN,
-    ISOformatTimeStamp,
     PLUS_MINUS,
     StartEndTime,
     TODAY_NOW,
@@ -39,6 +38,7 @@ from gam.util.args import (
     orgUnitPathQuery,
     todaysDate,
 )
+from gam.util.output import ISOformatTimeStamp
 from gam.util.csv_pf import CSVPrintFile, flattenJSON, getTodriveOnly
 from gam.util.display import (
     BAD_REQUEST_RC,

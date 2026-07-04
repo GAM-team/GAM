@@ -21,8 +21,7 @@ from gamlib import glindent
 from gamlib import glmsgs as Msg
 from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
-    ISOformatTimeStamp,
-    getAddCSVData,
+        getAddCSVData,
     getArgument,
     getBoolean,
     getCharacter,
@@ -31,6 +30,7 @@ from gam.util.args import (
     getString,
     protectedSheetId,
 )
+from gam.util.output import ISOformatTimeStamp
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (
     entityActionFailedWarning,

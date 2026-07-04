@@ -39,7 +39,6 @@ from gam.util.api import (
     writeClientCredentials,
 )
 from gam.util.args import (
-    ISOformatTimeStamp,
     UTF8,
     YYYYMMDDTHHMMSSZ_FORMAT,
     checkForExtraneousArguments,
@@ -47,6 +46,7 @@ from gam.util.args import (
     getEmailAddress,
     getString,
 )
+from gam.util.output import ISOformatTimeStamp
 from gam.util.display import (
     entityActionNotPerformedWarning,
     entityActionPerformed,

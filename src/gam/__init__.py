@@ -157,11 +157,13 @@ import gdata.apps.contacts.service
 from gam.util.html import _DeHTMLParser, dehtml  # noqa: F401  # re-export
 from gam.util.access import (  # noqa: F401  # re-export
     accessErrorMessage, accessErrorExit, accessErrorExitNonDirectory,
-    ClientAPIAccessDeniedExit, SvcAcctAPIAccessDenied, SvcAcctAPIAccessDeniedExit,
-    SvcAcctAPIDisabledExit, APIAccessDeniedExit,
     checkEntityDNEorAccessErrorExit, checkEntityAFDNEorAccessErrorExit,
     checkEntityItemValueAFDNEorAccessErrorExit,
     entityUnknownWarning, entityOrEntityUnknownWarning, duplicateAliasGroupUserWarning,
+)
+from gam.util.api import (  # noqa: F401  # re-export (moved from access.py)
+    ClientAPIAccessDeniedExit, SvcAcctAPIAccessDenied, SvcAcctAPIAccessDeniedExit,
+    SvcAcctAPIDisabledExit, APIAccessDeniedExit,
 )
 from gam.util.email import (  # noqa: F401  # re-export
     _addAttachmentsToMessage, _addEmbeddedImagesToMessage, send_email,
@@ -170,7 +172,7 @@ from gam.util.email import (  # noqa: F401  # re-export
 
 from gam.constants import *
 
-from util.args import ISOformatTimeStamp, currentISOformatTimeStamp  # noqa: E402,F401
+from util.output import ISOformatTimeStamp, currentISOformatTimeStamp  # noqa: E402,F401
 from util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402,F401
 
 from gam.var import Act, Cmd, Ent, Ind  # noqa: E402,F401

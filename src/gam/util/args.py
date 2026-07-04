@@ -100,6 +100,7 @@ from util.errors import (
 )
 
 from util.fileio import readFile
+from util.output import ISOformatTimeStamp
 from gam.var import Cmd, Ent
 
 # Lazy accessor for main module
@@ -130,12 +131,6 @@ SECONDS_PER_MINUTE = 60
 SECONDS_PER_HOUR = 3600
 SECONDS_PER_DAY = 86400
 SECONDS_PER_WEEK = 604800
-
-def ISOformatTimeStamp(timestamp):
-  return timestamp.isoformat('T', 'seconds')
-
-def currentISOformatTimeStamp(timespec='milliseconds'):
-  return arrow.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
 
 def checkArgumentPresent(choices, required=False):
   choiceList = choices if isinstance(choices, (list, set)) else [choices]

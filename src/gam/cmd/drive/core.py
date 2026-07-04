@@ -22,7 +22,7 @@ from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
-from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages, getHttpObj
+from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages, getHttpObj
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     checkArgumentPresent,
@@ -561,7 +561,7 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
     if not drive:
       return (user, None, 0)
   else:
-    user = convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
   if fileIdEntity['list'] and _simpleFileIdEntityList(fileIdEntity['list']):
     l = len(fileIdEntity['list'])
     if ROOT in fileIdEntity['list'] and fileIdEntity[ROOT]:
@@ -760,7 +760,7 @@ def _validateUserGetSharedDriveFileIDs(user, i, count, fileIdEntity, drive=None,
     if not drive:
       return (user, None, 0)
   else:
-    user = convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
   if fileIdEntity.get('shareddrivename') and not _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity):
     return (user, None, 0)
   if fileIdEntity['shareddrivefilequery']:

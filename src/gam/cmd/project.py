@@ -1218,7 +1218,7 @@ def checkServiceAccount(users):
   for user in users:
     i += 1
     allScopesPass = True
-    user = convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
     printKeyValueListWithCount([Msg.DOMAIN_WIDE_DELEGATION_AUTHENTICATION, '',
                                 Ent.Singular(Ent.USER), user,
                                 Ent.Choose(Ent.SCOPE, jcount), jcount],

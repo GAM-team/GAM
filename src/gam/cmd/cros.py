@@ -25,9 +25,9 @@ from gam.util.api import (
     callGAPIpages,
     checkGAPIError,
 )
+from gam.util.output import ISOformatTimeStamp
 from gam.util.args import (
-    ISOformatTimeStamp,
-    SORTORDER_CHOICE_MAP,
+        SORTORDER_CHOICE_MAP,
     StartEndTime,
     YYYYMMDDTHHMMSS_FORMAT_REQUIRED,
     YYYYMMDD_FORMAT,

@@ -20,7 +20,7 @@ from gamlib import glmsgs as Msg
 
 
 from gam.var import Act, Ent, Ind
-from util.output import (
+from util.output import (currentISOformatTimeStamp,
     stderrErrorMsg,
     stderrWarningMsg,
     setSysExitRC,
@@ -258,7 +258,6 @@ def openGAMCommandLog(Globals, name):
     systemErrorExit(CONFIG_ERROR_RC, Msg.LOGGING_INITIALIZATION_ERROR.format(str(e)))
 
 def writeGAMCommandLog(Globals, logCmd, sysRC):
-  from util.args import currentISOformatTimeStamp
   Globals[GM.CMDLOG_LOGGER].info(f'{currentISOformatTimeStamp()},{sysRC},{logCmd}')
 
 def closeGAMCommandLog(Globals):

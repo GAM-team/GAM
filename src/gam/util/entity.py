@@ -25,7 +25,6 @@ from gamlib import glmsgs as Msg
 
 
 def getUserEmailFromID(uid, cd):
-  from util.api import callGAPI
   try:
     result = callGAPI(cd.users(), 'get',
                       throwReasons=GAPI.USER_GET_THROW_REASONS,
@@ -37,7 +36,6 @@ def getUserEmailFromID(uid, cd):
     return None
 
 def getGroupEmailFromID(uid, cd):
-  from util.api import callGAPI
   try:
     result = callGAPI(cd.groups(), 'get',
                       throwReasons=GAPI.GROUP_GET_THROW_REASONS,
@@ -49,7 +47,6 @@ def getGroupEmailFromID(uid, cd):
     return None
 
 def getServiceAccountEmailFromID(account_id, sal=None):
-  from util.api import buildGAPIObject, callGAPI
   if sal is None:
     sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
   try:
@@ -72,113 +69,9 @@ def getServiceAccountEmailFromID(account_id, sal=None):
         sa_emails.append(sa_email)
   return GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER].join(sa_emails)
 
-# Convert UID to email address and type
-def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, emailTypes=None,
-                                     checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
-  from util.api import buildGAPIObject, callGAPI
-  if emailTypes is None:
-    emailTypes = ['user']
-  elif not isinstance(emailTypes, list):
-    emailTypes = [emailTypes] if emailTypes != 'any' else ['user', 'group']
-  if checkForCustomerId and (emailAddressOrUID == GC.Values[GC.CUSTOMER_ID]):
-    return (emailAddressOrUID, 'email')
-  normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID, ciGroupsAPI=ciGroupsAPI)
-  if ciGroupsAPI and emailAddressOrUID.startswith('groups/'):
-    return emailAddressOrUID
-  if normalizedEmailAddressOrUID.find('@') > 0 and aliasAllowed:
-    return (normalizedEmailAddressOrUID, 'email')
-  if cd is None:
-    cd = buildGAPIObject(API.DIRECTORY)
-  if 'user' in emailTypes and 'group' in emailTypes:
-    # Google User IDs *TEND* to be integers while groups tend to have letters
-    # thus we can optimize which check we try first. We'll still check
-    # both since there is no guarantee this will always be true.
-    if normalizedEmailAddressOrUID.isdigit():
-      uid = getUserEmailFromID(normalizedEmailAddressOrUID, cd)
-      if uid:
-        return (uid, 'user')
-      uid = getGroupEmailFromID(normalizedEmailAddressOrUID, cd)
-      if uid:
-        return (uid, 'group')
-    else:
-      uid = getGroupEmailFromID(normalizedEmailAddressOrUID, cd)
-      if uid:
-        return (uid, 'group')
-      uid = getUserEmailFromID(normalizedEmailAddressOrUID, cd)
-      if uid:
-        return (uid, 'user')
-  elif 'user' in emailTypes:
-    uid = getUserEmailFromID(normalizedEmailAddressOrUID, cd)
-    if uid:
-      return (uid, 'user')
-  elif 'group' in emailTypes:
-    uid = getGroupEmailFromID(normalizedEmailAddressOrUID, cd)
-    if uid:
-      return (uid, 'group')
-  if 'resource' in emailTypes:
-    try:
-      result = callGAPI(cd.resources().calendars(), 'get',
-                        throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.FORBIDDEN],
-                        calendarResourceId=normalizedEmailAddressOrUID,
-                        customer=GC.Values[GC.CUSTOMER_ID], fields='resourceEmail')
-      if 'resourceEmail' in result:
-        return (result['resourceEmail'].lower(), 'resource')
-    except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
-      pass
-  if 'serviceaccount' in emailTypes:
-    uid = getServiceAccountEmailFromID(normalizedEmailAddressOrUID, sal)
-    if uid:
-      return (uid, 'serviceaccount')
-  return (normalizedEmailAddressOrUID, 'unknown')
-
-NON_EMAIL_MEMBER_PREFIXES = (
-                              "cbcm-browser.",
-                              "chrome-os-device.",
-                            )
-# Convert UID to email address
-def convertUIDtoEmailAddress(emailAddressOrUID, cd=None, emailTypes=None,
-                             checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):
-  if ciGroupsAPI:
-    if emailAddressOrUID.startswith(NON_EMAIL_MEMBER_PREFIXES):
-      return emailAddressOrUID
-    normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID, ciGroupsAPI=ciGroupsAPI)
-    if normalizedEmailAddressOrUID.startswith(NON_EMAIL_MEMBER_PREFIXES):
-      return normalizedEmailAddressOrUID
-  email, _ = convertUIDtoEmailAddressWithType(emailAddressOrUID, cd, None, emailTypes,
-                                              checkForCustomerId, ciGroupsAPI, aliasAllowed)
-  return email
-
-# Convert email address to User/Group UID; called immediately after getting email address from command line
-def convertEmailAddressToUID(emailAddressOrUID, cd=None, emailType='user', savedLocation=None):
-  from util.api import buildGAPIObject, callGAPI
-  normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
-  if normalizedEmailAddressOrUID.find('@') == -1:
-    return normalizedEmailAddressOrUID
-  if cd is None:
-    cd = buildGAPIObject(API.DIRECTORY)
-  if emailType != 'group':
-    try:
-      return callGAPI(cd.users(), 'get',
-                      throwReasons=GAPI.USER_GET_THROW_REASONS,
-                      userKey=normalizedEmailAddressOrUID, fields='id')['id']
-    except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-            GAPI.badRequest, GAPI.backendError, GAPI.systemError):
-      if emailType == 'user':
-        if savedLocation is not None:
-          Cmd.SetLocation(savedLocation)
-        entityDoesNotExistExit(Ent.USER, normalizedEmailAddressOrUID, errMsg=getPhraseDNEorSNA(normalizedEmailAddressOrUID))
-  try:
-    return callGAPI(cd.groups(), 'get',
-                    throwReasons=GAPI.GROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
-                    groupKey=normalizedEmailAddressOrUID, fields='id')['id']
-  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError):
-    if savedLocation is not None:
-      Cmd.SetLocation(savedLocation)
-    entityDoesNotExistExit([Ent.USER, Ent.GROUP][emailType == 'group'], normalizedEmailAddressOrUID, errMsg=getPhraseDNEorSNA(normalizedEmailAddressOrUID))
 
 # Convert User UID from API call to email address
 def convertUserIDtoEmail(uid, cd=None):
-  from util.api import buildGAPIObject, callGAPI
   primaryEmail = GM.Globals[GM.MAP_USER_ID_TO_NAME].get(uid)
   if not primaryEmail:
     if cd is None:
@@ -196,7 +89,6 @@ def convertUserIDtoEmail(uid, cd=None):
 # Convert UID to split email address
 # Return (foo@bar.com, foo, bar.com)
 def splitEmailAddressOrUID(emailAddressOrUID):
-  from util.api import buildGAPIObject, callGAPI
   normalizedEmailAddressOrUID = normalizeEmailAddressOrUID(emailAddressOrUID)
   atLoc = normalizedEmailAddressOrUID.find('@')
   if atLoc > 0:
@@ -217,7 +109,6 @@ def splitEmailAddressOrUID(emailAddressOrUID):
 
 # Convert Org Unit Id to Org Unit Path
 def convertOrgUnitIDtoPath(cd, orgUnitId):
-  from util.api import buildGAPIObject, callGAPI
   if orgUnitId.lower().startswith('orgunits/'):
     orgUnitId = f'id:{orgUnitId[9:]}'
   orgUnitPath = GM.Globals[GM.MAP_ORGUNIT_ID_TO_NAME].get(orgUnitId)
@@ -234,6 +125,7 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
   return orgUnitPath
 
 from util.args import shlexSplitList, shlexSplitListStatus  # noqa: E402,F401 - moved to args, re-exported for compat
+from util.uid import convertUIDtoEmailAddress, convertUIDtoEmailAddressWithType, convertEmailAddressToUID  # noqa: F401 - re-export
 from gam.constants import DATA_ERROR_RC, INVALID_ENTITY_RC, NO_ENTITIES_FOUND_RC, UNKNOWN_ERROR_RC
 from gamlib import glskus as SKU
 from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkMatchSkipFields, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getPhraseDNEorSNA, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, removeCourseIdScope, splitEmailAddress, validateEmailAddressOrUID
@@ -242,6 +134,9 @@ from util.errors import csvDataAlreadySavedErrorExit, csvFieldErrorExit, entityD
 from util.fileio import closeFile, openFile, setFilePath
 from util.gdoc import getGDocData, getStorageFileData, openCSVFileReader
 from util.output import formatKeyValueList, printErrorMessage, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr
+from gam.util.access import ClientAPIAccessDeniedExit, accessErrorExit
+from util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
+from util.api import _getAdminEmail, buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.var import Act, Cmd, Ent
 
 def getQueries(myarg):
@@ -422,7 +317,6 @@ def getCIGroupTransitiveMemberRoleFixType(groupName, tmember):
   return member
 
 def convertGroupCloudIDToEmail(ci, group, i=0, count=0):
-  from util.api import buildGAPIObject, callGAPI
   if not group.startswith('groups/'):
     group = normalizeEmailAddressOrUID(group, ciGroupsAPI=True)
     if not group.startswith('groups/'):
@@ -444,7 +338,6 @@ def convertGroupCloudIDToEmail(ci, group, i=0, count=0):
     return (ci, None, None)
 
 def convertGroupEmailToCloudID(ci, group, i=0, count=0):
-  from util.api import buildGAPIObject, callGAPI
   group = normalizeEmailAddressOrUID(group, ciGroupsAPI=True)
   if not group.startswith('groups/') and group.find('@') == -1:
     group = 'groups/'+group
@@ -473,7 +366,6 @@ CIGROUP_SECURITY_LABEL = 'cloudidentity.googleapis.com/groups.security'
 CIGROUP_LOCKED_LABEL = 'cloudidentity.googleapis.com/groups.locked'
 
 def getCIGroupMembershipGraph(ci, member):
-  from util.api import buildGAPIObject, callGAPI
   if not ci:
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   parent = 'groups/-'
@@ -493,8 +385,6 @@ def getCIGroupMembershipGraph(ci, member):
     return (ci, None)
 
 def checkGroupExists(cd, ci, ciGroupsAPI, group, i=0, count=0):
-  from util.access import entityUnknownWarning
-  from util.api import callGAPI
   group = normalizeEmailAddressOrUID(group, ciGroupsAPI=ciGroupsAPI)
   if not ciGroupsAPI:
     if not group.startswith('groups/'):
@@ -539,8 +429,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
     printErrorMessage(INVALID_ENTITY_RC, formatKeyValueList('', [Ent.Singular(entityType), entityName, Msg.INVALID], ''))
 
   def _addGroupUsersToUsers(group, domains, recursive, includeDerivedMembership):
-    from util.access import entityUnknownWarning
-    from util.api import callGAPIpages
     printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, group, entityType=Ent.GROUP)
     validRoles, listRoles, listFields = _getRoleVerification(memberRoles, 'nextPageToken,members(email,type,status)')
     try:
@@ -571,8 +459,6 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
   def _addCIGroupUsersToUsers(groupName, groupEmail, recursive):
     from gam.cmd.licenses import doPrintLicenses
     from gam.cmd.courses.courses import _getCoursesOwnerInfo
-    from util.access import ClientAPIAccessDeniedExit, accessErrorExit, accessErrorExitNonDirectory, checkEntityDNEorAccessErrorExit, entityUnknownWarning
-    from util.api import buildGAPIObject, callGAPI, callGAPIpages, yieldGAPIpages
     printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, groupEmail, entityType=Ent.CLOUD_IDENTITY_GROUP)
     validRoles = _getCIRoleVerification(memberRoles)
     try:
@@ -1347,7 +1233,6 @@ def getEntityArgument(entityList):
 
 def getEntityToModify(defaultEntityType=None, browserAllowed=False, crosAllowed=False, userAllowed=True,
                       typeMap=None, isSuspended=None, isArchived=None, groupMemberType='USER', delayGet=False):
-  from util.api import _getAdminEmail, buildGAPIObject
   if GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY]:
     crosAllowed = False
     selectorChoices = Cmd.SERVICE_ACCOUNT_ONLY_ENTITY_SELECTORS[:]
@@ -1514,7 +1399,6 @@ def getUserObjectEntity(clObject, itemType, shlexSplit=False):
   return entity
 
 def _validateUserGetObjectList(user, i, count, entity, api=API.GMAIL, showAction=True):
-  from util.api import buildGAPIServiceObject
   if entity['dict']:
     entityList = entity['dict'][user]
   else:
@@ -1530,7 +1414,6 @@ def _validateUserGetObjectList(user, i, count, entity, api=API.GMAIL, showAction
   return (user, svc, entityList, jcount)
 
 def _validateUserGetMessageIds(user, i, count, entity):
-  from util.api import buildGAPIServiceObject
   if entity:
     if entity['dict']:
       entityList = entity['dict'][user]
@@ -1544,8 +1427,6 @@ def _validateUserGetMessageIds(user, i, count, entity):
   return (user, gmail, entityList)
 
 def checkUserExists(cd, user, entityType=None, i=0, count=0):
-  from util.access import entityUnknownWarning
-  from util.api import callGAPI
   if entityType is None:
     entityType = Ent.USER
   user = normalizeEmailAddressOrUID(user)
@@ -1559,8 +1440,6 @@ def checkUserExists(cd, user, entityType=None, i=0, count=0):
     return None
 
 def checkUserSuspended(cd, user, entityType=None, i=0, count=0):
-  from util.access import entityUnknownWarning
-  from util.api import callGAPI
   if entityType is None:
     entityType = Ent.USER
   user = normalizeEmailAddressOrUID(user)
@@ -1598,8 +1477,6 @@ def _getCustomersCustomerIdWithC():
   return f'customers/{customerId}'
 
 def _getDomainList(cd, customer, fields):
-  from util.api import callGAPIitems
-  from gam.util.access import accessErrorExit, ClientAPIAccessDeniedExit
   try:
     return callGAPIitems(cd.domains(), 'list', 'domains',
                          throwReasons=[GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
@@ -1611,8 +1488,6 @@ def _getDomainList(cd, customer, fields):
     ClientAPIAccessDeniedExit(str(e))
 
 def setTrueCustomerId(cd=None, forceUpdate=False):
-  from util.api import buildGAPIObject, callGAPI
-  from gam.util.access import ClientAPIAccessDeniedExit
   if GC.Values[GC.CUSTOMER_ID] == GC.MY_CUSTOMER or forceUpdate:
     if not cd:
       cd = buildGAPIObject(API.DIRECTORY)

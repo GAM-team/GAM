@@ -36,7 +36,6 @@ from gam.util.api import (
 from gam.util.args import (
     BCP47_LANGUAGE_CODES_MAP,
     CALENDAR_COLOR_MAP,
-    ISOformatTimeStamp,
     YYYYMMDD_FORMAT,
     checkArgumentPresent,
     checkForExtraneousArguments,
@@ -56,6 +55,7 @@ from gam.util.args import (
     normalizeEmailAddressOrUID,
     splitEmailAddress,
 )
+from gam.util.output import ISOformatTimeStamp
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
@@ -1142,7 +1142,7 @@ def printShowCalendarACLs(users):
     j = 0
     for calId in calIds:
       j += 1
-      calId = convertUIDtoEmailAddress(calId)
+      calId = convertUIDtoEmailAddress(calId, buildGAPIObject(API.DIRECTORY))
       _printShowCalendarACLs(cal, user, Ent.CALENDAR, calId, j, jcount, csvPF, FJQC, noSelfOwner, addCSVData)
     Ind.Decrement()
   if csvPF:
@@ -1269,7 +1269,7 @@ def moveCalendarEvents(users):
   calendarEntity = getUserCalendarEntity()
   calendarEventEntity = getCalendarEventEntity()
   checkArgumentPresent(['to', 'destination'])
-  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
+  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM), buildGAPIObject(API.DIRECTORY))
   parameters, _ = _getCalendarMoveEventsOptions()
   if not checkCalendarExists(None, newCalId, 0, 0, True):
     return

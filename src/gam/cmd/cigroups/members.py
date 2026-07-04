@@ -759,9 +759,9 @@ def doPrintCIGroups():
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'showownedby':
-      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
+      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
-      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
+      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'group'])
       memberQuery = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels && parent == '{parent}'"
       entitySelection = None
       if myarg == 'ciowner':
@@ -1218,9 +1218,9 @@ def doPrintCIGroupMembers():
     if myarg == 'todrive':
       csvPF.GetTodriveParameters()
     elif myarg == 'showownedby':
-      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
+      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
-      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
+      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'group'])
       query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels && parent == '{parent}'"
       entityList = None
       if myarg == 'ciowner':
@@ -1473,9 +1473,9 @@ def doShowCIGroupMembers():
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'showownedby':
-      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user'])
+      showOwnedBy = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user'])
     elif myarg in {'cimember', 'enterprisemember', 'ciowner'}:
-      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), emailTypes=['user', 'group'])
+      emailAddress = convertUIDtoEmailAddress(getEmailAddress(), buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'group'])
       query = f"member_key_id == '{emailAddress}' && '{CIGROUP_DISCUSSION_FORUM_LABEL}' in labels parent == '{parent}'"
       entityList = None
       if myarg == 'ciowner':

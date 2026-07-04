@@ -138,7 +138,7 @@ def makeRoleRuleIdBody(role, ruleId):
 
 def normalizeCalendarId(calId, user):
   if not user or calId.lower() != 'primary':
-    return convertUIDtoEmailAddress(calId, emailTypes=['user', 'resource'])
+    return convertUIDtoEmailAddress(calId, buildGAPIObject(API.DIRECTORY), emailTypes=['user', 'resource'])
   return user
 
 def checkCalendarExists(cal, calId, i, count, showMessage=False):
@@ -1525,7 +1525,7 @@ def _getCalendarMoveEventsOptions(calendarEventEntity=None):
     elif calendarEventEntity and myarg in {'id', 'eventid'}:
       calendarEventEntity['list'].append(getString(Cmd.OB_EVENT_ID))
     elif calendarEventEntity and myarg == 'destination':
-      newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
+      newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM), buildGAPIObject(API.DIRECTORY))
     else:
       unknownArgumentExit()
   return (parameters, newCalId)
@@ -1572,7 +1572,7 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
 def doCalendarsMoveEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()
   checkArgumentPresent(['to', 'destination'])
-  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM))
+  newCalId = convertUIDtoEmailAddress(getString(Cmd.OB_CALENDAR_ITEM), buildGAPIObject(API.DIRECTORY))
   parameters, _ = _getCalendarMoveEventsOptions()
   if not checkCalendarExists(None, newCalId, 0, 0, True):
     return

@@ -264,7 +264,6 @@ class signjwtSignJwt(google.auth.crypt.Signer):
     return signed_jwt
 
 def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
-  from util.access import APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit
   errMsg = str(e).replace('.', '')
   if ((errMsg in API.OAUTH2_TOKEN_ERRORS) or
       errMsg.startswith('Invalid response') or
@@ -641,7 +640,6 @@ def _getSvcAcctData():
       GM.Globals[GM.SVCACCT_SCOPES] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].pop(API.OAUTH2SA_SCOPES)
 
 def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=False):
-  from util.access import SvcAcctAPIAccessDeniedExit
   _getSvcAcctData()
   if isinstance(scopesOrAPI, str):
     GM.Globals[GM.CURRENT_SVCACCT_API] = scopesOrAPI
@@ -844,7 +842,6 @@ def callGData(service, function,
               bailOnInternalServerError=False, softErrors=False,
               throwErrors=None, retryErrors=None, triesLimit=0,
               **kwargs):
-  from util.access import APIAccessDeniedExit
   if throwErrors is None:
     throwErrors = []
   if retryErrors is None:
@@ -1137,7 +1134,6 @@ def callGAPI(service, function,
              softErrors=False, mapNotFound=True,
              throwReasons=None, retryReasons=None, triesLimit=0,
              **kwargs):
-  from util.access import APIAccessDeniedExit
   if throwReasons is None:
     throwReasons = []
   if retryReasons is None:
@@ -1415,14 +1411,6 @@ def buildGAPIObject(api, credentials=None):
     GM.Globals[GM.OAUTH2_CLIENT_ID] = credentials.client_id
   return service
 
-def getSaUser(user):
-  from util.entity import convertUIDtoEmailAddress
-  currentClientAPI = GM.Globals[GM.CURRENT_CLIENT_API]
-  currentClientAPIScopes = GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-  userEmail = convertUIDtoEmailAddress(user) if user else None
-  GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
-  GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
-  return userEmail
 
 def chooseSaAPI(api1, api2):
   _getSvcAcctData()
@@ -1513,3 +1501,55 @@ def getContactsQuery(**kwargs):
 
 def getEmailAuditObject():
   return initGDataObject(gdata.apps.audit.service.AuditService(), API.EMAIL_AUDIT)
+
+# API access denied handlers (moved from access.py to break cycle)
+def ClientAPIAccessDeniedExit(errMsg=None):
+  if errMsg is None:
+    stderrErrorMsg(Msg.API_ACCESS_DENIED)
+    missingScopes = API.getClientScopesSet(GM.Globals[GM.CURRENT_CLIENT_API])-GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
+    if missingScopes:
+      writeStderr(Msg.API_CHECK_CLIENT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2_CLIENT_ID],
+                                                            ','.join(sorted(missingScopes))))
+    systemErrorExit(API_ACCESS_DENIED_RC, None)
+  else:
+    stderrErrorMsg(errMsg)
+    systemErrorExit(API_ACCESS_DENIED_RC, Msg.REAUTHENTICATION_IS_NEEDED)
+
+
+def SvcAcctAPIAccessDenied():
+  _getSvcAcctData()
+  if (GM.Globals[GM.CURRENT_SVCACCT_API] == API.GMAIL and
+      GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES] and
+      GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES][0] == API.GMAIL_SEND_SCOPE):
+    systemErrorExit(OAUTH2SERVICE_JSON_REQUIRED_RC, Msg.NO_SVCACCT_ACCESS_ALLOWED)
+  stderrErrorMsg(Msg.API_ACCESS_DENIED)
+  apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
+  writeStderr(Msg.API_CHECK_SVCACCT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id'],
+                                                         apiOrScopes,
+                                                         GM.Globals[GM.CURRENT_SVCACCT_USER] or _getAdminEmail()))
+
+def SvcAcctAPIAccessDeniedExit():
+  SvcAcctAPIAccessDenied()
+  systemErrorExit(API_ACCESS_DENIED_RC, None)
+
+
+def SvcAcctAPIDisabledExit():
+  if not GM.Globals[GM.CURRENT_SVCACCT_USER] and GM.Globals[GM.CURRENT_CLIENT_API]:
+    ClientAPIAccessDeniedExit()
+  if GM.Globals[GM.CURRENT_SVCACCT_API]:
+    stderrErrorMsg(Msg.SERVICE_ACCOUNT_API_DISABLED.format(API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API])))
+    systemErrorExit(API_ACCESS_DENIED_RC, None)
+  systemErrorExit(API_ACCESS_DENIED_RC, Msg.API_ACCESS_DENIED)
+
+
+def APIAccessDeniedExit():
+  if not GM.Globals[GM.CURRENT_SVCACCT_USER] and GM.Globals[GM.CURRENT_CLIENT_API]:
+    ClientAPIAccessDeniedExit()
+  if GM.Globals[GM.CURRENT_SVCACCT_API]:
+    SvcAcctAPIAccessDeniedExit()
+  systemErrorExit(API_ACCESS_DENIED_RC, Msg.API_ACCESS_DENIED)
+
+
+# Late import: uid.py imports callGAPI/buildGAPIObject from this module,
+# so we import from uid after those are defined to avoid circular ImportError.
+from util.uid import getSaUser  # noqa: E402

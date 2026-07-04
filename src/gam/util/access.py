@@ -15,7 +15,7 @@ from gamlib import glglobals as GM
 from gamlib import glindent
 from gamlib import glmsgs as Msg
 from gam.constants import API_ACCESS_DENIED_RC, INVALID_DOMAIN_RC
-from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, callGAPI
+from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, callGAPI, APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, SvcAcctAPIDisabledExit
 from util.args import getEmailAddressDomain, getPhraseDNEorSNA
 from util.display import ENTITY_DOES_NOT_EXIST_RC, ENTITY_DUPLICATE_RC, entityActionFailedWarning, entityDoesNotExistWarning, entityServiceNotApplicableWarning
 from util.errors import OAUTH2SERVICE_JSON_REQUIRED_RC
@@ -71,48 +71,6 @@ def accessErrorExitNonDirectory(api, errMsg):
                                                                 Ent.DOMAIN, GC.Values[GC.DOMAIN],
                                                                 Ent.API, api])+[errMsg],
                                      ''))
-
-def ClientAPIAccessDeniedExit(errMsg=None):
-  if errMsg is None:
-    stderrErrorMsg(Msg.API_ACCESS_DENIED)
-    missingScopes = API.getClientScopesSet(GM.Globals[GM.CURRENT_CLIENT_API])-GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-    if missingScopes:
-      writeStderr(Msg.API_CHECK_CLIENT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2_CLIENT_ID],
-                                                            ','.join(sorted(missingScopes))))
-    systemErrorExit(API_ACCESS_DENIED_RC, None)
-  else:
-    stderrErrorMsg(errMsg)
-    systemErrorExit(API_ACCESS_DENIED_RC, Msg.REAUTHENTICATION_IS_NEEDED)
-
-def SvcAcctAPIAccessDenied():
-  _getSvcAcctData()
-  if (GM.Globals[GM.CURRENT_SVCACCT_API] == API.GMAIL and
-      GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES] and
-      GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES][0] == API.GMAIL_SEND_SCOPE):
-    systemErrorExit(OAUTH2SERVICE_JSON_REQUIRED_RC, Msg.NO_SVCACCT_ACCESS_ALLOWED)
-  stderrErrorMsg(Msg.API_ACCESS_DENIED)
-  apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
-  writeStderr(Msg.API_CHECK_SVCACCT_AUTHORIZATION.format(GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id'],
-                                                         apiOrScopes,
-                                                         GM.Globals[GM.CURRENT_SVCACCT_USER] or _getAdminEmail()))
-def SvcAcctAPIAccessDeniedExit():
-  SvcAcctAPIAccessDenied()
-  systemErrorExit(API_ACCESS_DENIED_RC, None)
-
-def SvcAcctAPIDisabledExit():
-  if not GM.Globals[GM.CURRENT_SVCACCT_USER] and GM.Globals[GM.CURRENT_CLIENT_API]:
-    ClientAPIAccessDeniedExit()
-  if GM.Globals[GM.CURRENT_SVCACCT_API]:
-    stderrErrorMsg(Msg.SERVICE_ACCOUNT_API_DISABLED.format(API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API])))
-    systemErrorExit(API_ACCESS_DENIED_RC, None)
-  systemErrorExit(API_ACCESS_DENIED_RC, Msg.API_ACCESS_DENIED)
-
-def APIAccessDeniedExit():
-  if not GM.Globals[GM.CURRENT_SVCACCT_USER] and GM.Globals[GM.CURRENT_CLIENT_API]:
-    ClientAPIAccessDeniedExit()
-  if GM.Globals[GM.CURRENT_SVCACCT_API]:
-    SvcAcctAPIAccessDeniedExit()
-  systemErrorExit(API_ACCESS_DENIED_RC, Msg.API_ACCESS_DENIED)
 
 def checkEntityDNEorAccessErrorExit(cd, entityType, entityName, i=0, count=0):
   message = accessErrorMessage(cd)

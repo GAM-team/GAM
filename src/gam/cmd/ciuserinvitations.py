@@ -230,7 +230,7 @@ def checkCIUserIsInvitable(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user = convertUIDtoEmailAddress(user)
+    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
     name = quotedCIUserInvitatonsEmail(customer, user)
     try:
       result = callGAPI(ci.customers().userinvitations(), 'isInvitableUser',

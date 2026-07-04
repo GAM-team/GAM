@@ -26,7 +26,8 @@ from gam.constants import (
     GOOGLE_TIMECHECK_LOCATION, MAX_LOCAL_GOOGLE_TIME_OFFSET, NETWORK_ERROR_RC,
     SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE,
 )
-from util.args import ISOformatTimeStamp, getArgument, getString, todaysTime
+from util.args import getArgument, getString, todaysTime
+from util.output import ISOformatTimeStamp
 from util.display import printBlankLine, printKeyValueList
 from util.errors import unknownArgumentExit
 from util.output import (

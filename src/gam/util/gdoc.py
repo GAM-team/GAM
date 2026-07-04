@@ -29,6 +29,7 @@ from util.display import ACTION_NOT_PERFORMED_RC, userDriveServiceNotEnabledWarn
 from util.errors import entityActionFailedExit, entityDoesNotExistExit
 from util.fileio import FILE_ERROR_RC, UTF8_SIG, fileErrorMessage, getGDocSheetDataFailedExit, getGDocSheetDataRetryWarning, openFile, setFilePath
 from util.output import stderrWarningMsg, systemErrorExit
+from util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
 
 
 
@@ -41,7 +42,6 @@ GDOC_FORMAT_MIME_TYPES = {
 
 # gdoc <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>
 def getGDocData(gformat):
-  from util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
   mimeType = GDOC_FORMAT_MIME_TYPES[gformat]
   user = getEmailAddress()
   fileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
@@ -103,7 +103,6 @@ HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
 
 # gsheet <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity> <SheetEntity>
 def getGSheetData():
-  from util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
   user = getEmailAddress()
   fileIdEntity = getDriveFileEntity(queryShortcutsOK=False)
   sheetEntity = getSheetEntity(False)
@@ -197,7 +196,6 @@ GCS_FORMAT_MIME_TYPES = {
 
 # gcscsv|gcshtml|gcsdoc <StorageBucketObjectName>
 def getStorageFileData(gcsformat, returnData=True):
-  from util.api import buildGAPIObject, callGAPI
   mimeType = GCS_FORMAT_MIME_TYPES[gcsformat]
   bucket, s_object, bucketObject = getBucketObjectName()
   s = buildGAPIObject(API.STORAGEREAD)

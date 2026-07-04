@@ -202,3 +202,12 @@ def showAPICallsRetryData():
       writeStderr(formatKeyValueList(Ind.Spaces(), [k, f'{v[0]}/{h}:{m:02d}:{s:02d}'], '\n'))
     Ind.Decrement()
 
+# Timestamp functions (moved from args.py to break fileio↔args cycle)
+def ISOformatTimeStamp(timestamp):
+  return timestamp.isoformat('T', 'seconds')
+
+
+def currentISOformatTimeStamp(timespec='milliseconds'):
+  return arrow.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
+
+
