@@ -15,14 +15,10 @@ from gamlib import gluprop as UProp
 import base64
 import time
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
 from gam.util.access import accessErrorExit, duplicateAliasGroupUserWarning, entityUnknownWarning
@@ -96,17 +92,21 @@ from gam.util.tags import (
     sendCreateUpdateUserNotification,
 )
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
+from gam.var import Act, Cmd, Ent, Ind
 
 from secrets import SystemRandom
 from passlib.hash import sha512_crypt
 UTF8 = 'utf-8'
 UNKNOWN = 'Unknown'
 
+
+def hashPassword(password):
+  """Hash a password using SHA-512 crypt for Google's API.
+
+  Returns a tuple of (hashed_password, hash_function_name).
+  The hash_function_name is always 'crypt' for Google's Directory API.
+  """
+  return (sha512_crypt.hash(password, rounds=10000), 'crypt')
 
 def _getGroupOrgUnitMap():
 
@@ -255,8 +255,7 @@ class PasswordOptions():
     if not self.notifyPasswordSet:
       notify[up] = body[up] if self.clearPassword else Msg.CONTACT_ADMINISTRATOR_FOR_PASSWORD
     if self.hashPassword:
-      body[up] = sha512_crypt.hash(body[up], rounds=10000)
-      body['hashFunction'] = 'crypt'
+      body[up], body['hashFunction'] = hashPassword(body[up])
     elif self.b64DecryptPassword:
       if body[up].lower()[:5] in ['{md5}', '{sha}']:
         body[up] = body[up][5:]
