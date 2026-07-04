@@ -5,13 +5,11 @@ Part of the _chat_tmp sub-package."""
 """GAM Google Chat management."""
 
 import json
-import sys
 import uuid
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages

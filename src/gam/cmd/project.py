@@ -5,7 +5,6 @@ key operations, and API enablement.
 """
 
 import base64
-import datetime
 import json
 import os
 import re
@@ -289,7 +288,7 @@ def _createClientSecretsOauth2service(httpObj, login_hint, appInfo, projectInfo,
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
       sys.stderr.write(f'{str(e)}: {content}')
       return False
-    if not 'error' in content or not 'error_description' in content:
+    if 'error' not in content or 'error_description' not in content:
       sys.stderr.write(f'Unknown error: {content}\n')
       return False
     if content['error'] == 'invalid_grant':

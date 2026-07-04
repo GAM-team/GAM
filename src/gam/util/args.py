@@ -72,12 +72,9 @@ __all__ = [
   'validateREPattern', 'validateREPatternSubstitution',
 ]
 
-import calendar
-import datetime
 import json
 import re
 import shlex
-import sys
 
 import arrow
 
@@ -831,7 +828,7 @@ def getNumberRangeList():
 
 SORTORDER_CHOICE_MAP = {'ascending': 'ASCENDING', 'descending': 'DESCENDING'}
 
-class OrderBy():
+class OrderBy:
   def __init__(self, choiceMap, ascendingKeyword='', descendingKeyword='desc'):
     self.choiceMap = choiceMap
     self.ascendingKeyword = ascendingKeyword
@@ -1293,7 +1290,7 @@ def mapQueryRelativeTimes(query, keywords):
       pos = mg.end()
   return query
 
-class StartEndTime():
+class StartEndTime:
   def __init__(self, startkw='starttime', endkw='endtime', mode='time'):
     self.startTime = self.endTime = self.startDateTime = self.endDateTime = None
     self._startkw = startkw

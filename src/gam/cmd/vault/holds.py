@@ -4,7 +4,6 @@ Part of the _vault_tmp sub-package."""
 
 """GAM Google Vault management."""
 
-import re
 import json
 
 from gam.cmd.vault.matters import _buildVaultQuery, _validateVaultQuery, convertHoldNameToID, convertMatterNameToID, convertQueryNameToID, formatVaultNameId, getMatterItem, warnMatterNotOpen
@@ -19,9 +18,7 @@ from gam.cmd.vault.matters import (
 import time
 
 from gamlib import api as API
-from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.constants import NO_ENTITIES_FOUND_RC, PROJECTION_CHOICE_MAP
 

@@ -4,7 +4,6 @@
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
-import re
 import json
 
 from gam.util.args import formatLocalTime
@@ -14,7 +13,6 @@ from gam.cmd.drive.filepaths import _finalizeIncludeLabels, _finalizeIncludePerm
 
 from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
 
-from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM

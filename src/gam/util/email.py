@@ -8,7 +8,6 @@ import mimetypes
 import os
 import smtplib
 import ssl
-import sys
 
 from email.mime.application import MIMEApplication
 from email.mime.audio import MIMEAudio

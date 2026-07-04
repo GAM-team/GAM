@@ -4,7 +4,6 @@ Part of the _gmail_monolith sub-package."""
 
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
-import re
 
 from gam.util.args import formatLocalTimestamp
 import base64
@@ -12,7 +11,6 @@ import base64
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIitems

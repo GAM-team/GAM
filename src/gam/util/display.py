@@ -5,7 +5,6 @@ and messages for user-facing output.  Depends only on gamlib modules and
 util.output.
 """
 
-import sys
 
 from gamlib import settings as GC
 from gamlib import state as GM

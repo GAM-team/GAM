@@ -9,15 +9,12 @@ import re
 from gam.cmd.drive.core import _getSharedDriveNameFromId, _mapDrive2QueryToDrive3, cleanFileIDsList, escapeDriveFileName, getEscapedDriveFileName, initDriveFileEntity
 from gam.cmd.drive.revisions import _stripMeInOwners, _stripNotMeInOwners, _updateAnyOwnerQuery
 
-from gamlib import api as API
-from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.entity import QUERY_SHORTCUTS_MAP
 from gam.constants import MY_DRIVE, TEAM_DRIVE
 
-from gam.var import Act, Cmd, Ent, Ind
+from gam.var import Cmd, Ent
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -65,7 +62,6 @@ from gam.util.args import (
     StartEndTime,
     checkArgumentPresent,
     checkGetArgument,
-    escapeCRsNLs,
     getArgument,
     getBoolean,
     getChoice,
@@ -258,7 +254,7 @@ DRIVEFILE_ACL_ROLES_MAP = {
 DRIVEFILE_ACL_PERMISSION_TYPES = ['anyone', 'domain', 'group', 'user'] # anyone must be first element
 DRIVEFILE_ACL_PERMISSION_DETAILS_TYPES = ['file', 'member']
 
-class PermissionMatch():
+class PermissionMatch:
   _PERMISSION_MATCH_ACTION_MAP = {'process': True, 'skip': False}
   _PERMISSION_MATCH_MODE_MAP = {'or': True, 'and': False}
 
@@ -505,7 +501,7 @@ def noFileSelectFileIdEntity(fileIdEntity):
 
 SHOW_OWNED_BY_CHOICE_MAP = {'any': None, 'me': True, 'others': False}
 
-class DriveListParameters():
+class DriveListParameters:
   def __init__(self, myargOptions):
     self.PM = PermissionMatch()
     self.myargOptions = myargOptions

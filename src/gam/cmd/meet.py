@@ -3,10 +3,7 @@
 import json
 
 from gamlib import api as API
-from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
-from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages

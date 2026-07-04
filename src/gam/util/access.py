@@ -4,7 +4,6 @@ Access-error diagnostics, API access denied handlers,
 and entity warning functions.
 """
 
-import sys
 
 from gamlib import action
 from gamlib import api as API
@@ -15,12 +14,11 @@ from gamlib import state as GM
 from gamlib import indent
 from gamlib import msgs as Msg
 from gam.constants import API_ACCESS_DENIED_RC, INVALID_DOMAIN_RC
-from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, SvcAcctAPIDisabledExit
+from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, SvcAcctAPIDisabledExit  # noqa: F401
 from util.api_call import callGAPI
 from util.args import getEmailAddressDomain, getPhraseDNEorSNA
 from util.display import ENTITY_DOES_NOT_EXIST_RC, ENTITY_DUPLICATE_RC, entityActionFailedWarning, entityDoesNotExistWarning, entityServiceNotApplicableWarning
-from util.errors import OAUTH2SERVICE_JSON_REQUIRED_RC
-from util.output import currentCountNL, formatKeyValueList, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr
+from util.output import currentCountNL, formatKeyValueList, setSysExitRC, systemErrorExit, writeStderr
 
 
 

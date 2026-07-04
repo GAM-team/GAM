@@ -34,7 +34,7 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 
-from gam.var import Act, Cmd, Ent, Ind
+from gam.var import Cmd, Ent, Ind
 
 from gamlib import skus as SKU
 from gamlib import uprop as UProp

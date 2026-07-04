@@ -143,7 +143,7 @@ def _gettingCourseEntityQuery(entityType, courseWorkStates):
     query = query[:-2]
   return query
 
-class CourseAttributes():
+class CourseAttributes:
 
   def __init__(self, croom, updateMode):
     self.croom = croom

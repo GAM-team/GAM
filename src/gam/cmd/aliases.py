@@ -6,7 +6,6 @@ import time
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
@@ -45,7 +44,6 @@ from gam.util.entity import (
     getEntityArgument,
     getEntityList,
     getEntityToModify,
-    getQueries,
 )
 from gam.util.errors import entityActionFailedExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitItem

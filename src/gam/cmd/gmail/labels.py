@@ -9,7 +9,6 @@ import re
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
 from gamlib import api as API
-from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
@@ -769,7 +768,7 @@ def _convertLabelNamesToIds(gmail, user, i, count, bodyLabels, labelNameMap, add
       # make sure to create parent labels for proper nesting
       parent_label = label[:label.rfind('/')]
       while True:
-        if (not parent_label in labelNameMap) and (not parent_label.upper() in labelNameMap):
+        if (parent_label not in labelNameMap) and (parent_label.upper() not in labelNameMap):
           result = callGAPI(gmail.users().labels(), 'create',
                             userId='me', body={'name': parent_label}, fields='id')
           labelNameMap[parent_label] = labelNameMap[parent_label.upper()] = result['id']
