@@ -799,6 +799,7 @@ def _fixupTodriveAndConfig(status, sectionName, inputFilterSectionName, outputFi
           break
         itemEntry = GC.VAR_INFO[itemName]
         checkArgumentPresent('=')
+        varType = itemEntry[GC.VAR_TYPE]
         match varType:
           case GC.TYPE_BOOLEAN:
             value = TRUE if getBoolean(None) else FALSE
