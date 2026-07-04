@@ -39,6 +39,26 @@ from gam.constants import GAM
 from gam.var import Cmd, Ind
 
 
+def executeBatch(dbatch):
+  dbatch.execute()
+  if GC.Values[GC.INTER_BATCH_WAIT] > 0:
+    time.sleep(GC.Values[GC.INTER_BATCH_WAIT])
+
+# Batch processing request_id fields
+RI_ENTITY = 0
+RI_I = 1
+RI_COUNT = 2
+RI_J = 3
+RI_JCOUNT = 4
+RI_ITEM = 5
+RI_ROLE = 6
+RI_OPTION = 7
+
+def batchRequestID(entityName, i, count, j, jcount, item, role=None, option=None):
+  if role is None and option is None:
+    return f'{entityName}\n{i}\n{count}\n{j}\n{jcount}\n{item}'
+  return f'{entityName}\n{i}\n{count}\n{j}\n{jcount}\n{item}\n{role}\n{option}'
+
 
 
 class NullHandler(logging.Handler):

@@ -7,7 +7,6 @@ Part of the _cigroups_tmp sub-package."""
 import re
 import json
 
-from gam.util.args import formatLocalTime
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -95,7 +94,7 @@ from gam.util.errors import (
 )
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import _getOrgunitsOrgUnitIdPath
-from gam.util.output import systemErrorExit, writeStdout
+from gam.util.output import systemErrorExit, writeStdout, formatLocalTime
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
 
 UNKNOWN = 'Unknown'

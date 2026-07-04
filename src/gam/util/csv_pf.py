@@ -23,13 +23,13 @@ from tempfile import TemporaryFile
 from util.api import _getAdminEmail, buildGAPIObject
 from util.svcacct import buildGAPIServiceObject, chooseSaAPI
 from util.api_call import callGAPI, callGAPIpages
-from util.args import LOCALE_CODES_MAP, NEVER_TIME, TRUE_FALSE, UTF8, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN, escapeCRsNLs, formatLocalTime, formatLocalTimestamp, getArgument, getBoolean, getCharacter, getChoice, getInteger, getLanguageCode, getSheetEntity, getSheetIdFromSheetEntity, getString, normalizeEmailAddressOrUID, protectedSheetId, todaysTime
+from util.args import LOCALE_CODES_MAP, NEVER_TIME, TRUE_FALSE, UTF8, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN, escapeCRsNLs, getArgument, getBoolean, getCharacter, getChoice, getInteger, getLanguageCode, getSheetEntity, getSheetIdFromSheetEntity, getString, normalizeEmailAddressOrUID, protectedSheetId, todaysTime
 from util.display import ACTION_FAILED_RC, entityActionFailedWarning, entityActionPerformed, printBlankLine, printJSONKey, printJSONValue, printKeyValueList, userDriveServiceNotEnabledWarning
 from util.email import send_email
 from util.entity import MIMETYPE_GA_FOLDER, MIMETYPE_GA_SPREADSHEET, checkUserExists, getEntityArgument
 from util.errors import USAGE_ERROR_RC, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from util.fileio import FILE_ERROR_RC, StringIOobject, closeFile, fdErrorMessage, openFile
-from util.output import ISOformatTimeStamp, WARNING, currentCountNL, formatKeyValueList, printWarningMessage, setSysExitRC, stderrErrorMsg, stderrWarningMsg, systemErrorExit, writeStdout
+from util.output import ISOformatTimeStamp, WARNING, currentCountNL, formatKeyValueList, formatLocalTime, formatLocalTimestamp, printWarningMessage, setSysExitRC, stderrErrorMsg, stderrWarningMsg, systemErrorExit, writeStdout
 from gam.var import Act, Cmd, Ent, Ind
 
 
@@ -1975,18 +1975,3 @@ class FormatJSONQuoteChar:
     if noExit:
       return False
     unknownArgumentExit()
-
-# Batch processing request_id fields
-RI_ENTITY = 0
-RI_I = 1
-RI_COUNT = 2
-RI_J = 3
-RI_JCOUNT = 4
-RI_ITEM = 5
-RI_ROLE = 6
-RI_OPTION = 7
-
-def batchRequestID(entityName, i, count, j, jcount, item, role=None, option=None):
-  if role is None and option is None:
-    return f'{entityName}\n{i}\n{count}\n{j}\n{jcount}\n{item}'
-  return f'{entityName}\n{i}\n{count}\n{j}\n{jcount}\n{item}\n{role}\n{option}'

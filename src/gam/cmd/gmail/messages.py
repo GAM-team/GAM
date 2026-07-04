@@ -6,12 +6,12 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 
-from gam.util.args import formatLocalTimestamp
+
 
 import googleapiclient.errors
 import googleapiclient.http
 
-from gam.util.csv_pf import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
 from gam.cmd.gmail.labels import _getUserGmailLabels, _initLabelNameMap, _convertLabelNamesToIds, MESSAGES_MAX_TO_KEYWORDS
 import io
 import base64
@@ -46,7 +46,8 @@ from gam.util.args import (
     getTimeOrDeltaFromNow,
     splitEmailAddress,
 )
-from gam.util.csv_pf import CSVPrintFile, batchRequestID, flattenJSON
+from gam.util.batch import batchRequestID
+from gam.util.csv_pf import CSVPrintFile, flattenJSON
 from gam.util.display import (
     entityActionFailedWarning,
     entityActionNotPerformedWarning,
@@ -83,7 +84,8 @@ from gam.util.fileio import (
     uniqueFilename,
     writeFileReturnError,
 )
-from gam.util.output import executeBatch, setSysExitRC, stderrWarningMsg
+from gam.util.batch import executeBatch
+from gam.util.output import setSysExitRC, stderrWarningMsg, formatLocalTime, formatLocalTimestamp
 from gam.constants import IS08601_TIME_FORMAT, NO_ENTITIES_FOUND_RC, RFC2822_TIME_FORMAT
 from gam.util.tags import (
     _getTagReplacement,

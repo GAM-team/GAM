@@ -8,41 +8,41 @@ class TestCourseScopes:
     """Test course ID and alias scope manipulation."""
 
     def test_add_course_id_scope_plain(self):
-        from gam.util.args import addCourseIdScope
+        from gam.util.entity import addCourseIdScope
         assert addCourseIdScope('12345') == '12345'  # numeric, no prefix
 
     def test_add_course_id_scope_name(self):
-        from gam.util.args import addCourseIdScope
+        from gam.util.entity import addCourseIdScope
         assert addCourseIdScope('my-course') == 'd:my-course'
 
     def test_add_course_id_scope_already_prefixed(self):
-        from gam.util.args import addCourseIdScope
+        from gam.util.entity import addCourseIdScope
         assert addCourseIdScope('d:my-course') == 'd:my-course'
         assert addCourseIdScope('p:my-course') == 'p:my-course'
 
     def test_remove_course_id_scope(self):
-        from gam.util.args import removeCourseIdScope
+        from gam.util.entity import removeCourseIdScope
         assert removeCourseIdScope('d:my-course') == 'my-course'
 
     def test_remove_course_id_scope_no_prefix(self):
-        from gam.util.args import removeCourseIdScope
+        from gam.util.entity import removeCourseIdScope
         assert removeCourseIdScope('12345') == '12345'
 
     def test_add_course_alias_scope(self):
-        from gam.util.args import addCourseAliasScope
+        from gam.util.entity import addCourseAliasScope
         assert addCourseAliasScope('my-alias') == 'd:my-alias'
 
     def test_add_course_alias_scope_already_prefixed(self):
-        from gam.util.args import addCourseAliasScope
+        from gam.util.entity import addCourseAliasScope
         assert addCourseAliasScope('d:my-alias') == 'd:my-alias'
         assert addCourseAliasScope('p:my-alias') == 'p:my-alias'
 
     def test_remove_course_alias_scope(self):
-        from gam.util.args import removeCourseAliasScope
+        from gam.util.entity import removeCourseAliasScope
         assert removeCourseAliasScope('d:my-alias') == 'my-alias'
 
     def test_remove_course_alias_scope_no_prefix(self):
-        from gam.util.args import removeCourseAliasScope
+        from gam.util.entity import removeCourseAliasScope
         assert removeCourseAliasScope('my-alias') == 'my-alias'
 
 
@@ -103,7 +103,7 @@ class TestFormatting:
     """Test formatting helper functions."""
 
     def test_format_milliseconds(self):
-        from gam.util.args import formatMilliSeconds
+        from gam.util.output import formatMilliSeconds
         assert formatMilliSeconds(0) == '00:00:00'
         assert formatMilliSeconds(1000) == '00:00:01'
         assert formatMilliSeconds(61000) == '00:01:01'
@@ -115,23 +115,23 @@ class TestFormatting:
         assert result == '404: Not Found - Resource missing'
 
     def test_format_max_message_bytes_raw(self):
-        from gam.util.args import formatMaxMessageBytes
+        from gam.util.output import formatMaxMessageBytes
         assert formatMaxMessageBytes(500, 1024, 1048576) == 500
 
     def test_format_max_message_bytes_kilobytes(self):
-        from gam.util.args import formatMaxMessageBytes
+        from gam.util.output import formatMaxMessageBytes
         assert formatMaxMessageBytes(2048, 1024, 1048576) == '2K'
 
     def test_format_max_message_bytes_megabytes(self):
-        from gam.util.args import formatMaxMessageBytes
+        from gam.util.output import formatMaxMessageBytes
         assert formatMaxMessageBytes(5242880, 1024, 1048576) == '5M'
 
     def test_format_file_size_zero(self):
-        from gam.util.args import formatFileSize
+        from gam.util.output import formatFileSize
         assert formatFileSize(0) == '0 KB'
 
     def test_format_file_size_small(self):
-        from gam.util.args import formatFileSize
+        from gam.util.output import formatFileSize
         assert formatFileSize(500) == '1 KB'
 
 

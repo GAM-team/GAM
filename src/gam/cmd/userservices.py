@@ -2,7 +2,7 @@
 
 import json
 
-from gam.util.args import formatLocalTimestamp
+
 
 from gam.cmd.calendar import (
     CALENDAR_ACL_ROLES_MAP,
@@ -33,7 +33,6 @@ from gam.util.args import (
     YYYYMMDD_FORMAT,
     checkArgumentPresent,
     checkForExtraneousArguments,
-    formatLocalTime,
     getArgument,
     getBoolean,
     getCalendarReminder,
@@ -49,7 +48,7 @@ from gam.util.args import (
     normalizeEmailAddressOrUID,
     splitEmailAddress,
 )
-from gam.util.output import ISOformatTimeStamp
+from gam.util.output import ISOformatTimeStamp, formatLocalTime, formatLocalTimestamp
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
@@ -2176,15 +2175,3 @@ def printShowYouTubeChannel(users):
       csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
     csvPF.writeCSVfile('YouTube Channels')
-
-CORPORA_ALL_DRIVES = 'allDrives'
-CORPORA_CHOICE_MAP = {
-  'alldrives': CORPORA_ALL_DRIVES,
-  'allshareddrives': CORPORA_ALL_DRIVES,
-  'allteamdrives': CORPORA_ALL_DRIVES,
-  'domain': 'domain',
-  'onlyshareddrives': CORPORA_ALL_DRIVES,
-  'onlyteamdrives': CORPORA_ALL_DRIVES,
-  'user': 'user',
-  }
-

@@ -13,9 +13,7 @@ from gam.util.api_call import callGAPI
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     YYYYMMDD_FORMAT,
-    formatLocalTime,
-    formatLocalTimestamp,
-    formatLocalTimestampUTC,
+    checkForExtraneousArguments,
     getArgument,
     getEmailAddress,
     getLanguageCode,
@@ -32,10 +30,11 @@ from gam.util.display import (
 )
 from gam.util.errors import unknownArgumentExit
 from gam.util.fileio import UNKNOWN
-from gam.util.output import printWarningMessage, writeStdout
+from gam.util.output import printWarningMessage, writeStdout, formatLocalTime, formatLocalTimestamp, formatLocalTimestampUTC
 from gam.util.entity import (
     _getCustomerId,
     _getDomainList,
+    setTrueCustomerId,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC
 from gam.cmd.domains import CUSTOMER_LICENSE_MAP
@@ -291,3 +290,8 @@ def doPrintShowDomains():
     csvPF.writeCSVfile('Domains')
 
 
+# gam info customerid
+def doInfoCustomerId():
+  checkForExtraneousArguments()
+  setTrueCustomerId(cd=None, forceUpdate=True)
+  writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')

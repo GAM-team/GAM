@@ -46,6 +46,7 @@ SHARED_DRIVES = 'SharedDrives'
 
 from gam.cmd.drive.core import (
     MimeTypeCheck,
+    CORPORA_CHOICE_MAP,
     DRIVE_BY_NAME_CHOICE_MAP,
     LOCATION_ALL_DRIVES,
     LOCATION_CHOICE_MAP,

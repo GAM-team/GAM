@@ -40,17 +40,17 @@ from gamlib import settings as GC
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gamlib import yubikey
-from gam.var import Ent, Ind
+from gam.var import Ent
 from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
 from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT
-from util.display import SERVICE_NOT_APPLICABLE_RC, entityActionFailedWarning, printBlankLine, printKeyValueList, userServiceNotEnabledWarning
+from util.display import SERVICE_NOT_APPLICABLE_RC, entityActionFailedWarning, printBlankLine, userServiceNotEnabledWarning
 from util.errors import INVALID_JSON_RC, OAUTH2SERVICE_JSON_REQUIRED_RC, OAUTH2_TXT_REQUIRED_RC, expiredRevokedOauth2TxtExit, invalidDiscoveryJsonExit, invalidOauth2TxtExit, invalidOauth2serviceJsonExit
 from util.fileio import FILE_ERROR_RC, UNKNOWN, incrAPICallsRetryData, readFile, writeFile
-from util.output import flushStderr, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+from util.output import flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
 
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
-from gam.constants import GAM_LATEST_RELEASE, GAM_USER_AGENT, __author__, __version__
+from gam.constants import GAM_USER_AGENT, __author__, __version__
 
 
 # Constants only used in this module
@@ -149,39 +149,6 @@ def transportCreateRequest(httpObj=None):
   if not httpObj:
     httpObj = getHttpObj()
   return transportAgentRequest(httpObj)
-
-def doGAMCheckForUpdates(forceCheck):
-  def _gamLatestVersionNotAvailable():
-    if forceCheck:
-      systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
-
-  try:
-    _, c = getHttpObj(timeout=10).request(GAM_LATEST_RELEASE, 'GET', headers={'Accept': 'application/vnd.github.v3.text+json'})
-    try:
-      release_data = json.loads(c)
-    except (IndexError, KeyError, SyntaxError, TypeError, ValueError):
-      _gamLatestVersionNotAvailable()
-      return
-    if not isinstance(release_data, dict) or 'tag_name' not in release_data:
-      _gamLatestVersionNotAvailable()
-      return
-    current_version = __version__
-    latest_version = release_data['tag_name']
-    if latest_version[0].lower() == 'v':
-      latest_version = latest_version[1:]
-      printKeyValueList(['Version Check', None])
-      Ind.Increment()
-      printKeyValueList(['Current', current_version])
-      printKeyValueList([' Latest', latest_version])
-      Ind.Decrement()
-    if forceCheck < 0:
-      setSysExitRC(1 if latest_version > current_version else 0)
-      return
-  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
-          google.auth.exceptions.TransportError,
-          RuntimeError, ConnectionError, OSError) as e:
-    if forceCheck:
-      handleServerError(e)
 
 def get_adc_request():
   request = google.auth.transport.requests.Request()

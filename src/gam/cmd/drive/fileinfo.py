@@ -67,8 +67,6 @@ from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages, yieldGAPIpages
 from gam.util.args import (
     OrderBy,
-    formatFileSize,
-    formatLocalSecondsTimestamp,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -97,7 +95,7 @@ from gam.util.entity import (
     getEntityArgument,
 )
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit
-from gam.util.output import writeStdout
+from gam.util.output import writeStdout, formatFileSize, formatLocalSecondsTimestamp
 from gam.cmd.groups.members import finalizeInternalDomains
 
 SHARED_DRIVE_MAX_FILES_FOLDERS = 500000

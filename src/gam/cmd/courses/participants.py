@@ -7,7 +7,7 @@ Part of the _courses_tmp sub-package."""
 import re
 import json
 
-from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -18,8 +18,6 @@ from gam.util.api import buildGAPIObject, waitOnFailure
 from gam.util.api_call import callGAPI, checkGAPIError
 from gam.util.args import (
     SORF_TEXT_ARGUMENTS,
-    addCourseAliasScope,
-    addCourseIdScope,
     checkArgumentPresent,
     checkForExtraneousArguments,
     getArgument,
@@ -32,14 +30,14 @@ from gam.util.args import (
     getStringReturnInList,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
-    removeCourseAliasScope,
-    removeCourseIdScope,
 )
-from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, batchRequestID, flattenJSON
+from gam.util.batch import batchRequestID
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, flattenJSON
 from gam.util.display import entityActionFailedWarning, entityActionPerformed, entityActionPerformedMessage, entityPerformActionNumItems
-from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify
+from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify, addCourseIdScope, removeCourseIdScope, addCourseAliasScope, removeCourseAliasScope
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
-from gam.util.output import executeBatch, writeStdout
+from gam.util.batch import executeBatch
+from gam.util.output import writeStdout
 from gam.constants import OWNER_ACCESS_OPTIONS
 from gam.cmd.groups.groups import getSyncOperation
 from gam.var import Act, Cmd, Ent, Ind

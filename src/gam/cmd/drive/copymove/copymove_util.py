@@ -21,7 +21,6 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     StartEndTime,
-    formatLocalTime,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -52,7 +51,7 @@ from gam.util.entity import (
 from gam.util.errors import deprecatedArgument, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN, closeFile
 from gam.util.gdoc import openCSVFileReader
-from gam.util.output import writeStdout
+from gam.util.output import writeStdout, formatLocalTime
 from gam.constants import ANY_NON_TRASHED_WITH_PARENTS, WITH_PARENTS
 
 from gam.var import Act, Cmd, Ent, Ind

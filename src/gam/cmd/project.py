@@ -47,7 +47,6 @@ from gam.util.args import (
     UTF8,
     checkArgumentPresent,
     checkForExtraneousArguments,
-    formatLocalTime,
     getArgument,
     getCharacter,
     getChoice,
@@ -92,6 +91,7 @@ from gam.util.output import (
     createRedText,
     createYellowText,
     currentCount,
+    formatLocalTime,
     readStdin,
     setSysExitRC,
     systemErrorExit,
@@ -608,11 +608,6 @@ def getCRMOrgId(forceSearch=False):
     return orgs[0].get('name')
   return GC.Values[GC.GCP_ORG_ID]
 
-# gam info customerid
-def doInfoCustomerId():
-  checkForExtraneousArguments()
-  setTrueCustomerId(cd=None, forceUpdate=True)
-  writeStdout(f'{GC.Values[GC.CUSTOMER_ID]}\n')
 
 # gam info gcporgid
 def doInfoGCPOrgId():

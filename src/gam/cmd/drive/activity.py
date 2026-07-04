@@ -6,7 +6,7 @@
 
 import json
 
-from gam.util.args import formatLocalTime
+from gam.util.output import formatFileSize, formatLocalTime
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -18,7 +18,6 @@ from gam.util.args import (
     StartEndTime,
     checkArgumentPresent,
     checkForExtraneousArguments,
-    formatFileSize,
     getArgument,
     getCharacter,
     getChoice,

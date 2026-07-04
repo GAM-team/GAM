@@ -24,7 +24,6 @@ from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     checkArgumentPresent,
-    formatLocalSecondsTimestamp,
     getBoolean,
     getChoice,
     getColor,
@@ -61,7 +60,7 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import FILE_ERROR_RC, fileErrorMessage, setFilePath
-from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit
+from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit, formatLocalSecondsTimestamp
 from gam.constants import ANY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME, NO_ENTITIES_FOUND_RC, TEAM_DRIVE
 
 from gam.var import Cmd, Ent
@@ -82,6 +81,16 @@ MIMETYPE_GA_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}shortcut'
 MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
 MIMETYPE_GA_SITE = f'{APPLICATION_VND_GOOGLE_APPS}site'
 MIMETYPE_GA_SPREADSHEET = f'{APPLICATION_VND_GOOGLE_APPS}spreadsheet'
+CORPORA_ALL_DRIVES = 'allDrives'
+CORPORA_CHOICE_MAP = {
+  'alldrives': CORPORA_ALL_DRIVES,
+  'allshareddrives': CORPORA_ALL_DRIVES,
+  'allteamdrives': CORPORA_ALL_DRIVES,
+  'domain': 'domain',
+  'onlyshareddrives': CORPORA_ALL_DRIVES,
+  'onlyteamdrives': CORPORA_ALL_DRIVES,
+  'user': 'user',
+  }
 ME_IN_OWNERS = "'me' in owners"
 ME_IN_OWNERS_AND = ME_IN_OWNERS + " and "
 NOT_ME_IN_OWNERS = "not " + ME_IN_OWNERS

@@ -1,5 +1,6 @@
 """Network diagnostics, version display, and usage functions."""
 
+import json
 import os
 import platform
 import socket
@@ -8,6 +9,7 @@ import struct
 import sys
 
 import arrow
+import google.auth.exceptions
 import httplib2
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -21,7 +23,7 @@ from gamlib import msgs as Msg
 from gamlib import verlibs
 
 from gam.constants import (
-    FN_GAMCOMMANDS_TXT, GAM, GAM_URL, GAM_WIKI,
+    FN_GAMCOMMANDS_TXT, GAM, GAM_LATEST_RELEASE, GAM_URL, GAM_WIKI,
     GOOGLE_TIMECHECK_LOCATION, MAX_LOCAL_GOOGLE_TIME_OFFSET, NETWORK_ERROR_RC,
     SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE,
 )
@@ -31,11 +33,11 @@ from util.display import printBlankLine, printKeyValueList
 from util.errors import unknownArgumentExit
 from util.output import (
     createGreenText, createRedText, createYellowText,
-    flushStdout, stderrWarningMsg, systemErrorExit, writeStdout,
+    flushStdout, setSysExitRC, stderrWarningMsg, systemErrorExit, writeStdout,
 )
-from util.api import doGAMCheckForUpdates, getHttpObj, getService, handleServerError, waitOnFailure
+from util.api import getHttpObj, getService, handleServerError, waitOnFailure
 from gam.constants import GAM_USER_AGENT, __author__, __version__
-from gam.var import Cmd, Ent
+from gam.var import Cmd, Ent, Ind
 
 # gam.__init__ attributes that can't be imported at module level
 # (connection.py is imported BY __init__.py during init)
@@ -280,6 +282,39 @@ def doComment():
   writeStdout(Cmd.QuotedArgumentList(Cmd.Remaining())+'\n')
 
 # gam version [check|checkrc|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
+def doGAMCheckForUpdates(forceCheck):
+  def _gamLatestVersionNotAvailable():
+    if forceCheck:
+      systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
+
+  try:
+    _, c = getHttpObj(timeout=10).request(GAM_LATEST_RELEASE, 'GET', headers={'Accept': 'application/vnd.github.v3.text+json'})
+    try:
+      release_data = json.loads(c)
+    except (IndexError, KeyError, SyntaxError, TypeError, ValueError):
+      _gamLatestVersionNotAvailable()
+      return
+    if not isinstance(release_data, dict) or 'tag_name' not in release_data:
+      _gamLatestVersionNotAvailable()
+      return
+    current_version = __version__
+    latest_version = release_data['tag_name']
+    if latest_version[0].lower() == 'v':
+      latest_version = latest_version[1:]
+      printKeyValueList(['Version Check', None])
+      Ind.Increment()
+      printKeyValueList(['Current', current_version])
+      printKeyValueList([' Latest', latest_version])
+      Ind.Decrement()
+    if forceCheck < 0:
+      setSysExitRC(1 if latest_version > current_version else 0)
+      return
+  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
+          google.auth.exceptions.TransportError,
+          RuntimeError, ConnectionError, OSError) as e:
+    if forceCheck:
+      handleServerError(e)
+
 def doVersion(checkForArgs=True):
   forceCheck = 0
   extended = noOffsetError = timeOffset = simple = False

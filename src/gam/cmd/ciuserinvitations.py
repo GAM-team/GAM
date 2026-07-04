@@ -243,30 +243,7 @@ def checkCIUserIsInvitable(users):
       return
   csvPF.writeCSVfile('Invitable Users')
 
-INBOUNDSSO_INPUT_MODE_CHOICE_MAP = {
-  'saml': 'saml',
-  'samlsso': 'saml',
-  'oidc': 'oidc',
-  'oidcsso': 'oidc',
-}
 
-INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP = {
-  'all': 'all',
-  'saml': 'saml',
-  'samlsso': 'saml',
-  'oidc': 'oidc',
-  'oidcsso': 'oidc',
-}
 
-INBOUNDSSO_ALL_SAML = {'all', 'saml'}
-INBOUNDSSO_ALL_OIDC = {'all', 'oidc'}
 
-INBOUNDSSO_MODE_CHOICE_MAP = {
-  'ssooff': 'SSO_OFF',
-  'saml': 'SAML_SSO',
-  'samlsso': 'SAML_SSO',
-  'oidc': 'OIDC_SSO',
-  'oidcsso': 'OIDC_SSO',
-  'domainwidesamlifenabled': 'DOMAIN_WIDE_SAML_IF_ENABLED'
-  }
 

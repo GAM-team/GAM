@@ -2,7 +2,6 @@
 
 import json
 
-from gam.util.csv_pf import RI_I, RI_J, RI_JCOUNT, RI_ITEM
 import time
 
 from gamlib import api as API
@@ -36,11 +35,11 @@ from gam.util.args import (
     normalizeEmailAddressOrUID,
     orgUnitPathQuery,
 )
+from gam.util.batch import batchRequestID, executeBatch, RI_I, RI_J, RI_JCOUNT, RI_ITEM
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
     _getFieldsList,
-    batchRequestID,
     cleanJSON,
     flattenJSON,
     getFieldsFromFieldsList,
@@ -76,7 +75,6 @@ from gam.util.errors import (
 from gam.util.fileio import DEFAULT_FILE_WRITE_MODE, closeFile, openFile, setFilePath
 from gam.util.orgunits import getOrgUnitId, getOrgUnitItem, getTopLevelOrgId
 from gam.util.output import (
-    executeBatch,
     setSysExitRC,
     systemErrorExit,
     writeStderr,

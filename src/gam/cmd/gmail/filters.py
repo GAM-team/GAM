@@ -41,7 +41,7 @@ from gam.util.display import (
 )
 from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUserObjectEntity
 from gam.util.errors import missingChoiceExit, unknownArgumentExit, usageErrorExit
-from gam.util.output import ERROR
+from gam.util.output import ERROR, formatMaxMessageBytes
 
 from gam.var import Act, Cmd, Ent, Ind
 

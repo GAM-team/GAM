@@ -22,7 +22,6 @@ from gam.util.args import (
     YYYYMMDD_FORMAT,
     YYYYMMDD_FORMAT_REQUIRED,
     escapeCRsNLs,
-    formatLocalTime,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -52,6 +51,7 @@ from gam.util.errors import invalidArgumentExit, invalidChoiceExit, unknownArgum
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import (
+    formatLocalTime,
     printErrorMessage,
     printWarningMessage,
     setSysExitRC,

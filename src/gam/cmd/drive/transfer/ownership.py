@@ -18,7 +18,6 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     OrderBy,
-    formatFileSize,
     getArgument,
     getBoolean,
     getCharacter,
@@ -54,7 +53,7 @@ from gam.util.entity import (
 )
 from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN
-from gam.util.output import formatKeyValueList, printWarningMessage, systemErrorExit
+from gam.util.output import formatKeyValueList, printWarningMessage, systemErrorExit, formatFileSize
 from gam.constants import MY_DRIVE, MY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME_WITH_PARENTS, NON_TRASHED, TARGET_DRIVE_SPACE_ERROR_RC, WITH_PARENTS
 from gam.util.tags import _substituteForUser
 

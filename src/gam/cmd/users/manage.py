@@ -28,7 +28,6 @@ from gam.util.args import (
     SORF_MSG_FILE_ARGUMENTS,
     checkArgumentPresent,
     checkForExtraneousArguments,
-    formatLocalTime,
     getArgument,
     getBoolean,
     getChoice,
@@ -83,7 +82,7 @@ from gam.util.errors import (
 from gam.util.fileio import closeFile, writeFile
 from gam.util.gdoc import openCSVFileReader
 from gam.util.orgunits import getOrgUnitItem
-from gam.util.output import readStdin, setSysExitRC, systemErrorExit, writeStderr
+from gam.util.output import readStdin, setSysExitRC, systemErrorExit, writeStderr, formatLocalTime
 from gam.constants import MULTIPLE_DELETED_USERS_FOUND_RC, NO_ENTITIES_FOUND_RC, PASSWORD_SAFE_CHARS, USER_SUSPENDED_RC
 from gam.constants import LICENSE_PRODUCT_SKUIDS
 from gam.util.tags import (

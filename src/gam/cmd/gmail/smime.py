@@ -5,7 +5,7 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 
-from gam.util.args import formatLocalTimestamp
+
 import base64
 
 from gamlib import api as API
@@ -32,7 +32,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import readFile, setFilePath
-from gam.util.output import setSysExitRC
+from gam.util.output import setSysExitRC, formatLocalTime, formatLocalTimestamp
 from gam.constants import NO_ENTITIES_FOUND_RC
 
 from gam.var import Act, Cmd, Ent, Ind

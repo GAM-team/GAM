@@ -2,7 +2,6 @@
 
 import json
 
-from gam.util.args import formatLocalTime
 
 from gamlib import api as API
 from gamlib import gapi as GAPI
@@ -10,6 +9,7 @@ from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import _getAdminEmail
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
+from gam.util.output import formatLocalTime
 from gam.util.args import (
     OrderBy,
     checkForExtraneousArguments,

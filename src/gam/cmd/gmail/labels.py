@@ -6,7 +6,7 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 
-from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
 from gamlib import api as API
 from gamlib import gapi as GAPI
@@ -28,7 +28,8 @@ from gam.util.args import (
     validateREPattern,
     validateREPatternSubstitution,
 )
-from gam.util.csv_pf import CSVPrintFile, batchRequestID, flattenJSON
+from gam.util.batch import batchRequestID
+from gam.util.csv_pf import CSVPrintFile, flattenJSON
 from gam.util.display import (
     entityActionFailedWarning,
     entityActionNotPerformedWarning,
@@ -45,7 +46,8 @@ from gam.util.display import (
 )
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
-from gam.util.output import executeBatch, setSysExitRC
+from gam.util.batch import executeBatch
+from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
 
 from gam.var import Act, Cmd, Ent, Ind

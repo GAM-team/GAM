@@ -11,7 +11,7 @@ from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import accessErrorExit
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIitems
-from gam.util.args import checkForExtraneousArguments, formatLocalTimestamp, getArgument, getString
+from gam.util.args import checkForExtraneousArguments, getArgument, getString
 from gam.util.csv_pf import (
     CSVPrintFile,
     DEFAULT_SKIP_OBJECTS,
@@ -29,7 +29,7 @@ from gam.util.display import (
     printLine,
 )
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
-from gam.util.output import writeStdout
+from gam.util.output import writeStdout, formatLocalTime, formatLocalTimestamp
 
 
 def doCreateDomainAlias():

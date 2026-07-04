@@ -18,7 +18,6 @@ from gam.util.api import buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
-    addCourseIdScope,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -32,8 +31,6 @@ from gam.util.args import (
     getStringReturnInList,
     getStringWithCRsNLs,
     getTimeOrDeltaFromNow,
-    removeCourseAliasScope,
-    removeCourseIdScope,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -63,7 +60,7 @@ from gam.util.display import (
     printKeyValueList,
     printLine,
 )
-from gam.util.entity import getEntityList
+from gam.util.entity import getEntityList, addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import currentCount, formatKeyValueList, writeStdout

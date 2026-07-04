@@ -2,9 +2,8 @@
 
 import json
 
-from gam.util.args import formatLocalTime
 
-from gam.util.csv_pf import RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import batchRequestID, executeBatch, RI_J, RI_JCOUNT, RI_ITEM
 import os
 import time
 
@@ -18,7 +17,7 @@ from gam.util.access import checkEntityAFDNEorAccessErrorExit
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import _finalizeGAPIpagesResult, _processGAPIpagesResult
 from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages, checkGAPIError
-from gam.util.output import ISOformatTimeStamp
+from gam.util.output import ISOformatTimeStamp, formatMilliSeconds
 from gam.util.args import (
         SORTORDER_CHOICE_MAP,
     StartEndTime,
@@ -27,7 +26,6 @@ from gam.util.args import (
     _getFilterDateTime,
     checkArgumentPresent,
     escapeCRsNLs,
-    formatLocalDatestamp,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -48,7 +46,6 @@ from gam.util.csv_pf import (
     FormatJSONQuoteChar,
     _getFieldsList,
     addFieldToFieldsList,
-    batchRequestID,
     cleanJSON,
     flattenJSON,
     getFieldsFromFieldsList,
@@ -97,7 +94,8 @@ from gam.util.errors import (
 from gam.util.fileio import setFilePath, writeFile
 from gam.util.orgunits import getOrgUnitId, getOrgUnitItem
 from gam.util.output import (
-    executeBatch,
+    formatLocalDatestamp,
+    formatLocalTime,
     stderrWarningMsg,
     systemErrorExit,
     writeStderr,

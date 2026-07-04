@@ -48,7 +48,6 @@ from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, g
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
-from gam.cmd.printers import CHROME_APPS_TIME_OBJECTS, CHROME_APPS_TYPE_CHOICES
 from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
 
 

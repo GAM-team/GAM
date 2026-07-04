@@ -39,13 +39,33 @@ from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageError
 from gam.util.fileio import readFile, setFilePath, writeFile
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import writeStderr, writeStdout
-from gam.cmd.ciuserinvitations import INBOUNDSSO_ALL_OIDC, INBOUNDSSO_ALL_SAML
 from gam.cmd.reseller import normalizeChannelCustomerID
-from gam.cmd.ciuserinvitations import INBOUNDSSO_INPUT_MODE_CHOICE_MAP
-from gam.cmd.ciuserinvitations import INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP
 from gam.cmd.project import _generatePrivateKeyAndPublicCert
-from gam.cmd.ciuserinvitations import INBOUNDSSO_MODE_CHOICE_MAP
 
+
+INBOUNDSSO_INPUT_MODE_CHOICE_MAP = {
+  'saml': 'saml',
+  'samlsso': 'saml',
+  'oidc': 'oidc',
+  'oidcsso': 'oidc',
+}
+INBOUNDSSO_OUTPUT_MODE_CHOICE_MAP = {
+  'all': 'all',
+  'saml': 'saml',
+  'samlsso': 'saml',
+  'oidc': 'oidc',
+  'oidcsso': 'oidc',
+}
+INBOUNDSSO_ALL_SAML = {'all', 'saml'}
+INBOUNDSSO_ALL_OIDC = {'all', 'oidc'}
+INBOUNDSSO_MODE_CHOICE_MAP = {
+  'ssooff': 'SSO_OFF',
+  'saml': 'SAML_SSO',
+  'samlsso': 'SAML_SSO',
+  'oidc': 'OIDC_SSO',
+  'oidcsso': 'OIDC_SSO',
+  'domainwidesamlifenabled': 'DOMAIN_WIDE_SAML_IF_ENABLED'
+  }
 
 def getCIOrgunitID(cd, orgunit):
   ou_id = getOrgUnitId(cd, orgunit)[1]
@@ -820,14 +840,5 @@ def doPrintShowInboundSSOAssignments():
   if csvPF:
     csvPF.writeCSVfile('Inbound SSO Assignments')
 
-SITEVERIFICATION_METHOD_CHOICE_MAP = {
-  'cname': 'DNS_CNAME',
-  'dnscname': 'DNS_CNAME',
-  'dnstxt': 'DNS_TXT',
-  'txt': 'DNS_TXT',
-  'text': 'DNS_TXT',
-  'file': 'FILE',
-  'site': 'FILE',
-  }
 
 # gam create verify|verification <DomainName>

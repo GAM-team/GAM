@@ -27,7 +27,6 @@ from gam.util.display import (
 )
 from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit
-from gam.cmd.reseller import ANALYTIC_ENTITY_MAP
 
 
 def printShowAnalyticItems(users, entityType):

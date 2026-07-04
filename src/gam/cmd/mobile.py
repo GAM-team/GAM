@@ -12,8 +12,6 @@ from gam.util.api_call import callGAPI, callGAPIpages, yieldGAPIpages
 from gam.util.args import (
     UTF8,
     checkArgumentPresent,
-    formatLocalTime,
-    formatLocalTimestamp,
     getArgument,
     getCharacter,
     getChoice,
@@ -50,7 +48,7 @@ from gam.util.display import (
 from gam.util.entity import _validateDeviceQuery, getDeviceQueries, getEntityList, getEntityToModify
 from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN
-from gam.util.output import writeStdout
+from gam.util.output import writeStdout, formatLocalTime, formatLocalTimestamp
 from gam.constants import PROJECTION_CHOICE_MAP
 
 

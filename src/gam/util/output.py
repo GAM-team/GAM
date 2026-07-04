@@ -129,11 +129,6 @@ def createYellowText(text):
   """Uses ANSI encoding to create yellow text if supported."""
   return createColoredText(text, '\u001b[33m')
 
-def executeBatch(dbatch):
-  dbatch.execute()
-  if GC.Values[GC.INTER_BATCH_WAIT] > 0:
-    time.sleep(GC.Values[GC.INTER_BATCH_WAIT])
-
 def _stripControlCharsFromName(name):
   for cc in ['\x00', '\r', '\n']:
     name = name.replace(cc, '')
@@ -213,3 +208,71 @@ def currentISOformatTimeStamp(timespec='milliseconds'):
   return arrow.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
 
 
+from gam.constants import ONE_KILO_10_BYTES, ONE_MEGA_10_BYTES, ONE_GIGA_10_BYTES, ONE_TERA_10_BYTES
+
+def formatFileSize(size):
+  if size == 0:
+    return '0 KB'
+  if size < ONE_KILO_10_BYTES:
+    return '1 KB'
+  if size < ONE_MEGA_10_BYTES:
+    return f'{size/ONE_KILO_10_BYTES:.2f} KB'
+  if size < ONE_GIGA_10_BYTES:
+    return f'{size/ONE_MEGA_10_BYTES:.2f} MB'
+  if size < ONE_TERA_10_BYTES:
+    return f'{size/ONE_GIGA_10_BYTES:.2f} GB'
+  return f'{size/ONE_TERA_10_BYTES:.2f} TB'
+
+def formatMaxMessageBytes(maxMessageBytes, oneKiloBytes, oneMegaBytes):
+  if maxMessageBytes < oneKiloBytes:
+    return maxMessageBytes
+  if maxMessageBytes < oneMegaBytes:
+    return f'{maxMessageBytes//oneKiloBytes}K'
+  return f'{maxMessageBytes//oneMegaBytes}M'
+
+def formatMilliSeconds(millis):
+  seconds, millis = divmod(millis, 1000)
+  minutes, seconds = divmod(seconds, 60)
+  hours, minutes = divmod(minutes, 60)
+  return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+
+from gam.constants import NEVER_TIME, NEVER_TIME_NOMS
+YYYYMMDDTHHMMSSZ_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+YYYYMMDD_FORMAT = '%Y-%m-%d'
+NEVER_DATE = '1970-01-01'
+
+def formatLocalTime(dateTimeStr):
+  if dateTimeStr in {NEVER_TIME, NEVER_TIME_NOMS}:
+    return GC.Values[GC.NEVER_TIME]
+  try:
+    timestamp = arrow.get(dateTimeStr)
+    if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+      if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
+        return ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE]))
+      return timestamp.strftime(YYYYMMDDTHHMMSSZ_FORMAT)
+    if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
+      return timestamp.astimezone(GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+    return timestamp.strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+  except (arrow.parser.ParserError, OverflowError):
+    return dateTimeStr
+
+def formatLocalSecondsTimestamp(timestamp):
+  if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+    return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]))
+  return arrow.Arrow.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+
+def formatLocalTimestamp(timestamp):
+  if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
+    return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]))
+  return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
+
+def formatLocalTimestampUTC(timestamp):
+  return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp)//1000, 'UTC'))
+
+def formatLocalDatestamp(timestamp):
+  try:
+    if not GC.Values[GC.OUTPUT_DATEFORMAT]:
+      return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
+    return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
+  except OverflowError:
+    return NEVER_DATE

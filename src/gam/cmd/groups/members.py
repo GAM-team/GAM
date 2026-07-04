@@ -7,11 +7,10 @@ Part of the _groups_tmp sub-package."""
 import re
 import json
 
-from gam.util.args import formatLocalTime
 
 from gam.cmd.groups.groups import GroupIsAbuseOrPostmaster, getGroupAttrProperties, getGroupAttrValue, getGroupMemberTypes, mapGroupEmailForSettings
 
-from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_COUNT
+from gam.util.batch import RI_ENTITY, RI_ROLE, RI_COUNT
 
 from gam.util.entity import GROUP_ROLES_MAP
 
@@ -38,7 +37,6 @@ from gam.util.args import (
     checkArgumentPresent,
     checkForExtraneousArguments,
     escapeCRsNLs,
-    formatMaxMessageBytes,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -51,12 +49,12 @@ from gam.util.args import (
     getString,
     normalizeEmailAddressOrUID,
 )
+from gam.util.batch import batchRequestID, executeBatch
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
     _getFieldsList,
     addFieldToFieldsList,
-    batchRequestID,
     cleanJSON,
     flattenJSON,
     getFieldsFromFieldsList,
@@ -110,7 +108,7 @@ from gam.util.domain_filters import (
     makeUserGroupDomainQueryFilters,
 )
 from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList
-from gam.util.output import executeBatch, writeStderr, writeStdout
+from gam.util.output import writeStderr, writeStdout, formatMaxMessageBytes, formatLocalTime
 
 def initMemberOptions():
   return [False, False, False, False, None, None, False, None, True]

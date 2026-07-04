@@ -366,6 +366,7 @@ from gam.cmd.cros import (
 )
 from gam.cmd.customer import (
     doInfoCustomer,
+    doInfoCustomerId,
     doInfoDomain,
     doInfoInstance,
     doPrintShowDomains,
@@ -645,7 +646,6 @@ from gam.cmd.project import (
     doDeleteSvcAcctKeys,
     doEnableAPIs,
     doInfoCurrentProjectId,
-    doInfoCustomerId,
     doInfoGCPOrgId,
     doPrintShowProjects,
     doPrintShowSvcAccts,
@@ -725,13 +725,15 @@ from gam.cmd.sso import (
     doUpdateInboundSSOAssignment,
     doUpdateInboundSSOProfile,
 )
-from gam.cmd.tasks import (
-    importTasklist,
+from gam.cmd.tagmanager import (
     printShowTagManagerAccounts,
     printShowTagManagerContainers,
     printShowTagManagerPermissions,
     printShowTagManagerTags,
     printShowTagManagerWorkspaces,
+)
+from gam.cmd.tasks import (
+    importTasklist,
     printShowTasklists,
     printShowTasks,
     processTasklists,

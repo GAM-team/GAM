@@ -38,10 +38,7 @@ __all__ = [
   'checkArgumentPresent', 'checkDataField', 'checkForExtraneousArguments',
   'checkGetArgument', 'checkMatchSkipFields', 'checkSubkeyField',
   'encodeOrgUnitPath', 'escapeCRsNLs',
-  'floatLimits', 'formatFileSize', 'formatHTTPError',
-  'formatLocalDatestamp', 'formatLocalSecondsTimestamp', 'formatLocalTime',
-  'formatLocalTimestamp', 'formatLocalTimestampUTC',
-  'formatMaxMessageBytes', 'formatMilliSeconds',
+  'floatLimits', 'formatHTTPError',
   'getACLRoles', 'getAddCSVData', 'getAgeTime',
   'getArgument', 'getArgumentEmptyAllowed',
   'getBoolean', 'getCalendarReminder', 'getCharSet', 'getCharacter',
@@ -526,26 +523,6 @@ def getLanguageCode(languageCodeMap):
       return languageCodeMap[choice]
     invalidChoiceExit(choice, languageCodeMap, False)
   missingChoiceExit(languageCodeMap)
-
-def addCourseIdScope(courseId):
-  if not courseId.isdigit() and courseId[:2] not in {'d:', 'p:'}:
-    return f'd:{courseId}'
-  return courseId
-
-def removeCourseIdScope(courseId):
-  if courseId.startswith('d:'):
-    return courseId[2:]
-  return courseId
-
-def addCourseAliasScope(alias):
-  if alias[:2] not in {'d:', 'p:'}:
-    return f'd:{alias}'
-  return alias
-
-def removeCourseAliasScope(alias):
-  if alias.startswith('d:'):
-    return alias[2:]
-  return alias
 
 def getCourseAlias():
   if Cmd.ArgumentsRemaining():
@@ -1527,67 +1504,10 @@ def splitEmailAddress(emailAddress):
     return (emailAddress.lower(), GC.Values[GC.DOMAIN])
   return (emailAddress[:atLoc].lower(), emailAddress[atLoc+1:].lower())
 
-def formatFileSize(size):
-  if size == 0:
-    return '0 KB'
-  if size < ONE_KILO_10_BYTES:
-    return '1 KB'
-  if size < ONE_MEGA_10_BYTES:
-    return f'{size/ONE_KILO_10_BYTES:.2f} KB'
-  if size < ONE_GIGA_10_BYTES:
-    return f'{size/ONE_MEGA_10_BYTES:.2f} MB'
-  if size < ONE_TERA_10_BYTES:
-    return f'{size/ONE_GIGA_10_BYTES:.2f} GB'
-  return f'{size/ONE_TERA_10_BYTES:.2f} TB'
 
-def formatLocalTime(dateTimeStr):
-  if dateTimeStr in {NEVER_TIME, NEVER_TIME_NOMS}:
-    return GC.Values[GC.NEVER_TIME]
-  try:
-    timestamp = arrow.get(dateTimeStr)
-    if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
-      if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
-        return ISOformatTimeStamp(timestamp.astimezone(GC.Values[GC.TIMEZONE]))
-      return timestamp.strftime(YYYYMMDDTHHMMSSZ_FORMAT)
-    if GM.Globals[GM.CONVERT_TO_LOCAL_TIME]:
-      return timestamp.astimezone(GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
-    return timestamp.strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
-  except (arrow.parser.ParserError, OverflowError):
-    return dateTimeStr
 
-def formatLocalSecondsTimestamp(timestamp):
-  if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
-    return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]))
-  return arrow.Arrow.fromtimestamp(int(timestamp), GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
-def formatLocalTimestamp(timestamp):
-  if not GC.Values[GC.OUTPUT_TIMEFORMAT]:
-    return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]))
-  return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_TIMEFORMAT])
 
-def formatLocalTimestampUTC(timestamp):
-  return ISOformatTimeStamp(arrow.Arrow.fromtimestamp(int(timestamp)//1000, 'UTC'))
-
-def formatLocalDatestamp(timestamp):
-  try:
-    if not GC.Values[GC.OUTPUT_DATEFORMAT]:
-      return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(YYYYMMDD_FORMAT)
-    return arrow.Arrow.fromtimestamp(int(timestamp)//1000, GC.Values[GC.TIMEZONE]).strftime(GC.Values[GC.OUTPUT_DATEFORMAT])
-  except OverflowError:
-    return NEVER_DATE
-
-def formatMaxMessageBytes(maxMessageBytes, oneKiloBytes, oneMegaBytes):
-  if maxMessageBytes < oneKiloBytes:
-    return maxMessageBytes
-  if maxMessageBytes < oneMegaBytes:
-    return f'{maxMessageBytes//oneKiloBytes}K'
-  return f'{maxMessageBytes//oneMegaBytes}M'
-
-def formatMilliSeconds(millis):
-  seconds, millis = divmod(millis, 1000)
-  minutes, seconds = divmod(seconds, 60)
-  hours, minutes = divmod(minutes, 60)
-  return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
 
 def getPhraseDNEorSNA(email):
   return Msg.DOES_NOT_EXIST if getEmailAddressDomain(email) == GC.Values[GC.DOMAIN] else Msg.SERVICE_NOT_APPLICABLE

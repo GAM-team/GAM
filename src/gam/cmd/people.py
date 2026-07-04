@@ -80,7 +80,6 @@ from gam.util.args import (
     UID_PATTERN,
     UTF8,
     checkForExtraneousArguments,
-    formatLocalTime,
     getArgument,
     getBoolean,
     getChoice,
@@ -121,7 +120,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import deprecatedArgument, invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
-from gam.util.output import setSysExitRC, writeStdout
+from gam.util.output import setSysExitRC, writeStdout, formatLocalTime
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import normalizeContactGroupResourceName
 from gam.cmd.contacts import PeopleManager

@@ -7,7 +7,6 @@
 import re
 import json
 
-from gam.util.args import formatLocalTime
 
 from gam.cmd.drive.core import _convertSharedDriveNameToId, _getSharedDriveNameFromId
 from gam.cmd.drive.filepaths import _mapDrivePermissionNames
@@ -81,7 +80,7 @@ from gam.util.errors import (
 )
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
-from gam.util.output import setSysExitRC, systemErrorExit, writeStderr, writeStdout
+from gam.util.output import setSysExitRC, systemErrorExit, writeStderr, writeStdout, formatLocalTime
 from gam.constants import ADMIN_ACCESS_OPTIONS, GOOGLE_API_ERROR_RC, NO_ENTITIES_FOUND_RC
 from gam.cmd.orgunits import getOrgUnitIdToPathMap
 

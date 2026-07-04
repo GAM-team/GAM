@@ -16,12 +16,12 @@ from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages
+from gam.util.output import formatLocalTime
 from gam.util.args import (
     NEVER_TIME,
     _getOptionalIsSuspendedIsArchived,
     checkArgumentPresent,
     checkForExtraneousArguments,
-    formatLocalTime,
     getArgument,
     getChoice,
     getEmailAddress,

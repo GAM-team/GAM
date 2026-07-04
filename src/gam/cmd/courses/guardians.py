@@ -17,7 +17,6 @@ from gam.util.api import buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
-    addCourseIdScope,
     checkForExtraneousArguments,
     getArgument,
     getChoice,
@@ -48,7 +47,7 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify
+from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify, addCourseIdScope
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.output import (
     currentCount,

@@ -6,7 +6,7 @@ Part of the _groups_tmp sub-package."""
 
 import re
 
-from gam.util.csv_pf import RI_ENTITY, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_ENTITY, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
 
 from gam.util.entity import GROUP_ROLES_MAP
 import time
@@ -45,7 +45,8 @@ from gam.util.args import (
     getStringWithCRsNLs,
     splitEmailAddress,
 )
-from gam.util.csv_pf import CSVPrintFile, batchRequestID
+from gam.util.batch import batchRequestID
+from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (
     entityActionFailedWarning,
     entityActionNotPerformedWarning,

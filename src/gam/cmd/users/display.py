@@ -10,7 +10,7 @@ import json
 from gam.cmd.users.manage import _filterSchemaFields, _filterUserMultiAttributes, _formatLanguagesList, _getUserMultiAttributeFilters, getUserLicenses
 from gam.util.schema_utils import _getSchemaNameList, _initSchemaParms
 
-from gam.util.csv_pf import RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_JCOUNT, RI_ITEM
 
 from gam.cmd.users.manage import (
     USER_ADDRESSES_PROPERTY_PRINT_ORDER,
@@ -68,7 +68,6 @@ from gam.util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, en
 from gam.util.api import _getAdminEmail, buildGAPIObject, waitOnFailure
 from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError, yieldGAPIpages
 from gam.util.args import (
-    formatLocalTime,
     getAddCSVData,
     getArgument,
     getBoolean,
@@ -88,7 +87,6 @@ from gam.util.args import (
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
-    batchRequestID,
     cleanJSON,
     flattenJSON,
     getFieldsFromFieldsList,
@@ -113,7 +111,8 @@ from gam.util.entity import getCIGroupMembershipGraph, getEntityArgument, getEnt
 from gam.util.errors import entityActionFailedExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitItem
-from gam.util.output import ERROR, executeBatch, writeStdout
+from gam.util.batch import batchRequestID, executeBatch
+from gam.util.output import ERROR, writeStdout, formatLocalTime
 from gam.util.group_parents import addJsonGroupParents, getGroupParents, showGroupParents
 from gam.cmd.resources import _getBuildingNameById
 from gam.util.domain_filters import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters

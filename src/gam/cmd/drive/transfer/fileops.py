@@ -69,7 +69,7 @@ from gam.util.fileio import (
     uniqueFilename,
     writeFile,
 )
-from gam.util.output import setSysExitRC, writeStderr
+from gam.util.output import setSysExitRC, writeStderr, formatFileSize
 from gam.constants import MY_NON_TRASHED_FOLDER_NAME
 from gam.util.tags import _substituteForUser
 

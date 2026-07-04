@@ -31,11 +31,20 @@ from gam.util.errors import INVALID_JSON_RC, deprecatedCommandExit, unknownArgum
 from gam.util.fileio import writeFile
 from gam.util.output import ERROR, systemErrorExit
 from gam.constants import NETWORK_ERROR_RC
-from gam.cmd.sso import SITEVERIFICATION_METHOD_CHOICE_MAP
 
 
 from urllib.parse import unquote
 from urllib.parse import urlencode
+
+SITEVERIFICATION_METHOD_CHOICE_MAP = {
+  'cname': 'DNS_CNAME',
+  'dnscname': 'DNS_CNAME',
+  'dnstxt': 'DNS_TXT',
+  'txt': 'DNS_TXT',
+  'text': 'DNS_TXT',
+  'file': 'FILE',
+  'site': 'FILE',
+  }
 
 def deprecatedUserSites(_):
   deprecatedCommandExit()

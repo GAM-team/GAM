@@ -13,11 +13,11 @@ from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
+from gam.util.output import formatLocalTime
 from gam.util.args import (
     SORF_TEXT_ARGUMENTS,
     checkForExtraneousArguments,
     escapeCRsNLs,
-    formatLocalTime,
     getArgument,
     getBoolean,
     getChoice,

@@ -3,7 +3,8 @@
 import re
 import json
 
-from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM, FormatJSONQuoteChar
+from gam.util.batch import batchRequestID, executeBatch, RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.csv_pf import FormatJSONQuoteChar
 import uuid
 
 from gamlib import api as API
@@ -45,7 +46,6 @@ from gam.util.csv_pf import (
     CSVPrintFile,
     _getFieldsList,
     addFieldToFieldsList,
-    batchRequestID,
     cleanJSON,
     flattenJSON,
     getFieldsFromFieldsList,
@@ -86,7 +86,7 @@ from gam.util.errors import (
     unknownArgumentExit,
 )
 from gam.util.fileio import UNKNOWN
-from gam.util.output import executeBatch, formatKeyValueList, setSysExitRC
+from gam.util.output import formatKeyValueList, setSysExitRC
 from gam.constants import DAYS_OF_WEEK, GOOGLE_MEETID_FORMAT_REQUIRED, GOOGLE_MEETID_PATTERN, NO_ENTITIES_FOUND_RC
 
 

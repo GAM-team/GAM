@@ -423,7 +423,5 @@ def doPrintShowPrinterModels():
   if csvPF:
     csvPF.writeCSVfile('Printer Models')
 
-CHROME_APPS_TIME_OBJECTS = {'firstPublishTime', 'latestPublishTime'}
-CHROME_APPS_TYPE_CHOICES  = ['android', 'chrome', 'web']
 
 # gam info chromeapp android|chrome|web <AppID> [formatjson]

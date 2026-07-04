@@ -1,7 +1,6 @@
 """GAM data transfer operations."""
 
 
-from gam.util.args import formatLocalTime
 import time
 
 from gamlib import api as API
@@ -33,7 +32,7 @@ from gam.util.display import (
 )
 from gam.util.entity import convertEmailAddressToUID
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
-from gam.util.output import writeStderr
+from gam.util.output import writeStderr, formatLocalTime
 
 
 def getTransferApplications(dt):

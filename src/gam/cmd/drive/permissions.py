@@ -10,7 +10,7 @@ from gam.cmd.drive.core import _getDriveFileNameFromId, _getSharedDriveNameFromI
 from gam.cmd.drive.filepaths import _finalizeIncludePermissionsForView, _getIncludePermissionsForView, _mapDrivePermissionNames
 from gam.cmd.drive.filetree import _validateACLAttributes, _validateACLOwnerType
 
-from gam.util.csv_pf import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -20,11 +20,11 @@ from gamlib import msgs as Msg
 from gam.util.api import _getAdminEmail, waitOnFailure
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
+from gam.util.output import formatLocalTime
 from gam.util.args import (
     OrderBy,
     checkArgumentPresent,
     checkForExtraneousArguments,
-    formatLocalTime,
     getACLRoles,
     getArgument,
     getBoolean,
@@ -41,7 +41,6 @@ from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
     _getFieldsList,
-    batchRequestID,
     cleanJSON,
     flattenJSON,
     getItemFieldsFromFieldsList,
@@ -75,7 +74,7 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import UNKNOWN
-from gam.util.output import executeBatch
+from gam.util.batch import batchRequestID, executeBatch
 from gam.constants import ADMIN_ACCESS_OPTIONS, WITH_PARENTS
 
 from gam.var import Act, Cmd, Ent, Ind

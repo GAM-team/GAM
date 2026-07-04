@@ -11,12 +11,12 @@ from gamlib import api as API
 from gamlib import gapi as GAPI
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI
+from gam.util.output import formatLocalDatestamp
 from gam.util.args import (
     FALSE_VALUES,
     SORF_MSG_FILE_ARGUMENTS,
     TRUE_VALUES,
     escapeCRsNLs,
-    formatLocalDatestamp,
     getArgument,
     getBoolean,
     getString,

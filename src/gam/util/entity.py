@@ -126,7 +126,7 @@ from util.args import shlexSplitList, shlexSplitListStatus  # noqa: E402,F401 - 
 from util.uid import convertUIDtoEmailAddress, convertUIDtoEmailAddressWithType, convertEmailAddressToUID  # noqa: F401 - re-export
 from gam.constants import DATA_ERROR_RC, INVALID_ENTITY_RC, NO_ENTITIES_FOUND_RC, UNKNOWN_ERROR_RC
 from gamlib import skus as SKU
-from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkMatchSkipFields, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, removeCourseIdScope, splitEmailAddress, validateEmailAddressOrUID
+from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkMatchSkipFields, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, splitEmailAddress, validateEmailAddressOrUID
 from util.display import ENTITY_DOES_NOT_EXIST_RC, entityActionFailedWarning, entityActionNotPerformedWarning, entityDoesNotExistWarning, entityPerformActionNumItems, getPageMessage, getPageMessageForWhom, printGettingAllAccountEntities, printGettingAllEntityItemsForWhom, printGotEntityItemsForWhom, setGettingAllEntityItemsForWhom
 from util.errors import csvDataAlreadySavedErrorExit, csvFieldErrorExit, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, usageErrorExit
 from util.fileio import closeFile, openFile, setFilePath
@@ -1574,4 +1574,24 @@ SHAREDDRIVE_QUERY_SHORTCUTS_MAP = {
   'allnongooglefiles': "not mimeType contains 'vnd.google'",
   'allitems': 'allitems',
   }
+
+def addCourseIdScope(courseId):
+  if not courseId.isdigit() and courseId[:2] not in {'d:', 'p:'}:
+    return f'd:{courseId}'
+  return courseId
+
+def removeCourseIdScope(courseId):
+  if courseId.startswith('d:'):
+    return courseId[2:]
+  return courseId
+
+def addCourseAliasScope(alias):
+  if alias[:2] not in {'d:', 'p:'}:
+    return f'd:{alias}'
+  return alias
+
+def removeCourseAliasScope(alias):
+  if alias.startswith('d:'):
+    return alias[2:]
+  return alias
 
