@@ -36,6 +36,7 @@ import os
 import platform
 import re
 import sys
+from traceback import print_exc
 import types
 
 # disable legacy stuff we don't use and isn't secure
