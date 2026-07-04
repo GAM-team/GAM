@@ -4,11 +4,13 @@ Part of the _userop_tmp sub-package."""
 
 """GAM user operations: Looker Studio, user groups, licenses, photos, profile, sheets, tokens, deprovision."""
 
+import re
 import json
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIitems

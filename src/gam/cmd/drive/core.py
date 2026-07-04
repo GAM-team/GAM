@@ -64,7 +64,7 @@ from gam.util.fileio import FILE_ERROR_RC, fileErrorMessage, setFilePath
 from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit
 from gam.constants import ANY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME, NO_ENTITIES_FOUND_RC, TEAM_DRIVE
 
-from gam.var import Cmd, Ent
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -649,7 +649,7 @@ def _getDriveFileParentInfo(drive, user, i, count, body, parameters, emptyQueryO
                         fileId=parameters[DFA_PARENTID], fields='id,name,mimeType,driveId', supportsAllDrives=True)
       if result['mimeType'] != MIMETYPE_GA_FOLDER:
         entityActionNotPerformedWarning([Ent.USER, user, entityType, None],
-                                        f'parentid: {parameters[DFA_PARENTID]}, {Msg.NOT_AN_ENTITY.format(Ent.Singular(Ent.DRIVE_FOLDER))}', i, count)
+                                        f'parentid: {parameters[DFA_PARENTID]}, {Msg.NOT_AN_ENTITY.format((Ent.Singular(Ent.DRIVE_FOLDER)))}', i, count)
         return False
       body['parents'].append(result['id'])
       if result.get('driveId'):
@@ -833,7 +833,7 @@ def validateMimeType(mimeType):
 def getMimeType():
   return validateMimeType(getString(Cmd.OB_MIMETYPE).lower())
 
-class MimeTypeCheck:
+class MimeTypeCheck():
 
   def __init__(self):
     self.mimeTypes = set()

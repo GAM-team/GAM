@@ -8,13 +8,16 @@ Part of the copymove sub-package."""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
+import re
 
 from gam.cmd.drive.core import DFA_SEARCHARGS
 
 from gam.cmd.drive.copymove.copymove_util import _checkForDuplicateTargetFile, _checkForExistingShortcut, _copyPermissions, _getCopyFolderNonInheritedPermissions, _getCopyMoveParentInfo, _getCopyMoveTargetInfo, _getUniqueFilename, _identicalSourceTarget, _printStatistics, _targetFilenameExists, _verifyUserIsOrganizer, getCopyMoveOptions, initCopyMoveOptions
 
+from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import getArgument, getBoolean

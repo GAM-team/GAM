@@ -4,6 +4,8 @@ Part of the _userop_tmp sub-package."""
 
 """GAM user operations: Looker Studio, user groups, licenses, photos, profile, sheets, tokens, deprovision."""
 
+import re
+import sys
 
 from gam.cmd.userop.usergroups import LICENSE_PREVIEW_TITLES
 
@@ -12,6 +14,7 @@ from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gamlib import skus as SKU
 from gam.util.access import entityUnknownWarning

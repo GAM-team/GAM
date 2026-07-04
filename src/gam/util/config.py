@@ -6,11 +6,14 @@ Reads gam.cfg and initializes all global runtime state.
 import collections
 import configparser
 import codecs
+import datetime
 import http.client
 import json
+import locale
 import os
 import re
 import sys
+import time
 
 import httplib2
 import arrow
@@ -27,6 +30,7 @@ from util.args import getRowFilterDateOrDeltaFromNow
 from util.args import getRowFilterTimeOrDeltaFromNow
 from util.args import integerLimits
 from util.args import LOCALE_CODES_MAP
+from util.args import LANGUAGE_CODES_MAP
 from util.args import TIMEZONE_FORMAT_REQUIRED
 from util.args import (
     checkArgumentPresent, getArgument, getBoolean, getCharacter, getChoice,
@@ -53,7 +57,7 @@ from util.output import (
 from gam.constants import (
     CONFIG_ERROR_RC, DEFAULT_FILE_APPEND_MODE, DEFAULT_FILE_READ_MODE,
     DEFAULT_FILE_WRITE_MODE, EV_GAMCFGDIR, EV_GAMCFGSECTION, EV_OLDGAMPATH,
-    FN_GAM_CFG,
+    FN_GAM_CFG, GAM,
 )
 
 REGEX_CHARS = '^$*+|$[{('
@@ -71,7 +75,7 @@ MULTIPROCESS_EXIT_RANGE_PATTERN = re.compile(r'^rcrange(=|!=)(\S+)/(\S+)$', re.I
 
 
 def _stringInQuotes(value):
-  return (len(value) > 1) and (((value.startswith('"') and value.endswith('"'))) or (value.startswith("'") and value.endswith("'")))
+  return (len(value) > 1) and (((value.startswith('"') and value.endswith('"'))) or ((value.startswith("'") and value.endswith("'"))))
 
 def _stripStringQuotes(value):
   if _stringInQuotes(value):

@@ -16,6 +16,7 @@ import google.auth.exceptions
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, getHttpObj
@@ -45,7 +46,7 @@ from gam.util.output import writeStdout
 from gam.util.tags import _substituteForUser
 from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
-from gam.var import Cmd, Ent
+from gam.var import Act, Cmd, Ent, Ind
 
 from tempfile import TemporaryFile
 

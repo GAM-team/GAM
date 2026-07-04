@@ -8,6 +8,7 @@ import os
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
@@ -70,6 +71,7 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import UNKNOWN, setFilePath
+from gam.util.orgunits import getOrgUnitId
 
 
 from gam.constants import DFA_URL

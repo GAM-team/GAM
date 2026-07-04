@@ -14,6 +14,7 @@ import time
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages
@@ -527,7 +528,7 @@ def doCreateVaultExport():
       body['exportOptions'][optionsField] = {'includeAccessInfo': includeAccessInfo}
   else:
     if exportFormat is not None:
-      if exportFormat not in VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']]:
+      if not exportFormat in VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']]:
         Cmd.SetLocation(formatLocation)
         invalidChoiceExit(exportFormat, VAULT_CORPUS_EXPORT_FORMATS[body['query']['corpus']], False)
     else:

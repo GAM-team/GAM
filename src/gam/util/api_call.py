@@ -8,6 +8,9 @@ construction) to break the api<->uid circular dependency.
 import http.client
 import json
 import re
+import ssl
+import sys
+import time
 
 import googleapiclient.errors
 import httplib2
@@ -19,12 +22,13 @@ from gamlib import gdata as GDATA
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Ent
-from gam.constants import GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, SOCKET_ERROR_RC
-from util.api import APIAccessDeniedExit, clearServiceCache, getGDataOAuthToken, handleOAuthTokenError, handleServerError, transportCreateRequest, waitOnFailure
+from gam.constants import GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
+from util.api import APIAccessDeniedExit, clearServiceCache, getGDataOAuthToken, getHttpObj, handleOAuthTokenError, handleServerError, transportCreateRequest, waitOnFailure
 from util.args import UTF8, formatHTTPError
-from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER
-from util.fileio import checkAPICallsRate
-from util.output import ERROR_PREFIX, flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, SERVICE_NOT_APPLICABLE_RC, TOTAL_ITEMS_MARKER, entityActionFailedWarning, printKeyValueList, userServiceNotEnabledWarning
+from util.errors import INVALID_JSON_RC
+from util.fileio import checkAPICallsRate, incrAPICallsRetryData
+from util.output import ERROR_PREFIX, flushStderr, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
 

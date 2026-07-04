@@ -1,6 +1,7 @@
 """GAM user service management: ASPs, backup codes, user calendars."""
 
 import json
+import sys
 
 from gam.util.args import formatLocalTimestamp
 
@@ -21,6 +22,7 @@ from gam.cmd.calendar import (
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
@@ -84,6 +86,22 @@ from gam.util.display import (
     userYouTubeServiceNotEnabledWarning,
 )
 from gam.util.entity import (
+    APPLICATION_VND_GOOGLE_APPS,
+    ME_IN_OWNERS,
+    ME_IN_OWNERS_AND,
+    MIMETYPE_GA_3P_SHORTCUT,
+    MIMETYPE_GA_DOCUMENT,
+    MIMETYPE_GA_FOLDER,
+    MIMETYPE_GA_FORM,
+    MIMETYPE_GA_PRESENTATION,
+    MIMETYPE_GA_SHORTCUT,
+    MIMETYPE_GA_SPREADSHEET,
+    NOT_ME_IN_OWNERS,
+    NOT_ME_IN_OWNERS_AND,
+    QUERY_SHORTCUTS_MAP,
+    SHAREDDRIVE_QUERY_SHORTCUTS_MAP,
+    _getEntityMimeType,
+    _getTargetEntityMimeType,
     checkUserSuspended,
     convertEntityToList,
     convertUIDtoEmailAddress,

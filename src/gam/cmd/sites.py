@@ -1,10 +1,12 @@
 """GAM site verification and web resource management."""
 
 import json
+import sys
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIObject, getHttpObj

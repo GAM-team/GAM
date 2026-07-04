@@ -7,10 +7,15 @@ Extracted from entity.py to break the entity↔api circular dependency.
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.var import Ent
 from util.api import buildGAPIObject
 from util.api_call import callGAPI
 from util.args import normalizeEmailAddressOrUID
+from util.display import entityDoesNotExistWarning, printGettingAllEntityItemsForWhom
+from util.errors import usageErrorExit
+from util.output import currentCountNL
 
 NON_EMAIL_MEMBER_PREFIXES = (
                               "cbcm-browser.",

@@ -320,7 +320,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
           return True
       return False
     for column in columns:
-      if str(row.get(column, '')) not in filterData:
+      if not str(row.get(column, '')) in filterData:
         return False
     return True
 
@@ -331,7 +331,7 @@ def RowFilterMatch(row, titlesList, rowFilter, rowFilterModeAll, rowDropFilter, 
           return False
       return True
     for column in columns:
-      if str(row.get(column, '')) not in filterData:
+      if not str(row.get(column, '')) in filterData:
         return True
     return False
 
@@ -494,7 +494,7 @@ def getItemFieldsFromFieldsList(item, fieldsList, returnItemIfNoneList=False):
     return None
   return f'nextPageToken,{item}'
 
-class CSVPrintFile:
+class CSVPrintFile():
 
   def __init__(self, titles=None, sortTitles=None, indexedTitles=None):
     self.rows = []
@@ -718,6 +718,7 @@ class CSVPrintFile:
         usageErrorExit(Msg.INVALID_ENTITY.format(Ent.Singular(entityType), message))
 
     def getDriveObject():
+      from gam.cmd.drive.core import escapeDriveFileName
       if not GC.Values[GC.TODRIVE_CLIENTACCESS]:
         _, drive = buildGAPIServiceObject(chooseSaAPI(API.DRIVETD, API.DRIVE3), self.todrive['user'])
         if not drive:
@@ -1923,7 +1924,7 @@ def showJSON(showName, showValue, skipObjects=None, timeObjects=None,
   dictObjectsKey = dictObjectsKey or {}
   _show(showName, showValue, None, None, 0, DEFAULT_SKIP_OBJECTS.union(skipObjects or set()))
 
-class FormatJSONQuoteChar:
+class FormatJSONQuoteChar():
 
   def __init__(self, csvPF=None, formatJSONOnly=False):
     self.SetCsvPF(csvPF)

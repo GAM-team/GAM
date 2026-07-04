@@ -12,6 +12,7 @@ from gam.util.args import formatLocalTime
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 
 from gam.var import Act, Cmd, Ent, Ind
@@ -123,7 +124,7 @@ def getCIGroupMemberTypes(myarg, typesSet):
 def doInfoCIGroups():
   from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP, CIGROUP_TIME_OBJECTS, _checkCIMemberMatch, _showCIGroup, finalizeIPSGMGroupRolesMemberDisplayOptions, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions
   def printCIGroupMemberTree(group_id, showRole):
-    if group_id not in cachedGroupMembers:
+    if not group_id in cachedGroupMembers:
       try:
         cachedGroupMembers[group_id] = callGAPIpages(ci.groups().memberships(), 'list', 'memberships',
                                                      throwReasons=GAPI.MEMBERS_THROW_REASONS,

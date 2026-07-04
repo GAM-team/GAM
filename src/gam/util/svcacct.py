@@ -11,6 +11,7 @@ import time
 import google.auth.exceptions
 import httplib2
 
+from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import state as GM
 from gam.constants import NETWORK_ERROR_RC

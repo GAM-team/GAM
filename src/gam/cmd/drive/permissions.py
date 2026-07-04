@@ -4,6 +4,7 @@
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
+import re
 import json
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity

@@ -4,12 +4,17 @@ Part of the _gmail_monolith sub-package."""
 
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
+import re
 import json
+import sys
 import uuid
 import base64
 
 from gamlib import api as API
+from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
+from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
@@ -25,7 +30,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import unknownArgumentExit
 
-from gam.var import Act, Cmd, Ent
+from gam.var import Act, Cmd, Ent, Ind
 
 def watchGmail(users):
   maxMessages = 100

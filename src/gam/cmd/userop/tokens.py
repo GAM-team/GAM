@@ -11,6 +11,7 @@ from gam.cmd.userop.sheets import commonClientIds
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.access import ClientAPIAccessDeniedExit, entityUnknownWarning
 from gam.util.api import _getAdminEmail, buildGAPIObject

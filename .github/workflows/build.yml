@@ -547,8 +547,8 @@ jobs:
       - name: Lint with ruff
         run: |
           "$PYTHON" -m pip install ruff
-          ruff check ../src/gam/
-          ruff check ../tests/
+          "$PYTHON" -m ruff check ../src/gam/
+          "$PYTHON" -m ruff check ../tests/
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'

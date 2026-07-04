@@ -5,6 +5,7 @@ Part of the _users_tmp sub-package."""
 """GAM user management."""
 
 import re
+import sys
 
 from gam.util.args import DEFAULT_CHOICE
 
@@ -106,7 +107,7 @@ def hashPassword(password):
   Returns a tuple of (hashed_password, hash_function_name).
   The hash_function_name is always 'crypt' for Google's Directory API.
   """
-  return (sha512_crypt.using(rounds=10000).hash(password), 'crypt')
+  return (sha512_crypt.hash(password, rounds=10000), 'crypt')
 
 def _getGroupOrgUnitMap():
 
@@ -138,7 +139,7 @@ def _getGroupOrgUnitMap():
   closeFile(f)
   return groupOrgUnitMap
 
-class PasswordOptions:
+class PasswordOptions():
   def __init__(self, updateCmd):
     self.password = ''
     self.notFoundPassword = ''

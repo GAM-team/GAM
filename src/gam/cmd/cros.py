@@ -1,6 +1,7 @@
 """GAM ChromeOS device management."""
 
 import json
+import sys
 
 from gam.util.args import formatLocalTime
 
@@ -39,6 +40,7 @@ from gam.util.args import (
     getString,
     getStringWithCRsNLs,
     getTimeOrDeltaFromNow,
+    getYYYYMMDD,
     makeOrgUnitPathAbsolute,
     makeOrgUnitPathRelative,
     substituteQueryTimes,

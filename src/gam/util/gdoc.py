@@ -235,6 +235,7 @@ def getStorageFileData(gcsformat, returnData=True):
 
 # <CSVFileInput>
 def openCSVFileReader(filename, fieldnames=None):
+  from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
   filenameLower = filename.lower()
   if filenameLower == 'gsheet':
     f = getGSheetData()

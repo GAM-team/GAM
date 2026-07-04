@@ -4,6 +4,7 @@ Part of the _courses_tmp sub-package."""
 
 """GAM Google Classroom course management."""
 
+import re
 import json
 
 from gamlib import uprop as UProp
@@ -11,6 +12,7 @@ from gamlib import uprop as UProp
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject

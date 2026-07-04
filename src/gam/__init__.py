@@ -29,39 +29,149 @@ __version__ = '7.46.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
+import base64
+import codecs
+import collections
+import configparser
+import csv
+from email.charset import add_charset, QP
+from email.generator import Generator
+from email.header import decode_header, Header
+from email import message_from_string
+from email.mime.application import MIMEApplication
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formatdate
+from email.policy import SMTP as policySMTP
+import hashlib
+from html.entities import name2codepoint
+from html.parser import HTMLParser
 import http.client
 import importlib
+from importlib.metadata import version as lib_version
+import io
+import ipaddress
+import json
 import logging
+from logging.handlers import RotatingFileHandler
+import mimetypes
+import multiprocessing
 import os
 import platform
+import queue
+import random
 import re
+from secrets import SystemRandom
+import shlex
+import signal
+import smtplib
+import socket
+import sqlite3
+import ssl
+import string
+import struct
+import subprocess
 import sys
+from tempfile import TemporaryFile
+try:
+  import termios
+except ImportError:
+  # termios does not exist for Windows
+  pass
+import threading
+import time
 from traceback import print_exc
 import types
+from urllib.parse import quote, quote_plus, unquote, urlencode, urlparse, parse_qs
+import uuid
+import warnings
+import webbrowser
+import wsgiref.simple_server
+import wsgiref.util
+import zipfile
 
 # disable legacy stuff we don't use and isn't secure
 os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = "1"
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.x509.oid import NameOID
 
 # Add package directory to sys.path for source installs (not needed for frozen/PyInstaller builds)
 if not getattr(sys, 'frozen', False):
   sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
+import arrow
+
+from pathvalidate import sanitize_filename, sanitize_filepath
+
+import google.oauth2.credentials
+import google.oauth2.id_token
+import google.auth
+import google.auth.transport.requests
+from google.auth.compute_engine import _metadata as gce_metadata
+from google.auth.jwt import Credentials as JWTCredentials
+import google.oauth2.service_account
+import google_auth_oauthlib.flow
+import google_auth_httplib2
+import googleapiclient
+import googleapiclient.discovery
+import googleapiclient.errors
+import googleapiclient.http
 import httplib2
+
 httplib2.RETRIES = 5
 
+from passlib.hash import sha512_crypt
+from filelock import FileLock
+
+if platform.system() == 'Linux':
+  import distro
+
+from gamlib import action
 from gamlib import api as API
 from gamlib import settings as GC
+from gamlib import clargs
+from gamlib import entity
 from gamlib import gapi as GAPI
+from gamlib import gdata as GDATA
 from gamlib import state as GM
+from gamlib import indent
 from gamlib import msgs as Msg
+from gamlib import skus as SKU
+from gamlib import uprop as UProp
+from gamlib import verlibs
 
-from gam.util.api import SvcAcctAPIDisabledExit  # noqa: E402
-from gam.util.email import send_email  # noqa: E402
+import gdata.apps.service
+import gdata.apps.audit
+import gdata.apps.audit.service
+import gdata.apps.contacts
+import gdata.apps.contacts.service
+
+from gam.util.html import _DeHTMLParser, dehtml  # noqa: F401  # re-export
+from gam.util.access import (  # noqa: F401  # re-export
+    accessErrorMessage, accessErrorExit, accessErrorExitNonDirectory,
+    checkEntityDNEorAccessErrorExit, checkEntityAFDNEorAccessErrorExit,
+    checkEntityItemValueAFDNEorAccessErrorExit,
+    entityUnknownWarning, entityOrEntityUnknownWarning, duplicateAliasGroupUserWarning,
+)
+from gam.util.api import (  # noqa: F401  # re-export (moved from access.py)
+    ClientAPIAccessDeniedExit, SvcAcctAPIAccessDenied, SvcAcctAPIAccessDeniedExit,
+    SvcAcctAPIDisabledExit, APIAccessDeniedExit,
+)
+from gam.util.email import (  # noqa: F401  # re-export
+    _addAttachmentsToMessage, _addEmbeddedImagesToMessage, send_email,
+)
 
 
 from gam.constants import *
 
-from util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402
+from util.output import ISOformatTimeStamp, currentISOformatTimeStamp  # noqa: E402,F401
+from util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402,F401
 
 from gam.var import Act, Cmd, Ent, Ind  # noqa: E402,F401
 
@@ -80,18 +190,20 @@ else:
   GM.Globals[GM.GAM_TYPE] = 'pythonsource'
 
 
-from util.output import showAPICallsRetryData  # noqa: E402
+from util.output import redactable_debug_print, showAPICallsRetryData  # noqa: E402,F401
 
 
 # Multiprocessing lock
 mplock = None
 
 # Imports used by __init__.py's own dispatch tables and functions
-from util.output import setSysExitRC, printErrorMessage  # noqa: E402
-from util.args import getChoice  # noqa: E402
-from util.args import checkArgumentPresent, NO_DEFAULT  # noqa: E402
+from util.output import setSysExitRC, systemErrorExit, printErrorMessage  # noqa: E402
+from util.output import writeStderr, formatKeyValueList  # noqa: E402
+from util.errors import unknownArgumentExit  # noqa: E402
+from util.args import getArgument, getChoice, getInteger, getStringReturnInList  # noqa: E402
+from util.args import checkArgumentPresent, normalizeEmailAddressOrUID, NO_DEFAULT  # noqa: E402
 from util.connection import doCheckConnection, doComment, doVersion, doUsage  # noqa: E402
-from util.entity import getEntityArgument, getEntityToModify  # noqa: E402
+from util.entity import getEntityArgument, getEntityList, getEntityToModify  # noqa: E402
 from util.config import SetGlobalVariables  # noqa: E402
 from util.fileio import closeGAMCommandLog, writeGAMCommandLog  # noqa: E402
 from util.batch import (  # noqa: E402

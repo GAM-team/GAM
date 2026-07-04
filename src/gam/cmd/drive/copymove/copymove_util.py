@@ -16,6 +16,7 @@ import os
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
+from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
@@ -1490,9 +1491,9 @@ def copyDriveFile(users):
         elif (sourceMimeType == MIMETYPE_GA_FOLDER) and copyMoveOptions['mergeWithParent']:
           destName = dest['name']
         elif ((newParentsSpecified and newParentId not in sourceParents) or
-              (newParentId in sourceParents and
+              ((newParentId in sourceParents and
                 (sourceMimeType == MIMETYPE_GA_FOLDER and copyMoveOptions['duplicateFolders'] != DUPLICATE_FOLDER_MERGE) or
-                (sourceMimeType != MIMETYPE_GA_FOLDER and copyMoveOptions['duplicateFiles'] not in [DUPLICATE_FILE_OVERWRITE_ALL, DUPLICATE_FILE_OVERWRITE_OLDER]))):
+                (sourceMimeType != MIMETYPE_GA_FOLDER and copyMoveOptions['duplicateFiles'] not in [DUPLICATE_FILE_OVERWRITE_ALL, DUPLICATE_FILE_OVERWRITE_OLDER])))):
           if copyMoveOptions['replaceFilename']:
             destName = processFilenameReplacements(sourceName, copyMoveOptions['replaceFilename'])
           else:
