@@ -55,3 +55,28 @@ class TestAllModulesImport:
             f"Found {len(violations)} unexpected local import(s) in util/:\n"
             + "\n".join(violations)
         )
+
+    def test_init_stdlib_import_count(self):
+        """Guard against stdlib import bloat creeping back into __init__.py.
+
+        After the cleanup, __init__.py should only import the ~8 stdlib
+        modules it actually uses. This test catches accidental additions.
+        """
+        init_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'gam', '__init__.py')
+        with open(os.path.normpath(init_path)) as f:
+            lines = f.readlines()
+
+        stdlib_imports = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith('import ') and not stripped.startswith(
+                ('import gam', 'import gdata', 'import google', 'import httplib2',
+                 'import arrow', 'import distro', 'import termios')):
+                stdlib_imports.append(stripped)
+
+        # Currently 8: http.client, importlib, logging, os, platform, re, sys, types
+        assert len(stdlib_imports) <= 10, (
+            f"__init__.py has {len(stdlib_imports)} stdlib imports (max 10). "
+            f"New stdlib imports should go in the module that uses them, "
+            f"not __init__.py.\n" + "\n".join(stdlib_imports)
+        )
