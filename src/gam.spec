@@ -5,7 +5,7 @@ from sys import platform
 
 from PyInstaller.utils.hooks import copy_metadata
 
-from gam.gamlib.glverlibs import GAM_VER_LIBS
+from gam.gamlib.verlibs import GAM_VER_LIBS
 
 
 with open("gam/__init__.py") as f:
