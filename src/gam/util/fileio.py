@@ -48,10 +48,6 @@ WARNING_PREFIX = WARNING + ': '
 _ENT_FILE = glentity.GamEntity.FILE
 
 
-def _getEnt():
-  """Get the Ent instance from the main module (lazy accessor)."""
-  return sys.modules['gam'].Ent
-
 
 def cleanFilename(filename):
   return sanitize_filename(filename, '_')
@@ -82,7 +78,6 @@ def cleanFilepath(filepath):
   return sanitize_filepath(filepath, platform='auto')
 
 def fileErrorMessage(filename, e, entityType=_ENT_FILE):
-  Ent = _getEnt()
   return f'{Ent.Singular(entityType)}: {filename}, {str(e)}'
 
 
@@ -209,7 +204,6 @@ def deleteFile(filename, continueOnError=False, displayError=True):
       systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 def getGDocSheetDataRetryWarning(entityValueList, errMsg, i=0, count=0):
-  Ent = _getEnt()
   action = Act.Get()
   Act.Set(Act.RETRIEVE_DATA)
   stderrWarningMsg(formatKeyValueList(Ind.Spaces(),
@@ -218,7 +212,6 @@ def getGDocSheetDataRetryWarning(entityValueList, errMsg, i=0, count=0):
   Act.Set(action)
 
 def getGDocSheetDataFailedExit(entityValueList, errMsg, i=0, count=0):
-  Ent = _getEnt()
   Act.Set(Act.RETRIEVE_DATA)
   systemErrorExit(ACTION_FAILED_RC, formatKeyValueList(Ind.Spaces(),
                                                        Ent.FormatEntityValueList(entityValueList)+[Act.NotPerformed(), errMsg],
@@ -265,9 +258,8 @@ def openGAMCommandLog(Globals, name):
     systemErrorExit(CONFIG_ERROR_RC, Msg.LOGGING_INITIALIZATION_ERROR.format(str(e)))
 
 def writeGAMCommandLog(Globals, logCmd, sysRC):
-  import sys as _sys  # noqa: PLC0415
-  gam = _sys.modules['gam']
-  Globals[GM.CMDLOG_LOGGER].info(f'{gam.currentISOformatTimeStamp()},{sysRC},{logCmd}')
+  from util.args import currentISOformatTimeStamp
+  Globals[GM.CMDLOG_LOGGER].info(f'{currentISOformatTimeStamp()},{sysRC},{logCmd}')
 
 def closeGAMCommandLog(Globals):
   try:

@@ -67,13 +67,6 @@ _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 
 
 
-def _getEnt():
-  return sys.modules['gam'].Ent
-
-def _getInd():
-  return sys.modules['gam'].Ind
-
-
 def handleServerError(e):
   errMsg = str(e)
   if 'setting tls' not in errMsg:
@@ -164,7 +157,6 @@ def transportCreateRequest(httpObj=None):
   return transportAgentRequest(httpObj)
 
 def doGAMCheckForUpdates(forceCheck):
-  Ind = _getInd()
   def _gamLatestVersionNotAvailable():
     if forceCheck:
       systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
@@ -273,7 +265,6 @@ class signjwtSignJwt(google.auth.crypt.Signer):
 
 def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
   from util.access import APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit
-  Ent = _getEnt()
   errMsg = str(e).replace('.', '')
   if ((errMsg in API.OAUTH2_TOKEN_ERRORS) or
       errMsg.startswith('Invalid response') or
@@ -923,7 +914,6 @@ def callGDataPages(service, function,
                    softErrors=False, throwErrors=None, retryErrors=None,
                    uri=None,
                    **kwargs):
-  Ent = _getEnt()
   if throwErrors is None:
     throwErrors = []
   if retryErrors is None:
@@ -1227,7 +1217,6 @@ def callGAPI(service, function,
       systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
 
 def _showGAPIpagesResult(results, pageItems, totalItems, pageMessage, messageAttribute, entityType):
-  Ent = _getEnt()
   showMessage = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
   if pageItems:
     if messageAttribute:
@@ -1302,7 +1291,6 @@ def callGAPIpages(service, function, items,
                   throwReasons=None, retryReasons=None,
                   pageArgsInBody=False,
                   **kwargs):
-  Ent = _getEnt()
   if throwReasons is None:
     throwReasons = []
   if retryReasons is None:
@@ -1335,7 +1323,6 @@ def yieldGAPIpages(service, function, items,
                    throwReasons=None, retryReasons=None,
                    pageArgsInBody=False,
                    **kwargs):
-  Ent = _getEnt()
   if throwReasons is None:
     throwReasons = []
   if retryReasons is None:

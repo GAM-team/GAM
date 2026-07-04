@@ -102,10 +102,6 @@ from util.errors import (
 from util.fileio import readFile
 from gam.var import Cmd, Ent
 
-# Lazy accessor for Ent (runtime instance)
-def _getEnt():
-  return sys.modules['gam'].Ent
-
 # Lazy accessor for main module
 
 # --- Constants duplicated from __init__.py ---
