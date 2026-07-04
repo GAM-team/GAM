@@ -100,7 +100,7 @@ from util.errors import (
 )
 
 from util.fileio import readFile
-from gam.var import Cmd
+from gam.var import Cmd, Ent
 
 # Lazy accessor for Ent (runtime instance)
 def _getEnt():

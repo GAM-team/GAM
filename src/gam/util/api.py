@@ -47,6 +47,7 @@ from gamlib import glgdata as GDATA
 from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 from gamlib import yubikey
+from gam.var import Ent, Ind
 from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
 from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT, formatHTTPError
 from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, SERVICE_NOT_APPLICABLE_RC, TOTAL_ITEMS_MARKER, entityActionFailedWarning, printBlankLine, printKeyValueList, userServiceNotEnabledWarning

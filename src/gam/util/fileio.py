@@ -19,7 +19,7 @@ from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 
 
-from gam.var import Act, Ind
+from gam.var import Act, Ent, Ind
 from util.output import (
     stderrErrorMsg,
     stderrWarningMsg,

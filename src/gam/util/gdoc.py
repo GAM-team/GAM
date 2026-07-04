@@ -22,6 +22,7 @@ Ent = glentity.GamEntity()
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
+from gam.var import Cmd
 from gam.constants import DEFAULT_CSV_READ_MODE, NO_ENTITIES_FOUND_RC
 from util.args import UTF8, checkArgumentPresent, getBoolean, getCharSet, getCharacter, getEmailAddress, getSheetEntity, getSheetIdFromSheetEntity, getString, shlexSplitList
 from util.display import ACTION_NOT_PERFORMED_RC, userDriveServiceNotEnabledWarning

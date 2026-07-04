@@ -17,6 +17,7 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from gam.var import Act, Ent
 from gamlib import glapi as API
 from gamlib import glcfg as GC
 from gamlib import glgapi as GAPI
