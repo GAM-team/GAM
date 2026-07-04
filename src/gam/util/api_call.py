@@ -1,7 +1,7 @@
 """Low-level Google API call wrappers with retry logic.
 
-Contains callGAPI/callGAPIpages/callGData and their error-checking
-helpers. Separated from api.py (which handles auth/credentials/service
+Contains callGAPI/callGAPIpages and their error-checking helpers.
+Separated from api.py (which handles auth/credentials/service
 construction) to break the api<->uid circular dependency.
 """
 
@@ -15,182 +15,18 @@ import httplib2
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import gdata as GDATA
+
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Ent
 from gam.constants import GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, SOCKET_ERROR_RC
-from util.api import APIAccessDeniedExit, clearServiceCache, getGDataOAuthToken, handleOAuthTokenError, handleServerError, transportCreateRequest, waitOnFailure
+from util.api import APIAccessDeniedExit, clearServiceCache, handleOAuthTokenError, handleServerError, transportCreateRequest, waitOnFailure
 from util.args import UTF8, formatHTTPError
 from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER
 from util.fileio import checkAPICallsRate
 from util.output import ERROR_PREFIX, flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
-
-def checkGDataError(e, service):
-  error = e.args
-  reason = error[0].get('reason', '')
-  body = error[0].get('body', '').decode(UTF8)
-  # First check for errors that need special handling
-  if reason in ['Token invalid - Invalid token: Stateless token expired', 'Token invalid - Invalid token: Token not found', 'gone']:
-    keep_domain = service.domain
-    getGDataOAuthToken(service)
-    service.domain = keep_domain
-    return (GDATA.TOKEN_EXPIRED, reason)
-  error_code = getattr(e, 'error_code', 600)
-  if GC.Values[GC.DEBUG_LEVEL] > 0:
-    writeStdout(f'{ERROR_PREFIX} {error_code}: {reason}, {body}\n')
-  if error_code == 600:
-    if (body.startswith('Quota exceeded for the current request') or
-        body.startswith('Quota exceeded for quota metric') or
-        body.startswith('Request rate higher than configured')):
-      return (GDATA.QUOTA_EXCEEDED, body)
-    if (body.startswith('Photo delete failed') or
-        body.startswith('Upload photo failed') or
-        body.startswith('Photo query failed')):
-      return (GDATA.NOT_FOUND, body)
-    if body.startswith(GDATA.API_DEPRECATED_MSG):
-      return (GDATA.API_DEPRECATED, body)
-    if reason == 'Too Many Requests':
-      return (GDATA.QUOTA_EXCEEDED, reason)
-    if reason == 'Bad Gateway':
-      return (GDATA.BAD_GATEWAY, reason)
-    if reason == 'Gateway Timeout':
-      return (GDATA.GATEWAY_TIMEOUT, reason)
-    if reason == 'Service Unavailable':
-      return (GDATA.SERVICE_UNAVAILABLE, reason)
-    if reason == 'Service <jotspot> disabled by G Suite admin.':
-      return (GDATA.FORBIDDEN, reason)
-    if reason == 'Internal Server Error':
-      return (GDATA.INTERNAL_SERVER_ERROR, reason)
-    if reason == 'Token invalid - Invalid token: Token disabled, revoked, or expired.':
-      return (GDATA.TOKEN_INVALID, 'Token disabled, revoked, or expired. Please delete and re-create oauth.txt')
-    if reason == 'Token invalid - AuthSub token has wrong scope':
-      return (GDATA.INSUFFICIENT_PERMISSIONS, reason)
-    if reason.startswith('Only administrators can request entries belonging to'):
-      return (GDATA.INSUFFICIENT_PERMISSIONS, reason)
-    if reason == 'You are not authorized to access this API':
-      return (GDATA.INSUFFICIENT_PERMISSIONS, reason)
-    if reason == 'Invalid domain.':
-      return (GDATA.INVALID_DOMAIN, reason)
-    if reason.startswith('You are not authorized to perform operations on the domain'):
-      return (GDATA.INVALID_DOMAIN, reason)
-    if reason == 'Bad Request':
-      if 'already exists' in body:
-        return (GDATA.ENTITY_EXISTS, Msg.DUPLICATE)
-      return (GDATA.BAD_REQUEST, body)
-    if reason == 'Forbidden':
-      return (GDATA.FORBIDDEN, body)
-    if reason == 'Not Found':
-      return (GDATA.NOT_FOUND, Msg.DOES_NOT_EXIST)
-    if reason == 'Not Implemented':
-      return (GDATA.NOT_IMPLEMENTED, body)
-    if reason == 'Precondition Failed':
-      return (GDATA.PRECONDITION_FAILED, reason)
-  elif error_code == 602:
-    if body.startswith(GDATA.API_DEPRECATED_MSG):
-      return (GDATA.API_DEPRECATED, body)
-    if reason == 'Bad Request':
-      return (GDATA.BAD_REQUEST, body)
-  elif error_code == 610:
-    if reason == 'Service <jotspot> disabled by G Suite admin.':
-      return (GDATA.FORBIDDEN, reason)
-
-  # We got a "normal" error, define the mapping below
-  error_code_map = {
-    1000: reason,
-    1001: reason,
-    1002: 'Unauthorized and forbidden',
-    1100: 'User deleted recently',
-    1200: 'Domain user limit exceeded',
-    1201: 'Domain alias limit exceeded',
-    1202: 'Domain suspended',
-    1203: 'Domain feature unavailable',
-    1300: f'Entity {getattr(e, "invalidInput", "<unknown>")} exists',
-    1301: f'Entity {getattr(e, "invalidInput", "<unknown>")} Does Not Exist',
-    1302: 'Entity Name Is Reserved',
-    1303: f'Entity {getattr(e, "invalidInput", "<unknown>")} name not valid',
-    1306: f'{getattr(e, "invalidInput", "<unknown>")} has members. Cannot delete.',
-    1317: f'Invalid input {getattr(e, "invalidInput", "<unknown>")}, reason {getattr(e, "reason", "<unknown>")}',
-    1400: 'Invalid Given Name',
-    1401: 'Invalid Family Name',
-    1402: 'Invalid Password',
-    1403: 'Invalid Username',
-    1404: 'Invalid Hash Function Name',
-    1405: 'Invalid Hash Digest Length',
-    1406: 'Invalid Email Address',
-    1407: 'Invalid Query Parameter Value',
-    1408: 'Invalid SSO Signing Key',
-    1409: 'Invalid Encryption Public Key',
-    1410: 'Feature Unavailable For User',
-    1411: 'Invalid Encryption Public Key Format',
-    1500: 'Too Many Recipients On Email List',
-    1501: 'Too Many Aliases For User',
-    1502: 'Too Many Delegates For User',
-    1601: 'Duplicate Destinations',
-    1602: 'Too Many Destinations',
-    1603: 'Invalid Route Address',
-    1700: 'Group Cannot Contain Cycle',
-    1800: 'Group Cannot Contain Cycle',
-    1801: f'Invalid value {getattr(e, "invalidInput", "<unknown>")}',
-  }
-  return (error_code, error_code_map.get(error_code, f'Unknown Error: {str(e)}'))
-
-def callGData(service, function,
-              bailOnInternalServerError=False, softErrors=False,
-              throwErrors=None, retryErrors=None, triesLimit=0,
-              **kwargs):
-  if throwErrors is None:
-    throwErrors = []
-  if retryErrors is None:
-    retryErrors = []
-  if triesLimit == 0:
-    triesLimit = GC.Values[GC.API_CALLS_TRIES_LIMIT]
-  allRetryErrors = GDATA.NON_TERMINATING_ERRORS+retryErrors
-  method = getattr(service, function)
-  if GC.Values[GC.API_CALLS_RATE_CHECK]:
-    checkAPICallsRate()
-  for n in range(1, triesLimit+1):
-    try:
-      return method(**kwargs)
-    except (gdata.service.RequestError, gdata.apps.service.AppsForYourDomainException) as e:
-      error_code, error_message = checkGDataError(e, service)
-      if (n != triesLimit) and (error_code in allRetryErrors):
-        if (error_code == GDATA.INTERNAL_SERVER_ERROR and
-            bailOnInternalServerError and n == GC.Values[GC.BAIL_ON_INTERNAL_ERROR_TRIES]):
-          raise GDATA.ERROR_CODE_EXCEPTION_MAP[error_code](error_message)
-        waitOnFailure(n, triesLimit, error_code, error_message)
-        continue
-      if error_code in throwErrors:
-        if error_code in GDATA.ERROR_CODE_EXCEPTION_MAP:
-          raise GDATA.ERROR_CODE_EXCEPTION_MAP[error_code](error_message)
-        raise
-      if softErrors:
-        stderrErrorMsg(f'{error_code} - {error_message}{["", ": Giving up."][n > 1]}')
-        return None
-      if error_code == GDATA.INSUFFICIENT_PERMISSIONS:
-        APIAccessDeniedExit()
-      systemErrorExit(GOOGLE_API_ERROR_RC, f'{error_code} - {error_message}')
-    except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-      if n != triesLimit:
-        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
-        continue
-      handleServerError(e)
-    except google.auth.exceptions.RefreshError as e:
-      if isinstance(e.args, tuple):
-        e = e.args[0]
-      handleOAuthTokenError(e, GDATA.SERVICE_NOT_APPLICABLE in throwErrors)
-      raise GDATA.ERROR_CODE_EXCEPTION_MAP[GDATA.SERVICE_NOT_APPLICABLE](str(e))
-    except (http.client.ResponseNotReady, OSError) as e:
-      errMsg = f'Connection error: {str(e) or repr(e)}'
-      if n != triesLimit:
-        waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
-        continue
-      if softErrors:
-        writeStderr(f'\n{ERROR_PREFIX}{errMsg} - Giving up.\n')
-        return None
-      systemErrorExit(SOCKET_ERROR_RC, errMsg)
 
 def writeGotMessage(msg):
   if GC.Values[GC.SHOW_GETTINGS_GOT_NL]:
@@ -204,45 +40,6 @@ def writeGotMessage(msg):
       writeStderr(msg)
     GM.Globals[GM.LAST_GOT_MSG_LEN] = msgLen
   flushStderr()
-
-def callGDataPages(service, function,
-                   pageMessage=None,
-                   softErrors=False, throwErrors=None, retryErrors=None,
-                   uri=None,
-                   **kwargs):
-  if throwErrors is None:
-    throwErrors = []
-  if retryErrors is None:
-    retryErrors = []
-  nextLink = None
-  allResults = []
-  totalItems = 0
-  while True:
-    this_page = callGData(service, function,
-                          softErrors=softErrors, throwErrors=throwErrors, retryErrors=retryErrors,
-                          uri=uri,
-                          **kwargs)
-    if this_page:
-      nextLink = this_page.GetNextLink()
-      pageItems = len(this_page.entry)
-      if pageItems == 0:
-        nextLink = None
-      totalItems += pageItems
-      allResults.extend(this_page.entry)
-    else:
-      nextLink = None
-      pageItems = 0
-    if pageMessage:
-      show_message = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
-      writeGotMessage(show_message.format(Ent.ChooseGetting(totalItems)))
-    if nextLink is None:
-      if pageMessage and (pageMessage[-1] != '\n'):
-        writeStderr('\r\n')
-        flushStderr()
-      return allResults
-    uri = nextLink.href
-    if 'url_params' in kwargs:
-      kwargs['url_params'].pop('start-index', None)
 
 def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True):
   def makeErrorDict(code, reason, message):

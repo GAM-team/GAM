@@ -10,7 +10,6 @@ import os
 import random
 import re
 import sqlite3
-import ssl
 import subprocess
 import sys
 import time
@@ -34,12 +33,7 @@ import httplib2
 from filelock import FileLock
 from google.auth.jwt import Credentials as JWTCredentials
 
-try:
-  import gdata.apps.audit.service
-  import gdata.apps.contacts.service
-  import gdata.service
-except ImportError:
-  pass
+
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -534,7 +528,7 @@ def getService(api, httpObj):
           waitOnFailure(n, triesLimit, INVALID_JSON_RC, str(e))
           continue
         systemErrorExit(INVALID_JSON_RC, str(e))
-      except (http.client.ResponseNotReady, OSError, googleapiclient.errors.HttpError) as e:
+      except (http.client.HTTPException, OSError, googleapiclient.errors.HttpError) as e:
         errMsg = f'Connection error: {str(e) or repr(e)}'
         if n != triesLimit:
           waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
@@ -657,27 +651,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
   GM.Globals[GM.OAUTH2SERVICE_CLIENT_ID] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
   return credentials
 
-def getGDataOAuthToken(gdataObj, credentials=None):
-  if not credentials:
-    credentials = getClientCredentials(refreshOnly=True)
-  try:
-    credentials.refresh(transportCreateRequest())
-  except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
-    handleServerError(e)
-  except google.auth.exceptions.RefreshError as e:
-    if isinstance(e.args, tuple):
-      e = e.args[0]
-    handleOAuthTokenError(e, False)
-  gdataObj.additional_headers['Authorization'] = f'Bearer {credentials.token}'
-  if not GC.Values[GC.DOMAIN]:
-    GC.Values[GC.DOMAIN] = GM.Globals[GM.DECODED_ID_TOKEN].get('hd', 'UNKNOWN').lower()
-  if not GC.Values[GC.CUSTOMER_ID]:
-    GC.Values[GC.CUSTOMER_ID] = GC.MY_CUSTOMER
-  GM.Globals[GM.ADMIN] = GM.Globals[GM.DECODED_ID_TOKEN].get('email', 'UNKNOWN').lower()
-  GM.Globals[GM.OAUTH2_CLIENT_ID] = credentials.client_id
-  gdataObj.domain = GC.Values[GC.DOMAIN]
-  gdataObj.source = GAM_USER_AGENT
-  return True
+
 
 
 def readDiscoveryFile(api_version):
@@ -723,29 +697,6 @@ def buildGAPIObjectNoAuthentication(api):
   service = getService(api, httpObj)
   return service
 
-def initGDataObject(gdataObj, api):
-  GM.Globals[GM.CURRENT_CLIENT_API] = api
-  credentials = getClientCredentials(noDASA=True, refreshOnly=True)
-  GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = API.getClientScopesSet(api).intersection(GM.Globals[GM.CREDENTIALS_SCOPES])
-  if not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
-    systemErrorExit(NO_SCOPES_FOR_API_RC, Msg.NO_SCOPES_FOR_API.format(API.getAPIName(api)))
-  getGDataOAuthToken(gdataObj, credentials)
-  if GC.Values[GC.DEBUG_LEVEL] > 0:
-    gdataObj.debug = True
-  return gdataObj
-
-def getContactsObject():
-  contactsObject = initGDataObject(gdata.apps.contacts.service.ContactsService(contactFeed=True),
-                                   API.CONTACTS)
-  return (GC.Values[GC.DOMAIN], contactsObject)
-
-def getContactsQuery(**kwargs):
-  if GC.Values[GC.NO_VERIFY_SSL]:
-    ssl._create_default_https_context = ssl._create_unverified_context
-  return gdata.apps.contacts.service.ContactsQuery(**kwargs)
-
-def getEmailAuditObject():
-  return initGDataObject(gdata.apps.audit.service.AuditService(), API.EMAIL_AUDIT)
 
 # API access denied handlers (moved from access.py to break cycle)
 def ClientAPIAccessDeniedExit(errMsg=None):

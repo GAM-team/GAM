@@ -108,8 +108,5 @@ fixable = []  # Don't auto-fix — we want to review changes manually
 "src/gam/util/**" = ["E402", "F821"]
 # gamlib modules
 "src/gam/gamlib/**" = ["F821"]
-# gdata/ and atom/ are vendored third-party code — don't lint them
-"src/gam/gdata/**" = ["F", "E", "UP"]
-"src/gam/atom/**" = ["F", "E", "UP"]
 # Test files can be more relaxed
 "tests/**" = ["F401", "F811"]

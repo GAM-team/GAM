@@ -54,7 +54,6 @@ CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CLOUDRESOURCEMANAGERV1 = 'cloudresourcemanagerv1'
-CONTACTS = 'contacts'
 CONTACTDELEGATION = 'contactdelegation'
 DATATRANSFER = 'datatransfer'
 DIRECTORY = 'directory'
@@ -66,7 +65,6 @@ DRIVEACTIVITY = 'driveactivity'
 DRIVELABELS = 'drivelabels'
 DRIVELABELS_ADMIN = 'drivelabelsadmin'
 DRIVELABELS_USER = 'drivelabelsuser'
-EMAIL_AUDIT = 'email-audit'
 FORMS = 'forms'
 GMAIL = 'gmail'
 GROUPSMIGRATION = 'groupsmigration'
@@ -263,7 +261,6 @@ _INFO = {
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity API - User Invitations', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDRESOURCEMANAGER: {'name': 'Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CLOUDRESOURCEMANAGERV1: {'name': 'Resource Manager API v1', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudresourcemanager'},
-  CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   DATATRANSFER: {'name': 'Data Transfer API', 'version': 'datatransfer_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DIRECTORY: {'name': 'Directory API', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
@@ -274,7 +271,6 @@ _INFO = {
   DRIVEACTIVITY: {'name': 'Drive Activity API v2', 'version': 'v2', 'v2discovery': True},
   DRIVELABELS_ADMIN: {'name': 'Drive Labels API - Admin', 'version': 'v2', 'v2discovery': True, 'mappedAPI': DRIVELABELS},
   DRIVELABELS_USER: {'name': 'Drive Labels API - User', 'version': 'v2', 'v2discovery': True, 'mappedAPI': DRIVELABELS},
-  EMAIL_AUDIT: {'name': 'Email Audit API', 'version': 'v1', 'v2discovery': False},
   FORMS: {'name': 'Forms API', 'version': 'v1', 'v2discovery': True},
   GMAIL: {'name': 'Gmail API', 'version': 'v1', 'v2discovery': True},
   GROUPSMIGRATION: {'name': 'Groups Migration API', 'version': 'v1', 'v2discovery': True},
@@ -415,9 +411,6 @@ _CLIENT_SCOPES = [
    'api': STORAGEWRITE,
    'offByDefault': True,
    'scope': STORAGE_READWRITE_SCOPE},
-  {'name': 'Contacts API - Domain Shared Contacts',
-   'api': CONTACTS,
-   'scope': 'https://www.google.com/m8/feeds'},
   {'name': 'Contact Delegation API',
    'api': CONTACTDELEGATION,
    'subscopes': READONLY,
@@ -469,10 +462,6 @@ _CLIENT_SCOPES = [
    'api': DIRECTORY,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/admin.directory.user'},
-  {'name': 'Email Audit API',
-   'api': EMAIL_AUDIT,
-   'offByDefault': True,
-   'scope': 'https://apps-apis.google.com/a/feeds/compliance/audit/'},
   {'name': 'Groups Migration API',
    'api': GROUPSMIGRATION,
    'scope': 'https://www.googleapis.com/auth/apps.groups.migration'},
@@ -637,11 +626,7 @@ _SVCACCT_SCOPES = [
 #   'scope': 'https://www.googleapis.com/auth/cloud-identity.policies'},
 #  {'name': 'Cloud Identity User Invitations API',
 #   'api': CLOUDIDENTITY_USERINVITATIONS,
-#   'subscopes': READONLY,
 #   'scope': 'https://www.googleapis.com/auth/cloud-identity'},
-#  {'name': 'Contacts API - Users',
-#   'api': CONTACTS,
-#   'scope': 'https://www.google.com/m8/feeds'},
   {'name': 'Drive API',
    'api': DRIVE3,
    'subscopes': READONLY,

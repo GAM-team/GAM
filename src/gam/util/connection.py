@@ -262,8 +262,6 @@ def doCheckConnection():
   # to ensure we are checking all hosts GAM may use we should
   # keep this.
   for api in API._INFO:
-    if api in [API.CONTACTS, API.EMAIL_AUDIT]:
-      continue
     svc = getService(api, httpObj)
     base_url = svc._rootDesc.get('baseUrl')
     parsed_base_url = urlparse(base_url)
