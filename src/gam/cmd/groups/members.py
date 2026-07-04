@@ -78,7 +78,6 @@ from gam.util.display import (
     printGettingEntityItem,
     printGettingEntityItemForWhom,
     printKeyValueList,
-    printKeyValueListWithCount,
     printKeyValueWithCRsNLs,
     printLine,
 )
@@ -108,7 +107,7 @@ from gam.constants import (
 )
 from gam.util.domain_filters import (
     getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters,
-    makeUserGroupDomainQueryFilters, _setUserGroupArgs,
+    makeUserGroupDomainQueryFilters,
 )
 from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList
 from gam.util.output import executeBatch, writeStderr, writeStdout
@@ -1443,11 +1442,11 @@ def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, cou
     groupMemberList = []
     for member in groupMembers:
       if member['type'] != Ent.TYPE_GROUP:
-        if ((member['type'] in typesSet and
+        if (member['type'] in typesSet and
              _checkMemberMatch(member, memberOptions) and
              _checkMemberRoleIsSuspendedIsArchived(member, validRoles, memberOptions[MEMBEROPTION_ISSUSPENDED], memberOptions[MEMBEROPTION_ISARCHIVED]) and
              (not checkShowCategory or _checkMemberCategory(member, memberDisplayOptions)) and
-             member['id'] not in membersSet)):
+             member['id'] not in membersSet):
           if memberOptions[MEMBEROPTION_GETDELIVERYSETTINGS]:
             _getMemberDeliverySettings(member)
           membersSet.add(member['id'])

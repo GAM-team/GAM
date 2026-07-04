@@ -69,3 +69,47 @@ requires = [
     "hatchling",
 ]
 build-backend = "hatchling.build"
+
+# Ruff linter configuration — https://docs.astral.sh/ruff/
+[tool.ruff]
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Focused rules that catch real bugs without overwhelming noise.
+select = [
+    "F",       # Pyflakes — unused imports, undefined names, etc.
+    "E711",    # Comparison to None (use `is` / `is not`)
+    "E713",    # Not-in test (use `not in` operator)
+    "UP",      # pyupgrade — modernize syntax for Python 3.11+
+]
+ignore = [
+    # Pyflakes rules suppressed for GAM's architecture
+    "F402",    # Import shadowed by loop variable — GAM reuses `entity` in loops
+    "F403",    # Star import — GAM uses `from gam.constants import *`
+    "F405",    # Undefined from star import — GAM uses `from gam.constants import *`
+    "F811",    # Redefined while unused — GAM reassigns variables in arg-parsing loops
+    "F841",    # Local variable assigned but never used — some GAM patterns use this intentionally
+    # pyupgrade rules that would be too noisy right now
+    "UP009",   # UTF-8 encoding declaration — harmless, not worth a 17-file churn
+    "UP024",   # os.error alias — 37 occurrences, low priority
+    "UP030",   # Format literals — would change string formatting style
+    "UP031",   # printf-string-formatting — 200+ occurrences, too noisy right now
+    "UP032",   # f-string — auto-conversion can break complex expressions
+]
+fixable = []  # Don't auto-fix — we want to review changes manually
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py re-exports cmd/ functions for dispatch tables
+"src/gam/__init__.py" = ["F401", "E402", "F821"]
+# cmd/ files use `from gam.constants import *`
+"src/gam/cmd/**" = ["F821"]
+# util/ modules have ordered imports and re-exports
+"src/gam/util/**" = ["E402", "F821"]
+# gamlib modules
+"src/gam/gamlib/**" = ["F821"]
+# gdata/ and atom/ are vendored third-party code — don't lint them
+"src/gam/gdata/**" = ["F", "E", "UP"]
+"src/gam/atom/**" = ["F", "E", "UP"]
+# Test files can be more relaxed
+"tests/**" = ["F401", "F811"]

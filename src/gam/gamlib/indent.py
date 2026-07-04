@@ -20,7 +20,7 @@
 
 """
 
-class GamIndent():
+class GamIndent:
 
   INDENT_SPACES_PER_LEVEL = '  '
 

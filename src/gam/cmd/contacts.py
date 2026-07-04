@@ -5,10 +5,7 @@ import json
 
 import gdata.apps.contacts
 
-from gamlib import api as API
 from gamlib import settings as GC
-from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.constants import NO_ENTITIES_FOUND_RC
 
@@ -54,7 +51,6 @@ from gam.util.display import (
 from gam.util.entity import getEntityList
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import setSysExitRC, writeStdout
-from gam.cmd.users.manage import ADDRESS_ARGUMENT_TO_FIELD_MAP, ORGANIZATION_ARGUMENT_TO_FIELD_MAP
 
 
 def _getCreateContactReturnOptions(parameters):
@@ -111,7 +107,7 @@ CONTACT_RELATIONS = 'Relations'
 CONTACT_USER_DEFINED_FIELDS = 'User Defined Fields'
 CONTACT_WEBSITES = 'Websites'
 #
-class ContactsManager():
+class ContactsManager:
 
   CONTACT_ARGUMENT_TO_PROPERTY_MAP = {
     'json': CONTACT_JSON,
@@ -1667,7 +1663,7 @@ PEOPLE_REMOVE_GROUPS_LIST = 'ContactRemoveGroupsList'
 PEOPLE_GROUP_NAME = 'name'
 PEOPLE_GROUP_CLIENT_DATA = 'clientData'
 #
-class PeopleManager():
+class PeopleManager:
   PEOPLE_ARGUMENT_TO_PROPERTY_MAP = {
     'json': PEOPLE_JSON,
     'additionalname': PEOPLE_NAMES_MIDDLE_NAME,

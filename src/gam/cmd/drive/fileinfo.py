@@ -4,16 +4,14 @@
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
-import re
 import platform
 
-from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
+from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 import os
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.constants import WITH_PARENTS
 
@@ -48,7 +46,7 @@ SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
 from gam.cmd.drive.core import (
-    MimeTypeCheck, _getSharedDriveNameFromId, _simpleFileIdEntityList,
+    _getSharedDriveNameFromId, _simpleFileIdEntityList,
     _validateUserGetFileIDs, _validateUserSharedDrive,
     cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity,
 )

@@ -18,7 +18,6 @@
 # limitations under the License.
 
 import multiprocessing
-import platform
 import sys
 
 import gam

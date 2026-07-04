@@ -55,7 +55,7 @@ YUBIKEY_NOT_FOUND_RC = 87
 
 PIN_PUK_CHARS = string.ascii_letters+string.digits+string.punctuation
 
-class YubiKey():
+class YubiKey:
 
   def __init__(self, service_account_info=None):
     self.key_type = None

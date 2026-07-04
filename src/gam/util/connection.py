@@ -1,6 +1,5 @@
 """Network diagnostics, version display, and usage functions."""
 
-import logging
 import os
 import platform
 import socket
@@ -309,7 +308,7 @@ def doVersion(checkForArgs=True):
   if simple:
     writeStdout(__version__)
     return
-  writeStdout((f'{GAM} {__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
+  writeStdout(f'{GAM} {__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
                f'{__author__}\n'
                f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {struct.calcsize("P")*8}-bit {sys.version_info[3]}\n'
                f'{getOSPlatform()} {platform.machine()}\n'
@@ -317,7 +316,7 @@ def doVersion(checkForArgs=True):
                f'{Ent.Singular(Ent.CONFIG_FILE)}: {GM.Globals[GM.GAM_CFG_FILE]}, {Ent.Singular(Ent.SECTION)}: {GM.Globals[GM.GAM_CFG_SECTION_NAME]}, '
                f'{GC.CUSTOMER_ID}: {GC.Values[GC.CUSTOMER_ID]}, {GC.DOMAIN}: {GC.Values[GC.DOMAIN]}\n'
                f'Time: {ISOformatTimeStamp(todaysTime())}\n'
-               ))
+               )
   if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
     printKeyValueList([Msg.UPDATE_GAM_TO_64BIT])
   if timeOffset:

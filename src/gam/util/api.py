@@ -43,18 +43,16 @@ except ImportError:
 
 from gamlib import api as API
 from gamlib import settings as GC
-from gamlib import gapi as GAPI
-from gamlib import gdata as GDATA
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gamlib import yubikey
 from gam.var import Ent, Ind
-from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
-from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT, formatHTTPError
-from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, SERVICE_NOT_APPLICABLE_RC, TOTAL_ITEMS_MARKER, entityActionFailedWarning, printBlankLine, printKeyValueList, userServiceNotEnabledWarning
+from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
+from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT
+from util.display import SERVICE_NOT_APPLICABLE_RC, entityActionFailedWarning, printBlankLine, printKeyValueList, userServiceNotEnabledWarning
 from util.errors import INVALID_JSON_RC, OAUTH2SERVICE_JSON_REQUIRED_RC, OAUTH2_TXT_REQUIRED_RC, expiredRevokedOauth2TxtExit, invalidDiscoveryJsonExit, invalidOauth2TxtExit, invalidOauth2serviceJsonExit
-from util.fileio import FILE_ERROR_RC, UNKNOWN, checkAPICallsRate, incrAPICallsRetryData, readFile, writeFile
-from util.output import ERROR_PREFIX, flushStderr, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+from util.fileio import FILE_ERROR_RC, UNKNOWN, incrAPICallsRetryData, readFile, writeFile
+from util.output import flushStderr, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
 
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')

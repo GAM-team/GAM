@@ -4,7 +4,6 @@
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
-import re
 import json
 
 from gam.cmd.drive.core import _getSharedDriveNameFromId, _validateUserGetFileIDs, getDriveFileEntity
@@ -13,14 +12,11 @@ from gam.cmd.drive.labels import normalizeDriveLabelID
 
 from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
 
-from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
-from gamlib import msgs as Msg
 from gam.constants import MY_DRIVE, TEAM_DRIVE
 
-from gam.var import Act, Cmd, Ent, Ind
+from gam.var import Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -54,8 +50,6 @@ from gam.cmd.drive.core import DRIVE_LABEL_CHOICE_MAP  # cross-module ref
 from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
     OrderBy,
-    StartEndTime,
-    checkArgumentPresent,
     escapeCRsNLs,
     getArgument,
     getBoolean,
@@ -575,7 +569,7 @@ def _getDriveFieldSubField(field, fieldsList, parentsSubFields):
   else:
     invalidChoiceExit(field, list(DRIVE_SUBFIELDS_CHOICE_MAP), True)
 
-class DriveFileFields():
+class DriveFileFields:
   def __init__(self):
     self.showSharedDriveNames = False
     self.allFields = False

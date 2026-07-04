@@ -3,7 +3,6 @@
 import json
 import sys
 
-import re
 
 from gamlib import api as API
 from gamlib import settings as GC

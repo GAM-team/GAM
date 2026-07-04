@@ -6,7 +6,6 @@ Part of the _chat_tmp sub-package."""
 
 import re
 import json
-import sys
 import base64
 import os
 

@@ -5,12 +5,11 @@ import json
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import accessErrorExit
 from gam.util.api import buildGAPIObject
-from gam.util.api_call import callGAPI, callGAPIitems
+from gam.util.api_call import callGAPI
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     YYYYMMDD_FORMAT,
@@ -35,13 +34,8 @@ from gam.util.errors import unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import printWarningMessage, writeStdout
 from gam.util.entity import (
-    PRINT_PRIVILEGES_FIELDS,
     _getCustomerId,
-    _getCustomerIdNoC,
-    _getCustomersCustomerIdNoC,
-    _getCustomersCustomerIdWithC,
     _getDomainList,
-    setTrueCustomerId,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC
 from gam.cmd.domains import CUSTOMER_LICENSE_MAP

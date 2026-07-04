@@ -20,7 +20,7 @@
 
 """
 
-class GamAction():
+class GamAction:
 
 # Keys into NAMES; arbitrary values but must be unique
   ACCEPT = 'acpt'

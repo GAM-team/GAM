@@ -20,7 +20,7 @@
 
 """
 
-class GamCLArgs():
+class GamCLArgs:
 
 # GAM entity types as specified on the command line
   ENTITY_BROWSER = 'ids'

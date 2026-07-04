@@ -12,7 +12,7 @@ import sys
 from gamlib import settings as GC
 
 # Version and author (canonical source: gam/__init__.py)
-from gam import __author__, __version__, __license__
+from gam import __author__, __version__
 
 # Time formats
 IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%:z'

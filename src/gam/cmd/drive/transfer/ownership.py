@@ -8,8 +8,6 @@ Part of the transfer sub-package."""
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
-import re
-import sys
 
 from gamlib import api as API
 from gamlib import settings as GC

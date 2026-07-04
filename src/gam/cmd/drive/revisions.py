@@ -4,11 +4,9 @@
 
 """GAM Google Drive file, permission, shared drive, and label management."""
 
-import re
 
 from gam.cmd.drive.core import _getDriveFileNameFromId, _validateUserGetFileIDs, getDriveFileEntity
 
-from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM

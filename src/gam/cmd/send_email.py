@@ -2,23 +2,17 @@
 
 import time
 
-import re
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.access import entityUnknownWarning
-from gam.util.api import _getAdminEmail, buildGAPIObject
+from gam.util.api import _getAdminEmail
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
-    FALSE,
     SORF_MSG_FILE_ARGUMENTS,
-    TRUE,
-    TRUE_FALSE,
     UTF8,
     checkArgumentPresent,
     getArgument,
@@ -27,12 +21,10 @@ from gam.util.args import (
     getDateOrDeltaFromNow,
     getEmailAddress,
     getFilename,
-    getREPatternSubstitution,
     getString,
     getStringOrFile,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
-    splitEmailAddress,
 )
 from gam.util.display import (
     entityActionFailedWarning,
@@ -43,15 +35,13 @@ from gam.util.display import (
     userGmailServiceNotEnabledWarning,
 )
 from gam.util.email import send_email
-from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify, getNormalizedEmailAddressEntity
+from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import (
-    invalidArgumentExit,
-    invalidChoiceExit,
     missingArgumentExit,
     unknownArgumentExit,
     usageErrorExit,
 )
-from gam.util.output import ERROR, setSysExitRC
+from gam.util.output import setSysExitRC
 from gam.util.tags import (  # noqa: F401  # re-export
     ADDRESS_FIELDS_PRINT_ORDER,
     CASE_MARKERS,

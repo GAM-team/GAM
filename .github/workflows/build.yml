@@ -544,6 +544,12 @@ jobs:
           "$PYTHON" -m pip install pytest
           "$PYTHON" -m pytest ../tests/ -v
 
+      - name: Lint with ruff
+        run: |
+          "$PYTHON" -m pip install ruff
+          ruff check ../src/gam/
+          ruff check ../tests/
+
       - name: Install PyInstaller
         if: matrix.goal == 'build'
         run: |

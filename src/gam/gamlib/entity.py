@@ -20,7 +20,7 @@
 
 """
 
-class GamEntity():
+class GamEntity:
 
   ROLE_MANAGER = 'MANAGER'
   ROLE_MEMBER = 'MEMBER'
