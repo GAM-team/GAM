@@ -9,7 +9,8 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
-from gam.util.api import buildGAPIObject, callGAPI
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI
 from gam.util.args import (
     FALSE,
     TRUE,

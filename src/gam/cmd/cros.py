@@ -16,15 +16,9 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit
-from gam.util.api import (
-    _finalizeGAPIpagesResult,
-    _processGAPIpagesResult,
-    buildGAPIObject,
-    callGAPI,
-    callGAPIitems,
-    callGAPIpages,
-    checkGAPIError,
-)
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import _finalizeGAPIpagesResult, _processGAPIpagesResult
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages, checkGAPIError
 from gam.util.output import ISOformatTimeStamp
 from gam.util.args import (
         SORTORDER_CHOICE_MAP,

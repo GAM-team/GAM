@@ -42,13 +42,9 @@ from gam.cmd.vault.matters import (
     getMatterItem,
     warnMatterNotOpen,
 )
-from gam.util.api import (
-    _getAdminEmail,
-    buildGAPIObject,
-    buildGAPIServiceObject,
-    callGAPI,
-    callGAPIpages,
-)
+from gam.util.api import _getAdminEmail, buildGAPIObject
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     checkForExtraneousArguments,
     getArgument,

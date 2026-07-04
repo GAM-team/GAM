@@ -15,7 +15,8 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.api import buildGAPIObject, callGAPIpages, checkGAPIError
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPIpages, checkGAPIError
 from gam.util.args import getArgument, getBoolean, getString
 from gam.util.display import (
     ACTION_NOT_PERFORMED_RC,

@@ -12,7 +12,8 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
-from gam.util.api import callGData, getEmailAuditObject
+from gam.util.api import getEmailAuditObject
+from gam.util.api_call import callGData
 from gam.util.args import (
     YYYYMMDD_HHMM_FORMAT,
     checkForExtraneousArguments,

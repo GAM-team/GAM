@@ -20,7 +20,9 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.constants import DEFAULT_FILE_APPEND_MODE, INSUFFICIENT_PERMISSIONS_RC, MAX_GOOGLE_SHEET_CELLS, NO_CSV_DATA_TO_UPLOAD_RC, ROOT
 from tempfile import TemporaryFile
-from util.api import _getAdminEmail, buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages, chooseSaAPI
+from util.api import _getAdminEmail, buildGAPIObject
+from util.svcacct import buildGAPIServiceObject, chooseSaAPI
+from util.api_call import callGAPI, callGAPIpages
 from util.args import LOCALE_CODES_MAP, NEVER_TIME, TRUE_FALSE, UTF8, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN, escapeCRsNLs, formatLocalTime, formatLocalTimestamp, getArgument, getBoolean, getCharacter, getChoice, getInteger, getLanguageCode, getSheetEntity, getSheetIdFromSheetEntity, getString, normalizeEmailAddressOrUID, protectedSheetId, todaysTime
 from util.display import ACTION_FAILED_RC, entityActionFailedWarning, entityActionPerformed, printBlankLine, printJSONKey, printJSONValue, printKeyValueList, userDriveServiceNotEnabledWarning
 from util.email import send_email

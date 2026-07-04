@@ -16,7 +16,8 @@ from gam.constants import NO_ENTITIES_FOUND_RC
 from gamlib import gdata as GDATA
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
-from gam.util.api import callGData, callGDataPages, getContactsObject, getContactsQuery
+from gam.util.api import getContactsObject, getContactsQuery
+from gam.util.api_call import callGData, callGDataPages
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     checkArgumentPresent,

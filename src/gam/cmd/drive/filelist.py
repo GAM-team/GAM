@@ -93,7 +93,7 @@ from gam.cmd.drive.filetree import (
     initFileTree,
     noFileSelectFileIdEntity,
 )
-from gam.util.api import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.util.args import (
     NEVER_TIME,
     OrderBy,

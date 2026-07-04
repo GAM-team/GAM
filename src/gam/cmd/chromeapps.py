@@ -10,7 +10,8 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit
-from gam.util.api import buildGAPIObject, buildGAPIObjectNoAuthentication, callGAPI, callGAPIpages
+from gam.util.api import buildGAPIObject, buildGAPIObjectNoAuthentication
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     OrderBy,
     YYYYMMDD_FORMAT,

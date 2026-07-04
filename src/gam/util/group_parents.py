@@ -8,7 +8,7 @@ from gamlib import gapi as GAPI
 from gamlib import indent
 
 from gam.util.access import accessErrorExit
-from gam.util.api import callGAPIpages
+from gam.util.api_call import callGAPIpages
 from gam.util.csv_pf import flattenJSON
 from gam.util.display import badRequestWarning, printKeyValueListWithCount
 from gam.util.domain_filters import _setUserGroupArgs

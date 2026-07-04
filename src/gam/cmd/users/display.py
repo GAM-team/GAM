@@ -65,15 +65,8 @@ from gam.cmd.users.manage import (  # cross-module refs
     _initSchemaParms,
 )
 from gam.util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
-from gam.util.api import (
-    _getAdminEmail,
-    buildGAPIObject,
-    callGAPI,
-    callGAPIpages,
-    checkGAPIError,
-    waitOnFailure,
-    yieldGAPIpages,
-)
+from gam.util.api import _getAdminEmail, buildGAPIObject, waitOnFailure
+from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError, yieldGAPIpages
 from gam.util.args import (
     formatLocalTime,
     getAddCSVData,

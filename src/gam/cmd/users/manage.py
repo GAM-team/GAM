@@ -22,7 +22,8 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gamlib import skus as SKU
 from gam.util.access import accessErrorExit, duplicateAliasGroupUserWarning, entityUnknownWarning
-from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, checkGAPIError
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     SORF_MSG_FILE_ARGUMENTS,

@@ -9,14 +9,9 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.api import (
-    buildGAPIObject,
-    buildGAPIServiceObject,
-    callGAPI,
-    callGAPIitems,
-    callGAPIpages,
-    getHttpObj,
-)
+from gam.util.api import buildGAPIObject, getHttpObj
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
     UTF8,
     checkForExtraneousArguments,

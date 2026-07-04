@@ -136,7 +136,9 @@ from util.gdoc import getGDocData, getStorageFileData, openCSVFileReader
 from util.output import formatKeyValueList, printErrorMessage, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr
 from gam.util.access import ClientAPIAccessDeniedExit, accessErrorExit
 from util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
-from util.api import _getAdminEmail, buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
+from util.api import _getAdminEmail, buildGAPIObject
+from util.svcacct import buildGAPIServiceObject
+from util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.var import Act, Cmd, Ent
 
 def getQueries(myarg):

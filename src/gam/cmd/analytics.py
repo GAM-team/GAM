@@ -8,7 +8,8 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.api import buildGAPIServiceObject, callGAPIpages
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPIpages
 from gam.util.args import getArgument, getBoolean, getInteger, getString
 from gam.util.csv_pf import (
     CSVPrintFile,

@@ -33,17 +33,12 @@ class TestAllModulesImport:
         assert not failures, "Failed to import:\n" + "\n".join(failures)
 
     def test_no_local_imports_in_util(self):
-        """util/ modules should not have function-scope imports from other util/ modules.
-
-        The one known exception is api.py:getSaUser (documented api<->uid cycle).
-        """
+        """util/ modules should not have function-scope imports from other util/ modules."""
         import re
         util_dir = os.path.join(os.path.dirname(__file__), '..', 'src', 'gam', 'util')
         util_dir = os.path.normpath(util_dir)
 
-        KNOWN_EXCEPTIONS = {
-            ('api.py', 'from util.uid import convertUIDtoEmailAddress'),
-        }
+        KNOWN_EXCEPTIONS = set()
 
         violations = []
         for f in sorted(os.listdir(util_dir)):

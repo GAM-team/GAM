@@ -60,7 +60,7 @@ from gam.cmd.drive.core import (
     getEscapedDriveFileName,
     initDriveFileEntity,
 )
-from gam.util.api import callGAPI, callGAPIpages
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     StartEndTime,
     checkArgumentPresent,

@@ -12,7 +12,8 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import accessErrorExit
-from gam.util.api import buildGAPIObject, callGAPI, callGAPIitems
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI, callGAPIitems
 from gam.util.args import checkForExtraneousArguments, formatLocalTimestamp, getArgument, getString
 from gam.util.csv_pf import (
     CSVPrintFile,

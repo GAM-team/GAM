@@ -21,7 +21,9 @@ from gam.var import Act, Ent
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from util.api import _getAdminEmail, buildGAPIObject, buildGAPIServiceObject, callGAPI
+from util.api import _getAdminEmail, buildGAPIObject
+from util.svcacct import buildGAPIServiceObject
+from util.api_call import callGAPI
 from util.args import NAME_EMAIL_ADDRESS_PATTERN, UTF8, normalizeEmailAddressOrUID
 from util.display import entityActionFailedWarning, entityActionPerformed, entityActionPerformedMessage
 from util.errors import usageErrorExit

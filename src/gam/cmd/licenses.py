@@ -10,7 +10,8 @@ from gamlib import msgs as Msg
 
 from gamlib import skus as SKU
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.api import buildGAPIObject, callGAPIpages
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPIpages
 from gam.util.args import getArgument, getGoogleProductList, getGoogleSKUList, getInteger
 from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList
 from gam.util.display import entityActionNotPerformedWarning, getPageMessageForWhom, printEntityKVList

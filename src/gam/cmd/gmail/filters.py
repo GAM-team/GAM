@@ -15,7 +15,8 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
-from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIitems
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIitems
 from gam.util.args import (
     ONE_KILO_10_BYTES,
     ONE_MEGA_10_BYTES,

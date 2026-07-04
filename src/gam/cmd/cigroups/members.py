@@ -24,7 +24,8 @@ from gam.cmd.groups.groups import (
 
 from gam.cmd.cigroups.groups import ALL_CIGROUP_MEMBER_TYPES, CIGROUP_MEMBER_TYPES_MAP
 from gam.util.access import entityUnknownWarning
-from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, getHttpObj
+from gam.util.api import buildGAPIObject, getHttpObj
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     checkArgumentPresent,
     checkForExtraneousArguments,

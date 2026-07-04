@@ -15,15 +15,9 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
-from gam.util.api import (
-    _getAdminEmail,
-    buildGAPIObject,
-    buildGAPIServiceObject,
-    callGAPI,
-    callGAPIitems,
-    callGAPIpages,
-    yieldGAPIpages,
-)
+from gam.util.api import _getAdminEmail, buildGAPIObject
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.util.args import (
     StartEndTime,
     checkArgumentPresent,

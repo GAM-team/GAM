@@ -14,7 +14,8 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
-from gam.util.api import buildGAPIObject, callGAPI, checkGAPIError, waitOnFailure
+from gam.util.api import buildGAPIObject, waitOnFailure
+from gam.util.api_call import callGAPI, checkGAPIError
 from gam.util.args import (
     SORF_TEXT_ARGUMENTS,
     addCourseAliasScope,

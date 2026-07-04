@@ -31,13 +31,13 @@ from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import (
     buildGAPIObject,
-    callGAPI,
     getClientCredentials,
     getHttpObj,
     getOauth2TxtCredentials,
     shortenURL,
     writeClientCredentials,
 )
+from gam.util.api_call import callGAPI
 from gam.util.args import (
     UTF8,
     YYYYMMDDTHHMMSSZ_FORMAT,

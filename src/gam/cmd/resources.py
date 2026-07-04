@@ -10,7 +10,8 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
-from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     UID_PATTERN,

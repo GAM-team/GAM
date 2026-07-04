@@ -11,7 +11,9 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
-from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
+from gam.util.api import buildGAPIObject
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI
 from gam.util.args import checkArgumentPresent, checkForExtraneousArguments, getArgument
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (

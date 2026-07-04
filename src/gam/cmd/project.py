@@ -33,10 +33,6 @@ from gam.util.api import (
     _getSvcAcctData,
     buildGAPIObject,
     buildGAPIObjectNoAuthentication,
-    buildGAPIServiceObject,
-    callGAPI,
-    callGAPIitems,
-    callGAPIpages,
     getAPIService,
     getHttpObj,
     getSvcAcctCredentials,
@@ -46,6 +42,8 @@ from gam.util.api import (
     transportAuthorizedHttp,
     transportCreateRequest,
 )
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
     UTF8,
     checkArgumentPresent,

@@ -11,13 +11,9 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
-from gam.util.api import (
-    _getAdminEmail,
-    buildGAPIObject,
-    buildGAPIServiceObject,
-    callGAPI,
-    callGAPIpages,
-)
+from gam.util.api import _getAdminEmail, buildGAPIObject
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     FALSE,
     SORF_MSG_FILE_ARGUMENTS,

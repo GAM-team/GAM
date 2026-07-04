@@ -29,7 +29,9 @@ from util.display import ACTION_NOT_PERFORMED_RC, userDriveServiceNotEnabledWarn
 from util.errors import entityActionFailedExit, entityDoesNotExistExit
 from util.fileio import FILE_ERROR_RC, UTF8_SIG, fileErrorMessage, getGDocSheetDataFailedExit, getGDocSheetDataRetryWarning, openFile, setFilePath
 from util.output import stderrWarningMsg, systemErrorExit
-from util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI
+from util.api import buildGAPIObject
+from util.svcacct import buildGAPIServiceObject
+from util.api_call import callGAPI
 
 
 

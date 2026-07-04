@@ -15,7 +15,8 @@ from gamlib import state as GM
 from gamlib import indent
 from gamlib import msgs as Msg
 from gam.constants import API_ACCESS_DENIED_RC, INVALID_DOMAIN_RC
-from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, callGAPI, APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, SvcAcctAPIDisabledExit
+from util.api import _getAdminEmail, _getSvcAcctData, buildGAPIObject, APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, SvcAcctAPIDisabledExit
+from util.api_call import callGAPI
 from util.args import getEmailAddressDomain, getPhraseDNEorSNA
 from util.display import ENTITY_DOES_NOT_EXIST_RC, ENTITY_DUPLICATE_RC, entityActionFailedWarning, entityDoesNotExistWarning, entityServiceNotApplicableWarning
 from util.errors import OAUTH2SERVICE_JSON_REQUIRED_RC

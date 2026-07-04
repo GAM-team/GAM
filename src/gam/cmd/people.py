@@ -72,14 +72,10 @@ from gam.cmd.contacts import (
     PEOPLE_UPDATE_TIME, PEOPLE_URLS, PEOPLE_USER_DEFINED,
 )
 from gam.util.access import entityUnknownWarning
-from gam.util.api import (
-    buildGAPIObject,
-    buildGAPIServiceObject,
-    callGAPI,
-    callGAPIpages,
-    getHttpObj,
-    writeGotMessage,
-)
+from gam.util.api import buildGAPIObject, getHttpObj
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import writeGotMessage
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     SORTORDER_CHOICE_MAP,
     UID_PATTERN,

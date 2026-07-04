@@ -10,7 +10,8 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Ent
-from util.api import buildGAPIObject, callGAPI
+from util.api import buildGAPIObject
+from util.api_call import callGAPI
 from util.args import normalizeEmailAddressOrUID
 from util.display import entityDoesNotExistWarning, printGettingAllEntityItemsForWhom
 from util.errors import usageErrorExit
@@ -117,5 +118,3 @@ def convertEmailAddressToUID(emailAddressOrUID, cd=None, emailType='user', saved
     if savedLocation is not None:
       Cmd.SetLocation(savedLocation)
     entityDoesNotExistExit([Ent.USER, Ent.GROUP][emailType == 'group'], normalizedEmailAddressOrUID, errMsg=getPhraseDNEorSNA(normalizedEmailAddressOrUID))
-
-

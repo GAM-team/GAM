@@ -12,16 +12,9 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit
-from gam.util.api import (
-    _finalizeGAPIpagesResult,
-    _processGAPIpagesResult,
-    buildGAPIObject,
-    callGAPI,
-    callGAPIpages,
-    checkGAPIError,
-    waitOnFailure,
-    yieldGAPIpages,
-)
+from gam.util.api import buildGAPIObject, waitOnFailure
+from gam.util.api_call import _finalizeGAPIpagesResult, _processGAPIpagesResult
+from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError, yieldGAPIpages
 from gam.util.args import (
     ARCHIVED_ARGUMENTS,
     SUSPENDED_ARGUMENTS,

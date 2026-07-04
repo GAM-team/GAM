@@ -65,7 +65,8 @@ from gam.cmd.drive.filelist import (
     _checkUpdateLastModifiction, _getLastModificationPath,
     _initLastModification, _showLastModification, _updateLastModificationRow,
 )
-from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages, yieldGAPIpages
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI, callGAPIpages, yieldGAPIpages
 from gam.util.args import (
     OrderBy,
     formatFileSize,

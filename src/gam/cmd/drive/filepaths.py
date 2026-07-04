@@ -51,7 +51,7 @@ SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
 from gam.cmd.drive.core import DRIVE_LABEL_CHOICE_MAP  # cross-module ref
-from gam.util.api import callGAPI, callGAPIitems, callGAPIpages
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
     OrderBy,
     StartEndTime,
