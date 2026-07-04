@@ -947,7 +947,7 @@ jobs:
           run_gam config enable_dasa false save
           # don't expose policy output
           run_gam show policies > policies.csv
-          run_gam user $gam_user create peoplecontact names givenname GHA familyname "$JID" emailaddresses work "${newbase}@example.com" primary
+          run_gam user $gam_user create peoplecontact givenname GHA familyname "$JID" email work "${newbase}@example.com" primary
           run_gam user $gam_user print peoplecontacts
           run_gam print privileges
           run_gam config enable_dasa true save

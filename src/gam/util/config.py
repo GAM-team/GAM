@@ -1079,7 +1079,7 @@ def _finalizeConfig(status, sectionName):
     else:
       GM.Globals[GM.CACHE_DIR] = GC.Values[GC.CACHE_DIR]
       GM.Globals[GM.CACHE_DISCOVERY_ONLY] = GC.Values[GC.CACHE_DISCOVERY_ONLY]
-# Set environment variables so GData API can find cacerts.pem
+# Set environment variables so HTTP libraries can find cacerts.pem
     os.environ['REQUESTS_CA_BUNDLE'] = GC.Values[GC.CACERTS_PEM]
     os.environ['DEFAULT_CA_BUNDLE_PATH'] = GC.Values[GC.CACERTS_PEM]
     os.environ['HTTPLIB2_CA_CERTS'] = GC.Values[GC.CACERTS_PEM]

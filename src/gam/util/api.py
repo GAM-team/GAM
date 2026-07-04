@@ -1,7 +1,7 @@
 """GAM API utility functions.
 
 HTTP transport, OAuth credential management, Google API service
-construction, and GAPI/GData call wrappers with retry logic.
+construction, and GAPI call wrappers with retry logic.
 """
 
 import http.client

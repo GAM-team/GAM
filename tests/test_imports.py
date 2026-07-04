@@ -70,7 +70,7 @@ class TestAllModulesImport:
         for line in lines:
             stripped = line.strip()
             if stripped.startswith('import ') and not stripped.startswith(
-                ('import gam', 'import gdata', 'import google', 'import httplib2',
+                ('import gam', 'import google', 'import httplib2',
                  'import arrow', 'import distro', 'import termios')):
                 stdlib_imports.append(stripped)
 

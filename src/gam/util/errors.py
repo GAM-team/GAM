@@ -12,6 +12,7 @@ from gam.var import Act, Cmd, Ent, Ind
 from gam.constants import (
     ACTION_FAILED_RC, CLIENT_SECRETS_JSON_REQUIRED_RC,
     ENTITY_DOES_NOT_EXIST_RC, ENTITY_IS_NOT_UNIQUE_RC,
+    FN_GAMCOMMANDS_TXT, GAM_WIKI,
     INVALID_JSON_RC, OAUTH2_TXT_REQUIRED_RC,
     OAUTH2SERVICE_JSON_REQUIRED_RC, USAGE_ERROR_RC,
 )
@@ -83,8 +84,6 @@ def entityIsNotUniqueExit(entityType, entityName, valueType, valueList, i=0, cou
 def usageErrorExit(message, extraneous=False):
   writeStderr(Cmd.CommandLineWithBadArgumentMarked(extraneous))
   stderrErrorMsg(message)
-  FN_GAMCOMMANDS_TXT = _getConst('FN_GAMCOMMANDS_TXT')
-  GAM_WIKI = _getConst('GAM_WIKI')
   writeStderr(Msg.HELP_SYNTAX.format(os.path.join(GM.Globals[GM.GAM_PATH], FN_GAMCOMMANDS_TXT)))
   writeStderr(Msg.HELP_WIKI.format(GAM_WIKI))
   sys.exit(USAGE_ERROR_RC)
