@@ -539,6 +539,11 @@ jobs:
           fi
           "$PYTHON" -m pip install ..[yubikey]
 
+      - name: Run unit tests
+        run: |
+          "$PYTHON" -m pip install pytest
+          "$PYTHON" -m pytest ../tests/ -v
+
       - name: Install PyInstaller
         if: matrix.goal == 'build'
         run: |
