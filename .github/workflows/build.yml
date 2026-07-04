@@ -906,7 +906,7 @@ jobs:
           run_gam csv ./vm-open.csv gam update vaultmatter "id:~~matterId~~" action close
           run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-closed.csv print vaultmatters matterstate CLOSED
           run_gam csv ./vm-closed.csv gam update vaultmatter "id:~~matterId~~" action delete
-          run_gam user $gam_user delete peoplecontacts emailmatchpattern "^gha_test-${JID}_" || if [ $? != 60 ]; then exit $?; fi # expect a 60 return code
+          run_gam -a "0 60" user $gam_user delete peoplecontacts emailmatchpattern "^gha_test-${JID}_"
           run_gam config enable_dasa true save
           run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./features.csv print features
           run_gam csv ./features.csv gam delete feature ~name
