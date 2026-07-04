@@ -249,24 +249,46 @@ If you do a couple of info user commands back to back, you start to run into quo
 
 You can help yourself in the following way: generate a list of all of the license SKUs that exist in your workspace.
 ```
-gam config csv_output_row_filter "licenses:count>0" print license countsonly allskus
-Got 0 Licenses for 1010010001 (Cloud Identity)...
+gam show configlicenseskus
+Got 0 Licenses for 1010010001 (Cloud Identity Free)...
 Got 0 Licenses for 1010050001 (Cloud Identity Premium)...
+...
+Got 2 Licenses for 1010340007 (Google Workspace for Education Fundamentals - Archived User)...
+...
+Got 100 Licenses for 1010070001 (Google Workspace for Education Fundamentals)...
+Got 200 Licenses for 1010070001 (Google Workspace for Education Fundamentals)...
+Got 300 Licenses for 1010070001 (Google Workspace for Education Fundamentals)...
+Got 358 Licenses for 1010070001 (Google Workspace for Education Fundamentals)...
+Got 2 Licenses for 1010070004 (Google Workspace for Education Gmail Only)...
 ...
 Got 0 Licenses for Google-Vault (Google Vault)...
 Got 0 Licenses for Google-Vault-Former-Employee (Google Vault - Former Employee)...
-productId,productDisplay,skuId,skuDisplay,licenses
-101031,Google Workspace for Education,1010310008,Google Workspace for Education Plus,410
-101031,Google Workspace for Education,1010310009,Google Workspace for Education Plus (Staff),103
-101033,Google Voice,1010330004,Google Voice Standard,3
-Google-Apps,Google Workspace,1010070001,Google Workspace for Education Fundamentals,1453
+To set license_skus in gam.cfg, execute the following command:
+gam config license_skus "1010340007,1010070001,1010070004" save verify variables license_skus
 ```
 
 Then do (example, use your actual list):
-`gam config license_skus 1010310008,1010310009,1010330004,1010070001 save`
+```
+gam config license_skus 1010310008,1010310009,1010330004,1010070001 save verify variables license_skus
+Config File: /Users/gamteam/GamConfig/gam.cfg, Saved
+Section: DEFAULT
+  license_skus = 1010340007,1010070001,1010070004
+```
 
 Now, rather that asking 73 questions per user, GAM will only ask about the license SKUs in the list.
 It is much less likely that quota issues will occur,
+
+You can script this:
+```
+Linux/MacOS
+eval $(gam show configlicenseskus)
+Windows PowerShell
+iex $(gam show configlicenseskus)
+Windows Command Prompt
+for /f "delims=" %a in ('gam show configlicenseskus') do @(%a)
+Windows Batch File
+for /f "delims=" %%a in ('gam show configlicenseskus') do @(%%a)
+```
 
 ## Display license counts
 ```
