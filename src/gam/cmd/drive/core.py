@@ -13,16 +13,12 @@ import platform
 import io
 import os
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
-from gam.util.api import buildGAPIObject, buildGAPIServiceObject, callGAPI, callGAPIpages, getHttpObj
+from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages, getHttpObj
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
     checkArgumentPresent,
@@ -66,10 +62,7 @@ from gam.util.fileio import FILE_ERROR_RC, fileErrorMessage, setFilePath
 from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit
 from gam.constants import ANY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME, NO_ENTITIES_FOUND_RC, TEAM_DRIVE
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
+from gam.var import Act, Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -98,7 +91,6 @@ ROOT = 'root'
 ORPHANS = 'Orphans'
 SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
-
 
 ROOTID = 'rootid'
 
@@ -561,7 +553,7 @@ def _validateUserGetFileIDs(user, i, count, fileIdEntity, drive=None, entityType
     if not drive:
       return (user, None, 0)
   else:
-    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
+    user = convertUIDtoEmailAddress(user)
   if fileIdEntity['list'] and _simpleFileIdEntityList(fileIdEntity['list']):
     l = len(fileIdEntity['list'])
     if ROOT in fileIdEntity['list'] and fileIdEntity[ROOT]:
@@ -760,7 +752,7 @@ def _validateUserGetSharedDriveFileIDs(user, i, count, fileIdEntity, drive=None,
     if not drive:
       return (user, None, 0)
   else:
-    user = convertUIDtoEmailAddress(user, buildGAPIObject(API.DIRECTORY))
+    user = convertUIDtoEmailAddress(user)
   if fileIdEntity.get('shareddrivename') and not _convertSharedDriveNameToId(drive, user, i, count, fileIdEntity):
     return (user, None, 0)
   if fileIdEntity['shareddrivefilequery']:

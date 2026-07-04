@@ -101,9 +101,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-# 10/2024 - I don't recall why we did this but PyInstaller
-# 6.10.0+ does not like it. Only run this when we're not
-# Frozen.
+# Add package directory to sys.path for source installs (not needed for frozen/PyInstaller builds)
 if not getattr(sys, 'frozen', False):
   sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
@@ -983,97 +981,6 @@ from gam.cmd.vault import (
 from gam.cmd.yubikey import doResetYubiKeyPIV
 
 
-# gam.cmd.alerts
-
-# gam.cmd.aliases
-
-# gam.cmd.analytics
-
-# gam.cmd.audit
-
-# gam.cmd.browsers
-
-# gam.cmd.caa
-
-# gam.cmd.calendar
-
-# gam.cmd.chat
-
-# gam.cmd.chromeapps
-
-# gam.cmd.chromepolicies
-
-# gam.cmd.cidevices
-
-# gam.cmd.cigroups
-
-# gam.cmd.ciuserinvitations
-
-# gam.cmd.cloudstorage
-
-# gam.cmd.contacts
-
-# gam.cmd.courses
-
-# gam.cmd.cros
-
-# gam.cmd.customer
-
-# gam.cmd.datatransfer
-
-# gam.cmd.delegates
-
-# gam.cmd.domains
-
-# gam.cmd.drive
-
-# gam.cmd.gmail
-
-# gam.cmd.groups
-
-# gam.cmd.licenses
-
-# gam.cmd.meet
-
-# gam.cmd.mobile
-
-# gam.cmd.notes
-
-# gam.cmd.oauth
-
-# gam.cmd.orgunits
-
-# gam.cmd.people
-
-# gam.cmd.printers
-
-# gam.cmd.project
-
-# gam.cmd.reports
-
-# gam.cmd.reseller
-
-# gam.cmd.resources
-
-# gam.cmd.schemas
-
-# gam.cmd.send_email
-
-# gam.cmd.sites
-
-# gam.cmd.sso
-
-# gam.cmd.tasks
-
-# gam.cmd.userop
-
-# gam.cmd.users
-
-# gam.cmd.userservices
-
-# gam.cmd.vault
-
-
 class LazyLoader(types.ModuleType):
   """Lazily import a module, mainly to avoid pulling in large dependencies.
 
@@ -1891,14 +1798,12 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_VERIFICATION:		Cmd.ARG_VERIFY,
   }
 
-# Audit command sub-commands with objects
-
 from gam.cmd.audit import processAuditCommands
 from gam.cmd.oauth import processOauthCommands
 from gam.cmd.calendar import processCalendarsCommands, processResourceCommands, processResourcesCommands
 from gam.cmd.courses.participants import processCourseCommands, processCoursesCommands
 
-# Commands
+# Multi-step commands (audit, oauth, calendars, courses, resources)
 COMMANDS_MAP = {
   'oauth':			processOauthCommands,
   'audit':			processAuditCommands,
@@ -1909,7 +1814,7 @@ COMMANDS_MAP = {
   'resources':			processResourcesCommands,
   }
 
-# Commands aliases
+# Command name aliases
 COMMANDS_ALIASES = {
   'oauth2':			'oauth',
   'calendar':			'calendars',
@@ -1969,7 +1874,6 @@ USER_COMMANDS = {
   }
 
 # User commands with objects
-#
 USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CALENDAR:		addCreateCalendars,
   Cmd.ARG_GROUP:		addUserToGroups,
@@ -2860,7 +2764,7 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
       closeGAMCommandLog(GM.Globals)
   return GM.Globals[GM.SYSEXITRC]
 
-# Process GAM command
+# Call GAM command (used by batch/loop to invoke sub-commands)
 def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
   return ProcessGAMCommand(args, processGamCfg=processGamCfg, inLoop=inLoop, closeSTD=closeSTD)
 
