@@ -29,7 +29,7 @@ from gam.util.display import (
     printLine,
 )
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
-from gam.util.output import writeStdout, formatLocalTime, formatLocalTimestamp
+from gam.util.output import writeStdout, formatLocalTimestamp
 
 
 def doCreateDomainAlias():

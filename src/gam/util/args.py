@@ -34,7 +34,7 @@ __all__ = [
   # Classes
   'OrderBy', 'StartEndTime',
   # Functions
-  'addCourseAliasScope', 'addCourseIdScope',
+
   'checkArgumentPresent', 'checkDataField', 'checkForExtraneousArguments',
   'checkGetArgument', 'checkMatchSkipFields', 'checkSubkeyField',
   'encodeOrgUnitPath', 'escapeCRsNLs',
@@ -63,7 +63,7 @@ __all__ = [
   'makeOrgUnitPathAbsolute', 'makeOrgUnitPathRelative', 'mapQueryRelativeTimes',
   'normalizeEmailAddressOrUID', 'normalizeStudentGuardianEmailAddressOrUID',
   'orgUnitPathQuery', 'protectedSheetId',
-  'removeCourseAliasScope', 'removeCourseIdScope',
+
   'splitEmailAddress', 'todaysDate', 'todaysTime',
   'unescapeCRsNLs', 'validateEmailAddressOrUID',
   'validateREPattern', 'validateREPatternSubstitution',

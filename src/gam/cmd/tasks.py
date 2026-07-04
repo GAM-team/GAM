@@ -10,7 +10,6 @@ from gam.var import Act, Cmd, Ent, Ind
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
-    checkArgumentPresent,
     checkForExtraneousArguments,
     escapeCRsNLs,
     getArgument,
@@ -41,7 +40,7 @@ from gam.util.display import (
     printLine,
     userTasksServiceNotEnabledWarning,
 )
-from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getEntityList, getUserObjectEntity
+from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUserObjectEntity
 from gam.util.errors import usageErrorExit
 from gam.util.fileio import readFile, setFilePath
 from gam.util.output import writeStdout

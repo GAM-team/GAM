@@ -32,7 +32,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import readFile, setFilePath
-from gam.util.output import setSysExitRC, formatLocalTime, formatLocalTimestamp
+from gam.util.output import setSysExitRC, formatLocalTimestamp
 from gam.constants import NO_ENTITIES_FOUND_RC
 
 from gam.var import Act, Cmd, Ent, Ind

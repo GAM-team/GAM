@@ -14,7 +14,7 @@ import sys
 
 import googleapiclient.http
 
-from gam.cmd.drive.core import DFA_PARENTID, DFA_PARENTQUERY, _validateUserGetFileIDs, getDriveFileEntity
+from gam.cmd.drive.core import DFA_PARENTID, DFA_PARENTQUERY, _getEntityMimeType, _validateUserGetFileIDs, getDriveFileEntity
 import os
 import time
 
@@ -57,7 +57,6 @@ from gam.util.display import (
     userDriveServiceNotEnabledWarning,
 )
 from gam.util.entity import (
-    _getEntityMimeType,
     getEntityArgument,
     splitEmailAddressOrUID,
 )

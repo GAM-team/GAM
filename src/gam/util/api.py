@@ -50,7 +50,7 @@ from util.output import flushStderr, stderrErrorMsg, systemErrorExit, writeStder
 
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
-from gam.constants import GAM_USER_AGENT, __author__, __version__
+from gam.constants import GAM_USER_AGENT, __author__
 
 
 # Constants only used in this module

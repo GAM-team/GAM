@@ -138,7 +138,7 @@ def resolve(data,id=None):
     if id:
         result = f'<div id="__{id}" style="padding:12px; padding-left:100px; text-indent:-90px">'
     else:
-        result = f'<div style="padding:12px; padding-left:100px; text-indent:-90px">'
+        result = '<div style="padding:12px; padding-left:100px; text-indent:-90px">'
 
     for line in data:
         if reWhitespace.match(line):
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     lnum   = 0
     key    = ''
     
-    with open(fname,"r") as infile:
+    with open(fname) as infile:
         for line in infile:
             lnum += 1
             line = fixSpecialCases(line.rstrip())

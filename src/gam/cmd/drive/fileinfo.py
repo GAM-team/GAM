@@ -90,8 +90,8 @@ from gam.util.display import (
     printKeyValueListWithCount,
     userDriveServiceNotEnabledWarning,
 )
+from gam.cmd.drive.core import _getEntityMimeType
 from gam.util.entity import (
-    _getEntityMimeType,
     getEntityArgument,
 )
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit, usageErrorExit

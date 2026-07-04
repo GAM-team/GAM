@@ -85,7 +85,7 @@ from gam.util.fileio import (
     writeFileReturnError,
 )
 from gam.util.batch import executeBatch
-from gam.util.output import setSysExitRC, stderrWarningMsg, formatLocalTime, formatLocalTimestamp
+from gam.util.output import setSysExitRC, stderrWarningMsg, formatLocalTimestamp
 from gam.constants import IS08601_TIME_FORMAT, NO_ENTITIES_FOUND_RC, RFC2822_TIME_FORMAT
 from gam.util.tags import (
     _getTagReplacement,

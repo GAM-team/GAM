@@ -73,8 +73,8 @@ from gam.util.display import (
     printLine,
     userDriveServiceNotEnabledWarning,
 )
+from gam.cmd.drive.core import _getEntityMimeType
 from gam.util.entity import (
-    _getEntityMimeType,
     getEntityArgument,
     getEntityList,
 )

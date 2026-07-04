@@ -47,7 +47,6 @@ from gam.util.display import (
     userDriveServiceNotEnabledWarning,
 )
 from gam.util.entity import (
-    _getEntityMimeType,
     convertUIDtoEmailAddress,
     getEntitySelection,
     getEntitySelector,
@@ -61,7 +60,32 @@ from gam.util.errors import (
 )
 from gam.util.fileio import FILE_ERROR_RC, fileErrorMessage, setFilePath
 from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit, formatLocalSecondsTimestamp
-from gam.constants import ANY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_FOLDER_NAME, NO_ENTITIES_FOUND_RC, TEAM_DRIVE
+from gam.constants import (
+    ANY_NON_TRASHED_FOLDER_NAME,
+    APPLICATION_VND_GOOGLE_APPS,
+    ME_IN_OWNERS,
+    ME_IN_OWNERS_AND,
+    MIMETYPE_GA_3P_SHORTCUT,
+    MIMETYPE_GA_DOCUMENT,
+    MIMETYPE_GA_DRAWING,
+    MIMETYPE_GA_FILE,
+    MIMETYPE_GA_FOLDER,
+    MIMETYPE_GA_FORM,
+    MIMETYPE_GA_FUSIONTABLE,
+    MIMETYPE_GA_JAM,
+    MIMETYPE_GA_MAP,
+    MIMETYPE_GA_PRESENTATION,
+    MIMETYPE_GA_SCRIPT,
+    MIMETYPE_GA_SCRIPT_JSON,
+    MIMETYPE_GA_SHORTCUT,
+    MIMETYPE_GA_SITE,
+    MIMETYPE_GA_SPREADSHEET,
+    MY_NON_TRASHED_FOLDER_NAME,
+    NO_ENTITIES_FOUND_RC,
+    NOT_ME_IN_OWNERS,
+    NOT_ME_IN_OWNERS_AND,
+    TEAM_DRIVE,
+)
 
 from gam.var import Cmd, Ent
 
@@ -91,10 +115,7 @@ CORPORA_CHOICE_MAP = {
   'onlyteamdrives': CORPORA_ALL_DRIVES,
   'user': 'user',
   }
-ME_IN_OWNERS = "'me' in owners"
-ME_IN_OWNERS_AND = ME_IN_OWNERS + " and "
-NOT_ME_IN_OWNERS = "not " + ME_IN_OWNERS
-NOT_ME_IN_OWNERS_AND = NOT_ME_IN_OWNERS + " and "
+
 WITH_ANY_FILE_NAME = "name = '{0}'"
 WITH_MY_FILE_NAME = ME_IN_OWNERS_AND + WITH_ANY_FILE_NAME
 WITH_OTHER_FILE_NAME = NOT_ME_IN_OWNERS_AND + WITH_ANY_FILE_NAME
@@ -1187,3 +1208,61 @@ CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP = {'driveui': 'legacy', 'legacy': 'le
 #	[consolidationstrategy legacy|none]
 #	[idmapfile <CSVFileInput> endcsv]
 #	[stripcrsfromname] [formatjson [quotechar <Character>]]
+
+def _getEntityMimeType(fileEntry):
+  if fileEntry['mimeType'] == MIMETYPE_GA_FOLDER:
+    return Ent.DRIVE_FOLDER
+  if fileEntry['mimeType'].startswith(MIMETYPE_GA_3P_SHORTCUT):
+    return Ent.DRIVE_3PSHORTCUT
+  if fileEntry['mimeType'] != MIMETYPE_GA_SHORTCUT:
+    return Ent.DRIVE_FILE
+  if 'shortcutDetails' not in fileEntry or 'targetMimeType' not in fileEntry['shortcutDetails']:
+    return Ent.DRIVE_SHORTCUT
+  return Ent.DRIVE_FOLDER_SHORTCUT if fileEntry['shortcutDetails']['targetMimeType'] == MIMETYPE_GA_FOLDER else Ent.DRIVE_FILE_SHORTCUT
+
+def _getTargetEntityMimeType(fileEntry):
+  return Ent.DRIVE_FOLDER if fileEntry['shortcutDetails']['targetMimeType'] == MIMETYPE_GA_FOLDER else Ent.DRIVE_FILE
+
+QUERY_SHORTCUTS_MAP = {
+  'allfiles': f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'allfolders': f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'allforms': f"mimeType = '{MIMETYPE_GA_FORM}'",
+  'allgooglefiles': f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'allnongooglefiles': "not mimeType contains 'vnd.google'",
+  'allshortcuts': f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
+  'all3pshortcuts': f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
+  'allitems': 'allitems',
+  'mycommentableitems': ME_IN_OWNERS_AND+f"(mimeType = '{MIMETYPE_GA_DOCUMENT}' or mimeType = '{MIMETYPE_GA_SPREADSHEET}' or mimeType = '{MIMETYPE_GA_PRESENTATION}')",
+  'mydocs': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_DOCUMENT}'",
+  'myfiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'myfolders': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'myforms': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FORM}'",
+  'mygooglefiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'mynongooglefiles': ME_IN_OWNERS_AND+"not mimeType contains 'vnd.google'",
+  'mypresentations': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_PRESENTATION}'",
+  'mypublishableitems': ME_IN_OWNERS_AND+f"(mimeType = '{MIMETYPE_GA_DOCUMENT}' or mimeType = '{MIMETYPE_GA_SPREADSHEET}' or mimeType = '{MIMETYPE_GA_FORM}' or mimeType = '{MIMETYPE_GA_PRESENTATION}')",
+  'mysheets': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SPREADSHEET}'",
+  'myshortcuts': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
+  'myslides': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_PRESENTATION}'",
+  'my3pshortcuts': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
+  'myitems': ME_IN_OWNERS,
+  'mytopfiles': ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and 'root' in parents",
+  'mytopfolders': ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}' and 'root' in parents",
+  'mytopitems': ME_IN_OWNERS_AND+"'root' in parents",
+  'othersfiles': NOT_ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'othersfolders': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'othersforms': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_FORM}'",
+  'othersgooglefiles': NOT_ME_IN_OWNERS_AND+f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'othersnongooglefiles': NOT_ME_IN_OWNERS_AND+"not mimeType contains 'vnd.google'",
+  'othersshortcuts': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_SHORTCUT}'",
+  'others3pshortcuts': NOT_ME_IN_OWNERS_AND+f"mimeType = '{MIMETYPE_GA_3P_SHORTCUT}'",
+  'othersitems': NOT_ME_IN_OWNERS,
+  'writablefiles': f"'me' in writers and mimeType != '{MIMETYPE_GA_FOLDER}'",
+  }
+SHAREDDRIVE_QUERY_SHORTCUTS_MAP = {
+  'allfiles': f"mimeType != '{MIMETYPE_GA_FOLDER}'",
+  'allfolders': f"mimeType = '{MIMETYPE_GA_FOLDER}'",
+  'allgooglefiles': f"mimeType != '{MIMETYPE_GA_FOLDER}' and mimeType contains 'vnd.google'",
+  'allnongooglefiles': "not mimeType contains 'vnd.google'",
+  'allitems': 'allitems',
+  }

@@ -11,7 +11,7 @@ from gam.cmd.drive.revisions import _stripMeInOwners, _stripNotMeInOwners, _upda
 
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
-from gam.util.entity import QUERY_SHORTCUTS_MAP
+
 from gam.constants import MY_DRIVE, TEAM_DRIVE
 
 from gam.var import Cmd, Ent
@@ -47,6 +47,7 @@ SHARED_DRIVES = 'SharedDrives'
 from gam.cmd.drive.core import (
     MimeTypeCheck,
     CORPORA_CHOICE_MAP,
+    QUERY_SHORTCUTS_MAP,
     DRIVE_BY_NAME_CHOICE_MAP,
     LOCATION_ALL_DRIVES,
     LOCATION_CHOICE_MAP,

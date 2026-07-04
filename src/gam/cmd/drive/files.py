@@ -38,9 +38,8 @@ from gam.util.display import (
     entityPerformActionSubItemModifierNumItems,
     userDriveServiceNotEnabledWarning,
 )
+from gam.cmd.drive.core import _getEntityMimeType, _getTargetEntityMimeType
 from gam.util.entity import (
-    _getEntityMimeType,
-    _getTargetEntityMimeType,
     getEntityArgument,
     shlexSplitList,
 )

@@ -6,7 +6,7 @@
 
 import json
 
-from gam.cmd.drive.core import _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity
+from gam.cmd.drive.core import _getEntityMimeType, _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity
 from gam.cmd.drive.filepaths import _finalizeIncludePermissionsForView, _getIncludePermissionsForView, _mapDrivePermissionNames
 from gam.cmd.drive.filetree import _validateACLAttributes, _validateACLOwnerType
 
@@ -62,7 +62,6 @@ from gam.util.display import (
     userDriveServiceNotEnabledWarning,
 )
 from gam.util.entity import (
-    _getEntityMimeType,
     getEntityArgument,
     getEntityList,
 )

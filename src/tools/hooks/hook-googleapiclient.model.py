@@ -11,7 +11,7 @@
 # ------------------------------------------------------------------
 
 from PyInstaller.utils.hooks import copy_metadata
-from PyInstaller.utils.hooks import collect_data_files
+
 
 # googleapiclient.model queries the library version via
 # pkg_resources.get_distribution("google-api-python-client").version,
