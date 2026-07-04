@@ -163,7 +163,7 @@ class TestDeltaParsing:
     def test_get_delta_date(self):
         """Requires GM.DATETIME_NOW to be initialized."""
         import arrow as _arrow
-        from gamlib import glglobals as GM
+        from gamlib import state as GM
         GM.Globals[GM.DATETIME_NOW] = _arrow.now()
 
         from gam.util.args import getDeltaDate
@@ -173,7 +173,7 @@ class TestDeltaParsing:
     def test_get_delta_time(self):
         """Requires GM.DATETIME_NOW to be initialized."""
         import arrow as _arrow
-        from gamlib import glglobals as GM
+        from gamlib import state as GM
         GM.Globals[GM.DATETIME_NOW] = _arrow.now()
 
         from gam.util.args import getDeltaTime

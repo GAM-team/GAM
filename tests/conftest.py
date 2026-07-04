@@ -36,8 +36,8 @@ def _gam_path_and_globals():
         sys.path.insert(0, src_dir)
         src_inserted = True
 
-    from gamlib import glcfg as GC
-    from gamlib import glglobals as GM
+    from gamlib import settings as GC
+    from gamlib import state as GM
 
     # Ensure Values dict exists with minimal defaults
     if not GC.Values:
