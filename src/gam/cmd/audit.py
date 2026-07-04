@@ -5,15 +5,12 @@ Mailbox monitor creation/deletion/listing and the doWhatIs command.
 
 import re
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
 from gam.util.api import callGData, getEmailAuditObject
 from gam.util.args import (
@@ -36,11 +33,6 @@ from gam.util.display import (
 from gam.util.errors import invalidArgumentExit, unknownArgumentExit
 from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def getAuditParameters(emailAddressRequired=True, requestIdRequired=True, destUserRequired=False):
@@ -159,3 +151,23 @@ def doShowMonitors():
     entityUnknownWarning(Ent.USER, parameters['auditUser'])
 
 # gam whatis <EmailItem> [noinfo] [noinvitablecheck]
+
+# Dispatch tables and routing (moved from __init__.py)
+# Additional imports for dispatch
+from gam.util.args import getChoice
+from gam.constants import CMD_ACTION, CMD_FUNCTION
+
+AUDIT_SUBCOMMANDS_WITH_OBJECTS = {
+  'monitor':
+    {'create': (Act.CREATE, doCreateMonitor),
+     'delete': (Act.DELETE, doDeleteMonitor),
+     'list': (Act.LIST, doShowMonitors),
+    },
+  }
+
+def processAuditCommands():
+  CL_subCommand = getChoice(list(AUDIT_SUBCOMMANDS_WITH_OBJECTS))
+  CL_objectName = getChoice(AUDIT_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand])
+  Act.Set(AUDIT_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CL_objectName][CMD_ACTION])
+  AUDIT_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CL_objectName][CMD_FUNCTION]()
+

@@ -8,19 +8,7 @@ from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 
 
-class _InstanceProxy:
-  """Lazy proxy that delegates attribute access to a named instance in the gam module."""
-  def __init__(self, name):
-    self._name = name
-  def __getattr__(self, attr):
-    return getattr(getattr(sys.modules['gam'], self._name), attr)
-
-Act = _InstanceProxy('Act')
-Cmd = _InstanceProxy('Cmd')
-Ind = _InstanceProxy('Ind')
-
-
-
+from gam.var import Act, Cmd, Ind
 from util.output import (
     currentCountNL,
     formatKeyValueList,

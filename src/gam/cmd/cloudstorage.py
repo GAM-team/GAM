@@ -9,15 +9,12 @@ import base64
 import os
 import time
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIObject, callGAPIpages, checkGAPIError
 from gam.util.args import getArgument, getBoolean, getString
 from gam.util.display import (
@@ -53,11 +50,6 @@ from gam.util.output import (
 )
 from gam.constants import GOOGLE_API_ERROR_RC
 from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def _copyStorageObjects(objects, target_bucket, target_prefix):

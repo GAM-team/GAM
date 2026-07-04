@@ -1,23 +1,15 @@
 """GAM license management."""
 
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 from gamlib import glskus as SKU
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIObject, callGAPIpages
 from gam.util.args import getArgument, getGoogleProductList, getGoogleSKUList, getInteger
 from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList

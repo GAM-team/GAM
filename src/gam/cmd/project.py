@@ -22,15 +22,12 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import (
     _getAdminEmail,
     _getSvcAcctData,
@@ -107,11 +104,6 @@ from gam.util.output import (
 from gam.constants import API_ACCESS_DENIED_RC, GAM, GAM_PROJECT_CREATION, GAM_PROJECT_CREATION_CLIENT_ID, GOOGLE_TIMECHECK_LOCATION, JSON_ALREADY_EXISTS_RC, MAX_LOCAL_GOOGLE_TIME_OFFSET, MULTIPLE_PROJECT_FOLDERS_FOUND_RC, SCOPES_NOT_AUTHORIZED_RC
 from gam.cmd.oauth import _getValidateLoginHint
 from gam.cmd.oauth import getScopesFromUser
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 from urllib.parse import quote, urlencode

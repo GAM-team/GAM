@@ -1,15 +1,12 @@
 """GAM contact delegate management."""
 
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import checkForExtraneousArguments, getArgument
 from gam.util.csv_pf import CSVPrintFile
@@ -27,11 +24,6 @@ from gam.util.entity import checkUserExists, getEntityArgument, getUserObjectEnt
 from gam.util.errors import unknownArgumentExit
 from gam.util.output import setSysExitRC, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def _validateUserGetDelegateList(cd, user, i, count, entity):

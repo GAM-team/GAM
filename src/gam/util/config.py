@@ -18,16 +18,11 @@ import time
 import httplib2
 import arrow
 
-from gamlib import glaction
-Act = glaction.GamAction()
+from gam.var import Act, Cmd, Ent, Ind
 from gamlib import glapi as API
 from gamlib import glcfg as GC
 from gam.util.fileio import setFilePath, readFile, writeFile, openFile
-from gamlib import glentity
-Ent = glentity.GamEntity()
 from gamlib import glglobals as GM
-from gamlib import glindent
-Ind = glindent.GamIndent()
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
 
@@ -41,10 +36,11 @@ from util.args import (
     checkArgumentPresent, getArgument, getBoolean, getCharacter, getChoice,
     getFloat, getInteger, getLanguageCode, getREPattern, getString,
     shlexSplitList, shlexSplitListStatus,
-    Cmd, FALSE, FALSE_VALUES, TRUE, TRUE_FALSE, TRUE_VALUES, UTF8,
+    FALSE, FALSE_VALUES, TRUE, TRUE_FALSE, TRUE_VALUES, UTF8,
 )
 from util.csv_pf import CSVPrintFile
 from util.display import printKeyValueList, printLine
+from util.output import redactable_debug_print
 from util.entity import getEntitiesFromCSVFile
 from util.entity import getEntitiesFromFile
 from util.errors import formatChoiceList, usageErrorExit, USAGE_ERROR_RC
@@ -66,9 +62,6 @@ from gam.constants import (
 
 
 def SetGlobalVariables():
-  # redactable_debug_print is defined in gam.__init__ — access at call time
-  # to avoid circular import (gam imports from us during init)
-  redactable_debug_print = sys.modules['gam'].redactable_debug_print
 
 
   def _stringInQuotes(value):

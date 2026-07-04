@@ -88,15 +88,6 @@ from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
 
 
-class _InstanceProxy:
-  """Lazy proxy that delegates attribute access to a named instance in the gam module."""
-  def __init__(self, name):
-    self._name = name
-  def __getattr__(self, attr):
-    return getattr(getattr(sys.modules['gam'], self._name), attr)
-
-Cmd = _InstanceProxy('Cmd')
-
 from util.errors import (
     blankArgumentExit,
     csvFieldErrorExit,
@@ -109,13 +100,13 @@ from util.errors import (
 )
 
 from util.fileio import readFile
+from gam.var import Cmd
 
 # Lazy accessor for Ent (runtime instance)
 def _getEnt():
   return sys.modules['gam'].Ent
 
 # Lazy accessor for main module
-_gam = lambda: sys.modules['gam']
 
 # --- Constants duplicated from __init__.py ---
 # These are simple literals that never change, duplicated to avoid
@@ -146,6 +137,9 @@ SECONDS_PER_WEEK = 604800
 
 def ISOformatTimeStamp(timestamp):
   return timestamp.isoformat('T', 'seconds')
+
+def currentISOformatTimeStamp(timespec='milliseconds'):
+  return arrow.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
 
 def checkArgumentPresent(choices, required=False):
   choiceList = choices if isinstance(choices, (list, set)) else [choices]

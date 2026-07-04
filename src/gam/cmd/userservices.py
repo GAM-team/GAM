@@ -19,15 +19,12 @@ from gam.cmd.calendar import (
     EVENT_TYPE_WORKINGLOCATION,
 )
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
 from gam.util.api import (
     buildGAPIObject,
@@ -158,11 +155,6 @@ from gam.cmd.resources import _getBuildingByNameOrId
 from gam.cmd.calendar import _setEventRecurrenceTimeZone
 from gam.cmd.calendar import checkCalendarExists
 from gam.cmd.calendar import _getEventDaysOfWeek, _printCalendarEvent
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def _showASPs(user, asps, i=0, count=0):

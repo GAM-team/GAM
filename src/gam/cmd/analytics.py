@@ -2,15 +2,12 @@
 
 import json
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIServiceObject, callGAPIpages
 from gam.util.args import getArgument, getBoolean, getInteger, getString
 from gam.util.csv_pf import (
@@ -32,11 +29,6 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import missingArgumentExit
 from gam.cmd.reseller import ANALYTIC_ENTITY_MAP
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def printShowAnalyticItems(users, entityType):

@@ -6,15 +6,12 @@ import json
 import googleapiclient.http
 import os
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIServiceObject, callGAPI, callGAPIpages
 from gam.util.args import (
     SORF_TEXT_ARGUMENTS,
@@ -62,11 +59,6 @@ from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import closeFile, openFile, setFilePath, uniqueFilename
 from gam.util.tags import _substituteForUser
 from gam.cmd.drive.core import _driveFileParentSpecified, _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def normalizeNoteName(noteName):

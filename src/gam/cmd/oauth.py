@@ -23,15 +23,12 @@ import google_auth_oauthlib.flow
 from filelock import FileLock
 from urllib.parse import urlparse, parse_qs, urlencode
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import (
     buildGAPIObject,
     callGAPI,
@@ -76,11 +73,6 @@ from gam.util.output import (
     writeStdout,
 )
 from gam.constants import GAM, INVALID_TOKEN_RC, SYSTEM_ERROR_RC
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 ERROR_PREFIX = 'ERROR: '
@@ -812,3 +804,33 @@ def doOAuthExport():
   getClientCredentials(forceRefresh=True, forceWrite=True, filename=filename, refreshOnly=True)
   if filename != '-':
     entityModifierNewValueActionPerformed([Ent.OAUTH2_TXT_FILE, GC.Values[GC.OAUTH2_TXT]], Act.MODIFIER_TO, filename)
+
+# Dispatch tables and routing (moved from __init__.py)
+# Additional imports for dispatch
+from gam.util.args import getChoice
+from gam.constants import CMD_ACTION, CMD_FUNCTION, USAGE_ERROR_RC
+
+# Oauth command sub-commands
+OAUTH2_SUBCOMMANDS = {
+  'create': 			(Act.CREATE, doOAuthCreate),
+  'delete': 			(Act.DELETE, doOAuthDelete),
+  'export': 			(Act.EXPORT, doOAuthExport),
+  'info': 			(Act.INFO, doOAuthInfo),
+  'refresh': 			(Act.REFRESH, doOAuthRefresh),
+  'update': 			(Act.UPDATE, doOAuthUpdate),
+  }
+
+# Oauth sub-command aliases
+OAUTH2_SUBCOMMAND_ALIASES = {
+  'request':			'create',
+  'revoke':			'delete',
+  'verify':			'info',
+  }
+
+def processOauthCommands():
+  CL_subCommand = getChoice(OAUTH2_SUBCOMMANDS, choiceAliases=OAUTH2_SUBCOMMAND_ALIASES)
+  Act.Set(OAUTH2_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
+  if GC.Values[GC.ENABLE_DASA]:
+    systemErrorExit(USAGE_ERROR_RC, Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format('oauth', CL_subCommand))
+  OAUTH2_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION]()
+

@@ -47,6 +47,15 @@ from gamlib import glgdata as GDATA
 from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 from gamlib import yubikey
+from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
+from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT, formatHTTPError
+from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, SERVICE_NOT_APPLICABLE_RC, TOTAL_ITEMS_MARKER, entityActionFailedWarning, printBlankLine, printKeyValueList, userServiceNotEnabledWarning
+from util.errors import INVALID_JSON_RC, OAUTH2SERVICE_JSON_REQUIRED_RC, OAUTH2_TXT_REQUIRED_RC, expiredRevokedOauth2TxtExit, invalidDiscoveryJsonExit, invalidOauth2TxtExit, invalidOauth2serviceJsonExit
+from util.fileio import FILE_ERROR_RC, UNKNOWN, checkAPICallsRate, incrAPICallsRetryData, readFile, writeFile
+from util.output import ERROR_PREFIX, flushStderr, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+
+HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
+from gam.constants import GAM_LATEST_RELEASE, GAM_USER_AGENT, __author__, __version__
 
 
 # Constants only used in this module
@@ -56,7 +65,6 @@ DEVELOPER_PREVIEW_DISCOVERY_URI = "https://{api}.googleapis.com/$discovery/rest?
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 
 
-_gam = lambda: sys.modules['gam']
 
 def _getEnt():
   return sys.modules['gam'].Ent
@@ -68,10 +76,10 @@ def _getInd():
 def handleServerError(e):
   errMsg = str(e)
   if 'setting tls' not in errMsg:
-    _gam().systemErrorExit(_gam().NETWORK_ERROR_RC, errMsg)
-  _gam().stderrErrorMsg(errMsg)
-  _gam().writeStderr(Msg.DISABLE_TLS_MIN_MAX)
-  _gam().systemErrorExit(_gam().NETWORK_ERROR_RC, None)
+    systemErrorExit(NETWORK_ERROR_RC, errMsg)
+  stderrErrorMsg(errMsg)
+  writeStderr(Msg.DISABLE_TLS_MIN_MAX)
+  systemErrorExit(NETWORK_ERROR_RC, None)
 
 def getHttpObj(cache=None, timeout=None, override_min_tls=None, override_max_tls=None):
   tls_minimum_version = override_min_tls if override_min_tls else GC.Values[GC.TLS_MIN_VERSION] if GC.Values[GC.TLS_MIN_VERSION] else None
@@ -111,7 +119,7 @@ def _force_user_agent(user_agent):
 def _lazy_force_user_agent(request_method):
   """Wraps a request method to lazily insert GAM_USER_AGENT at call time."""
   def wrapped_request_method(*args, **kwargs):
-    user_agent = _gam().GAM_USER_AGENT
+    user_agent = GAM_USER_AGENT
     if kwargs.get('headers') is not None:
       if kwargs['headers'].get('user-agent'):
         if user_agent not in kwargs['headers']['user-agent']:
@@ -158,10 +166,10 @@ def doGAMCheckForUpdates(forceCheck):
   Ind = _getInd()
   def _gamLatestVersionNotAvailable():
     if forceCheck:
-      _gam().systemErrorExit(_gam().NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
+      systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
 
   try:
-    _, c = getHttpObj(timeout=10).request(_gam().GAM_LATEST_RELEASE, 'GET', headers={'Accept': 'application/vnd.github.v3.text+json'})
+    _, c = getHttpObj(timeout=10).request(GAM_LATEST_RELEASE, 'GET', headers={'Accept': 'application/vnd.github.v3.text+json'})
     try:
       release_data = json.loads(c)
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError):
@@ -170,17 +178,17 @@ def doGAMCheckForUpdates(forceCheck):
     if not isinstance(release_data, dict) or 'tag_name' not in release_data:
       _gamLatestVersionNotAvailable()
       return
-    current_version = _gam().__version__
+    current_version = __version__
     latest_version = release_data['tag_name']
     if latest_version[0].lower() == 'v':
       latest_version = latest_version[1:]
-      _gam().printKeyValueList(['Version Check', None])
+      printKeyValueList(['Version Check', None])
       Ind.Increment()
-      _gam().printKeyValueList(['Current', current_version])
-      _gam().printKeyValueList([' Latest', latest_version])
+      printKeyValueList(['Current', current_version])
+      printKeyValueList([' Latest', latest_version])
       Ind.Decrement()
     if forceCheck < 0:
-      _gam().setSysExitRC(1 if latest_version > current_version else 0)
+      setSysExitRC(1 if latest_version > current_version else 0)
       return
   except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
           google.auth.exceptions.TransportError,
@@ -252,7 +260,7 @@ class signjwtSignJwt(google.auth.crypt.Signer):
       credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE],
                                            request=request)
     except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
-      _gam().systemErrorExit(_gam().API_ACCESS_DENIED_RC, str(e))
+      systemErrorExit(API_ACCESS_DENIED_RC, str(e))
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
     # refresh here so we can use the proper request from above
     httpObj.credentials.refresh(request)
@@ -263,40 +271,41 @@ class signjwtSignJwt(google.auth.crypt.Signer):
     return signed_jwt
 
 def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
+  from util.access import APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit
   Ent = _getEnt()
   errMsg = str(e).replace('.', '')
   if ((errMsg in API.OAUTH2_TOKEN_ERRORS) or
       errMsg.startswith('Invalid response') or
       errMsg.startswith('invalid_request: Invalid impersonation &quot;sub&quot; field')):
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
-      _gam().ClientAPIAccessDeniedExit()
+      ClientAPIAccessDeniedExit()
     # 403 Forbidden, API disabled, user not enabled
     # 400 Bad Request, user not defined
     if softErrors:
-      _gam().entityActionFailedWarning([Ent.USER, GM.Globals[GM.CURRENT_SVCACCT_USER], Ent.USER, None], errMsg, i, count)
+      entityActionFailedWarning([Ent.USER, GM.Globals[GM.CURRENT_SVCACCT_USER], Ent.USER, None], errMsg, i, count)
       return None
-    _gam().systemErrorExit(_gam().SERVICE_NOT_APPLICABLE_RC, Msg.SERVICE_NOT_APPLICABLE_THIS_ADDRESS.format(GM.Globals[GM.CURRENT_SVCACCT_USER]))
+    systemErrorExit(SERVICE_NOT_APPLICABLE_RC, Msg.SERVICE_NOT_APPLICABLE_THIS_ADDRESS.format(GM.Globals[GM.CURRENT_SVCACCT_USER]))
   if errMsg in API.OAUTH2_UNAUTHORIZED_ERRORS:
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
-      _gam().ClientAPIAccessDeniedExit()
+      ClientAPIAccessDeniedExit()
     # 401 Unauthorized, API disabled, user enabled
     if softErrors:
       if displayError:
         apiOrScopes = API.getAPIName(GM.Globals[GM.CURRENT_SVCACCT_API]) if GM.Globals[GM.CURRENT_SVCACCT_API] else ','.join(sorted(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]))
-        _gam().userServiceNotEnabledWarning(GM.Globals[GM.CURRENT_SVCACCT_USER], apiOrScopes, i, count)
+        userServiceNotEnabledWarning(GM.Globals[GM.CURRENT_SVCACCT_USER], apiOrScopes, i, count)
       return None
-    _gam().SvcAcctAPIAccessDeniedExit()
+    SvcAcctAPIAccessDeniedExit()
   if errMsg in API.REFRESH_PERM_ERRORS:
     if softErrors:
       return None
     if not GM.Globals[GM.CURRENT_SVCACCT_USER]:
-      _gam().expiredRevokedOauth2TxtExit()
-  _gam().stderrErrorMsg(f'Authentication Token Error - {errMsg}')
-  _gam().APIAccessDeniedExit()
+      expiredRevokedOauth2TxtExit()
+  stderrErrorMsg(f'Authentication Token Error - {errMsg}')
+  APIAccessDeniedExit()
 
 def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   if not noDASA and GC.Values[GC.ENABLE_DASA]:
-    jsonData = _gam().readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
+    jsonData = readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
     if jsonData:
       try:
         if api in API.APIS_NEEDING_ACCESS_TOKEN:
@@ -314,9 +323,9 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           sjsigner = signjwtSignJwt(jsonDict)
           return (True, signjwtJWTCredentials._from_signer_and_info(sjsigner, jsonDict, audience=audience))
       except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
-        _gam().invalidOauth2serviceJsonExit(str(e))
-    _gam().invalidOauth2serviceJsonExit(Msg.NO_DATA)
-  jsonData = _gam().readFile(GC.Values[GC.OAUTH2_TXT], continueOnError=True, displayError=False)
+        invalidOauth2serviceJsonExit(str(e))
+    invalidOauth2serviceJsonExit(Msg.NO_DATA)
+  jsonData = readFile(GC.Values[GC.OAUTH2_TXT], continueOnError=True, displayError=False)
   if jsonData:
     try:
       jsonDict = json.loads(jsonData)
@@ -326,11 +335,11 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
         if not refreshOnly:
           if set(jsonDict.get('scopes', API.REQUIRED_SCOPES)) == API.REQUIRED_SCOPES_SET:
             if exitOnError:
-              _gam().systemErrorExit(_gam().OAUTH2_TXT_REQUIRED_RC, Msg.NO_CLIENT_ACCESS_ALLOWED)
+              systemErrorExit(OAUTH2_TXT_REQUIRED_RC, Msg.NO_CLIENT_ACCESS_ALLOWED)
             return (False, None)
         else:
           GM.Globals[GM.CREDENTIALS_SCOPES] = set(jsonDict.pop('scopes', API.REQUIRED_SCOPES))
-        token_expiry = jsonDict.get('token_expiry', _gam().REFRESH_EXPIRY)
+        token_expiry = jsonDict.get('token_expiry', REFRESH_EXPIRY)
         if GC.Values[GC.TRUNCATE_CLIENT_ID]:
           # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
           jsonDict['client_id'] = re.sub(r'\.apps\.googleusercontent\.com$', '', jsonDict['client_id'])
@@ -343,15 +352,15 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           creds.token = jsonDict['access_token']
           creds._id_token = jsonDict['id_token_jwt']
           GM.Globals[GM.DECODED_ID_TOKEN] = jsonDict['id_token']
-        creds.expiry = arrow.Arrow.strptime(token_expiry, _gam().YYYYMMDDTHHMMSSZ_FORMAT, tzinfo='UTC').naive
+        creds.expiry = arrow.Arrow.strptime(token_expiry, YYYYMMDDTHHMMSSZ_FORMAT, tzinfo='UTC').naive
         return (not noScopes, creds)
       if jsonDict and exitOnError:
-        _gam().invalidOauth2TxtExit(Msg.INVALID)
+        invalidOauth2TxtExit(Msg.INVALID)
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
       if exitOnError:
-        _gam().invalidOauth2TxtExit(str(e))
+        invalidOauth2TxtExit(str(e))
   if exitOnError:
-    _gam().systemErrorExit(_gam().OAUTH2_TXT_REQUIRED_RC, Msg.NO_CLIENT_ACCESS_ALLOWED)
+    systemErrorExit(OAUTH2_TXT_REQUIRED_RC, Msg.NO_CLIENT_ACCESS_ALLOWED)
   return (False, None)
 
 def _getValueFromOAuth(field, credentials=None):
@@ -366,9 +375,9 @@ def _getValueFromOAuth(field, credentials=None):
                                                                                     clock_skew_in_seconds=GC.Values[GC.CLOCK_SKEW_IN_SECONDS])
     except ValueError as e:
       if 'Token used too early' in str(e):
-        _gam().stderrErrorMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
-      _gam().systemErrorExit(_gam().SYSTEM_ERROR_RC, str(e))
-  return GM.Globals[GM.DECODED_ID_TOKEN].get(field, _gam().UNKNOWN)
+        stderrErrorMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+      systemErrorExit(SYSTEM_ERROR_RC, str(e))
+  return GM.Globals[GM.DECODED_ID_TOKEN].get(field, UNKNOWN)
 
 def _getAdminEmail():
   if GC.Values[GC.ADMIN_EMAIL]:
@@ -383,25 +392,25 @@ def writeClientCredentials(creds, filename):
     'refresh_token': creds.refresh_token,
     'scopes': sorted(creds.scopes or GM.Globals[GM.CREDENTIALS_SCOPES]),
     'token': creds.token,
-    'token_expiry': creds.expiry.strftime(_gam().YYYYMMDDTHHMMSSZ_FORMAT),
+    'token_expiry': creds.expiry.strftime(YYYYMMDDTHHMMSSZ_FORMAT),
     'token_uri': creds.token_uri,
     }
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
-    _gam().systemErrorExit(_gam().OAUTH2_TXT_REQUIRED_RC, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
+    systemErrorExit(OAUTH2_TXT_REQUIRED_RC, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
   request = transportCreateRequest()
   try:
     creds_data['decoded_id_token'] = google.oauth2.id_token.verify_oauth2_token(creds.id_token, request,
                                                                                  clock_skew_in_seconds=GC.Values[GC.CLOCK_SKEW_IN_SECONDS])
   except ValueError as e:
     if 'Token used too early' in str(e):
-      _gam().stderrErrorMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
-    _gam().systemErrorExit(_gam().SYSTEM_ERROR_RC, str(e))
+      stderrErrorMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+    systemErrorExit(SYSTEM_ERROR_RC, str(e))
   GM.Globals[GM.DECODED_ID_TOKEN] = creds_data['decoded_id_token']
   if filename != '-':
-    _gam().writeFile(filename, json.dumps(creds_data, indent=2, sort_keys=True)+'\n')
+    writeFile(filename, json.dumps(creds_data, indent=2, sort_keys=True)+'\n')
   else:
-    _gam().writeStdout(json.dumps(creds_data, ensure_ascii=False, indent=2, sort_keys=True)+'\n')
+    writeStdout(json.dumps(creds_data, ensure_ascii=False, indent=2, sort_keys=True)+'\n')
 
 def shortenURL(long_url):
   if GC.Values[GC.NO_SHORT_URLS]:
@@ -412,7 +421,7 @@ def shortenURL(long_url):
     resp, content = httpObj.request(URL_SHORTENER_ENDPOINT, 'POST',
                                     payload,
                                     headers={'Content-Type': 'application/json',
-                                             'User-Agent': _gam().GAM_USER_AGENT})
+                                             'User-Agent': GAM_USER_AGENT})
   except:
     return long_url
   if resp.status != 200:
@@ -432,11 +441,11 @@ def runSqliteQuery(db_file, query):
 
 def refreshCredentialsWithReauth(credentials):
   def gcloudError():
-    _gam().writeStderr(f'Failed to run gcloud as {admin_email}. Please make sure it\'s setup')
+    writeStderr(f'Failed to run gcloud as {admin_email}. Please make sure it\'s setup')
     e = Msg.REAUTHENTICATION_IS_NEEDED
     handleOAuthTokenError(e, False)
 
-  _gam().writeStderr(Msg.CALLING_GCLOUD_FOR_REAUTH)
+  writeStderr(Msg.CALLING_GCLOUD_FOR_REAUTH)
   if 'termios' in sys.modules:
     import termios
     old_settings = termios.tcgetattr(sys.stdin)
@@ -444,7 +453,7 @@ def refreshCredentialsWithReauth(credentials):
   # First makes sure gcloud has a valid access token and thus
   # should also have a valid RAPT token
   try:
-    devnull = open(os.devnull, 'w', encoding=_gam().UTF8)
+    devnull = open(os.devnull, 'w', encoding=UTF8)
     subprocess.run(['gcloud',
                     'auth',
                     'print-identity-token',
@@ -462,7 +471,7 @@ def refreshCredentialsWithReauth(credentials):
     if 'termios' in sys.modules:
       import termios
       termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
-    _gam().printBlankLine()
+    printBlankLine()
     raise KeyboardInterrupt from e
   token_path = gcloud_path_result.stdout.decode().strip()
   if not token_path:
@@ -474,7 +483,7 @@ def refreshCredentialsWithReauth(credentials):
   except TypeError:
     gcloudError()
   if not credentials._rapt_token:
-    _gam().systemErrorExit(_gam().SYSTEM_ERROR_RC,
+    systemErrorExit(SYSTEM_ERROR_RC,
             'Failed to retrieve reauth token from gcloud. You may need to wait until gcloud is also prompted for reauth.')
 
 def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, api=None, noDASA=False, refreshOnly=False, noScopes=False):
@@ -485,7 +494,7 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
   with lock:
     writeCreds, credentials = getOauth2TxtCredentials(api=api, noDASA=noDASA, refreshOnly=refreshOnly, noScopes=noScopes)
     if not credentials:
-      _gam().invalidOauth2TxtExit('')
+      invalidOauth2TxtExit('')
     if credentials.expired or forceRefresh:
       triesLimit = 3
       for n in range(1, triesLimit+1):
@@ -496,7 +505,7 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
           break
         except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
           if n != triesLimit:
-            waitOnFailure(n, triesLimit, _gam().NETWORK_ERROR_RC, str(e))
+            waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
             continue
           handleServerError(e)
         except google.auth.exceptions.RefreshError as e:
@@ -513,11 +522,11 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
 def waitOnFailure(n, triesLimit, error_code, error_message):
   delta = min(2 ** n, 60)+float(random.randint(1, 1000))/1000
   if n > 3:
-    _gam().writeStderr(f'Temporary error: {error_code} - {error_message}, Backing off: {int(delta)} seconds, Retry: {n}/{triesLimit}\n')
-    _gam().flushStderr()
+    writeStderr(f'Temporary error: {error_code} - {error_message}, Backing off: {int(delta)} seconds, Retry: {n}/{triesLimit}\n')
+    flushStderr()
   time.sleep(delta)
   if GC.Values[GC.SHOW_API_CALLS_RETRY_DATA]:
-    _gam().incrAPICallsRetryData(error_message, delta)
+    incrAPICallsRetryData(error_message, delta)
 
 def clearServiceCache(service):
   if hasattr(service._http, 'http') and hasattr(service._http.http, 'cache'):
@@ -564,22 +573,22 @@ def getService(api, httpObj):
           clearServiceCache(service)
         return service
       except googleapiclient.errors.UnknownApiNameOrVersion as e:
-        _gam().systemErrorExit(_gam().GOOGLE_API_ERROR_RC, Msg.UNKNOWN_API_OR_VERSION.format(str(e), _gam().__author__))
+        systemErrorExit(GOOGLE_API_ERROR_RC, Msg.UNKNOWN_API_OR_VERSION.format(str(e), __author__))
       except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
         if n != triesLimit:
-          waitOnFailure(n, triesLimit, _gam().INVALID_JSON_RC, str(e))
+          waitOnFailure(n, triesLimit, INVALID_JSON_RC, str(e))
           continue
-        _gam().systemErrorExit(_gam().INVALID_JSON_RC, str(e))
+        systemErrorExit(INVALID_JSON_RC, str(e))
       except (http.client.ResponseNotReady, OSError, googleapiclient.errors.HttpError) as e:
         errMsg = f'Connection error: {str(e) or repr(e)}'
         if n != triesLimit:
-          waitOnFailure(n, triesLimit, _gam().SOCKET_ERROR_RC, errMsg)
+          waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
           continue
-        _gam().systemErrorExit(_gam().SOCKET_ERROR_RC, errMsg)
+        systemErrorExit(SOCKET_ERROR_RC, errMsg)
       except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
         if n != triesLimit:
           httpObj.connections = {}
-          waitOnFailure(n, triesLimit, _gam().NETWORK_ERROR_RC, str(e))
+          waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
           continue
         handleServerError(e)
   disc_file, discovery = readDiscoveryFile(f'{api}-{version}')
@@ -591,9 +600,9 @@ def getService(api, httpObj):
       clearServiceCache(service)
     return service
   except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
-    _gam().invalidDiscoveryJsonExit(disc_file, str(e))
+    invalidDiscoveryJsonExit(disc_file, str(e))
   except IOError as e:
-    _gam().systemErrorExit(_gam().FILE_ERROR_RC, str(e))
+    systemErrorExit(FILE_ERROR_RC, str(e))
 
 def defaultSvcAcctScopes():
   scopesList = API.getSvcAcctScopesList(GC.Values[GC.USER_SERVICE_ACCOUNT_ACCESS_ONLY], False)
@@ -610,15 +619,15 @@ def defaultSvcAcctScopes():
 
 def _getSvcAcctData():
   if not GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]:
-    jsonData = _gam().readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
+    jsonData = readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=True)
     if not jsonData:
-      _gam().invalidOauth2serviceJsonExit(Msg.NO_DATA)
+      invalidOauth2serviceJsonExit(Msg.NO_DATA)
     try:
       GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = json.loads(jsonData)
     except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
-      _gam().invalidOauth2serviceJsonExit(str(e))
+      invalidOauth2serviceJsonExit(str(e))
     if not GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]:
-      _gam().systemErrorExit(_gam().OAUTH2SERVICE_JSON_REQUIRED_RC, Msg.NO_SVCACCT_ACCESS_ALLOWED)
+      systemErrorExit(OAUTH2SERVICE_JSON_REQUIRED_RC, Msg.NO_SVCACCT_ACCESS_ALLOWED)
     requiredFields = ['client_email', 'client_id', 'project_id', 'token_uri']
     key_type = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].get('key_type', 'default')
     if key_type == 'default':
@@ -628,7 +637,7 @@ def _getSvcAcctData():
       if field not in GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]:
         missingFields.append(field)
     if missingFields:
-      _gam().invalidOauth2serviceJsonExit(Msg.MISSING_FIELDS.format(','.join(missingFields)))
+      invalidOauth2serviceJsonExit(Msg.MISSING_FIELDS.format(','.join(missingFields)))
 # Some old oauth2service.json files have: 'https://accounts.google.com/o/oauth2/auth' which no longer works
     if GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['token_uri'] == 'https://accounts.google.com/o/oauth2/auth':
       GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['token_uri'] = API.GOOGLE_OAUTH2_TOKEN_ENDPOINT
@@ -640,6 +649,7 @@ def _getSvcAcctData():
       GM.Globals[GM.SVCACCT_SCOPES] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].pop(API.OAUTH2SA_SCOPES)
 
 def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=False):
+  from util.access import SvcAcctAPIAccessDeniedExit
   _getSvcAcctData()
   if isinstance(scopesOrAPI, str):
     GM.Globals[GM.CURRENT_SVCACCT_API] = scopesOrAPI
@@ -650,7 +660,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
     if scopesOrAPI != API.CHAT_EVENTS and not GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES]:
       if softErrors:
         return None
-      _gam().SvcAcctAPIAccessDeniedExit()
+      SvcAcctAPIAccessDeniedExit()
     if scopesOrAPI in {API.PEOPLE, API.PEOPLE_DIRECTORY, API.PEOPLE_OTHERCONTACTS}:
       GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES].append(API.USERINFO_PROFILE_SCOPE)
       if scopesOrAPI in {API.PEOPLE_OTHERCONTACTS}:
@@ -677,7 +687,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
     except (ValueError, IndexError, KeyError) as e:
       if softErrors:
         return None
-      _gam().invalidOauth2serviceJsonExit(str(e))
+      invalidOauth2serviceJsonExit(str(e))
     credentials = credentials.with_scopes(GM.Globals[GM.CURRENT_SVCACCT_API_SCOPES])
   else:
     audience = f'https://{scopesOrAPI}.googleapis.com/'
@@ -699,7 +709,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
     except (ValueError, IndexError, KeyError) as e:
       if softErrors:
         return None
-      _gam().invalidOauth2serviceJsonExit(str(e))
+      invalidOauth2serviceJsonExit(str(e))
   GM.Globals[GM.CURRENT_SVCACCT_USER] = userEmail
   if userEmail:
     credentials = credentials.with_subject(userEmail)
@@ -726,13 +736,13 @@ def getGDataOAuthToken(gdataObj, credentials=None):
   GM.Globals[GM.ADMIN] = GM.Globals[GM.DECODED_ID_TOKEN].get('email', 'UNKNOWN').lower()
   GM.Globals[GM.OAUTH2_CLIENT_ID] = credentials.client_id
   gdataObj.domain = GC.Values[GC.DOMAIN]
-  gdataObj.source = _gam().GAM_USER_AGENT
+  gdataObj.source = GAM_USER_AGENT
   return True
 
 def checkGDataError(e, service):
   error = e.args
   reason = error[0].get('reason', '')
-  body = error[0].get('body', '').decode(_gam().UTF8)
+  body = error[0].get('body', '').decode(UTF8)
   # First check for errors that need special handling
   if reason in ['Token invalid - Invalid token: Stateless token expired', 'Token invalid - Invalid token: Token not found', 'gone']:
     keep_domain = service.domain
@@ -741,7 +751,7 @@ def checkGDataError(e, service):
     return (GDATA.TOKEN_EXPIRED, reason)
   error_code = getattr(e, 'error_code', 600)
   if GC.Values[GC.DEBUG_LEVEL] > 0:
-    _gam().writeStdout(f'{_gam().ERROR_PREFIX} {error_code}: {reason}, {body}\n')
+    writeStdout(f'{ERROR_PREFIX} {error_code}: {reason}, {body}\n')
   if error_code == 600:
     if (body.startswith('Quota exceeded for the current request') or
         body.startswith('Quota exceeded for quota metric') or
@@ -842,6 +852,7 @@ def callGData(service, function,
               bailOnInternalServerError=False, softErrors=False,
               throwErrors=None, retryErrors=None, triesLimit=0,
               **kwargs):
+  from util.access import APIAccessDeniedExit
   if throwErrors is None:
     throwErrors = []
   if retryErrors is None:
@@ -851,7 +862,7 @@ def callGData(service, function,
   allRetryErrors = GDATA.NON_TERMINATING_ERRORS+retryErrors
   method = getattr(service, function)
   if GC.Values[GC.API_CALLS_RATE_CHECK]:
-    _gam().checkAPICallsRate()
+    checkAPICallsRate()
   for n in range(1, triesLimit+1):
     try:
       return method(**kwargs)
@@ -868,14 +879,14 @@ def callGData(service, function,
           raise GDATA.ERROR_CODE_EXCEPTION_MAP[error_code](error_message)
         raise
       if softErrors:
-        _gam().stderrErrorMsg(f'{error_code} - {error_message}{["", ": Giving up."][n > 1]}')
+        stderrErrorMsg(f'{error_code} - {error_message}{["", ": Giving up."][n > 1]}')
         return None
       if error_code == GDATA.INSUFFICIENT_PERMISSIONS:
-        _gam().APIAccessDeniedExit()
-      _gam().systemErrorExit(_gam().GOOGLE_API_ERROR_RC, f'{error_code} - {error_message}')
+        APIAccessDeniedExit()
+      systemErrorExit(GOOGLE_API_ERROR_RC, f'{error_code} - {error_message}')
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
       if n != triesLimit:
-        waitOnFailure(n, triesLimit, _gam().NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
@@ -886,25 +897,25 @@ def callGData(service, function,
     except (http.client.ResponseNotReady, OSError) as e:
       errMsg = f'Connection error: {str(e) or repr(e)}'
       if n != triesLimit:
-        waitOnFailure(n, triesLimit, _gam().SOCKET_ERROR_RC, errMsg)
+        waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
         continue
       if softErrors:
-        _gam().writeStderr(f'\n{_gam().ERROR_PREFIX}{errMsg} - Giving up.\n')
+        writeStderr(f'\n{ERROR_PREFIX}{errMsg} - Giving up.\n')
         return None
-      _gam().systemErrorExit(_gam().SOCKET_ERROR_RC, errMsg)
+      systemErrorExit(SOCKET_ERROR_RC, errMsg)
 
 def writeGotMessage(msg):
   if GC.Values[GC.SHOW_GETTINGS_GOT_NL]:
-    _gam().writeStderr(msg)
+    writeStderr(msg)
   else:
-    _gam().writeStderr('\r')
+    writeStderr('\r')
     msgLen = len(msg)
     if msgLen < GM.Globals[GM.LAST_GOT_MSG_LEN]:
-      _gam().writeStderr(msg+' '*(GM.Globals[GM.LAST_GOT_MSG_LEN]-msgLen))
+      writeStderr(msg+' '*(GM.Globals[GM.LAST_GOT_MSG_LEN]-msgLen))
     else:
-      _gam().writeStderr(msg)
+      writeStderr(msg)
     GM.Globals[GM.LAST_GOT_MSG_LEN] = msgLen
-  _gam().flushStderr()
+  flushStderr()
 
 def callGDataPages(service, function,
                    pageMessage=None,
@@ -935,12 +946,12 @@ def callGDataPages(service, function,
       nextLink = None
       pageItems = 0
     if pageMessage:
-      show_message = pageMessage.replace(_gam().TOTAL_ITEMS_MARKER, str(totalItems))
+      show_message = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
       writeGotMessage(show_message.format(Ent.ChooseGetting(totalItems)))
     if nextLink is None:
       if pageMessage and (pageMessage[-1] != '\n'):
-        _gam().writeStderr('\r\n')
-        _gam().flushStderr()
+        writeStderr('\r\n')
+        flushStderr()
       return allResults
     uri = nextLink.href
     if 'url_params' in kwargs:
@@ -951,14 +962,14 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
     return {'error': {'code': code, 'errors': [{'reason': reason, 'message': message}]}}
 
   try:
-    error = json.loads(e.content.decode(_gam().UTF8))
+    error = json.loads(e.content.decode(UTF8))
     if GC.Values[GC.DEBUG_LEVEL] > 0:
-      _gam().writeStdout(f'{_gam().ERROR_PREFIX} JSON: {str(error)}\n')
+      writeStdout(f'{ERROR_PREFIX} JSON: {str(error)}\n')
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError):
-    eContent = e.content.decode(_gam().UTF8) if isinstance(e.content, bytes) else e.content
+    eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
     lContent = eContent.lower()
     if GC.Values[GC.DEBUG_LEVEL] > 0:
-      _gam().writeStdout(f'{_gam().ERROR_PREFIX} HTTP: {str(eContent)}\n')
+      writeStdout(f'{ERROR_PREFIX} HTTP: {str(eContent)}\n')
     if eContent[0:15] != '<!DOCTYPE html>':
       if (e.resp['status'] == '403') and (lContent.startswith('request rate higher than configured')):
         return (e.resp['status'], GAPI.QUOTA_EXCEEDED, eContent)
@@ -971,7 +982,7 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
       if (e.resp['status'] == '504') and ('gateway timeout' in lContent):
         return (e.resp['status'], GAPI.GATEWAY_TIMEOUT, eContent)
     else:
-      tg = _gam().HTML_TITLE_PATTERN.match(lContent)
+      tg = HTML_TITLE_PATTERN.match(lContent)
       lContent = tg.group(1) if tg else 'bad request'
     if (e.resp['status'] == '403') and ('invalid domain.' in lContent):
       error = makeErrorDict(403, GAPI.NOT_FOUND, 'Domain not found')
@@ -998,10 +1009,10 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
     elif retryOnHttpError:
       return (-1, None, eContent)
     elif softErrors:
-      _gam().stderrErrorMsg(eContent)
+      stderrErrorMsg(eContent)
       return (0, None, None)
     else:
-      _gam().systemErrorExit(_gam().HTTP_ERROR_RC, eContent)
+      systemErrorExit(HTTP_ERROR_RC, eContent)
   requiredScopes = ''
   wwwAuthenticate = e.resp.get('www-authenticate', '')
   if 'insufficient_scope' in wwwAuthenticate:
@@ -1107,9 +1118,9 @@ def checkGAPIError(e, softErrors=False, retryOnHttpError=False, mapNotFound=True
         http_status = 400
         error = makeErrorDict(http_status, GAPI.INVALID, message)
       else:
-        _gam().systemErrorExit(_gam().GOOGLE_API_ERROR_RC, str(error))
+        systemErrorExit(GOOGLE_API_ERROR_RC, str(error))
     else:
-      _gam().systemErrorExit(_gam().GOOGLE_API_ERROR_RC, str(error))
+      systemErrorExit(GOOGLE_API_ERROR_RC, str(error))
   try:
     reason = error['error']['errors'][0]['reason']
     for messageItem in GAPI.REASON_MESSAGE_MAP.get(reason, []):
@@ -1135,6 +1146,7 @@ def callGAPI(service, function,
              softErrors=False, mapNotFound=True,
              throwReasons=None, retryReasons=None, triesLimit=0,
              **kwargs):
+  from util.access import APIAccessDeniedExit
   if throwReasons is None:
     throwReasons = []
   if retryReasons is None:
@@ -1145,7 +1157,7 @@ def callGAPI(service, function,
   method = getattr(service, function)
   svcparms = dict(list(kwargs.items())+GM.Globals[GM.EXTRA_ARGS_LIST])
   if GC.Values[GC.API_CALLS_RATE_CHECK]:
-    _gam().checkAPICallsRate()
+    checkAPICallsRate()
   for n in range(1, triesLimit+1):
     try:
       return method(**svcparms).execute()
@@ -1158,7 +1170,7 @@ def callGAPI(service, function,
 #          service._http.credentials.refresh(getHttpObj())
           service._http.credentials.refresh(transportCreateRequest())
         except TypeError:
-          _gam().systemErrorExit(_gam().HTTP_ERROR_RC, message)
+          systemErrorExit(HTTP_ERROR_RC, message)
         continue
       if http_status == 0:
         return None
@@ -1179,17 +1191,17 @@ def callGAPI(service, function,
           raise GAPI.REASON_EXCEPTION_MAP[reason](message)
         raise e
       if softErrors:
-        _gam().stderrErrorMsg(f'{http_status}: {reason} - {message}{["", ": Giving up."][n > 1]}')
+        stderrErrorMsg(f'{http_status}: {reason} - {message}{["", ": Giving up."][n > 1]}')
         return None
       if reason == GAPI.INSUFFICIENT_PERMISSIONS:
-        _gam().APIAccessDeniedExit()
-      _gam().systemErrorExit(_gam().HTTP_ERROR_RC, _gam().formatHTTPError(http_status, reason, message))
+        APIAccessDeniedExit()
+      systemErrorExit(HTTP_ERROR_RC, formatHTTPError(http_status, reason, message))
     except googleapiclient.errors.MediaUploadSizeError as e:
       raise e
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
       if n != triesLimit:
         service._http.connections = {}
-        waitOnFailure(n, triesLimit, _gam().NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
@@ -1200,22 +1212,22 @@ def callGAPI(service, function,
     except (http.client.ResponseNotReady, OSError) as e:
       errMsg = f'Connection error: {str(e) or repr(e)}'
       if n != triesLimit:
-        waitOnFailure(n, triesLimit, _gam().SOCKET_ERROR_RC, errMsg)
+        waitOnFailure(n, triesLimit, SOCKET_ERROR_RC, errMsg)
         continue
       if softErrors:
-        _gam().writeStderr(f'\n{_gam().ERROR_PREFIX}{errMsg} - Giving up.\n')
+        writeStderr(f'\n{ERROR_PREFIX}{errMsg} - Giving up.\n')
         return None
-      _gam().systemErrorExit(_gam().SOCKET_ERROR_RC, errMsg)
+      systemErrorExit(SOCKET_ERROR_RC, errMsg)
     except ValueError as e:
       if clearServiceCache(service):
         continue
-      _gam().systemErrorExit(_gam().GOOGLE_API_ERROR_RC, str(e))
+      systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
     except TypeError as e:
-      _gam().systemErrorExit(_gam().GOOGLE_API_ERROR_RC, str(e))
+      systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
 
 def _showGAPIpagesResult(results, pageItems, totalItems, pageMessage, messageAttribute, entityType):
   Ent = _getEnt()
-  showMessage = pageMessage.replace(_gam().TOTAL_ITEMS_MARKER, str(totalItems))
+  showMessage = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
   if pageItems:
     if messageAttribute:
       firstItem = results[0] if pageItems > 0 else {}
@@ -1229,11 +1241,11 @@ def _showGAPIpagesResult(results, pageItems, totalItems, pageMessage, messageAtt
           lastItem = lastItem.get(attr, {})
         firstItem = str(firstItem)
         lastItem = str(lastItem)
-      showMessage = showMessage.replace(_gam().FIRST_ITEM_MARKER, firstItem)
-      showMessage = showMessage.replace(_gam().LAST_ITEM_MARKER, lastItem)
+      showMessage = showMessage.replace(FIRST_ITEM_MARKER, firstItem)
+      showMessage = showMessage.replace(LAST_ITEM_MARKER, lastItem)
   else:
-    showMessage = showMessage.replace(_gam().FIRST_ITEM_MARKER, '')
-    showMessage = showMessage.replace(_gam().LAST_ITEM_MARKER, '')
+    showMessage = showMessage.replace(FIRST_ITEM_MARKER, '')
+    showMessage = showMessage.replace(LAST_ITEM_MARKER, '')
   writeGotMessage(showMessage.replace('{0}', str(Ent.Choose(entityType, totalItems))))
 
 def _processGAPIpagesResult(results, items, allResults, totalItems, pageMessage, messageAttribute, entityType):
@@ -1257,8 +1269,8 @@ def _processGAPIpagesResult(results, items, allResults, totalItems, pageMessage,
 
 def _finalizeGAPIpagesResult(pageMessage):
   if pageMessage and (pageMessage[-1] != '\n'):
-    _gam().writeStderr('\r\n')
-    _gam().flushStderr()
+    writeStderr('\r\n')
+    flushStderr()
 
 def _setMaxArgResults(maxItems, pageArgsInBody, kwargs):
   if pageArgsInBody:
@@ -1381,18 +1393,18 @@ def readDiscoveryFile(api_version):
   disc_filename = f'{api_version}.json'
   disc_file = os.path.join(GM.Globals[GM.GAM_PATH], disc_filename)
   if hasattr(sys, '_MEIPASS'):
-    json_string = _gam().readFile(os.path.join(sys._MEIPASS, disc_filename), continueOnError=True, displayError=True) #pylint: disable=no-member
+    json_string = readFile(os.path.join(sys._MEIPASS, disc_filename), continueOnError=True, displayError=True) #pylint: disable=no-member
   elif os.path.isfile(disc_file):
-    json_string = _gam().readFile(disc_file, continueOnError=True, displayError=True)
+    json_string = readFile(disc_file, continueOnError=True, displayError=True)
   else:
     json_string = None
   if not json_string:
-    _gam().invalidDiscoveryJsonExit(disc_file, Msg.NO_DATA)
+    invalidDiscoveryJsonExit(disc_file, Msg.NO_DATA)
   try:
     discovery = json.loads(json_string)
     return (disc_file, discovery)
   except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
-    _gam().invalidDiscoveryJsonExit(disc_file, str(e))
+    invalidDiscoveryJsonExit(disc_file, str(e))
 
 def buildGAPIObject(api, credentials=None):
   if credentials is None:
@@ -1406,7 +1418,7 @@ def buildGAPIObject(api, credentials=None):
     GM.Globals[GM.CURRENT_CLIENT_API] = api
     GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = API_Scopes.intersection(GM.Globals[GM.CREDENTIALS_SCOPES])
     if api not in API.SCOPELESS_APIS and not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
-      _gam().systemErrorExit(_gam().NO_SCOPES_FOR_API_RC, Msg.NO_SCOPES_FOR_API.format(API.getAPIName(api)))
+      systemErrorExit(NO_SCOPES_FOR_API_RC, Msg.NO_SCOPES_FOR_API.format(API.getAPIName(api)))
     if not GC.Values[GC.DOMAIN]:
       GC.Values[GC.DOMAIN] = GM.Globals[GM.DECODED_ID_TOKEN].get('hd', 'UNKNOWN').lower()
     if not GC.Values[GC.CUSTOMER_ID]:
@@ -1416,9 +1428,10 @@ def buildGAPIObject(api, credentials=None):
   return service
 
 def getSaUser(user):
+  from util.entity import convertUIDtoEmailAddress
   currentClientAPI = GM.Globals[GM.CURRENT_CLIENT_API]
   currentClientAPIScopes = GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]
-  userEmail = _gam().convertUIDtoEmailAddress(user) if user else None
+  userEmail = convertUIDtoEmailAddress(user) if user else None
   GM.Globals[GM.CURRENT_CLIENT_API] = currentClientAPI
   GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = currentClientAPIScopes
   return userEmail
@@ -1446,7 +1459,7 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
     except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
       if n != triesLimit:
         httpObj.connections = {}
-        waitOnFailure(n, triesLimit, _gam().NETWORK_ERROR_RC, str(e))
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
@@ -1456,12 +1469,12 @@ def buildGAPIServiceObject(api, user, i=0, count=0, displayError=True):
         if isinstance(e, str):
           eContent = e
         else:
-          eContent = e.content.decode(_gam().UTF8) if isinstance(e.content, bytes) else e.content
+          eContent = e.content.decode(UTF8) if isinstance(e.content, bytes) else e.content
         if eContent[0:15] == '<!DOCTYPE html>':
           if GC.Values[GC.DEBUG_LEVEL] > 0:
-            _gam().writeStdout(f'{_gam().ERROR_PREFIX} HTTP: {str(eContent)}\n')
+            writeStdout(f'{ERROR_PREFIX} HTTP: {str(eContent)}\n')
           lContent = eContent.lower()
-          tg = _gam().HTML_TITLE_PATTERN.match(lContent)
+          tg = HTML_TITLE_PATTERN.match(lContent)
           lContent = tg.group(1) if tg else ''
           if lContent.startswith('Error 502 (Server Error)'):
             time.sleep(30)
@@ -1479,7 +1492,7 @@ def initGDataObject(gdataObj, api):
   credentials = getClientCredentials(noDASA=True, refreshOnly=True)
   GM.Globals[GM.CURRENT_CLIENT_API_SCOPES] = API.getClientScopesSet(api).intersection(GM.Globals[GM.CREDENTIALS_SCOPES])
   if not GM.Globals[GM.CURRENT_CLIENT_API_SCOPES]:
-    _gam().systemErrorExit(_gam().NO_SCOPES_FOR_API_RC, Msg.NO_SCOPES_FOR_API.format(API.getAPIName(api)))
+    systemErrorExit(NO_SCOPES_FOR_API_RC, Msg.NO_SCOPES_FOR_API.format(API.getAPIName(api)))
   getGDataOAuthToken(gdataObj, credentials)
   if GC.Values[GC.DEBUG_LEVEL] > 0:
     gdataObj.debug = True

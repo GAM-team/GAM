@@ -19,17 +19,7 @@ from gamlib import glglobals as GM
 from gamlib import glmsgs as Msg
 
 
-class _InstanceProxy:
-  """Lazy proxy that delegates attribute access to a named instance in the gam module."""
-  def __init__(self, name):
-    self._name = name
-  def __getattr__(self, attr):
-    return getattr(getattr(sys.modules['gam'], self._name), attr)
-
-Act = _InstanceProxy('Act')
-Ind = _InstanceProxy('Ind')
-
-
+from gam.var import Act, Ind
 from util.output import (
     stderrErrorMsg,
     stderrWarningMsg,
@@ -287,3 +277,41 @@ def closeGAMCommandLog(Globals):
   except Exception:
     pass
   Globals[GM.CMDLOG_LOGGER] = None
+
+def adjustRedirectedSTDFilesIfNotMultiprocessing():
+  def adjustRedirectedSTDFile(stdtype):
+    rdFd = GM.Globals[stdtype].get(GM.REDIRECT_FD)
+    rdMultiFd = GM.Globals[stdtype].get(GM.REDIRECT_MULTI_FD)
+    if rdFd and rdMultiFd and rdFd != rdMultiFd:
+      try:
+        rdFd.write(rdMultiFd.getvalue())
+        rdMultiFd.close()
+        GM.Globals[stdtype][GM.REDIRECT_MULTI_FD] = rdFd
+        if (stdtype == GM.STDOUT) and (GM.Globals.get(GM.SAVED_STDOUT) is not None):
+          sys.stdout = rdFd
+      except IOError as e:
+        systemErrorExit(FILE_ERROR_RC, e)
+
+  adjustRedirectedSTDFile(GM.STDOUT)
+  if GM.Globals[GM.STDERR].get(GM.REDIRECT_NAME) != 'stdout':
+    adjustRedirectedSTDFile(GM.STDERR)
+  else:
+    GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]
+
+
+def closeSTDFilesIfNotMultiprocessing(closeSTD):
+  def closeSTDFile(stdtype, stdfile):
+    rdFd = GM.Globals[stdtype].get(GM.REDIRECT_FD)
+    rdMultiFd = GM.Globals[stdtype].get(GM.REDIRECT_MULTI_FD)
+    if rdFd and rdMultiFd and (rdFd == rdMultiFd) and (rdFd != stdfile):
+      try:
+        rdFd.flush()
+        if closeSTD:
+          rdFd.close()
+      except BrokenPipeError:
+        pass
+
+  closeSTDFile(GM.STDOUT, sys.stdout)
+  if GM.Globals[GM.STDERR].get(GM.REDIRECT_NAME) != 'stdout':
+    closeSTDFile(GM.STDERR, sys.stderr)
+

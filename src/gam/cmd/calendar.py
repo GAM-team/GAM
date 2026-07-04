@@ -6,15 +6,12 @@ import json
 from gam.util.csv_pf import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM, FormatJSONQuoteChar
 import uuid
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
 from gam.util.api import (
     buildGAPIObject,
@@ -96,10 +93,6 @@ from gam.util.fileio import UNKNOWN
 from gam.util.output import executeBatch, formatKeyValueList, setSysExitRC
 from gam.constants import DAYS_OF_WEEK, GOOGLE_MEETID_FORMAT_REQUIRED, GOOGLE_MEETID_PATTERN, NO_ENTITIES_FOUND_RC
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-
 
 # ACL utility functions (moved from gam/__init__.py)
 def ACLRuleDict(rule):
@@ -141,8 +134,6 @@ def makeRoleRuleIdBody(role, ruleId):
       return {'role': role, 'scope': {'type': ruleIdParts[0], 'value': GC.Values[GC.DOMAIN]}}
     return {'role': role, 'scope': {'type': 'user', 'value': ruleIdParts[0]}}
   return {'role': role, 'scope': {'type': ruleIdParts[0], 'value': ruleIdParts[1]}}
-
-Cmd = glclargs.GamCLArgs()
 
 
 def normalizeCalendarId(calId, user):
@@ -2334,4 +2325,207 @@ def doResourcePrintShowCalendarACLs(entityList):
     _printShowCalendarACLs(cal, resourceId, Ent.RESOURCE_CALENDAR, calId, i, count, csvPF, FJQC, noSelfOwner, addCSVData)
   if csvPF:
     csvPF.writeCSVfile('Resource Calendar ACLs')
+
+
+# Dispatch tables and routing (moved from __init__.py)
+from gam.constants import CMD_ACTION, CMD_FUNCTION
+from gam.cmd.userservices import doCalendarsTransferOwnership
+
+# Calendar command sub-commands
+CALENDAR_SUBCOMMANDS = {
+  'showacl': 			(Act.SHOW, doCalendarsPrintShowACLs),
+  'printacl': 			(Act.PRINT, doCalendarsPrintShowACLs),
+  'addevent': 			(Act.ADD, doCalendarsCreateEvent),
+  'deleteevent': 		(Act.DELETE, doCalendarsDeleteEventsOld),
+  'moveevent': 			(Act.MOVE, doCalendarsMoveEventsOld),
+  'updateevent': 		(Act.UPDATE, doCalendarsUpdateEventsOld),
+  'printevents': 		(Act.PRINT, doCalendarsPrintShowEvents),
+  'wipe': 			(Act.WIPE, doCalendarsWipeEvents),
+  'modify': 			(Act.MODIFY, doCalendarsModifySettings),
+  }
+
+CALENDAR_OLDACL_SUBCOMMANDS = {
+  'add': 			(Act.ADD, doCalendarsCreateACL),
+  'create': 			(Act.CREATE, doCalendarsCreateACL),
+  'delete': 			(Act.DELETE, doCalendarsDeleteACL),
+  'update': 			(Act.UPDATE, doCalendarsUpdateACL),
+  }
+
+# Calendar sub-command aliases
+CALENDAR_OLDACL_SUBCOMMAND_ALIASES = {
+  'del':			'delete',
+  }
+
+# Calendars command sub-commands with objects
+CALENDARS_SUBCOMMANDS_WITH_OBJECTS = {
+  'add':
+    (Act.ADD,
+     {Cmd.ARG_CALENDARACL:	doCalendarsCreateACLs,
+      Cmd.ARG_EVENT:		doCalendarsCreateEvent,
+     }
+    ),
+  'create':
+    (Act.CREATE,
+     {Cmd.ARG_CALENDARACL:	doCalendarsCreateACLs,
+      Cmd.ARG_EVENT:		doCalendarsCreateEvent,
+     }
+    ),
+  'delete':
+    (Act.DELETE,
+     {Cmd.ARG_CALENDARACL:	doCalendarsDeleteACLs,
+      Cmd.ARG_EVENT:		doCalendarsDeleteEvents,
+     }
+    ),
+  'empty':
+    (Act.EMPTY,
+     {Cmd.ARG_CALENDARTRASH:	doCalendarsEmptyTrash,
+     }
+    ),
+  'import':
+    (Act.IMPORT,
+     {Cmd.ARG_EVENT:		doCalendarsImportEvent,
+     }
+    ),
+  'info':
+    (Act.INFO,
+     {Cmd.ARG_CALENDARACL:	doCalendarsInfoACLs,
+      Cmd.ARG_EVENT:		doCalendarsInfoEvents,
+     }
+    ),
+  'move':
+    (Act.MOVE,
+     {Cmd.ARG_EVENT:		doCalendarsMoveEvents,
+     }
+    ),
+  'print':
+    (Act.PRINT,
+     {Cmd.ARG_CALENDARACL:	doCalendarsPrintShowACLs,
+      Cmd.ARG_EVENT:		doCalendarsPrintShowEvents,
+      Cmd.ARG_SETTINGS:		doCalendarsPrintShowSettings,
+     }
+    ),
+  'purge':
+    (Act.PURGE,
+     {Cmd.ARG_EVENT:		doCalendarsPurgeEvents,
+     }
+    ),
+  'show':
+    (Act.SHOW,
+     {Cmd.ARG_CALENDARACL:	doCalendarsPrintShowACLs,
+      Cmd.ARG_EVENT:		doCalendarsPrintShowEvents,
+      Cmd.ARG_SETTINGS:		doCalendarsPrintShowSettings,
+     }
+    ),
+  'transfer':
+    (Act.TRANSFER,
+     {Cmd.ARG_OWNERSHIP:	doCalendarsTransferOwnership,
+     }
+    ),
+  'update':
+    (Act.UPDATE,
+     {Cmd.ARG_CALENDARACL:	doCalendarsUpdateACLs,
+      Cmd.ARG_EVENT:		doCalendarsUpdateEvents,
+     }
+    ),
+  'wipe':
+    (Act.WIPE,
+     {Cmd.ARG_EVENT:		doCalendarsWipeEvents,
+     }
+    ),
+  }
+
+CALENDARS_SUBCOMMANDS_OBJECT_ALIASES = {
+  Cmd.ARG_ACL:			Cmd.ARG_CALENDARACL,
+  Cmd.ARG_ACLS:			Cmd.ARG_CALENDARACL,
+  Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
+  Cmd.ARG_EVENTS:		Cmd.ARG_EVENT,
+  }
+
+def processCalendarsCommands():
+  calendarList = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
+  CL_subCommand = getChoice(CALENDAR_SUBCOMMANDS, defaultChoice=None)
+  if CL_subCommand:
+    Act.Set(CALENDAR_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
+    CALENDAR_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION](calendarList)
+    return
+  CL_subCommand = getChoice(CALENDAR_OLDACL_SUBCOMMANDS, choiceAliases=CALENDAR_OLDACL_SUBCOMMAND_ALIASES, defaultChoice=None)
+  if CL_subCommand:
+    Act.Set(CALENDAR_OLDACL_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
+    CL_objectName = getChoice([Cmd.ARG_CALENDARACL, Cmd.ARG_EVENT], choiceAliases=CALENDARS_SUBCOMMANDS_OBJECT_ALIASES, defaultChoice=None)
+    if not CL_objectName:
+      CALENDAR_OLDACL_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION](calendarList)
+    else:
+      CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION][CL_objectName](calendarList)
+    return
+  CL_subCommand = getChoice(CALENDARS_SUBCOMMANDS_WITH_OBJECTS)
+  Act.Set(CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_ACTION])
+  CL_objectName = getChoice(CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION], choiceAliases=CALENDARS_SUBCOMMANDS_OBJECT_ALIASES)
+  CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION][CL_objectName](calendarList)
+
+
+# Dispatch tables and routing (moved from __init__.py)
+# Additional imports for dispatch
+from gam.util.args import getChoice, getStringReturnInList
+
+# Resource command sub-commands
+RESOURCE_SUBCOMMANDS_WITH_OBJECTS = {
+  'add':
+    (Act.ADD,
+     {Cmd.ARG_CALENDARACL:	doResourceCreateCalendarACLs,
+     }
+    ),
+  'create':
+    (Act.CREATE,
+     {Cmd.ARG_CALENDARACL:	doResourceCreateCalendarACLs,
+     }
+    ),
+  'update':
+    (Act.UPDATE,
+     {Cmd.ARG_CALENDARACL:	doResourceUpdateCalendarACLs,
+     }
+    ),
+  'delete':
+    (Act.DELETE,
+     {Cmd.ARG_CALENDARACL:	doResourceDeleteCalendarACLs,
+     }
+    ),
+  'info':
+    (Act.INFO,
+     {Cmd.ARG_CALENDARACL:	doResourceInfoCalendarACLs,
+     }
+    ),
+  'print':
+    (Act.PRINT,
+     {Cmd.ARG_CALENDARACL:	doResourcePrintShowCalendarACLs,
+     }
+    ),
+  'show':
+    (Act.SHOW,
+     {Cmd.ARG_CALENDARACL:	doResourcePrintShowCalendarACLs,
+     }
+    ),
+  }
+
+# Resource sub-command aliases
+RESOURCE_SUBCOMMAND_ALIASES = {
+  'del':			'delete',
+  }
+
+RESOURCE_SUBCOMMANDS_OBJECT_ALIASES = {
+  Cmd.ARG_ACL:			Cmd.ARG_CALENDARACL,
+  Cmd.ARG_ACLS:			Cmd.ARG_CALENDARACL,
+  Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
+  }
+
+def executeResourceCommands(resourceEntity):
+  CL_subCommand = getChoice(RESOURCE_SUBCOMMANDS_WITH_OBJECTS, choiceAliases=RESOURCE_SUBCOMMAND_ALIASES)
+  Act.Set(RESOURCE_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_ACTION])
+  CL_objectName = getChoice(RESOURCE_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION], choiceAliases=RESOURCE_SUBCOMMANDS_OBJECT_ALIASES)
+  RESOURCE_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION][CL_objectName](resourceEntity)
+
+def processResourceCommands():
+  executeResourceCommands(getStringReturnInList(Cmd.OB_RESOURCE_ID))
+
+def processResourcesCommands():
+  executeResourceCommands(getEntityList(Cmd.OB_RESOURCE_ENTITY))
 

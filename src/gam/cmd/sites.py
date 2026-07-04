@@ -3,15 +3,12 @@
 import json
 import sys
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import (
     buildGAPIObject,
     buildGAPIServiceObject,
@@ -42,11 +39,6 @@ from gam.util.fileio import writeFile
 from gam.util.output import ERROR, systemErrorExit
 from gam.constants import NETWORK_ERROR_RC
 from gam.cmd.sso import SITEVERIFICATION_METHOD_CHOICE_MAP
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 from urllib.parse import unquote

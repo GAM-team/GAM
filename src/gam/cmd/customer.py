@@ -2,15 +2,12 @@
 
 import json
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import accessErrorExit
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIitems
 from gam.util.args import (
@@ -52,11 +49,6 @@ from gam.cmd.reseller import _showCustomerAddressPhoneNumber
 from gam.cmd.reseller import ADDRESS_FIELDS_ARGUMENT_MAP
 from gam.cmd.domains import DOMAIN_ALIAS_SKIP_OBJECTS, DOMAIN_TIME_OBJECTS, _showDomainAlias
 from gam.cmd.domains import DOMAIN_TIME_OBJECTS, _printDomain
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def _showCustomerLicenseInfo(customerInfo, FJQC):
@@ -108,7 +100,6 @@ def _showCustomerLicenseInfo(customerInfo, FJQC):
         customerInfo[item['name']] = api_value
   if not FJQC.formatJSON:
     Ind.Decrement()
-
 
 
 # gam info customer [formatjson]
@@ -303,6 +294,5 @@ def doPrintShowDomains():
                                                  ensure_ascii=False, sort_keys=True)})
   if csvPF:
     csvPF.writeCSVfile('Domains')
-
 
 

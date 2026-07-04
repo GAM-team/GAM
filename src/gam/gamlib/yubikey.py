@@ -24,7 +24,7 @@ from secrets import SystemRandom
 import string
 import sys
 
-from gam import mplock
+
 from gam.util.output import systemErrorExit, readStdin, writeStdout
 
 from gam.gamlib import glmsgs as Msg
@@ -170,8 +170,9 @@ class YubiKey():
       systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
 
   def sign(self, message):
-    if mplock is not None:
-      mplock.acquire()
+    _mplock = sys.modules['gam'].mplock
+    if _mplock is not None:
+      _mplock.acquire()
     try:
       conn = self._connect()
       with conn:
@@ -193,6 +194,6 @@ class YubiKey():
       systemErrorExit(YUBIKEY_VALUE_ERROR_RC, f'YubiKey - {err}')
     except TypeError as err:
       systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
-    if mplock is not None:
-      mplock.release()
+    if _mplock is not None:
+      _mplock.release()
     return signed

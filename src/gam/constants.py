@@ -4,10 +4,15 @@ Return codes, Drive query fragments, choice maps, and other constants
 shared across cmd/ modules.
 """
 
+import platform
 import re
 import string
+import sys
 
 from gamlib import glcfg as GC
+
+# Version and author (canonical source: gam/__init__.py)
+from gam import __author__, __version__, __license__
 
 # Time formats
 IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%:z'
@@ -212,6 +217,11 @@ GAM_URL = f'https://github.com/{GIT_USER}/{GAM}'
 GAM_RELEASES = f'https://github.com/{GIT_USER}/{GAM}/releases'
 GAM_WIKI = f'https://github.com/{GIT_USER}/{GAM}/wiki'
 GAM_LATEST_RELEASE = f'https://api.github.com/repos/{GIT_USER}/{GAM}/releases/latest'
+GAM_USER_AGENT = (f'{GAM} {__version__} - {GAM_URL} / '
+                  f'{__author__} / '
+                  f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {sys.version_info[3]} / '
+                  f'{platform.platform()} {platform.machine()} /'
+                  )
 
 # Additional Google API MIME types
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -536,3 +546,7 @@ GROUP_ATTRIBUTES_SET = set(list(GROUP_BASIC_ATTRIBUTES)+list(GROUP_SETTINGS_ATTR
                            list(GROUP_ASSIST_CONTENT_ATTRIBUTES)+list(GROUP_MODERATE_CONTENT_ATTRIBUTES)+list(GROUP_MODERATE_MEMBERS_ATTRIBUTES)+
                            list(GROUP_MERGED_ATTRIBUTES)+list(GROUP_DEPRECATED_ATTRIBUTES))
 GROUP_FIELDS_WITH_CRS_NLS = {'customFooterText', 'defaultMessageDenyNotificationText', 'description'}
+
+# Command routing table indices
+CMD_ACTION = 0
+CMD_FUNCTION = 1

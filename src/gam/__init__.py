@@ -167,19 +167,13 @@ from gam.util.email import (  # noqa: F401  # re-export
     _addAttachmentsToMessage, _addEmbeddedImagesToMessage, send_email,
 )
 
-IS08601_TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%:z'
-RFC2822_TIME_FORMAT = '%a, %d %b %Y %H:%M:%S %z'
 
-def ISOformatTimeStamp(timestamp):
-  return timestamp.isoformat('T', 'seconds')
+from gam.constants import *
 
-def currentISOformatTimeStamp(timespec='milliseconds'):
-  return arrow.now(GC.Values[GC.TIMEZONE]).isoformat('T', timespec)
+from util.args import ISOformatTimeStamp, currentISOformatTimeStamp  # noqa: E402,F401
+from util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402,F401
 
-Act = glaction.GamAction()
-Cmd = glclargs.GamCLArgs()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
+from gam.var import Act, Cmd, Ent, Ind  # noqa: E402,F401
 
 # Finding path method varies between Python source, PyInstaller and StaticX
 if os.environ.get('STATICX_PROG_PATH', False):
@@ -195,35 +189,9 @@ else:
   GM.Globals[GM.GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
   GM.Globals[GM.GAM_TYPE] = 'pythonsource'
 
-GIT_USER = 'GAM-team'
-GAM = 'GAM'
-GAM_URL = f'https://github.com/{GIT_USER}/{GAM}'
-GAM_USER_AGENT = (f'{GAM} {__version__} - {GAM_URL} / '
-                  f'{__author__} / '
-                  f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {sys.version_info[3]} / '
-                  f'{platform.platform()} {platform.machine()} /'
-                  )
-GAM_RELEASES = f'https://github.com/{GIT_USER}/{GAM}/releases'
-GAM_WIKI = f'https://github.com/{GIT_USER}/{GAM}/wiki'
-GAM_LATEST_RELEASE = f'https://api.github.com/repos/{GIT_USER}/{GAM}/releases/latest'
-GAM_PROJECT_CREATION = 'GAM Project Creation'
-GAM_PROJECT_CREATION_CLIENT_ID = '297408095146-fug707qsjv4ikron0hugpevbrjhkmsk7.apps.googleusercontent.com'
 
-from gam.constants import *
+from util.output import redactable_debug_print, showAPICallsRetryData  # noqa: E402,F401
 
-def redactable_debug_print(*args):
-  processed_args = []
-  for arg in args:
-    if arg.startswith('b\''):
-      sbytes = arg[2:-1]
-      sbytes = bytes(sbytes, 'utf-8')
-      arg = sbytes.decode()
-      arg = arg.replace('\\r\\n', "\n          ")
-    if GC.Values[GC.DEBUG_REDACTION]:
-      for pattern, replace in DEBUG_REDACTION_PATTERNS:
-        arg = re.sub(pattern, replace, arg)
-    processed_args.append(arg)
-  print(*processed_args)
 
 # Multiprocessing lock
 mplock = None
@@ -1010,6 +978,7 @@ from gam.cmd.vault import (
     doUpdateVaultMatter,
     printShowUserVaultHolds,
 )
+from gam.cmd.yubikey import doResetYubiKeyPIV
 
 
 # gam.cmd.alerts
@@ -1138,22 +1107,6 @@ class LazyLoader(types.ModuleType):
     return dir(module)
 
 yubikey = LazyLoader('yubikey', globals(), 'gam.gamlib.yubikey')
-
-# gam yubikey resetpvi [yubikey_serialnumber <String>]
-def doResetYubiKeyPIV():
-  new_data = {}
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if myarg == 'yubikeyserialnumber':
-      new_data['yubikey_serial_number'] =  getInteger()
-    else:
-      unknownArgumentExit()
-  yk = yubikey.YubiKey(new_data)
-  yk.serial_number = yk.get_serial_number()
-  yk.reset_piv()
-
-
-
 
 BUILDING_ADDRESS_FIELD_MAP = {
   'address': 'addressLines',
@@ -1796,7 +1749,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
     ),
   'yubikey':
     (Act.RESET_YUBIKEY_PIV,
-     {Cmd.ARG_RESETPIV:		doResetYubiKeyPIV,
+     {Cmd.ARG_RESETPIV:		doResetYubiKeyPIV,  # from cmd/yubikey
      }
     ),
   }
@@ -1937,263 +1890,11 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   }
 
 # Audit command sub-commands with objects
-AUDIT_SUBCOMMANDS_WITH_OBJECTS = {
-  'monitor':
-    {'create': (Act.CREATE, doCreateMonitor),
-     'delete': (Act.DELETE, doDeleteMonitor),
-     'list': (Act.LIST, doShowMonitors),
-    },
-  }
 
-def processAuditCommands():
-  CL_subCommand = getChoice(list(AUDIT_SUBCOMMANDS_WITH_OBJECTS))
-  CL_objectName = getChoice(AUDIT_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand])
-  Act.Set(AUDIT_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CL_objectName][CMD_ACTION])
-  AUDIT_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CL_objectName][CMD_FUNCTION]()
-
-# Oauth command sub-commands
-OAUTH2_SUBCOMMANDS = {
-  'create': 			(Act.CREATE, doOAuthCreate),
-  'delete': 			(Act.DELETE, doOAuthDelete),
-  'export': 			(Act.EXPORT, doOAuthExport),
-  'info': 			(Act.INFO, doOAuthInfo),
-  'refresh': 			(Act.REFRESH, doOAuthRefresh),
-  'update': 			(Act.UPDATE, doOAuthUpdate),
-  }
-
-# Oauth sub-command aliases
-OAUTH2_SUBCOMMAND_ALIASES = {
-  'request':			'create',
-  'revoke':			'delete',
-  'verify':			'info',
-  }
-
-def processOauthCommands():
-  CL_subCommand = getChoice(OAUTH2_SUBCOMMANDS, choiceAliases=OAUTH2_SUBCOMMAND_ALIASES)
-  Act.Set(OAUTH2_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
-  if GC.Values[GC.ENABLE_DASA]:
-    systemErrorExit(USAGE_ERROR_RC, Msg.COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA.format('oauth', CL_subCommand))
-  OAUTH2_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION]()
-
-# Calendar command sub-commands
-CALENDAR_SUBCOMMANDS = {
-  'showacl': 			(Act.SHOW, doCalendarsPrintShowACLs),
-  'printacl': 			(Act.PRINT, doCalendarsPrintShowACLs),
-  'addevent': 			(Act.ADD, doCalendarsCreateEvent),
-  'deleteevent': 		(Act.DELETE, doCalendarsDeleteEventsOld),
-  'moveevent': 			(Act.MOVE, doCalendarsMoveEventsOld),
-  'updateevent': 		(Act.UPDATE, doCalendarsUpdateEventsOld),
-  'printevents': 		(Act.PRINT, doCalendarsPrintShowEvents),
-  'wipe': 			(Act.WIPE, doCalendarsWipeEvents),
-  'modify': 			(Act.MODIFY, doCalendarsModifySettings),
-  }
-
-CALENDAR_OLDACL_SUBCOMMANDS = {
-  'add': 			(Act.ADD, doCalendarsCreateACL),
-  'create': 			(Act.CREATE, doCalendarsCreateACL),
-  'delete': 			(Act.DELETE, doCalendarsDeleteACL),
-  'update': 			(Act.UPDATE, doCalendarsUpdateACL),
-  }
-
-# Calendar sub-command aliases
-CALENDAR_OLDACL_SUBCOMMAND_ALIASES = {
-  'del':			'delete',
-  }
-
-# Calendars command sub-commands with objects
-CALENDARS_SUBCOMMANDS_WITH_OBJECTS = {
-  'add':
-    (Act.ADD,
-     {Cmd.ARG_CALENDARACL:	doCalendarsCreateACLs,
-      Cmd.ARG_EVENT:		doCalendarsCreateEvent,
-     }
-    ),
-  'create':
-    (Act.CREATE,
-     {Cmd.ARG_CALENDARACL:	doCalendarsCreateACLs,
-      Cmd.ARG_EVENT:		doCalendarsCreateEvent,
-     }
-    ),
-  'delete':
-    (Act.DELETE,
-     {Cmd.ARG_CALENDARACL:	doCalendarsDeleteACLs,
-      Cmd.ARG_EVENT:		doCalendarsDeleteEvents,
-     }
-    ),
-  'empty':
-    (Act.EMPTY,
-     {Cmd.ARG_CALENDARTRASH:	doCalendarsEmptyTrash,
-     }
-    ),
-  'import':
-    (Act.IMPORT,
-     {Cmd.ARG_EVENT:		doCalendarsImportEvent,
-     }
-    ),
-  'info':
-    (Act.INFO,
-     {Cmd.ARG_CALENDARACL:	doCalendarsInfoACLs,
-      Cmd.ARG_EVENT:		doCalendarsInfoEvents,
-     }
-    ),
-  'move':
-    (Act.MOVE,
-     {Cmd.ARG_EVENT:		doCalendarsMoveEvents,
-     }
-    ),
-  'print':
-    (Act.PRINT,
-     {Cmd.ARG_CALENDARACL:	doCalendarsPrintShowACLs,
-      Cmd.ARG_EVENT:		doCalendarsPrintShowEvents,
-      Cmd.ARG_SETTINGS:		doCalendarsPrintShowSettings,
-     }
-    ),
-  'purge':
-    (Act.PURGE,
-     {Cmd.ARG_EVENT:		doCalendarsPurgeEvents,
-     }
-    ),
-  'show':
-    (Act.SHOW,
-     {Cmd.ARG_CALENDARACL:	doCalendarsPrintShowACLs,
-      Cmd.ARG_EVENT:		doCalendarsPrintShowEvents,
-      Cmd.ARG_SETTINGS:		doCalendarsPrintShowSettings,
-     }
-    ),
-  'transfer':
-    (Act.TRANSFER,
-     {Cmd.ARG_OWNERSHIP:	doCalendarsTransferOwnership,
-     }
-    ),
-  'update':
-    (Act.UPDATE,
-     {Cmd.ARG_CALENDARACL:	doCalendarsUpdateACLs,
-      Cmd.ARG_EVENT:		doCalendarsUpdateEvents,
-     }
-    ),
-  'wipe':
-    (Act.WIPE,
-     {Cmd.ARG_EVENT:		doCalendarsWipeEvents,
-     }
-    ),
-  }
-
-CALENDARS_SUBCOMMANDS_OBJECT_ALIASES = {
-  Cmd.ARG_ACL:			Cmd.ARG_CALENDARACL,
-  Cmd.ARG_ACLS:			Cmd.ARG_CALENDARACL,
-  Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
-  Cmd.ARG_EVENTS:		Cmd.ARG_EVENT,
-  }
-
-def processCalendarsCommands():
-  calendarList = getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY)
-  CL_subCommand = getChoice(CALENDAR_SUBCOMMANDS, defaultChoice=None)
-  if CL_subCommand:
-    Act.Set(CALENDAR_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
-    CALENDAR_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION](calendarList)
-    return
-  CL_subCommand = getChoice(CALENDAR_OLDACL_SUBCOMMANDS, choiceAliases=CALENDAR_OLDACL_SUBCOMMAND_ALIASES, defaultChoice=None)
-  if CL_subCommand:
-    Act.Set(CALENDAR_OLDACL_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
-    CL_objectName = getChoice([Cmd.ARG_CALENDARACL, Cmd.ARG_EVENT], choiceAliases=CALENDARS_SUBCOMMANDS_OBJECT_ALIASES, defaultChoice=None)
-    if not CL_objectName:
-      CALENDAR_OLDACL_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION](calendarList)
-    else:
-      CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION][CL_objectName](calendarList)
-    return
-  CL_subCommand = getChoice(CALENDARS_SUBCOMMANDS_WITH_OBJECTS)
-  Act.Set(CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_ACTION])
-  CL_objectName = getChoice(CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION], choiceAliases=CALENDARS_SUBCOMMANDS_OBJECT_ALIASES)
-  CALENDARS_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION][CL_objectName](calendarList)
-
-# Course command sub-commands
-COURSE_SUBCOMMANDS = {
-  'add': 			(Act.ADD, doCourseAddItems),
-  'clear': 			(Act.REMOVE, doCourseClearParticipants),
-  'remove': 			(Act.REMOVE, doCourseRemoveItems),
-  'update': 			(Act.UPDATE, doCourseUpdateItems),
-  'sync': 			(Act.SYNC, doCourseSyncParticipants),
-  }
-
-# Course sub-command aliases
-COURSE_SUBCOMMAND_ALIASES = {
-  'create':			'add',
-  'del':			'remove',
-  'delete':			'remove',
-  }
-
-def executeCourseCommands(courseIdList, getEntityListArg):
-  CL_subCommand = getChoice(COURSE_SUBCOMMANDS, choiceAliases=COURSE_SUBCOMMAND_ALIASES)
-  Act.Set(COURSE_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
-  COURSE_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION](courseIdList, getEntityListArg)
-
-def processCourseCommands():
-  executeCourseCommands(getStringReturnInList(Cmd.OB_COURSE_ID), False)
-
-def processCoursesCommands():
-  executeCourseCommands(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True), True)
-
-# Resource command sub-commands
-RESOURCE_SUBCOMMANDS_WITH_OBJECTS = {
-  'add':
-    (Act.ADD,
-     {Cmd.ARG_CALENDARACL:	doResourceCreateCalendarACLs,
-     }
-    ),
-  'create':
-    (Act.CREATE,
-     {Cmd.ARG_CALENDARACL:	doResourceCreateCalendarACLs,
-     }
-    ),
-  'update':
-    (Act.UPDATE,
-     {Cmd.ARG_CALENDARACL:	doResourceUpdateCalendarACLs,
-     }
-    ),
-  'delete':
-    (Act.DELETE,
-     {Cmd.ARG_CALENDARACL:	doResourceDeleteCalendarACLs,
-     }
-    ),
-  'info':
-    (Act.INFO,
-     {Cmd.ARG_CALENDARACL:	doResourceInfoCalendarACLs,
-     }
-    ),
-  'print':
-    (Act.PRINT,
-     {Cmd.ARG_CALENDARACL:	doResourcePrintShowCalendarACLs,
-     }
-    ),
-  'show':
-    (Act.SHOW,
-     {Cmd.ARG_CALENDARACL:	doResourcePrintShowCalendarACLs,
-     }
-    ),
-  }
-
-# Resource sub-command aliases
-RESOURCE_SUBCOMMAND_ALIASES = {
-  'del':			'delete',
-  }
-
-RESOURCE_SUBCOMMANDS_OBJECT_ALIASES = {
-  Cmd.ARG_ACL:			Cmd.ARG_CALENDARACL,
-  Cmd.ARG_ACLS:			Cmd.ARG_CALENDARACL,
-  Cmd.ARG_CALENDARACLS:		Cmd.ARG_CALENDARACL,
-  }
-
-def executeResourceCommands(resourceEntity):
-  CL_subCommand = getChoice(RESOURCE_SUBCOMMANDS_WITH_OBJECTS, choiceAliases=RESOURCE_SUBCOMMAND_ALIASES)
-  Act.Set(RESOURCE_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_ACTION])
-  CL_objectName = getChoice(RESOURCE_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION], choiceAliases=RESOURCE_SUBCOMMANDS_OBJECT_ALIASES)
-  RESOURCE_SUBCOMMANDS_WITH_OBJECTS[CL_subCommand][CMD_FUNCTION][CL_objectName](resourceEntity)
-
-def processResourceCommands():
-  executeResourceCommands(getStringReturnInList(Cmd.OB_RESOURCE_ID))
-
-def processResourcesCommands():
-  executeResourceCommands(getEntityList(Cmd.OB_RESOURCE_ENTITY))
+from gam.cmd.audit import processAuditCommands
+from gam.cmd.oauth import processOauthCommands
+from gam.cmd.calendar import processCalendarsCommands, processResourceCommands, processResourcesCommands
+from gam.cmd.courses.participants import processCourseCommands, processCoursesCommands
 
 # Commands
 COMMANDS_MAP = {
@@ -3034,53 +2735,6 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_YOUTUBECHANNELS:	Cmd.ARG_YOUTUBECHANNEL,
   }
 
-def showAPICallsRetryData():
-  if GC.Values.get(GC.SHOW_API_CALLS_RETRY_DATA) and GM.Globals[GM.API_CALLS_RETRY_DATA]:
-    Ind.Reset()
-    writeStderr(Msg.API_CALLS_RETRY_DATA)
-    Ind.Increment()
-    for k, v in sorted(GM.Globals[GM.API_CALLS_RETRY_DATA].items()):
-      m, s = divmod(int(v[1]), 60)
-      h, m = divmod(m, 60)
-      writeStderr(formatKeyValueList(Ind.Spaces(), [k, f'{v[0]}/{h}:{m:02d}:{s:02d}'], '\n'))
-    Ind.Decrement()
-
-def adjustRedirectedSTDFilesIfNotMultiprocessing():
-  def adjustRedirectedSTDFile(stdtype):
-    rdFd = GM.Globals[stdtype].get(GM.REDIRECT_FD)
-    rdMultiFd = GM.Globals[stdtype].get(GM.REDIRECT_MULTI_FD)
-    if rdFd and rdMultiFd and rdFd != rdMultiFd:
-      try:
-        rdFd.write(rdMultiFd.getvalue())
-        rdMultiFd.close()
-        GM.Globals[stdtype][GM.REDIRECT_MULTI_FD] = rdFd
-        if (stdtype == GM.STDOUT) and (GM.Globals.get(GM.SAVED_STDOUT) is not None):
-          sys.stdout = rdFd
-      except IOError as e:
-        systemErrorExit(FILE_ERROR_RC, e)
-
-  adjustRedirectedSTDFile(GM.STDOUT)
-  if GM.Globals[GM.STDERR].get(GM.REDIRECT_NAME) != 'stdout':
-    adjustRedirectedSTDFile(GM.STDERR)
-  else:
-    GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]
-
-def closeSTDFilesIfNotMultiprocessing(closeSTD):
-  def closeSTDFile(stdtype, stdfile):
-    rdFd = GM.Globals[stdtype].get(GM.REDIRECT_FD)
-    rdMultiFd = GM.Globals[stdtype].get(GM.REDIRECT_MULTI_FD)
-    if rdFd and rdMultiFd and (rdFd == rdMultiFd) and (rdFd != stdfile):
-      try:
-        rdFd.flush()
-        if closeSTD:
-          rdFd.close()
-      except BrokenPipeError:
-        pass
-
-  closeSTDFile(GM.STDOUT, sys.stdout)
-  if GM.Globals[GM.STDERR].get(GM.REDIRECT_NAME) != 'stdout':
-    closeSTDFile(GM.STDERR, sys.stderr)
-
 # Process GAM command
 def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
   setSysExitRC(0)
@@ -3207,62 +2861,4 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
 # Process GAM command
 def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
   return ProcessGAMCommand(args, processGamCfg=processGamCfg, inLoop=inLoop, closeSTD=closeSTD)
-
-# Re-export util names for _gam().X access by util/ modules.
-# This block runs AFTER all modules are fully loaded (no circular import risk).
-# Only names actually referenced via _gam() are included.
-from gamlib import glskus as SKU  # noqa: E402,F811
-from tempfile import TemporaryFile  # noqa: E402,F401
-from util.access import (  # noqa: E402,F401
-    APIAccessDeniedExit, ClientAPIAccessDeniedExit, SvcAcctAPIAccessDeniedExit, accessErrorExit,
-    accessErrorExitNonDirectory, checkEntityAFDNEorAccessErrorExit,
-    checkEntityDNEorAccessErrorExit, entityUnknownWarning,
-)
-from util.api import (  # noqa: E402,F401,F811
-    _getAdminEmail, _getSvcAcctData, buildGAPIObject, buildGAPIServiceObject,
-    callGAPI, callGAPIitems, callGAPIpages, chooseSaAPI, yieldGAPIpages,
-)
-from util.args import (  # noqa: E402,F401,F811
-    ARCHIVED_ARGUMENTS, ISOformatTimeStamp, LOCALE_CODES_MAP, NAME_EMAIL_ADDRESS_PATTERN,
-    SUSPENDED_ARGUMENTS, YYYYMMDDTHHMMSSZ_FORMAT, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN,
-    _getIsArchived, _getIsSuspended, checkDataField, checkForExtraneousArguments,
-    checkMatchSkipFields, checkSubkeyField, encodeOrgUnitPath, escapeCRsNLs,
-    formatLocalTime, formatLocalTimestamp, getBoolean, getCharSet, getCharacter,
-    getDelimiter, getEmailAddress, getEmailAddressDomain, getLanguageCode,
-    getMatchSkipFields, getPhraseDNEorSNA, getREPattern, getString,
-    getSheetEntity, getSheetIdFromSheetEntity, makeOrgUnitPathAbsolute,
-    makeOrgUnitPathRelative, orgUnitPathQuery, protectedSheetId, removeCourseIdScope,
-    shlexSplitList, splitEmailAddress, todaysTime, validateEmailAddressOrUID,
-)
-from util.csv_pf import CheckInputRowFilterHeaders  # noqa: E402,F401
-from util.display import (  # noqa: E402,F401
-    FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER, actionPerformedNumItems,
-    entityActionFailedWarning, entityActionNotPerformedWarning, entityActionPerformed,
-    entityActionPerformedMessage, entityDoesNotExistWarning, entityPerformActionNumItems,
-    entityServiceNotApplicableWarning, getPageMessage, getPageMessageForWhom, printBlankLine,
-    printGettingAllAccountEntities, printGettingAllEntityItemsForWhom,
-    printGotEntityItemsForWhom, printJSONKey, printJSONValue, printKeyValueList,
-    setGettingAllEntityItemsForWhom, userDriveServiceNotEnabledWarning,
-    userServiceNotEnabledWarning,
-)
-from util.email import send_email  # noqa: E402,F401,F811
-from util.entity import checkUserExists, convertUIDtoEmailAddress  # noqa: E402,F401,F811
-from util.errors import (  # noqa: E402,F401,F811
-    csvDataAlreadySavedErrorExit, csvFieldErrorExit, entityActionFailedExit,
-    entityDoesNotExistExit, expiredRevokedOauth2TxtExit, formatChoiceList,
-    invalidArgumentExit, invalidChoiceExit, invalidDiscoveryJsonExit,
-    invalidOauth2TxtExit, invalidOauth2serviceJsonExit, missingArgumentExit,
-)
-from util.fileio import (  # noqa: E402,F401,F811
-    StringIOobject, checkAPICallsRate, closeFile, fdErrorMessage, fileErrorMessage,
-    getGDocSheetDataFailedExit, getGDocSheetDataRetryWarning, incrAPICallsRetryData,
-    openFile, readFile, writeFile,
-)
-from util.gdoc import (  # noqa: E402,F401
-    getGDocData, getStorageFileData, openCSVFileReader,
-)
-from util.output import (  # noqa: E402,F401,F811
-    currentCountNL, flushStderr, flushStdout,
-    printWarningMessage, readStdin, stderrWarningMsg, writeStdout,
-)
 

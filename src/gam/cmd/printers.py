@@ -3,15 +3,12 @@
 import re
 import json
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
@@ -48,11 +45,6 @@ from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, c
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import writeStdout
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def isolatePrinterID(name):

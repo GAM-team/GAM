@@ -688,3 +688,36 @@ def doCourseSyncParticipants(courseIdList, _):
     if syncOperation != 'addonly':
       _batchRemoveItemsFromCourse(courseInfo['croom'], courseId, i, count, list(currentParticipantsSet-syncParticipantsSet), role)
 
+
+# Dispatch tables and routing (moved from __init__.py)
+# Additional imports for dispatch
+from gam.var import Act, Cmd
+from gam.constants import CMD_ACTION, CMD_FUNCTION
+
+# Course command sub-commands
+COURSE_SUBCOMMANDS = {
+  'add': 			(Act.ADD, doCourseAddItems),
+  'clear': 			(Act.REMOVE, doCourseClearParticipants),
+  'remove': 			(Act.REMOVE, doCourseRemoveItems),
+  'update': 			(Act.UPDATE, doCourseUpdateItems),
+  'sync': 			(Act.SYNC, doCourseSyncParticipants),
+  }
+
+# Course sub-command aliases
+COURSE_SUBCOMMAND_ALIASES = {
+  'create':			'add',
+  'del':			'remove',
+  'delete':			'remove',
+  }
+
+def executeCourseCommands(courseIdList, getEntityListArg):
+  CL_subCommand = getChoice(COURSE_SUBCOMMANDS, choiceAliases=COURSE_SUBCOMMAND_ALIASES)
+  Act.Set(COURSE_SUBCOMMANDS[CL_subCommand][CMD_ACTION])
+  COURSE_SUBCOMMANDS[CL_subCommand][CMD_FUNCTION](courseIdList, getEntityListArg)
+
+def processCourseCommands():
+  executeCourseCommands(getStringReturnInList(Cmd.OB_COURSE_ID), False)
+
+def processCoursesCommands():
+  executeCourseCommands(getEntityList(Cmd.OB_COURSE_ENTITY, shlexSplit=True), True)
+

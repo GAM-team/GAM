@@ -3,15 +3,12 @@
 import re
 import json
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit
 from gam.util.api import buildGAPIObject, buildGAPIObjectNoAuthentication, callGAPI, callGAPIpages
 from gam.util.args import (
@@ -53,11 +50,6 @@ from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
 from gam.cmd.printers import CHROME_APPS_TIME_OBJECTS, CHROME_APPS_TYPE_CHOICES
 from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def doInfoChromeApp():

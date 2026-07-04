@@ -4,15 +4,12 @@ import time
 
 import re
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
 from gam.util.api import (
     _getAdminEmail,
@@ -98,14 +95,8 @@ from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP
 from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP, _decodeHeader
 
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
-
 
 from email.utils import formatdate
-
 
 
 # gam sendemail [recipient|to] <RecipientEntity>

@@ -48,15 +48,12 @@ import time
 import google.auth
 import google.auth.exceptions
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
+from gam.var import Act, Cmd, Ent, Ind
 
 from gam.cmd.contacts import (
     CONTACTS_ORDERBY_CHOICE_MAP, CONTACTS_PROJECTION_CHOICE_MAP,
@@ -136,11 +133,6 @@ from gam.cmd.contacts import PeopleManager
 from gam.cmd.contacts import normalizePeopleResourceName
 from gam.cmd.contacts import normalizeOtherContactsResourceName
 from gam.cmd.contacts import PeopleManager, normalizeOtherContactsResourceName
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def _initPeopleContactQueryAttributes(printShowCmd):

@@ -5,21 +5,15 @@ No circular dependency risk — they only depend on gamlib modules and
 simple string constants.
 """
 
+import re
 import sys
 import time
 
 from gamlib import glcfg as GC
 from gamlib import glglobals as GM
-
-
-class _InstanceProxy:
-  """Lazy proxy that delegates attribute access to a named instance in the gam module."""
-  def __init__(self, name):
-    self._name = name
-  def __getattr__(self, attr):
-    return getattr(getattr(sys.modules['gam'], self._name), attr)
-
-Ind = _InstanceProxy('Ind')
+from gamlib import glmsgs as Msg
+from gam.constants import DEBUG_REDACTION_PATTERNS
+from gam.var import Ind
 
 
 # These constants are duplicated from __init__.py to avoid circular imports.
@@ -182,3 +176,29 @@ def formatKeyValueList(prefixStr, kvList, suffixStr):
           msg += ' '
   msg += suffixStr
   return msg
+
+def redactable_debug_print(*args):
+  processed_args = []
+  for arg in args:
+    if arg.startswith('b\''):
+      sbytes = arg[2:-1]
+      sbytes = bytes(sbytes, 'utf-8')
+      arg = sbytes.decode()
+      arg = arg.replace('\\r\\n', "\n          ")
+    if GC.Values[GC.DEBUG_REDACTION]:
+      for pattern, replace in DEBUG_REDACTION_PATTERNS:
+        arg = re.sub(pattern, replace, arg)
+    processed_args.append(arg)
+  print(*processed_args)
+
+def showAPICallsRetryData():
+  if GC.Values.get(GC.SHOW_API_CALLS_RETRY_DATA) and GM.Globals[GM.API_CALLS_RETRY_DATA]:
+    Ind.Reset()
+    writeStderr(Msg.API_CALLS_RETRY_DATA)
+    Ind.Increment()
+    for k, v in sorted(GM.Globals[GM.API_CALLS_RETRY_DATA].items()):
+      m, s = divmod(int(v[1]), 60)
+      h, m = divmod(m, 60)
+      writeStderr(formatKeyValueList(Ind.Spaces(), [k, f'{v[0]}/{h}:{m:02d}:{s:02d}'], '\n'))
+    Ind.Decrement()
+

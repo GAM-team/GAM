@@ -5,16 +5,13 @@ import sys
 
 import re
 
-from gamlib import glaction
 from gamlib import glapi as API
 from gamlib import glcfg as GC
-from gamlib import glclargs
-from gamlib import glentity
 from gamlib import glgapi as GAPI
 from gamlib import glglobals as GM
-from gamlib import glindent
 from gamlib import glmsgs as Msg
 from gamlib import glskus as SKU
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api import buildGAPIObject, callGAPI, callGAPIpages
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
@@ -45,11 +42,6 @@ from gam.util.display import (
 )
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.tags import ADDRESS_FIELDS_PRINT_ORDER
-
-Act = glaction.GamAction()
-Ent = glentity.GamEntity()
-Ind = glindent.GamIndent()
-Cmd = glclargs.GamCLArgs()
 
 
 def _showCustomerAddressPhoneNumber(customerInfo):

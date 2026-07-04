@@ -34,10 +34,11 @@ from util.output import (
     flushStdout, stderrWarningMsg, systemErrorExit, writeStdout,
 )
 from util.api import doGAMCheckForUpdates, getHttpObj, getService, handleServerError, waitOnFailure
+from gam.constants import GAM_USER_AGENT, __author__, __version__
+from gam.var import Cmd, Ent
 
 # gam.__init__ attributes that can't be imported at module level
 # (connection.py is imported BY __init__.py during init)
-_gam = lambda: sys.modules['gam']
 
 
 # --- Constants ---
@@ -114,7 +115,7 @@ def _getServerTLSUsed(location):
   triesLimit = 5
   for n in range(1, triesLimit+1):
     try:
-      httpObj.request(url, headers={'user-agent': _gam().GAM_USER_AGENT})
+      httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
       cipher_name, tls_ver, _ = httpObj.connections[conn].sock.cipher()
       return tls_ver, cipher_name
     except (httplib2.HttpLib2Error, RuntimeError) as e:
@@ -228,7 +229,7 @@ def doCheckConnection():
   try_count = 0
   httpObj = getHttpObj(timeout=30)
   httpObj.follow_redirects = False
-  headers = {'user-agent': _gam().GAM_USER_AGENT}
+  headers = {'user-agent': GAM_USER_AGENT}
   okay = createGreenText('OK')
   not_okay = createRedText('ERROR')
   success_count = 0
@@ -278,12 +279,10 @@ def doCheckConnection():
 
 # gam comment
 def doComment():
-  writeStdout(_gam().Cmd.QuotedArgumentList(_gam().Cmd.Remaining())+'\n')
+  writeStdout(Cmd.QuotedArgumentList(Cmd.Remaining())+'\n')
 
 # gam version [check|checkrc|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
 def doVersion(checkForArgs=True):
-  Ent = _gam().Ent
-  Cmd = _gam().Cmd
   forceCheck = 0
   extended = noOffsetError = timeOffset = simple = False
   testLocation = GOOGLE_TIMECHECK_LOCATION
@@ -307,10 +306,10 @@ def doVersion(checkForArgs=True):
       else:
         unknownArgumentExit()
   if simple:
-    writeStdout(_gam().__version__)
+    writeStdout(__version__)
     return
-  writeStdout((f'{GAM} {_gam().__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
-               f'{_gam().__author__}\n'
+  writeStdout((f'{GAM} {__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
+               f'{__author__}\n'
                f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {struct.calcsize("P")*8}-bit {sys.version_info[3]}\n'
                f'{getOSPlatform()} {platform.machine()}\n'
                f'Path: {GM.Globals[GM.GAM_PATH]}\n'
