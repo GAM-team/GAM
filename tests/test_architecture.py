@@ -275,8 +275,8 @@ class TestGamlibIndependence:
                         )
 
         assert not violations, (
-            f'\n\nARCHITECTURE VIOLATION: gamlib/ imports from gam/ or util/.\n'
-            f'gamlib/ is the lowest layer and must be fully independent.\n\n'
+            '\n\nARCHITECTURE VIOLATION: gamlib/ imports from gam/ or util/.\n'
+            'gamlib/ is the lowest layer and must be fully independent.\n\n'
             + '\n'.join(violations)
         )
 
