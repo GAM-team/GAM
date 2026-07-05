@@ -21,6 +21,12 @@ from gam.util.errors import deprecatedArgument, invalidChoiceExit
 from gam.util.output import setSysExitRC, formatLocalTime
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import normalizePeopleResourceName
+from gam.cmd.people import (
+    PEOPLE_CONTACTS_DEFAULT_FIELDS,
+    PEOPLE_CONTACT_OBJECT_KEYS,
+    PEOPLE_FIELDS_CHOICE_MAP,
+    PEOPLE_PROFILE_SOURCETYPE_CHOICE_MAP,
+)
 
 
 def _initPersonMetadataParameters():

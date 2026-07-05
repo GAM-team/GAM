@@ -13,7 +13,7 @@ from gam.util.display import entityActionFailedWarning, entityActionPerformed, p
 from gam.util.entity import getEntityList, getEntityArgument
 from gam.constants import NO_ENTITIES_FOUND_RC
 
-from gam.cmd.calendar import checkCalendarExists, validateCalendar, normalizeCalendarId
+from gam.cmd.calendar import checkCalendarExists, validateCalendar, normalizeCalendarId, CALENDAR_ACL_ROLES_MAP
 
 
 def _getCalendarSelectProperty(myarg, kwargs):

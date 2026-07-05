@@ -14,7 +14,7 @@ from gam.util.entity import getEntityArgument, convertUIDtoEmailAddress, normali
 from gam.util.errors import systemErrorExit
 from gam.constants import NO_ENTITIES_FOUND_RC
 
-from gam.cmd.calendar import checkCalendarExists
+from gam.cmd.calendar import checkCalendarExists, getNormalizedCalIdCal
 
 
 def _createImportCalendarEvent(users, function):

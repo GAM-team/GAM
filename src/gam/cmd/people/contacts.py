@@ -41,6 +41,17 @@ from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
 from gam.util.output import setSysExitRC, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import normalizeContactGroupResourceName, PeopleManager, normalizePeopleResourceName
+from gam.cmd.people import (
+    PEOPLE_CONTACTGROUPS_DEFAULT_FIELDS,
+    PEOPLE_CONTACTGROUPS_FIELDS_CHOICE_MAP,
+    PEOPLE_CONTACTS_DEFAULT_FIELDS,
+    PEOPLE_CONTACT_DEPRECATED_SELECT_ARGUMENTS,
+    PEOPLE_CONTACT_SELECT_ARGUMENTS,
+    PEOPLE_FIELDS_CHOICE_MAP,
+    PEOPLE_GROUP_TIME_OBJECTS,
+    PEOPLE_ORDERBY_CHOICE_MAP,
+    PEOPLE_OTHER_CONTACTS_FIELDS_CHOICE_MAP,
+)
 
 
 def _initPeopleContactQueryAttributes(printShowCmd):

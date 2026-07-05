@@ -12,7 +12,7 @@ from gam.util.display import entityActionFailedWarning
 from gam.util.entity import getEntityList, getEntityArgument, convertUIDtoEmailAddress
 from gam.constants import NO_ENTITIES_FOUND_RC
 
-from gam.cmd.calendar import validateCalendar
+from gam.cmd.calendar import validateCalendar, CALENDAR_ACL_ROLES_MAP
 
 
 def createCalendarACLs(users):

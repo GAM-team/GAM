@@ -18,6 +18,13 @@ from gam.util.errors import unknownArgumentExit
 from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import PeopleManager, normalizeOtherContactsResourceName
+from gam.cmd.people import (
+    CONTACTGROUPS_MYCONTACTS_ID,
+    CONTACTGROUPS_MYCONTACTS_NAME,
+    PEOPLE_CONTACTS_DEFAULT_FIELDS,
+    PEOPLE_OTHERCONTACT_SELECT_ARGUMENTS,
+    PEOPLE_OTHER_CONTACTS_FIELDS_CHOICE_MAP,
+)
 
 
 def _initPeopleOtherContactQueryAttributes():
