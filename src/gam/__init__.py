@@ -37,7 +37,7 @@ import platform
 import re
 import sys
 from traceback import print_exc
-import types
+
 
 # disable legacy stuff we don't use and isn't secure
 os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = "1"
@@ -159,35 +159,78 @@ from gam.cmd.caa import (
     doPrintShowCAALevels,
     doUpdateCAALevel,
 )
-from gam.cmd.calendar import (
+
+from gam.cmd.calendar.acls import (
     doCalendarsCreateACL,
     doCalendarsCreateACLs,
-    doCalendarsCreateEvent,
     doCalendarsDeleteACL,
     doCalendarsDeleteACLs,
-    doCalendarsDeleteEvents,
-    doCalendarsDeleteEventsOld,
-    doCalendarsEmptyTrash,
-    doCalendarsImportEvent,
     doCalendarsInfoACLs,
-    doCalendarsInfoEvents,
-    doCalendarsModifySettings,
-    doCalendarsMoveEvents,
-    doCalendarsMoveEventsOld,
     doCalendarsPrintShowACLs,
-    doCalendarsPrintShowEvents,
-    doCalendarsPrintShowSettings,
-    doCalendarsPurgeEvents,
     doCalendarsUpdateACL,
     doCalendarsUpdateACLs,
-    doCalendarsUpdateEvents,
-    doCalendarsUpdateEventsOld,
-    doCalendarsWipeEvents,
     doResourceCreateCalendarACLs,
     doResourceDeleteCalendarACLs,
     doResourceInfoCalendarACLs,
     doResourcePrintShowCalendarACLs,
     doResourceUpdateCalendarACLs,
+    createCalendarACLs,
+    deleteCalendarACLs,
+    infoCalendarACLs,
+    printShowCalendarACLs,
+    updateCalendarACLs,
+)
+from gam.cmd.calendar.events import (
+    doCalendarsCreateEvent,
+    doCalendarsDeleteEvents,
+    doCalendarsDeleteEventsOld,
+    doCalendarsEmptyTrash,
+    doCalendarsImportEvent,
+    doCalendarsInfoEvents,
+    doCalendarsMoveEvents,
+    doCalendarsMoveEventsOld,
+    doCalendarsPrintShowEvents,
+    doCalendarsPurgeEvents,
+    doCalendarsUpdateEvents,
+    doCalendarsUpdateEventsOld,
+    doCalendarsWipeEvents,
+    createCalendarEvent,
+    deleteCalendarEvents,
+    emptyCalendarTrash,
+    importCalendarEvent,
+    infoCalendarEvents,
+    moveCalendarEvents,
+    printShowCalendarEvents,
+    purgeCalendarEvents,
+    updateCalendarAttendees,
+    updateCalendarEvents,
+    wipeCalendarEvents,
+)
+from gam.cmd.calendar.calendars import (
+    addCreateCalendars,
+    deleteCalendars,
+    doCalendarsTransferOwnership,
+    infoCalendars,
+    modifyCalendars,
+    printShowCalendars,
+    removeCalendars,
+    updateCalendars,
+)
+from gam.cmd.calendar.settings import (
+    doCalendarsModifySettings,
+    doCalendarsPrintShowSettings,
+    printShowCalSettings,
+)
+from gam.cmd.calendar.status import (
+    createFocusTime,
+    createOutOfOffice,
+    createWorkingLocation,
+    deleteFocusTime,
+    deleteOutOfOffice,
+    deleteWorkingLocation,
+    printShowFocusTime,
+    printShowOutOfOffice,
+    printShowWorkingLocation,
 )
 from gam.cmd.chat import (
     createChatEmoji,
@@ -348,21 +391,25 @@ from gam.cmd.courses import (
     printShowGuardians,
     syncGuardians,
 )
-from gam.cmd.cros import (
+
+from gam.cmd.cros.manage import (
     doGetCommandResultCrOSDevices,
+    doIssueCommandCrOSDevices,
+    doUpdateCrOSDevices,
+    getCommandResultCrOSDevices,
+    getCrOSDeviceEntity,
+    issueCommandCrOSDevices,
+    updateCrOSDevices,
+)
+from gam.cmd.cros.print import (
     doGetCrOSDeviceFiles,
     doInfoCrOSDevices,
     doInfoPrintShowCrOSTelemetry,
-    doIssueCommandCrOSDevices,
     doPrintCrOSActivity,
     doPrintCrOSDevices,
     doPrintCrOSEntity,
-    doUpdateCrOSDevices,
-    getCommandResultCrOSDevices,
     getCrOSDeviceFiles,
     infoCrOSDevices,
-    issueCommandCrOSDevices,
-    updateCrOSDevices,
 )
 from gam.cmd.customer import (
     doInfoCustomer,
@@ -597,34 +644,7 @@ from gam.cmd.orgunits import (
     doUpdateOrg,
     doUpdateOrgs,
 )
-from gam.cmd.people import (
-    clearUserPeopleContacts,
-    copyUserPeopleOtherContacts,
-    createUserPeopleContact,
-    createUserPeopleContactGroup,
-    dedupReplaceDomainUserPeopleContacts,
-    deleteUserPeopleContactGroups,
-    deleteUserPeopleContactPhoto,
-    deleteUserPeopleContacts,
-    doDeleteDomainContactPhoto,
-    doGetDomainContactPhoto,
-    doInfoDomainPeopleContacts,
-    doInfoDomainPeopleProfile,
-    doPrintShowDomainPeopleContacts,
-    doPrintShowDomainPeopleProfiles,
-    doUpdateDomainContactPhoto,
-    getUserPeopleContactPhoto,
-    infoUserPeopleContactGroups,
-    infoUserPeopleContacts,
-    printShowUserPeopleContactGroups,
-    printShowUserPeopleContacts,
-    printShowUserPeopleOtherContacts,
-    printShowUserPeopleProfiles,
-    processUserPeopleOtherContacts,
-    updateUserPeopleContactGroup,
-    updateUserPeopleContactPhoto,
-    updateUserPeopleContacts,
-)
+
 from gam.cmd.printers import (
     doCreatePrinter,
     doDeletePrinter,
@@ -632,6 +652,40 @@ from gam.cmd.printers import (
     doPrintShowPrinterModels,
     doPrintShowPrinters,
     doUpdatePrinter,
+)
+from gam.cmd.people.contacts import (
+    clearUserPeopleContacts,
+    createUserPeopleContact,
+    createUserPeopleContactGroup,
+    dedupReplaceDomainUserPeopleContacts,
+    deleteUserPeopleContactGroups,
+    deleteUserPeopleContactPhoto,
+    deleteUserPeopleContacts,
+    getUserPeopleContactPhoto,
+    infoUserPeopleContactGroups,
+    infoUserPeopleContacts,
+    printShowUserPeopleContactGroups,
+    printShowUserPeopleContacts,
+    updateUserPeopleContactGroup,
+    updateUserPeopleContactPhoto,
+    updateUserPeopleContacts,
+)
+from gam.cmd.people.othercontacts import (
+    copyUserPeopleOtherContacts,
+    printShowUserPeopleOtherContacts,
+    processUserPeopleOtherContacts,
+)
+from gam.cmd.people.domainprofiles import (
+    doInfoDomainPeopleProfile,
+    doPrintShowDomainPeopleProfiles,
+    printShowUserPeopleProfiles,
+)
+from gam.cmd.people.domaincontacts import (
+    doDeleteDomainContactPhoto,
+    doGetDomainContactPhoto,
+    doInfoDomainPeopleContacts,
+    doPrintShowDomainPeopleContacts,
+    doUpdateDomainContactPhoto,
 )
 from gam.cmd.project import (
     checkServiceAccount,
@@ -798,42 +852,7 @@ from gam.cmd.users import (
     updateUsers,
     waitForMailbox,
 )
-from gam.cmd.userservices import (
-    addCreateCalendars,
-    createCalendarACLs,
-    createCalendarEvent,
-    createFocusTime,
-    createOutOfOffice,
-    createWorkingLocation,
-    deleteCalendarACLs,
-    deleteCalendarEvents,
-    deleteCalendars,
-    deleteFocusTime,
-    deleteOutOfOffice,
-    deleteWorkingLocation,
-    doCalendarsTransferOwnership,
-    emptyCalendarTrash,
-    importCalendarEvent,
-    infoCalendarACLs,
-    infoCalendarEvents,
-    infoCalendars,
-    modifyCalendars,
-    moveCalendarEvents,
-    printShowCalSettings,
-    printShowCalendarACLs,
-    printShowCalendarEvents,
-    printShowCalendars,
-    printShowFocusTime,
-    printShowOutOfOffice,
-    printShowWorkingLocation,
-    purgeCalendarEvents,
-    removeCalendars,
-    updateCalendarACLs,
-    updateCalendarAttendees,
-    updateCalendarEvents,
-    updateCalendars,
-    wipeCalendarEvents,
-)
+
 from gam.cmd.users.security import (
     deleteASP,
     deleteBackupCodes,
@@ -872,44 +891,13 @@ from gam.cmd.vault import (
     doUpdateVaultMatter,
     printShowUserVaultHolds,
 )
-from gam.cmd.yubikey import doResetYubiKeyPIV
+
+def doResetYubiKeyPIV():
+  """Wrapper that defers import of gam.cmd.yubikey (optional yubikey-manager dependency)."""
+  from gam.cmd.yubikey import doResetYubiKeyPIV as _doResetYubiKeyPIV
+  _doResetYubiKeyPIV()
 
 
-class LazyLoader(types.ModuleType):
-  """Lazily import a module, mainly to avoid pulling in large dependencies.
-
-  `contrib`, and `ffmpeg` are examples of modules that are large and not always
-  needed, and this allows them to only be loaded when they are used.
-  """
-
-  # The lint error here is incorrect.
-  def __init__(self, local_name, parent_module_globals, name):
-    self._local_name = local_name
-    self._parent_module_globals = parent_module_globals
-
-    super().__init__(name)
-
-  def _load(self):
-    # Import the target module and insert it into the parent's namespace
-    module = importlib.import_module(self.__name__)
-    self._parent_module_globals[self._local_name] = module
-
-    # Update this object's dict so that if someone keeps a reference to the
-    #   LazyLoader, lookups are efficient (__getattr__ is only called on lookups
-    #   that fail).
-    self.__dict__.update(module.__dict__)
-
-    return module
-
-  def __getattr__(self, item):
-    module = self._load()
-    return getattr(module, item)
-
-  def __dir__(self):
-    module = self._load()
-    return dir(module)
-
-yubikey = LazyLoader('yubikey', globals(), 'gam.gamlib.yubikey')
 
 BUILDING_ADDRESS_FIELD_MAP = {
   'address': 'addressLines',
@@ -1694,7 +1682,8 @@ MAIN_COMMANDS_OBJ_ALIASES = {
 
 from gam.cmd.audit import processAuditCommands
 from gam.cmd.oauth import processOauthCommands
-from gam.cmd.calendar import processCalendarsCommands, processResourceCommands, processResourcesCommands
+from gam.cmd.calendar.dispatch import processCalendarsCommands
+from gam.cmd.calendar.resources import processResourceCommands, processResourcesCommands
 from gam.cmd.courses.participants import processCourseCommands, processCoursesCommands
 
 # Multi-step commands (audit, oauth, calendars, courses, resources)

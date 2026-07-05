@@ -41,8 +41,10 @@ from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttrib
 from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.constants import (
+    MIMETYPE_GA_FORM,
+)
 
-MIMETYPE_GA_FORM = 'application/vnd.google-apps.form'
 
 def findFormRequest(field, newRequest, ubody):
   for request in ubody['requests']:

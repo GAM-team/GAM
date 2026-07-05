@@ -56,7 +56,7 @@ from gam.util.entity import getEntityList, shlexSplitList
 from gam.util.errors import entityDoesNotExistExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import printErrorMessage, writeStdout
 from gam.constants import BUILDING_ADDRESS_FIELD_MAP
-from gam.cmd.calendar import _showCalendarSettings
+from gam.cmd.calendar.settings import _showCalendarSettings
 
 
 def _getBuildingAttributes(body):
@@ -666,7 +666,7 @@ RESOURCE_FIELDS_WITH_CRS_NLS = {'resourceDescription'}
 
 def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
 
-  from gam.cmd.calendar import ACLRuleKeyValueList
+  from gam.cmd.calendar.acls import ACLRuleKeyValueList
   def _showResourceField(title, resource, field):
     if field in resource:
       if field not in RESOURCE_FIELDS_WITH_CRS_NLS:

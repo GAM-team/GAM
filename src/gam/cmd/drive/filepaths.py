@@ -19,21 +19,6 @@ from gam.constants import MY_DRIVE, TEAM_DRIVE
 from gam.var import Cmd, Ent, Ind
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
-MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
-MIMETYPE_GA_DRAWING = f'{APPLICATION_VND_GOOGLE_APPS}drawing'
-MIMETYPE_GA_FILE = f'{APPLICATION_VND_GOOGLE_APPS}file'
-MIMETYPE_GA_FOLDER = f'{APPLICATION_VND_GOOGLE_APPS}folder'
-MIMETYPE_GA_FORM = f'{APPLICATION_VND_GOOGLE_APPS}form'
-MIMETYPE_GA_FUSIONTABLE = f'{APPLICATION_VND_GOOGLE_APPS}fusiontable'
-MIMETYPE_GA_JAM = f'{APPLICATION_VND_GOOGLE_APPS}jam'
-MIMETYPE_GA_MAP = f'{APPLICATION_VND_GOOGLE_APPS}map'
-MIMETYPE_GA_PRESENTATION = f'{APPLICATION_VND_GOOGLE_APPS}presentation'
-MIMETYPE_GA_SCRIPT = f'{APPLICATION_VND_GOOGLE_APPS}script'
-MIMETYPE_GA_SCRIPT_JSON = f'{APPLICATION_VND_GOOGLE_APPS}script+json'
-MIMETYPE_GA_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}shortcut'
-MIMETYPE_GA_3P_SHORTCUT = f'{APPLICATION_VND_GOOGLE_APPS}drive-sdk'
-MIMETYPE_GA_SITE = f'{APPLICATION_VND_GOOGLE_APPS}site'
-MIMETYPE_GA_SPREADSHEET = f'{APPLICATION_VND_GOOGLE_APPS}spreadsheet'
 ME_IN_OWNERS = "'me' in owners"
 ME_IN_OWNERS_AND = ME_IN_OWNERS + " and "
 NOT_ME_IN_OWNERS = "not " + ME_IN_OWNERS
@@ -80,6 +65,10 @@ from gam.util.entity import (
 )
 from gam.util.errors import invalidChoiceExit
 from gam.util.output import writeStdout
+from gam.constants import (
+    MIMETYPE_GA_FOLDER,
+    MIMETYPE_GA_SHORTCUT,
+)
 
 def initFilePathInfo(delimiter):
   return {'ids': {}, 'allPaths': {}, 'localPaths': None, 'delimiter': delimiter}

@@ -1339,3 +1339,491 @@ MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP = 6
 MEMBEROPTION_MATCHPATTERN = 7
 MEMBEROPTION_DISPLAYMATCH = 8
 
+
+
+def doPrintGroups():
+  def _printGroupRow(groupEntity, groupSettings, groupMembers):
+    nonlocal itemCount
+    row = {}
+    if matchSettings:
+      if not isinstance(groupSettings, dict):
+        return
+      for key, matchp in matchSettings.items():
+        gvalue = groupSettings.get(key)
+        if matchp['notvalues'] and gvalue in matchp['notvalues']:
+          return
+        if matchp['values'] and gvalue not in matchp['values']:
+          return
+    if showOwnedBy and not checkGroupShowOwnedBy(showOwnedBy, groupMembers):
+      return
+    if showItemCountOnly:
+      itemCount += 1
+      return
+    if deprecatedAttributesSet and isinstance(groupSettings, dict):
+      deprecatedKeys = []
+      for key in groupSettings:
+        if key in deprecatedAttributesSet:
+          deprecatedKeys.append(key)
+      for key in deprecatedKeys:
+        groupSettings.pop(key)
+    if addCSVData:
+      row.update(addCSVData)
+    if FJQC.formatJSON:
+      row['email'] = groupEntity['email']
+      if addCSVData and includeCSVDataInJSON:
+        groupEntity.update(addCSVData)
+      row['JSON'] = json.dumps(cleanJSON(groupEntity), ensure_ascii=False, sort_keys=True)
+      if rolesSet and groupMembers is not None:
+        row['JSON-members'] = json.dumps(groupMembers, ensure_ascii=False, sort_keys=True)
+      if isinstance(groupSettings, dict):
+        row['JSON-settings'] = json.dumps(cleanJSON(groupSettings), ensure_ascii=False, sort_keys=True)
+      groupCloudIdentity = ciGroups.get(row['email'], {})
+      if groupCloudIdentity:
+        row['JSON-cloudIdentity'] = json.dumps(cleanJSON(groupCloudIdentity, timeObjects=CIGROUP_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)
+      csvPF.WriteRowNoFilter(row)
+      return
+    for field in groupFieldsLists['cd']:
+      if field in groupEntity:
+        if isinstance(groupEntity[field], list):
+          row[field] = delimiter.join(groupEntity[field])
+        elif convertCRNL and field in GROUP_FIELDS_WITH_CRS_NLS:
+          row[field] = escapeCRsNLs(groupEntity[field])
+        else:
+          row[field] = groupEntity[field]
+    if rolesSet and groupMembers is not None:
+      addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplayOptions, delimiter,
+                         isSuspended, isArchived, False)
+    if isinstance(groupSettings, dict):
+      for key, value in groupSettings.items():
+        if key not in {'kind', 'etag', 'email', 'name', 'description'}:
+          if value is None:
+            value = ''
+          csvPF.AddTitles(key)
+          if convertCRNL and key in GROUP_FIELDS_WITH_CRS_NLS:
+            row[key] = escapeCRsNLs(value)
+          else:
+            row[key] = value
+    groupCloudEntity = ciGroups.get(row['email'], {})
+    if groupCloudEntity:
+      for k, v in groupCloudEntity.pop('labels', {}).items():
+        if v == '':
+          groupCloudEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = True
+        else:
+          groupCloudEntity[f'labels{GC.Values[GC.CSV_OUTPUT_SUBFIELD_DELIMITER]}{k}'] = v
+      for key, value in sorted(flattenJSON({'cloudIdentity': groupCloudEntity}, flattened={}, timeObjects=CIGROUP_TIME_OBJECTS).items()):
+        csvPF.AddTitles(key)
+        row[key] = value
+    csvPF.WriteRow(row)
+
+  def _callbackProcessGroupBasic(request_id, response, exception):
+    ri = request_id.splitlines()
+    i = int(ri[RI_I])
+    if exception is not None:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason not in GAPI.DEFAULT_RETRY_REASONS+GAPI.GROUP_GET_RETRY_REASONS:
+        if reason in GAPI.GROUP_GET_THROW_REASONS:
+          entityUnknownWarning(Ent.GROUP, ri[RI_ENTITY], i, int(ri[RI_COUNT]))
+        else:
+          errMsg = getHTTPError({}, http_status, reason, message)
+          entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], Ent.GROUP, None], errMsg, i, int(ri[RI_COUNT]))
+        return
+      waitOnFailure(1, 10, reason, message)
+      try:
+        response = callGAPI(cd.groups(), 'get',
+                            throwReasons=GAPI.GROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
+                            groupKey=ri[RI_ENTITY], fields=cdfields)
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.systemError) as e:
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], Ent.GROUP, None], str(e), i, int(ri[RI_COUNT]))
+        return
+    entityList.append(response)
+
+  def _callbackProcessGroupMembers(request_id, response, exception):
+    ri = request_id.splitlines()
+    i = int(ri[RI_I])
+    totalItems = 0
+    items = 'members'
+    pageMessage = getPageMessageForWhom(forWhom=ri[RI_ENTITY], showFirstLastItems=True)
+    if exception is not None:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason not in GAPI.DEFAULT_RETRY_REASONS+GAPI.MEMBERS_RETRY_REASONS:
+        errMsg = getHTTPError({}, http_status, reason, message)
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], ri[RI_ROLE], None], errMsg, i, int(ri[RI_COUNT]))
+        groupData[i]['required'] -= 1
+        return
+      waitOnFailure(1, 10, reason, message)
+      try:
+        response = callGAPI(cd.members(), 'list',
+                            throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                            includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
+                            groupKey=ri[RI_ENTITY], roles=ri[RI_ROLE], fields='nextPageToken,members(email,id,role,type,status)',
+                            maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], ri[RI_ROLE], None], str(e), i, int(ri[RI_COUNT]))
+        groupData[i]['required'] -= 1
+        return
+    while True:
+      pageToken, totalItems = _processGAPIpagesResult(response, items, groupData[i][items], totalItems, pageMessage, 'email', ri[RI_ROLE])
+      if not pageToken:
+        _finalizeGAPIpagesResult(pageMessage)
+        break
+      try:
+        response = callGAPI(cd.members(), 'list',
+                            throwReasons=GAPI.MEMBERS_THROW_REASONS, retryReasons=GAPI.MEMBERS_RETRY_REASONS,
+                            pageToken=pageToken,
+                            includeDerivedMembership=memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP],
+                            groupKey=ri[RI_ENTITY], roles=ri[RI_ROLE], fields='nextPageToken,members(email,id,role,type,status)',
+                            maxResults=GC.Values[GC.MEMBER_MAX_RESULTS])
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.invalid, GAPI.forbidden, GAPI.serviceNotAvailable) as e:
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], ri[RI_ROLE], None], str(e), i, int(ri[RI_COUNT]))
+        break
+    groupData[i]['required'] -= 1
+
+  def _callbackProcessGroupSettings(request_id, response, exception):
+    ri = request_id.splitlines()
+    i = int(ri[RI_I])
+    if exception is not None:
+      http_status, reason, message = checkGAPIError(exception)
+      if reason not in GAPI.DEFAULT_RETRY_REASONS+GAPI.GROUP_SETTINGS_RETRY_REASONS:
+        errMsg = getHTTPError({}, http_status, reason, message)
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], Ent.GROUP_SETTINGS, None], errMsg, i, int(ri[RI_COUNT]))
+        groupData[i]['required'] -= 1
+        return
+      waitOnFailure(1, 10, reason, message)
+      try:
+        response = callGAPI(gs.groups(), 'get',
+                            throwReasons=GAPI.GROUP_SETTINGS_THROW_REASONS, retryReasons=GAPI.GROUP_SETTINGS_RETRY_REASONS,
+                            groupUniqueId=mapGroupEmailForSettings(ri[RI_ENTITY]), fields=gsfields)
+      except GAPI.notFound:
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], Ent.GROUP_SETTINGS, None], Msg.DOES_NOT_EXIST, i, int(ri[RI_COUNT]))
+        response = {}
+      except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
+              GAPI.backendError, GAPI.invalid, GAPI.invalidParameter, GAPI.invalidInput, GAPI.badRequest, GAPI.permissionDenied,
+              GAPI.systemError, GAPI.serviceLimit, GAPI.serviceNotAvailable, GAPI.authError) as e:
+        entityActionFailedWarning([Ent.GROUP, ri[RI_ENTITY], Ent.GROUP_SETTINGS, None], str(e), i, int(ri[RI_COUNT]))
+        response = {}
+    groupData[i]['settings'] = response
+    groupData[i]['required'] -= 1
+
+  def _writeCompleteRows():
+    complete = [k for k in groupData if groupData[k]['required'] == 0]
+    for k in complete:
+      _printGroupRow(groupData[k]['entity'], groupData[k]['settings'], groupData[k]['members'])
+      del groupData[k]
+
+  cd = buildGAPIObject(API.DIRECTORY)
+  ci = None
+  kwargsDict = initUserGroupDomainQueryFilters()
+  convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
+  delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
+  getCloudIdentity = getSettings = showCIgroupKey = sortHeaders = False
+  memberDisplayOptions = initIPSGMGroupMemberDisplayOptions()
+  maxResults = None
+  groupFieldsLists = {'cd': ['email'], 'ci': [], 'gs': []}
+  csvPF = CSVPrintFile(groupFieldsLists['cd'])
+  FJQC = FormatJSONQuoteChar(csvPF)
+  rolesSet = set()
+  typesSet = set()
+  memberOptions = initMemberOptions()
+  entitySelection = isSuspended = isArchived = None
+  showOwnedBy = {}
+  matchPatterns = {}
+  matchSettings = {}
+  deprecatedAttributesSet = set()
+  ciGroups = {}
+  showItemCountOnly = False
+  addCSVData = {}
+  includeCSVDataInJSON = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif getGroupFilters(myarg, kwargsDict, showOwnedBy):
+      pass
+    elif getGroupMatchPatterns(myarg, matchPatterns, False):
+      pass
+    elif myarg in {'group', 'groupns', 'groupsusp'}:
+      entitySelection = [getString(Cmd.OB_EMAIL_ADDRESS)]
+      if myarg == 'groupns':
+        isSuspended = False
+      elif myarg == 'groupsusp':
+        isSuspended = True
+    elif myarg == 'select':
+      entitySelection = getEntityList(Cmd.OB_GROUP_ENTITY)
+    elif myarg in SUSPENDED_ARGUMENTS:
+      isSuspended = _getIsSuspended(myarg)
+    elif myarg in ARCHIVED_ARGUMENTS:
+      isArchived = _getIsArchived(myarg)
+    elif myarg == 'maxresults':
+      maxResults = getInteger(minVal=1, maxVal=200)
+    elif myarg == 'nodeprecated':
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_DISCOVER_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_ASSIST_CONTENT_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_MODERATE_CONTENT_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_MODERATE_MEMBERS_ATTRIBUTES.values()])
+      deprecatedAttributesSet.update([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
+    elif myarg in {'convertcrnl', 'converttextnl', 'convertfooternl'}:
+      convertCRNL = True
+    elif myarg == 'delimiter':
+      delimiter = getCharacter()
+    elif myarg == 'basic':
+      sortHeaders = True
+      for field in GROUP_FIELDS_CHOICE_MAP:
+        csvPF.AddField(field, GROUP_FIELDS_CHOICE_MAP, groupFieldsLists['cd'])
+    elif myarg in {'ciallfields', 'allcifields'}:
+      sortHeaders = True
+      groupFieldsLists['ci'] = []
+      for field in CIGROUP_FIELDS_CHOICE_MAP:
+        addFieldToFieldsList(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+    elif myarg == 'settings':
+      getSettings = sortHeaders = True
+    elif myarg == 'allfields':
+      getSettings = sortHeaders = True
+      groupFieldsLists['cd'] = []
+      groupFieldsLists['gs'] = []
+      for field in GROUP_FIELDS_CHOICE_MAP:
+        csvPF.AddField(field, GROUP_FIELDS_CHOICE_MAP, groupFieldsLists['cd'])
+    elif myarg == 'sortheaders':
+      sortHeaders = getBoolean()
+    elif myarg in GROUP_FIELDS_CHOICE_MAP:
+      csvPF.AddField(myarg, GROUP_FIELDS_CHOICE_MAP, groupFieldsLists['cd'])
+    elif myarg in GROUP_ATTRIBUTES_SET:
+      attrProperties = getGroupAttrProperties(myarg)
+      csvPF.AddField(myarg, {myarg: attrProperties[0]}, groupFieldsLists['gs'])
+    elif myarg == 'fields':
+      for field in _getFieldsList():
+        if field in GROUP_FIELDS_CHOICE_MAP:
+          csvPF.AddField(field, GROUP_FIELDS_CHOICE_MAP, groupFieldsLists['cd'])
+        else:
+          attrProperties = getGroupAttrProperties(field)
+          if attrProperties is None:
+            invalidChoiceExit(field, list(GROUP_FIELDS_CHOICE_MAP)+list(GROUP_ATTRIBUTES_SET), True)
+          csvPF.AddField(field, {field: attrProperties[0]}, groupFieldsLists['gs'])
+    elif myarg == 'cifields':
+      for field in _getFieldsList():
+        if field in CIGROUP_FIELDS_CHOICE_MAP:
+          addFieldToFieldsList(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+        else:
+          invalidChoiceExit(field, list(CIGROUP_FIELDS_CHOICE_MAP), True)
+    elif myarg == 'matchsetting':
+      valueList = getChoice({'not': 'notvalues'}, mapChoice=True, defaultChoice='values')
+      matchBody = {}
+      getGroupAttrValue(getString(Cmd.OB_FIELD_NAME).lower(), matchBody)
+      for key, value in matchBody.items():
+        matchSettings.setdefault(key, {'notvalues': [], 'values': []})
+        matchSettings[key][valueList].append(value)
+    elif getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
+      pass
+    elif getGroupMemberTypes(myarg, typesSet):
+      pass
+    elif getMemberMatchOptions(myarg, memberOptions):
+      pass
+    elif myarg == 'includederivedmembership':
+      memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP] = True
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
+    elif myarg == 'addcsvdata':
+      getAddCSVData(addCSVData)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, False)
+  if not typesSet:
+    typesSet = ALL_GROUP_MEMBER_TYPES
+  showCategory, _ = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
+  if showCategory:
+    groupFieldsLists['gs'].append('allowExternalMembers')
+  updateFieldsForGroupMatchPatterns(matchPatterns, groupFieldsLists['cd'], csvPF)
+  if groupFieldsLists['cd']:
+    cdfields = ','.join(set(groupFieldsLists['cd']))
+    cdfieldsnp = f'nextPageToken,groups({cdfields})'
+  else:
+    cdfields = cdfieldsnp = None
+  if matchSettings:
+    groupFieldsLists['gs'].extend(list(matchSettings))
+  if groupFieldsLists['gs']:
+    getSettings = True
+    gsfields = ','.join(set(groupFieldsLists['gs']))
+  else:
+    gsfields = None
+  if getSettings:
+    gs = buildGAPIObject(API.GROUPSSETTINGS)
+  if groupFieldsLists['ci']:
+    setTrueCustomerId(cd)
+    getCloudIdentity = True
+    showCIgroupKey = 'groupKey' in groupFieldsLists['ci']
+    if not showCIgroupKey:
+      groupFieldsLists['ci'].append('groupKey(id)')
+    cifields = ','.join(set(groupFieldsLists['ci']))
+    ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
+  if FJQC.formatJSON:
+    sortHeaders = False
+    if showCategory:
+      csvPF.AddJSONTitles(['allowExternalMembers'])
+    if addCSVData:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+    csvPF.AddJSONTitles('JSON')
+    if rolesSet:
+      csvPF.AddJSONTitle('JSON-members')
+    if getSettings:
+      csvPF.AddJSONTitle('JSON-settings')
+    if getCloudIdentity:
+      csvPF.AddJSONTitle('JSON-cloudIdentity')
+  else:
+    if showCategory:
+      csvPF.AddTitles(['allowExternalMembers'])
+    if addCSVData:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+    csvPF.SetSortAllTitles()
+  getRolesSet = rolesSet.copy()
+  if showOwnedBy:
+    getRolesSet.add(Ent.ROLE_OWNER)
+  getRoles = ','.join(sorted(getRolesSet))
+  showDetails = getRoles or getSettings or getCloudIdentity
+  if rolesSet:
+    setMemberDisplayTitles(memberDisplayOptions, csvPF)
+  if entitySelection is None:
+    entityList = []
+    for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
+      kwargs = kwargsQuery[0]
+      query  = kwargsQuery[1]
+      query, pquery = groupFilters(kwargs, query)
+      printGettingAllAccountEntities(Ent.GROUP, pquery)
+      try:
+        entityList.extend(callGAPIpages(cd.groups(), 'list', 'groups',
+                                        pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute='email',
+                                        throwReasons=GAPI.GROUP_LIST_USERKEY_THROW_REASONS,
+                                        retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                        orderBy='email', query=query, fields=cdfieldsnp, maxResults=maxResults, **kwargs))
+      except (GAPI.invalidMember, GAPI.invalidInput) as e:
+        if not invalidMember(query):
+          entityActionFailedExit([Ent.GROUP, None], str(e))
+      except (GAPI.resourceNotFound, GAPI.domainNotFound, GAPI.forbidden, GAPI.badRequest):
+        if kwargs.get('domain'):
+          badRequestWarning(Ent.GROUP, Ent.DOMAIN, kwargs['domain'])
+        else:
+          accessErrorExit(cd)
+  else:
+    svcargs = dict([('groupKey', None), ('fields', cdfields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
+    cdmethod = getattr(cd.groups(), 'get')
+    cdbatch = cd.new_batch_http_request(callback=_callbackProcessGroupBasic)
+    cdbcount = 0
+    entityList = []
+    i = 0
+    count = len(entitySelection)
+    for groupEntity in entitySelection:
+      i += 1
+      groupEmail = normalizeEmailAddressOrUID(groupEntity)
+      svcparms = svcargs.copy()
+      svcparms['groupKey'] = groupEmail
+      printGettingEntityItem(Ent.GROUP, groupEmail, i, count)
+      cdbatch.add(cdmethod(**svcparms), request_id=batchRequestID(groupEmail, i, count, 0, 0, None))
+      cdbcount += 1
+      if cdbcount >= GC.Values[GC.BATCH_SIZE]:
+        executeBatch(cdbatch)
+        cdbatch = cd.new_batch_http_request(callback=_callbackProcessGroupBasic)
+        cdbcount = 0
+    if cdbcount > 0:
+      cdbatch.execute()
+  required = 0
+  if getRoles:
+    required += 1
+    svcargs = dict([('groupKey', None), ('roles', getRoles), ('fields', 'nextPageToken,members(email,id,role,type,status)'),
+                    ('includeDerivedMembership', memberOptions[MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP]),
+                    ('maxResults', GC.Values[GC.MEMBER_MAX_RESULTS])]+GM.Globals[GM.EXTRA_ARGS_LIST])
+  if getSettings:
+    required += 1
+    svcargsgs = dict([('groupUniqueId', None), ('fields', gsfields)]+GM.Globals[GM.EXTRA_ARGS_LIST])
+  cdmethod = getattr(cd.members(), 'list')
+  cdbatch = cd.new_batch_http_request(callback=_callbackProcessGroupMembers)
+  cdbcount = 0
+  if getSettings:
+    gsmethod = getattr(gs.groups(), 'get')
+    gsbatch = gs.new_batch_http_request(callback=_callbackProcessGroupSettings)
+    gsbcount = 0
+  groupData = {}
+  itemCount = 0
+  i = 0
+  count = len(entityList)
+  for groupEntity in entityList:
+    i += 1
+    groupEmail = groupEntity['email']
+    if not checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
+      continue
+    if not showDetails:
+      _printGroupRow(groupEntity, None, None)
+      continue
+    if getCloudIdentity:
+      _, name, groupEmail = convertGroupEmailToCloudID(ci, groupEmail, i, count)
+      printGettingEntityItemForWhom(Ent.CLOUD_IDENTITY_GROUP, groupEmail, i, count)
+      if name and groupEmail:
+        try:
+          ciGroup = callGAPI(ci.groups(), 'get',
+                             throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
+                             name=name, fields=cifields)
+          key = ciGroup['groupKey']['id']
+          if not showCIgroupKey:
+            ciGroup.pop('groupKey')
+          ciGroups[key] = ciGroup
+        except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
+                GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument,
+                GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+          entityActionFailedWarning([Ent.GROUP, groupEmail, Ent.CLOUD_IDENTITY_GROUP, None], str(e), i, count)
+    groupData[i] = {'entity': groupEntity, 'cloudIdentity': {}, 'settings': getSettings, 'members': [], 'required': required}
+    if getRoles:
+      printGettingEntityItemForWhom(getRoles, groupEmail, i, count)
+      svcparms = svcargs.copy()
+      svcparms['groupKey'] = groupEmail
+      cdbatch.add(cdmethod(**svcparms), request_id=batchRequestID(groupEmail, i, count, 0, 0, None, getRoles))
+      cdbcount += 1
+      if cdbcount >= GC.Values[GC.BATCH_SIZE]:
+        executeBatch(cdbatch)
+        cdbatch = cd.new_batch_http_request(callback=_callbackProcessGroupMembers)
+        cdbcount = 0
+        _writeCompleteRows()
+    if getSettings:
+      if not GroupIsAbuseOrPostmaster(groupEmail):
+        printGettingEntityItemForWhom(Ent.GROUP_SETTINGS, groupEmail, i, count)
+        svcparmsgs = svcargsgs.copy()
+        svcparmsgs['groupUniqueId'] = mapGroupEmailForSettings(groupEmail)
+        gsbatch.add(gsmethod(**svcparmsgs), request_id=batchRequestID(groupEmail, i, count, 0, 0, None))
+        gsbcount += 1
+        if gsbcount >= GC.Values[GC.BATCH_SIZE]:
+          executeBatch(gsbatch)
+          gsbatch = gs.new_batch_http_request(callback=_callbackProcessGroupSettings)
+          gsbcount = 0
+          _writeCompleteRows()
+      else:
+        groupData[i]['settings'] = False
+        groupData[i]['required'] -= 1
+  if cdbcount > 0:
+    cdbatch.execute()
+  if getSettings and gsbcount > 0:
+    gsbatch.execute()
+  _writeCompleteRows()
+  if showItemCountOnly:
+    writeStdout(f'{itemCount}\n')
+    return
+  if sortHeaders:
+    sortTitles = ['email']
+    if showCategory:
+      sortTitles.append('allowExternalMembers')
+    if addCSVData:
+      sortTitles.extend(sorted(addCSVData.keys()))
+    sortTitles.extend(GROUP_INFO_PRINT_ORDER+['aliases', 'nonEditableAliases'])
+    if getSettings:
+      sortTitles += sorted([attr[0] for attr in GROUP_SETTINGS_ATTRIBUTES.values()])
+      for key in GROUP_MERGED_ATTRIBUTES_PRINT_ORDER:
+        sortTitles.append(key)
+        if not deprecatedAttributesSet:
+          sortTitles += sorted([attr[0] for attr in GROUP_MERGED_TO_COMPONENT_MAP[key].values()])
+      if not deprecatedAttributesSet:
+        sortTitles += sorted([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
+    if rolesSet:
+      setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
+    csvPF.SetSortTitles(sortTitles)
+  csvPF.SortRows('email', False)
+  csvPF.writeCSVfile('Groups')
+
+
+def doInfoGroups():
+  infoGroups(getEntityList(Cmd.OB_GROUP_ENTITY))

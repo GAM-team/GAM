@@ -44,7 +44,7 @@ from gam.cmd.gmail.labels import (  # noqa: F401
     updateLabelSettingsById,
     updateLabels,
 )
-from gam.cmd.gmail.messages import (  # noqa: F401
+from gam.cmd.gmail.modify import (  # noqa: F401
     HEADER_ENCODE_PATTERN,
     IMPORT_INSERT,
     LABEL_QUERY_REPLACEMENT_CHARACTERS,
@@ -68,11 +68,13 @@ from gam.cmd.gmail.messages import (  # noqa: F401
     forwardMessagesThreads,
     importMessage,
     insertMessage,
+    processMessages,
+    processThreads,
+)
+from gam.cmd.gmail.print import (  # noqa: F401
     printShowMessages,
     printShowMessagesThreads,
     printShowThreads,
-    processMessages,
-    processThreads,
 )
 from gam.cmd.gmail.delegates import (  # noqa: F401
     FILTER_ADD_LABEL_TO_ARGUMENT_MAP,

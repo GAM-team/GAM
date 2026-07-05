@@ -39,7 +39,6 @@ from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import state as GM
 from gamlib import msgs as Msg
-from gamlib import yubikey
 from gam.var import Ent
 from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
 from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT
@@ -172,7 +171,18 @@ def _getIAMSigner(service_account_info):
                                          request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-  credentials.refresh(request)
+  triesLimit = 3
+  for n in range(1, triesLimit+1):
+    try:
+      credentials.refresh(request)
+      break
+    except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
+      if n != triesLimit:
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
+        continue
+      handleServerError(e)
+    except google.auth.exceptions.RefreshError as e:
+      systemErrorExit(API_ACCESS_DENIED_RC, f'signjwt credentials refresh failed: {e}')
   return google.auth.iam.Signer(request, credentials,
                                 service_account_info['client_email'])
 
@@ -188,7 +198,8 @@ def _getSigner(service_account_info):
   if key_type == 'default':
     return None
   if key_type == 'yubikey':
-    return yubikey.YubiKey(service_account_info)
+    from gam.cmd.yubikey import YubiKey  # deferred: yubikey-manager is an optional dependency
+    return YubiKey(service_account_info)
   if key_type == 'signjwt':
     return _getIAMSigner(service_account_info)
   return None

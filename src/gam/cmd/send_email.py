@@ -78,8 +78,8 @@ from gam.util.tags import (  # noqa: F401  # re-export
     sendCreateUpdateUserNotification,
 )
 from gam.constants import NO_ENTITIES_FOUND_RC
-from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP
-from gam.cmd.gmail.messages import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP, _decodeHeader
+from gam.cmd.gmail.modify import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP
+from gam.cmd.gmail.modify import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP, _decodeHeader
 
 
 from email.utils import formatdate
