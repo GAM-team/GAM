@@ -76,7 +76,6 @@ from gam.constants import DFA_URL
 
 
 from gam.cmd.chromeapps import getPlatformChannelMap, getRelativeMilestone
-from gam.cmd.cigroups.members import _showPolicy
 from gam.cmd.drive.core import getMediaBody
 from gam.cmd.drive.core import DFA_LOCALFILENAME, DFA_LOCALFILEPATH, DFA_LOCALMIMETYPE
 from gam.util.access import accessErrorExit
