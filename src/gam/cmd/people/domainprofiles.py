@@ -12,8 +12,8 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import getArgument, getChoice, getString
 from gam.util.csv_pf import (
-    CSVPrintFile, FormatJSONQuoteChar, addFieldToFieldsList,
-    _getFieldsList, cleanJSON, flattenJSON, getFieldsList, showJSON
+    CSVPrintFile, FormatJSONQuoteChar,
+    _getFieldsList, cleanJSON, flattenJSON, showJSON
 )
 from gam.util.display import (
     entityActionFailedWarning,
@@ -33,21 +33,25 @@ from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import (
     PEOPLE_DIRECTORY_MERGE_SOURCES_CHOICE_MAP,
     PEOPLE_DIRECTORY_SOURCES_CHOICE_MAP,
-    PEOPLE_METADATA,
     PEOPLE_READ_SOURCES_CHOICE_MAP,
-    PEOPLE_UPDATE_TIME,
     normalizePeopleResourceName,
 )
-from gam.cmd.people import (
+from gam.cmd.people.core import (
+    PEOPLE_METADATA,
+    PEOPLE_UPDATE_TIME,
+    _getPersonFields,
+    _initPersonMetadataParameters,
+    addContactGroupNamesToContacts,
+    getPersonFieldsList,
+    localPeopleContactSelects,
+)
+from gam.cmd.people.core import (
     PEOPLE_CONTACTS_DEFAULT_FIELDS,
     PEOPLE_CONTACT_OBJECT_KEYS,
     PEOPLE_FIELDS_CHOICE_MAP,
     PEOPLE_PROFILE_SOURCETYPE_CHOICE_MAP,
 )
-
-
-def _initPersonMetadataParameters():
-  return {'strip': True, 'mapUpdateTime': False, 'sourceTypes': set()}
+from gam.cmd.people.contacts import getPeopleContactGroupsInfo
 
 def _processPersonMetadata(person, parameters):
   metadata = person.get(PEOPLE_METADATA, None)
@@ -100,7 +104,6 @@ def _showPerson(userEntityType, user, entityType, person, i, count, FJQC, parame
     printLine(json.dumps(cleanJSON(person), ensure_ascii=False, sort_keys=True))
 
 def _printPersonEntityList(entityType, entityList, userEntityType, user, i, count, csvPF, FJQC, parameters, contactQuery):
-  from gam.cmd.people.contacts import localPeopleContactSelects  # deferred: circular
   if not csvPF:
     jcount = len(entityList)
     if not FJQC.formatJSON:
@@ -120,28 +123,7 @@ def _printPersonEntityList(entityType, entityList, userEntityType, user, i, coun
   elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
     csvPF.WriteRowNoFilter({userEntityType: user})
 
-def getPersonFieldsList(myarg, fieldsChoiceMap, fieldsList, initialField=None, fieldsArg='fields'):
-  if fieldsList is None:
-    fieldsList = []
-  return getFieldsList(myarg, fieldsChoiceMap, fieldsList, initialField, fieldsArg)
-
-def _getPersonFields(fieldsChoiceMap, defaultFields, fieldsList, parameters):
-  if fieldsList is None:
-    fieldsList = []
-    for field in fieldsChoiceMap:
-      addFieldToFieldsList(field, fieldsChoiceMap, fieldsList)
-  elif not fieldsList:
-    for field in defaultFields:
-      addFieldToFieldsList(field, fieldsChoiceMap, fieldsList)
-  fieldsList = list(set(fieldsList))
-  if PEOPLE_UPDATE_TIME in fieldsList:
-    parameters['mapUpdateTime'] = True
-    fieldsList.remove(PEOPLE_UPDATE_TIME)
-    fieldsList.append(PEOPLE_METADATA)
-  return ','.join(fieldsList)
-
 def _infoPeople(users, entityType, source):
-  from gam.cmd.people.contacts import addContactGroupNamesToContacts, getPeopleContactGroupsInfo  # deferred: circular
   if entityType == Ent.DOMAIN:
     people = buildGAPIObject(API.PEOPLE)
   peopleEntityType = Ent.DOMAIN_PROFILE if source == 'profile' else Ent.PEOPLE_CONTACT

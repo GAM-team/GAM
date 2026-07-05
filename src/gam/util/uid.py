@@ -1,21 +1,77 @@
 """UID-to-email-address resolution utilities.
 
 Convert UIDs to email addresses by querying the Directory/CI APIs.
-Extracted from entity.py to break the entity↔api circular dependency.
+Includes low-level lookup functions (getUserEmailFromID, etc.) that
+were originally in entity.py but belong here since they're pure
+UID-resolution helpers.
 """
+
+import re
+import warnings
+
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gam.var import Ent
+from gam.var import Cmd, Ent
 from util.api import buildGAPIObject
 from util.api_call import callGAPI
-from util.args import normalizeEmailAddressOrUID
+from util.args import getPhraseDNEorSNA, normalizeEmailAddressOrUID
+from util.errors import entityDoesNotExistExit
 
 NON_EMAIL_MEMBER_PREFIXES = (
                               "cbcm-browser.",
                               "chrome-os-device.",
                             )
+
+
+def getUserEmailFromID(uid, cd):
+  try:
+    result = callGAPI(cd.users(), 'get',
+                      throwReasons=GAPI.USER_GET_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                      userKey=uid, fields='primaryEmail')
+    return result.get('primaryEmail')
+  except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
+          GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.serviceNotAvailable):
+    return None
+
+def getGroupEmailFromID(uid, cd):
+  try:
+    result = callGAPI(cd.groups(), 'get',
+                      throwReasons=GAPI.GROUP_GET_THROW_REASONS,
+                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                      groupKey=uid, fields='email')
+    return result.get('email')
+  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
+          GAPI.badRequest, GAPI.serviceNotAvailable):
+    return None
+
+def getServiceAccountEmailFromID(account_id, sal=None):
+  if sal is None:
+    sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
+  try:
+    certs = callGAPI(sal.serviceaccounts(), 'lookup',
+                     throwReasons = [GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,  GAPI.INVALID_ARGUMENT],
+                     account=account_id)
+  except (GAPI.badRequest, GAPI.notFound, GAPI.resourceNotFound, GAPI.invalidArgument):
+    return None
+  sa_cn_rx = r'CN=(.+)\.(.+)\.iam\.gservice.*'
+  sa_emails = []
+  for _, raw_cert in certs.items():
+    cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
+    # suppress crytography warning due to long service account email
+    with warnings.catch_warnings():
+      warnings.filterwarnings('ignore', message='.*Attribute\'s length.*')
+      mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
+    if mg:
+      sa_email = f'{mg.group(1)}@{mg.group(2)}.iam.gserviceaccount.com'
+      if sa_email not in sa_emails:
+        sa_emails.append(sa_email)
+  return GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER].join(sa_emails)
+
 
 def convertUIDtoEmailAddressWithType(emailAddressOrUID, cd=None, sal=None, emailTypes=None,
                                      checkForCustomerId=False, ciGroupsAPI=False, aliasAllowed=True):

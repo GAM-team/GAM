@@ -16,6 +16,15 @@ import sys
 import threading
 import time
 
+# Registry for ProcessGAMCommand. gam/__init__.py registers this at import
+# time to break the init-cycle (gam imports batch, batch needs ProcessGAMCommand).
+_process_gam_command = None
+
+def register_process_gam_command(func):
+  """Register the ProcessGAMCommand callable from gam/__init__.py."""
+  global _process_gam_command
+  _process_gam_command = func
+
 from gamlib import api as API
 from gamlib import clargs
 from gamlib import settings as GC
@@ -322,7 +331,6 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            csvRowLimit,
                            showGettings, showGettingsGotNL,
                            args):
-  from gam import ProcessGAMCommand
   global mplock
 
   with mplock:
@@ -384,7 +392,7 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
         GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]
     else:
       GM.Globals[GM.STDERR] = {}
-  sysRC = ProcessGAMCommand(args)
+  sysRC = _process_gam_command(args)
   with mplock:
     if mpQueueStdout:
 #      mpQueueStdout.put((pid, GM.REDIRECT_QUEUE_END, [sysRC, GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].getvalue()]))
@@ -974,7 +982,7 @@ def doCSVTest():
 #	[skiprows <Integer>] [maxrows <Integer>]
 #	gam <GAM argument list>
 def doLoop(loopCmd):
-  from gam import ProcessGAMCommand
+
   filename = getString(Cmd.OB_FILE_NAME)
   if (filename == '-') and (GC.Values[GC.DEBUG_LEVEL] > 0):
     Cmd.Backup()
@@ -1028,7 +1036,7 @@ def doLoop(loopCmd):
         logCmd = Cmd.QuotedArgumentList(item)
         if i % 100 == 0:
           batchWriteStderr(Msg.PROCESSING_ITEM_N.format(currentISOformatTimeStamp(), i))
-        sysRC = ProcessGAMCommand(item, processGamCfg=processGamCfg, inLoop=True)
+        sysRC = _process_gam_command(item, processGamCfg=processGamCfg, inLoop=True)
         if (GM.Globals[GM.PID] > 0) and LoopGlobals[GM.CMDLOG_LOGGER]:
           writeGAMCommandLog(LoopGlobals, logCmd, sysRC)
         if (sysRC > 0) and (GM.Globals[GM.SYSEXITRC] <= HARD_ERROR_RC):
@@ -1057,7 +1065,7 @@ def doLoop(loopCmd):
       pid += 1
       logCmd = Cmd.QuotedArgumentList(item)
       batchWriteStderr(f'{currentISOformatTimeStamp()},{pid}/{numItems},Start,0,{logCmd}\n')
-      sysRC = ProcessGAMCommand(item, processGamCfg=processGamCfg, inLoop=True)
+      sysRC = _process_gam_command(item, processGamCfg=processGamCfg, inLoop=True)
       batchWriteStderr(f'{currentISOformatTimeStamp()},{pid}/{numItems},End,{sysRC},{logCmd}\n')
       if (GM.Globals[GM.PID] > 0) and LoopGlobals[GM.CMDLOG_LOGGER]:
         writeGAMCommandLog(LoopGlobals, logCmd, sysRC)

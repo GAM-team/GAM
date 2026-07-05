@@ -24,7 +24,7 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.util.access import entityUnknownWarning
-from gam.util.api import buildGAPIObject
+from gam.util.api import ClientAPIAccessDeniedExit, buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     checkArgumentPresent,
@@ -64,6 +64,8 @@ from gam.cmd.drive.looker import _getLookerStudioAssets, _showLookerStudioPermis
 from gam.util.group_parents import addJsonGroupParents, getGroupParents, printGroupParents, showGroupParents
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.util.access import accessErrorExit
+from gam.util.domain_filters import _setUserGroupArgs
 
 def processLookerStudioPermissions(users):
   action = Act.Get()
@@ -326,8 +328,6 @@ def _getUserGroupOptionalDomainCustomerId():
   if checkArgumentPresent('customerid'):
     return {'customer': getString(Cmd.OB_CUSTOMER_ID)}
   return {}
-
-from gam.util.domain_filters import _setUserGroupArgs  # noqa: F401 - re-exported
 
 def checkUserGroupMatchPattern(groupEmail, matchPattern):
   if not matchPattern['not']:
@@ -1019,6 +1019,5 @@ def printUserGroupsList(users):
   csvPF.writeCSVfile('User GroupsList')
 
 # License command utilities
-from gam.constants import LICENSE_PRODUCT_SKUIDS  # noqa: F401 - re-exported
 LICENSE_PREVIEW_TITLES = ['user', 'productId', 'skuId', 'action', 'message']
 

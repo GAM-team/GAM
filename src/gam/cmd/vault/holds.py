@@ -78,15 +78,14 @@ from gam.util.display import (
     stderrEntityMessage,
 )
 from gam.util.entity import (
-    convertEmailAddressToUID,
     convertOrgUnitIDtoPath,
-    convertUIDtoEmailAddress,
     convertUserIDtoEmail,
     getEntityArgument,
     getEntityList,
     getItemsToModify,
     shlexSplitList,
 )
+from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddress
 from gam.util.errors import (
     entityActionFailedExit,
     invalidChoiceExit,

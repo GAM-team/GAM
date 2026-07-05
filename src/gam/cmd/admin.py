@@ -46,11 +46,10 @@ from gam.util.display import (
 from gam.util.entity import (
     ALL_GROUP_ROLES,
     PRINT_PRIVILEGES_FIELDS,
-    convertEmailAddressToUID,
     convertOrgUnitIDtoPath,
-    convertUIDtoEmailAddressWithType,
     getEntityList,
 )
+from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddressWithType
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId

@@ -8,7 +8,7 @@ import re
 import json
 
 
-from gam.cmd.groups.groups import (
+from gam.cmd.groups.core import (
     GroupIsAbuseOrPostmaster,
     getGroupAttrProperties,
     getGroupMemberTypes,
@@ -26,7 +26,9 @@ from gam.constants import ONE_KILO_BYTES, ONE_MEGA_BYTES
 
 from gam.var import Act, Cmd, Ent, Ind
 
-from gam.cmd.groups.groups import ALL_GROUP_MEMBER_TYPES, GROUP_CIGROUP_ENTITYTYPE_MAP, MEMBEROPTION_DISPLAYMATCH, MEMBEROPTION_GETDELIVERYSETTINGS, MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED, MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_MATCHPATTERN, MEMBEROPTION_MEMBERNAMES, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE, getGroupMemberTypes, GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
+from gam.cmd.groups.core import ALL_GROUP_MEMBER_TYPES, GROUP_CIGROUP_ENTITYTYPE_MAP, MEMBEROPTION_DISPLAYMATCH, MEMBEROPTION_GETDELIVERYSETTINGS, MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED, MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_MATCHPATTERN, MEMBEROPTION_MEMBERNAMES, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE, getGroupMemberTypes, GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
+from gam.util.domain_filters import groupFilters
+from gam.util.group_parents import addJsonGroupParents, getGroupParents, printGroupParents, showGroupParents
 from gam.util.access import accessErrorExit, entityUnknownWarning
 from gam.util.api import buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
@@ -84,12 +86,12 @@ from gam.util.entity import (
     _getRoleVerification,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,
-    convertUIDtoEmailAddress,
     getCIGroupMemberRoleFixType,
     getEntityArgument,
     getEntityList,
-    getEntityToModify
+    getEntityToModify,
 )
+from gam.util.uid import convertUIDtoEmailAddress
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.constants import (
@@ -110,6 +112,7 @@ from gam.util.domain_filters import (
 )
 from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList
 from gam.util.output import writeStderr, formatMaxMessageBytes, formatLocalTime
+from gam.cmd.chat.members import _getChatSpaceMembers
 
 def initMemberOptions():
   return [False, False, False, False, None, None, False, None, True]
@@ -244,8 +247,6 @@ GROUP_FIELDS_CHOICE_MAP = {
   'name': 'name',
   }
 GROUP_INFO_PRINT_ORDER = ['id', 'name', 'description', 'directMembersCount', 'adminCreated']
-from gam.constants import INFO_GROUP_OPTIONS  # noqa: F401 - re-exported
-
 CIGROUP_FIELDS_CHOICE_MAP = {
   'additionalgroupkeys': 'additionalGroupKeys',
   'createtime': 'createTime',
@@ -577,8 +578,6 @@ def infoGroups(entityList):
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[formatjson]
 
-from gam.util.domain_filters import groupFilters  # noqa: F401 - re-exported
-
 def getGroupFilters(myarg, kwargsDict, showOwnedBy):
   if getUserGroupDomainQueryFilters(myarg, kwargsDict):
     pass
@@ -904,7 +903,6 @@ def getGroupMembersEntityList(cd, entityList, matchPatterns, fieldsList, kwargsD
 
 def getGroupMembers(cd, groupEmail, memberRoles, membersList, membersSet, i, count,
                     memberOptions, memberDisplayOptions, level, typesSet):
-  from gam.cmd.chat.members import _getChatSpaceMembers
   def _getMemberDeliverySettings(member):
     if 'delivery_settings' not in member:
       try:
@@ -1494,8 +1492,6 @@ def doShowGroupMembers():
       ci, _, groupEmail = convertGroupCloudIDToEmail(ci, groupEmail, i, count)
     if checkGroupMatchPatterns(groupEmail, group, matchPatterns):
       _showGroup(groupEmail, 0)
-
-from gam.util.group_parents import getGroupParents, showGroupParents, addJsonGroupParents, printGroupParents  # noqa: F401 - re-exported
 
 # gam print grouptree <GroupEntity> [todrive <ToDriveAttribute>*]
 #	[showparentsaslist [<Boolean>]] [delimiter <Character>]

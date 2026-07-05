@@ -8,10 +8,6 @@ import os
 import platform
 import re
 import sys
-import warnings
-
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -19,53 +15,6 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 
-
-
-
-def getUserEmailFromID(uid, cd):
-  try:
-    result = callGAPI(cd.users(), 'get',
-                      throwReasons=GAPI.USER_GET_THROW_REASONS,
-                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                      userKey=uid, fields='primaryEmail')
-    return result.get('primaryEmail')
-  except (GAPI.userNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.badRequest, GAPI.backendError, GAPI.systemError, GAPI.serviceNotAvailable):
-    return None
-
-def getGroupEmailFromID(uid, cd):
-  try:
-    result = callGAPI(cd.groups(), 'get',
-                      throwReasons=GAPI.GROUP_GET_THROW_REASONS,
-                      retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                      groupKey=uid, fields='email')
-    return result.get('email')
-  except (GAPI.groupNotFound, GAPI.domainNotFound, GAPI.domainCannotUseApis, GAPI.forbidden,
-          GAPI.badRequest, GAPI.serviceNotAvailable):
-    return None
-
-def getServiceAccountEmailFromID(account_id, sal=None):
-  if sal is None:
-    sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
-  try:
-    certs = callGAPI(sal.serviceaccounts(), 'lookup',
-                     throwReasons = [GAPI.BAD_REQUEST, GAPI.NOT_FOUND, GAPI.RESOURCE_NOT_FOUND,  GAPI.INVALID_ARGUMENT],
-                     account=account_id)
-  except (GAPI.badRequest, GAPI.notFound, GAPI.resourceNotFound, GAPI.invalidArgument):
-    return None
-  sa_cn_rx = r'CN=(.+)\.(.+)\.iam\.gservice.*'
-  sa_emails = []
-  for _, raw_cert in certs.items():
-    cert = x509.load_pem_x509_certificate(raw_cert.encode(), default_backend())
-    # suppress crytography warning due to long service account email
-    with warnings.catch_warnings():
-      warnings.filterwarnings('ignore', message='.*Attribute\'s length.*')
-      mg = re.match(sa_cn_rx, cert.issuer.rfc4514_string())
-    if mg:
-      sa_email = f'{mg.group(1)}@{mg.group(2)}.iam.gserviceaccount.com'
-      if sa_email not in sa_emails:
-        sa_emails.append(sa_email)
-  return GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER].join(sa_emails)
 
 
 # Convert User UID from API call to email address
@@ -122,22 +71,21 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
     GM.Globals[GM.MAP_ORGUNIT_ID_TO_NAME][orgUnitId] = orgUnitPath
   return orgUnitPath
 
-from util.args import shlexSplitList, shlexSplitListStatus  # noqa: E402,F401 - moved to args, re-exported for compat
-from util.uid import convertUIDtoEmailAddress, convertUIDtoEmailAddressWithType, convertEmailAddressToUID  # noqa: F401 - re-export
 from gam.constants import DATA_ERROR_RC, INVALID_ENTITY_RC, NO_ENTITIES_FOUND_RC, UNKNOWN_ERROR_RC
 from gamlib import skus as SKU
-from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkMatchSkipFields, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, splitEmailAddress, validateEmailAddressOrUID
+from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkMatchSkipFields, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, shlexSplitList, shlexSplitListStatus, splitEmailAddress, validateEmailAddressOrUID
 from util.display import ENTITY_DOES_NOT_EXIST_RC, entityActionFailedWarning, entityActionNotPerformedWarning, entityDoesNotExistWarning, entityPerformActionNumItems, getPageMessage, getPageMessageForWhom, printGettingAllAccountEntities, printGettingAllEntityItemsForWhom, printGotEntityItemsForWhom, setGettingAllEntityItemsForWhom
 from util.errors import csvDataAlreadySavedErrorExit, csvFieldErrorExit, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, usageErrorExit
 from util.fileio import closeFile, openFile, setFilePath
 from util.gdoc import getGDocData, getStorageFileData, openCSVFileReader
 from util.output import formatKeyValueList, printErrorMessage, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr
-from gam.util.access import ClientAPIAccessDeniedExit, accessErrorExit
+from gam.util.access import accessErrorExit
 from util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
-from util.api import _getAdminEmail, buildGAPIObject
+from util.api import ClientAPIAccessDeniedExit, _getAdminEmail, buildGAPIObject
 from util.svcacct import buildGAPIServiceObject
 from util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.var import Act, Cmd, Ent
+from gam.util.access import accessErrorExitNonDirectory
 
 def getQueries(myarg):
   if myarg in {'query', 'filter'}:
@@ -1515,10 +1463,7 @@ def removeCourseIdScope(courseId):
     return courseId[2:]
   return courseId
 
-def addCourseAliasScope(alias):
-  if alias[:2] not in {'d:', 'p:'}:
-    return f'd:{alias}'
-  return alias
+
 
 def removeCourseAliasScope(alias):
   if alias.startswith('d:'):

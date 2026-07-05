@@ -63,7 +63,7 @@ from gam.constants import *
 
 from util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402
 
-from gam.var import Act, Cmd, Ent, Ind  # noqa: E402,F401
+from gam.var import Act, Cmd, Ent, Ind  # noqa: E402
 
 # Finding path method varies between Python source, PyInstaller and StaticX
 if os.environ.get('STATICX_PROG_PATH', False):
@@ -232,44 +232,48 @@ from gam.cmd.calendar.status import (
     printShowOutOfOffice,
     printShowWorkingLocation,
 )
-from gam.cmd.chat import (
-    createChatEmoji,
+from gam.cmd.chat.members import (
     createChatMember,
     createChatMessage,
-    createChatSpace,
-    createUpdateChatSection,
-    deleteChatEmoji,
     deleteChatMessage,
-    deleteChatSection,
-    deleteChatSpace,
     deleteUpdateChatMember,
     doCreateChatMessage,
     doDeleteChatMessage,
     doInfoChatEvent,
     doInfoChatMember,
     doInfoChatMessage,
-    doInfoChatSpace,
     doPrintShowChatMembers,
-    doPrintShowChatSpaces,
-    doSetupChat,
     doUpdateChatMessage,
-    infoChatEmoji,
     infoChatEvent,
     infoChatMember,
     infoChatMessage,
-    infoChatSpace,
-    infoChatSpaceDM,
-    moveShowChatSectionItem,
-    printShowChatEmojis,
     printShowChatEvents,
     printShowChatMembers,
     printShowChatMessages,
     printShowChatSearchMessages,
-    printShowChatSectionItems,
-    printShowChatSections,
-    printShowChatSpaces,
     syncChatMembers,
     updateChatMessage,
+)
+from gam.cmd.chat.setup import (
+    createChatEmoji,
+    createUpdateChatSection,
+    deleteChatEmoji,
+    deleteChatSection,
+    doSetupChat,
+    infoChatEmoji,
+    moveShowChatSectionItem,
+    printShowChatEmojis,
+    printShowChatSectionItems,
+    printShowChatSections,
+)
+from gam.cmd.chat.spaces import (
+    createChatSpace,
+    deleteChatSpace,
+    doInfoChatSpace,
+    doPrintShowChatSpaces,
+    infoChatSpace,
+    infoChatSpaceDM,
+    printShowChatSpaces,
     updateChatSpace,
 )
 from gam.cmd.chromeapps import (
@@ -313,10 +317,13 @@ from gam.cmd.cidevices import (
     doWipeCIDevice,
     doWipeCIDeviceUser,
 )
-from gam.cmd.cigroups import (
+from gam.cmd.cigroups.groups import (
     doCreateCIGroup,
-    doCreateUpdateCIPolicy,
     doDeleteCIGroups,
+    doUpdateCIGroups,
+)
+from gam.cmd.cigroups.members import (
+    doCreateUpdateCIPolicy,
     doDeleteCIPolicies,
     doInfoCIGroupMembers,
     doInfoCIGroups,
@@ -325,7 +332,6 @@ from gam.cmd.cigroups import (
     doPrintCIGroups,
     doPrintShowCIPolicies,
     doShowCIGroupMembers,
-    doUpdateCIGroups,
     infoCIGroupMembers,
 )
 from gam.cmd.ciuserinvitations import (
@@ -345,7 +351,24 @@ from gam.cmd.contacts import (
     doPrintShowDomainContacts,
     doUpdateDomainContacts,
 )
-from gam.cmd.courses import (
+from gam.cmd.courses.content import (
+    doPrintCourseAnnouncements,
+    doPrintCourseMaterials,
+    doPrintCourseSubmissions,
+    doPrintCourseTopics,
+    doPrintCourseWork,
+)
+from gam.cmd.courses.courses import (
+    doCreateCourse,
+    doDeleteCourse,
+    doDeleteCourses,
+    doInfoCourse,
+    doInfoCourses,
+    doPrintCourses,
+    doUpdateCourse,
+    doUpdateCourses,
+)
+from gam.cmd.courses.guardians import (
     acceptClassroomInvitations,
     cancelGuardianInvitations,
     clearGuardians,
@@ -354,42 +377,31 @@ from gam.cmd.courses import (
     deleteGuardians,
     doCancelGuardianInvitation,
     doClearCourseStudentGroups,
-    doCourseAddItems,
-    doCourseClearParticipants,
-    doCourseRemoveItems,
-    doCourseSyncParticipants,
-    doCourseUpdateItems,
-    doCreateCourse,
     doCreateCourseStudentGroups,
     doDeleteClassroomInvitations,
-    doDeleteCourse,
     doDeleteCourseStudentGroups,
-    doDeleteCourses,
     doDeleteGuardian,
-    doInfoCourse,
-    doInfoCourses,
     doInviteGuardian,
-    doPrintCourseAnnouncements,
-    doPrintCourseCounts,
-    doPrintCourseMaterials,
-    doPrintCourseParticipants,
     doPrintCourseStudentGroupMembers,
     doPrintCourseStudentGroups,
-    doPrintCourseSubmissions,
-    doPrintCourseTopics,
-    doPrintCourseWork,
-    doPrintCourses,
     doPrintShowClassroomInvitations,
     doPrintShowGuardians,
     doProcessCourseStudentGroupMembers,
-    doUpdateCourse,
     doUpdateCourseStudentGroups,
-    doUpdateCourses,
     inviteGuardians,
     printShowClassroomInvitations,
     printShowClassroomProfile,
     printShowGuardians,
     syncGuardians,
+)
+from gam.cmd.courses.participants import (
+    doCourseAddItems,
+    doCourseClearParticipants,
+    doCourseRemoveItems,
+    doCourseSyncParticipants,
+    doCourseUpdateItems,
+    doPrintCourseCounts,
+    doPrintCourseParticipants,
 )
 
 from gam.cmd.cros.manage import (
@@ -435,167 +447,207 @@ from gam.cmd.domains import (
     doPrintShowDomains,
     doUpdateDomain,
 )
-from gam.cmd.drive import (
+from gam.cmd.drive.activity import (
+    doShowSharedDriveThemes,
+    printDriveActivity,
+    printShowDriveSettings,
+    showSharedDriveThemes,
+)
+from gam.cmd.drive.copymove.copymove_move import moveDriveFile
+from gam.cmd.drive.copymove.copymove_util import copyDriveFile
+from gam.cmd.drive.fileinfo import (
+    printDiskUsage,
+    printShowDrivelastModifications,
+    printShowFileCounts,
+    printShowFileShareCounts,
+    printShowFileTree,
+)
+from gam.cmd.drive.filelist import (
+    printFileList,
+    printFileParentTree,
+    printShowFileComments,
+    printShowFilePaths,
+)
+from gam.cmd.drive.filepaths import showFileInfo
+from gam.cmd.drive.files import (
     checkDriveFileShortcut,
-    claimOwnership,
-    collectOrphans,
-    copyDriveFile,
-    copySyncSharedDriveACLs,
     createDriveFile,
-    createDriveFileACL,
-    createDriveFilePermissions,
     createDriveFileShortcut,
     createDriveFolderPath,
+    updateDriveFile,
+)
+from gam.cmd.drive.labels import (
     createDriveLabelPermissions,
-    createSharedDrive,
-    deleteDriveFile,
-    deleteDriveFileACLs,
     deleteDriveLabelPermissions,
-    deleteEmptyDriveFolders,
-    deleteFileRevisions,
-    deletePermissions,
-    deleteSharedDrive,
-    doCopySyncSharedDriveACLs,
-    doCreateDriveFileACL,
     doCreateDriveLabelPermissions,
-    doCreatePermissions,
-    doCreateSharedDrive,
-    doDeleteDriveFileACLs,
     doDeleteDriveLabelPermissions,
-    doDeletePermissions,
-    doDeleteSharedDrive,
-    doHideUnhideSharedDrive,
-    doInfoDriveFileACLs,
     doInfoDriveLabels,
-    doInfoSharedDrive,
-    doPrintSharedDriveOrganizers,
-    doPrintShowDriveFileACLs,
     doPrintShowDriveLabelPermissions,
     doPrintShowDriveLabels,
+    infoDriveLabels,
+    printShowDriveLabelPermissions,
+    printShowDriveLabels,
+    processFileDriveLabels,
+)
+from gam.cmd.drive.looker import printShowLookerStudioAssets
+from gam.cmd.drive.permissions import (
+    createDriveFileACL,
+    createDriveFilePermissions,
+    deleteDriveFileACLs,
+    deleteEmptyDriveFolders,
+    deletePermissions,
+    doCreateDriveFileACL,
+    doCreatePermissions,
+    doDeleteDriveFileACLs,
+    doDeletePermissions,
+    doInfoDriveFileACLs,
+    doPrintShowDriveFileACLs,
+    doUpdateDriveFileACLs,
+    emptyDriveTrash,
+    infoDriveFileACLs,
+    printEmptyDriveFolders,
+    printShowDriveFileACLs,
+    updateDriveFileACLs,
+)
+from gam.cmd.drive.revisions import (
+    deleteFileRevisions,
+    printShowFileRevisions,
+    updateFileRevisions,
+)
+from gam.cmd.drive.shareddrives import (
+    copySyncSharedDriveACLs,
+    createSharedDrive,
+    deleteSharedDrive,
+    doCopySyncSharedDriveACLs,
+    doCreateSharedDrive,
+    doDeleteSharedDrive,
+    doHideUnhideSharedDrive,
+    doInfoSharedDrive,
+    doPrintSharedDriveOrganizers,
     doPrintShowOrgunitSharedDrives,
     doPrintShowOwnership,
     doPrintShowSharedDriveACLs,
     doPrintShowSharedDrives,
-    doShowSharedDriveThemes,
-    doUpdateDriveFileACLs,
     doUpdateSharedDrive,
-    emptyDriveTrash,
-    getDriveFile,
-    getGoogleDocument,
     hideUnhideSharedDrive,
-    infoDriveFileACLs,
-    infoDriveLabels,
     infoSharedDrive,
-    moveDriveFile,
-    printDiskUsage,
-    printDriveActivity,
-    printEmptyDriveFolders,
-    printFileList,
-    printFileParentTree,
     printSharedDriveOrganizers,
-    printShowDriveFileACLs,
-    printShowDriveLabelPermissions,
-    printShowDriveLabels,
-    printShowDriveSettings,
-    printShowDrivelastModifications,
-    printShowFileComments,
-    printShowFileCounts,
-    printShowFilePaths,
-    printShowFileRevisions,
-    printShowFileShareCounts,
-    printShowFileTree,
-    printShowLookerStudioAssets,
     printShowSharedDriveACLs,
     printShowSharedDrives,
-    processFileDriveLabels,
-    purgeDriveFile,
-    showFileInfo,
-    showSharedDriveThemes,
-    transferDrive,
-    transferOwnership,
-    trashDriveFile,
-    untrashDriveFile,
-    updateDriveFile,
-    updateDriveFileACLs,
-    updateFileRevisions,
-    updateGoogleDocument,
     updateSharedDrive,
 )
-from gam.cmd.gmail import (
-    archiveMessages,
+from gam.cmd.drive.transfer.fileops import (
+    collectOrphans,
+    deleteDriveFile,
+    getDriveFile,
+    getGoogleDocument,
+    purgeDriveFile,
+    trashDriveFile,
+    untrashDriveFile,
+    updateGoogleDocument,
+)
+from gam.cmd.drive.transfer.ownership import (
+    claimOwnership,
+    transferDrive,
+    transferOwnership,
+)
+from gam.cmd.gmail.cse import (
     createCSEKeyPair,
+    createUpdateCSEIdentity,
+    printShowCSEIdentities,
+    printShowCSEKeyPairs,
+    processCSEIdentity,
+    processCSEKeyPair,
+)
+from gam.cmd.gmail.delegates import (
+    delegateTo,
+    printShowDelegates,
+    processDelegates,
+    updateDelegates,
+)
+from gam.cmd.gmail.filters import (
     createFilter,
+    deleteFilters,
+    infoFilters,
+    printShowFilters,
+)
+from gam.cmd.gmail.forms import (
     createForm,
-    createForwardingAddresses,
+    printShowFormResponses,
+    printShowForms,
+    updateForm,
+)
+from gam.cmd.gmail.labels import (
     createLabel,
     createLabelList,
-    createSmime,
-    createUpdateCSEIdentity,
-    createUpdateSendAs,
-    delegateTo,
-    deleteFilters,
-    deleteForwardingAddresses,
-    deleteInfoSendAs,
     deleteLabel,
     deleteLabelId,
     deleteLabelIdList,
     deleteLabelList,
-    deleteSmime,
+    printShowLabels,
+    updateLabelSettings,
+    updateLabelSettingsById,
+    updateLabels,
+)
+from gam.cmd.gmail.modify import (
+    archiveMessages,
     draftMessage,
     exportMessages,
     exportThreads,
     importMessage,
-    infoFilters,
-    infoForwardingAddresses,
     insertMessage,
-    printShowCSEIdentities,
-    printShowCSEKeyPairs,
-    printShowDelegates,
-    printShowFilters,
-    printShowFormResponses,
-    printShowForms,
+    processMessages,
+    processThreads,
+)
+from gam.cmd.gmail.print import (
+    printShowMessages,
+    printShowThreads,
+)
+from gam.cmd.gmail.profile import (
+    printShowGmailProfile,
+    watchGmail,
+)
+from gam.cmd.gmail.settings import (
+    createForwardingAddresses,
+    createUpdateSendAs,
+    deleteForwardingAddresses,
+    deleteInfoSendAs,
+    infoForwardingAddresses,
     printShowForward,
     printShowForwardingAddresses,
-    printShowGmailProfile,
     printShowImap,
-    printShowLabels,
     printShowLanguage,
-    printShowMessages,
     printShowPop,
     printShowSendAs,
     printShowSignature,
-    printShowSmimes,
-    printShowThreads,
-    printShowVacation,
-    processCSEIdentity,
-    processCSEKeyPair,
-    processDelegates,
-    processMessages,
-    processThreads,
     setForward,
     setImap,
     setLanguage,
     setPop,
+)
+from gam.cmd.gmail.signature import (
+    printShowVacation,
     setSignature,
     setVacation,
-    updateDelegates,
-    updateForm,
-    updateLabelSettings,
-    updateLabelSettingsById,
-    updateLabels,
-    updateSmime,
-    watchGmail,
 )
-from gam.cmd.groups import (
+from gam.cmd.gmail.smime import (
+    createSmime,
+    deleteSmime,
+    printShowSmimes,
+    updateSmime,
+)
+from gam.cmd.groups.groups import (
     doCreateGroup,
     doDeleteGroups,
-    doInfoGroupMembers,
     doInfoGroups,
-    doPrintGroupMembers,
     doPrintGroups,
+    doUpdateGroups,
+)
+from gam.cmd.groups.members import (
+    doInfoGroupMembers,
+    doPrintGroupMembers,
     doPrintShowGroupTree,
     doShowGroupMembers,
-    doUpdateGroups,
     infoGroupMembers,
 )
 from gam.cmd.licenses import doPrintLicenses, doShowLicenses
@@ -793,59 +845,69 @@ from gam.cmd.tasks import (
     processTasklists,
     processTasks,
 )
-from gam.cmd.userop import (
-    addUserToGroups,
-    appendSheetRanges,
-    checkUserInGroups,
-    clearSheetRanges,
+from gam.cmd.userop.licenses import (
     createLicense,
-    createSheet,
     deleteLicense,
+    syncLicense,
+    updateLicense,
+)
+from gam.cmd.userop.photos import (
     deletePhoto,
-    deleteTokens,
-    deleteUserFromGroups,
-    deprovisionUser,
-    doPrintShowTokens,
     getProfilePhoto,
     getUserPhoto,
+    setProfile,
+    showProfile,
+    updatePhoto,
+)
+from gam.cmd.userop.sheets import (
+    appendSheetRanges,
+    clearSheetRanges,
+    createSheet,
     infoPrintShowSheets,
+    printShowSheetRanges,
+    updateSheetRanges,
+    updateSheets,
+)
+from gam.cmd.userop.tokens import (
+    deleteTokens,
+    deprovisionUser,
+    doPrintShowTokens,
+    printShowTokens,
+)
+from gam.cmd.userop.usergroups import (
+    addUserToGroups,
+    checkUserInGroups,
+    deleteUserFromGroups,
     printShowGroupTree,
     printShowLookerStudioPermissions,
-    printShowSheetRanges,
-    printShowTokens,
     printShowUserGroups,
     printUserGroupsList,
     processLookerStudioPermissions,
-    setProfile,
-    showProfile,
-    syncLicense,
     syncUserWithGroups,
-    updateLicense,
-    updatePhoto,
-    updateSheetRanges,
-    updateSheets,
     updateUserGroups,
 )
-from gam.cmd.users import (
-    deleteUsers,
-    doCheckUserSuspended,
-    doCreateGuestUser,
-    doCreateUser,
-    doDeleteUser,
-    doDeleteUsers,
+from gam.cmd.users.display import (
     doInfoUser,
     doInfoUsers,
     doPrintUserCountsByOrgUnit,
     doPrintUserEntity,
     doPrintUserList,
     doPrintUsers,
+    infoUsers,
+)
+from gam.cmd.users.manage import (
+    deleteUsers,
+    doCheckUserSuspended,
+    doCreateGuestUser,
+    doCreateUser,
+    doDeleteUser,
+    doDeleteUsers,
     doSuspendUnsuspendUser,
     doSuspendUnsuspendUsers,
     doUndeleteUser,
     doUndeleteUsers,
     doUpdateUser,
     doUpdateUsers,
-    infoUsers,
     signoutTurnoff2SVUsers,
     suspendUnsuspendUsers,
     undeleteUsers,
@@ -863,24 +925,18 @@ from gam.cmd.users.security import (
 from gam.cmd.users.youtube import (
     printShowYouTubeChannel,
 )
-from gam.cmd.vault import (
+from gam.cmd.vault.holds import (
     doCloseVaultMatter,
-    doCopyVaultExport,
     doCopyVaultQuery,
-    doCreateVaultExport,
     doCreateVaultHold,
     doCreateVaultMatter,
     doCreateVaultQuery,
-    doDeleteVaultExport,
     doDeleteVaultHold,
     doDeleteVaultMatter,
     doDeleteVaultQuery,
-    doDownloadVaultExport,
-    doInfoVaultExport,
     doInfoVaultHold,
     doInfoVaultMatter,
     doInfoVaultQuery,
-    doPrintShowVaultExports,
     doPrintShowVaultHolds,
     doPrintShowVaultMatters,
     doPrintShowVaultQueries,
@@ -890,6 +946,14 @@ from gam.cmd.vault import (
     doUpdateVaultHold,
     doUpdateVaultMatter,
     printShowUserVaultHolds,
+)
+from gam.cmd.vault.matters import (
+    doCopyVaultExport,
+    doCreateVaultExport,
+    doDeleteVaultExport,
+    doDownloadVaultExport,
+    doInfoVaultExport,
+    doPrintShowVaultExports,
 )
 
 def doResetYubiKeyPIV():
@@ -2651,3 +2715,7 @@ def ProcessGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=True):
 def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
   return ProcessGAMCommand(args, processGamCfg=processGamCfg, inLoop=inLoop, closeSTD=closeSTD)
 
+# Register ProcessGAMCommand with util/batch.py so it can invoke GAM
+# commands without importing from gam/__init__.py (which would be circular).
+from util.batch import register_process_gam_command  # noqa: E402
+register_process_gam_command(ProcessGAMCommand)

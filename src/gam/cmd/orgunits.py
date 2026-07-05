@@ -81,6 +81,7 @@ from gam.util.output import (
     writeStdout,
 )
 from gam.constants import INVALID_DOMAIN_RC, ORGUNIT_NOT_EMPTY_RC
+from gam.util.access import accessErrorExit, accessErrorMessage, checkEntityDNEorAccessErrorExit, checkEntityItemValueAFDNEorAccessErrorExit
 
 
 WARNING_PREFIX = 'WARNING: '
@@ -1133,8 +1134,6 @@ def doCheckOrgUnit():
   csvPF.writeCSVfile(f'OrgUnit {orgUnitPath} Item Counts')
   if not empty and GM.Globals[GM.SYSEXITRC] == 0:
     setSysExitRC(ORGUNIT_NOT_EMPTY_RC)
-
-from gam.constants import ALIAS_TARGET_TYPES  # noqa: F401 - re-exported
 
 # gam create aliases|nicknames <EmailAddressEntity> user|group|target <UniqueID>|<EmailAddress>
 #	[verifynotinvitable]

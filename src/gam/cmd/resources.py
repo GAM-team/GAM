@@ -27,6 +27,7 @@ from gam.util.args import (
     getString,
     getStringReturnInList,
     getStringWithCRsNLs,
+    shlexSplitList,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -52,11 +53,11 @@ from gam.util.display import (
     printLine,
     userCalServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityList, shlexSplitList
+from gam.util.entity import getEntityList
 from gam.util.errors import entityDoesNotExistExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import printErrorMessage, writeStdout
 from gam.constants import BUILDING_ADDRESS_FIELD_MAP
-from gam.cmd.calendar.settings import _showCalendarSettings
+from gam.cmd.calendar.core import _showCalendarSettings, ACLRuleKeyValueList
 
 
 def _getBuildingAttributes(body):
@@ -121,6 +122,11 @@ def _makeBuildingIdNameMap(cd=None):
   for building in buildings:
     GM.Globals[GM.MAP_BUILDING_ID_TO_NAME][building['buildingId']] = building['buildingName']
     GM.Globals[GM.MAP_BUILDING_NAME_TO_ID][building['buildingName']] = building['buildingId']
+
+# Register with util/tags.py so it can trigger building map population
+# without importing from the cmd layer.
+from gam.util.tags import register_building_map_factory  # noqa: E402
+register_building_map_factory(_makeBuildingIdNameMap)
 
 def _getBuildingByNameOrId(cd, minLen=1, allowNV=False):
   which_building = getString(Cmd.OB_BUILDING_ID, minLen=minLen)
@@ -666,7 +672,6 @@ RESOURCE_FIELDS_WITH_CRS_NLS = {'resourceDescription'}
 
 def _showResource(cd, resource, i, count, FJQC, acls=None, noSelfOwner=False):
 
-  from gam.cmd.calendar.acls import ACLRuleKeyValueList
   def _showResourceField(title, resource, field):
     if field in resource:
       if field not in RESOURCE_FIELDS_WITH_CRS_NLS:

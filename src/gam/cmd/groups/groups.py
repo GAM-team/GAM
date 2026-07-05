@@ -87,51 +87,54 @@ from gam.util.entity import (
     convertEntityToList,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,
-    convertUIDtoEmailAddress,
     getEntityList,
     getEntityToModify,
     setTrueCustomerId,
 )
+from gam.util.uid import convertUIDtoEmailAddress
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit
 from gam.util.output import writeStderr, writeStdout
-from gam.constants import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_ATTRIBUTES_SET, GROUP_BASIC_ATTRIBUTES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
+from gam.constants import GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_ATTRIBUTES_SET, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
 from gam.constants import GROUP_FIELDS_WITH_CRS_NLS
 from gam.cmd.ciuserinvitations import _getIsInvitableUser
 from gam.util.domain_filters import groupFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
 
 from gam.var import Act, Cmd, Ent, Ind
 
+from gam.cmd.groups.core import (
+    ALL_GROUP_MEMBER_TYPES,
+    GROUP_CIGROUP_ENTITYTYPE_MAP,
+    GroupIsAbuseOrPostmaster,
+    MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP,
+    getGroupAttrProperties,
+    getGroupMemberTypes,
+    mapGroupEmailForSettings,
+)
+
+from gam.cmd.groups.members import (  # now safe — cycle broken via core.py
+    CIGROUP_FIELDS_CHOICE_MAP,
+    CIGROUP_TIME_OBJECTS,
+    GROUP_FIELDS_CHOICE_MAP,
+    GROUP_INFO_PRINT_ORDER,
+    addMemberInfoToRow,
+    checkGroupMatchPatterns,
+    checkGroupShowOwnedBy,
+    finalizeIPSGMGroupRolesMemberDisplayOptions,
+    getGroupFilters,
+    getGroupMatchPatterns,
+    getMemberMatchOptions,
+    getPGGroupRolesMemberDisplayOptions,
+    infoGroups,
+    initIPSGMGroupMemberDisplayOptions,
+    initMemberOptions,
+    setMemberDisplaySortTitles,
+    setMemberDisplayTitles,
+    updateFieldsForGroupMatchPatterns,
+)
+
 WARNING_PREFIX = 'WARNING: '
 
-def getGroupAttrProperties(myarg):
-  attrProperties = GROUP_BASIC_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_SETTINGS_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_ALIAS_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_DISCOVER_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_ASSIST_CONTENT_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_MODERATE_CONTENT_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_MODERATE_MEMBERS_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_MERGED_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  attrProperties = GROUP_DEPRECATED_ATTRIBUTES.get(myarg)
-  if attrProperties is not None:
-    return attrProperties
-  return None
+# getGroupAttrProperties — moved to core.py, re-exported above
 
 def getGroupAttrValue(argument, gs_body):
   if argument == 'copyfrom':
@@ -165,11 +168,9 @@ def getGroupAttrValue(argument, gs_body):
     else:
       gs_body[attrName] = getInteger(minVal, maxVal)
 
-def GroupIsAbuseOrPostmaster(emailAddr):
-  return emailAddr.startswith('abuse@') or emailAddr.startswith('postmaster@')
+# GroupIsAbuseOrPostmaster — moved to core.py, re-exported above
 
-def mapGroupEmailForSettings(emailAddr):
-  return emailAddr.replace('/', '%2F')
+# mapGroupEmailForSettings — moved to core.py, re-exported above
 
 def getSettingsFromGroup(cd, group, gs, gs_body):
   if gs_body:
@@ -206,7 +207,7 @@ def checkReplyToCustom(group, settings, i=0, count=0):
   entityActionNotPerformedWarning([Ent.GROUP, group], Msg.REPLY_TO_CUSTOM_REQUIRES_EMAIL_ADDRESS, i, count)
   return False
 
-GROUP_CIGROUP_ENTITYTYPE_MAP = {False: Ent.GROUP, True: Ent.CLOUD_IDENTITY_GROUP}
+# GROUP_CIGROUP_ENTITYTYPE_MAP — moved to core.py, re-exported above
 GROUP_CIGROUP_FIELDS_MAP = {'name': 'displayName', 'displayname': 'displayName', 'description': 'description'}
 GROUP_JSON_SKIP_FIELDS = ['email', 'adminCreated', 'directMembersCount', 'members', 'aliases', 'nonEditableAliases']
 GROUP_ACCESS_TYPE_CHOICE_MAP = {
@@ -1333,56 +1334,15 @@ def getGroupRoles(myarg, rolesSet):
     return False
   return True
 
-GROUP_MEMBER_TYPES_MAP = {
-  'customer': Ent.TYPE_CUSTOMER,
-  'group': Ent.TYPE_GROUP,
-  'user': Ent.TYPE_USER,
-  }
-ALL_GROUP_MEMBER_TYPES = {Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP, Ent.TYPE_USER}
-
-def getGroupMemberTypes(myarg, typesSet):
-  if myarg in {'type', 'types'}:
-    for gtype in getString(Cmd.OB_GROUP_TYPE_LIST).lower().replace(',', ' ').split():
-      if gtype in GROUP_MEMBER_TYPES_MAP:
-        typesSet.add(GROUP_MEMBER_TYPES_MAP[gtype])
-      else:
-        invalidChoiceExit(gtype, GROUP_MEMBER_TYPES_MAP, True)
-  else:
-    return False
-  return True
-
-MEMBEROPTION_MEMBERNAMES = 0
-MEMBEROPTION_NODUPLICATES = 1
-MEMBEROPTION_RECURSIVE = 2
-MEMBEROPTION_GETDELIVERYSETTINGS = 3
-MEMBEROPTION_ISARCHIVED = 4
-MEMBEROPTION_ISSUSPENDED = 5
-MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP = 6
-MEMBEROPTION_MATCHPATTERN = 7
-MEMBEROPTION_DISPLAYMATCH = 8
+# GROUP_MEMBER_TYPES_MAP — moved to core.py, re-exported above
+# ALL_GROUP_MEMBER_TYPES — moved to core.py, re-exported above
+# getGroupMemberTypes — moved to core.py, re-exported above
+# MEMBEROPTION_* constants — moved to core.py, re-exported above
 
 
 
 def doPrintGroups():
-  from gam.cmd.groups.members import (  # deferred: circular
-      CIGROUP_FIELDS_CHOICE_MAP,
-      CIGROUP_TIME_OBJECTS,
-      GROUP_FIELDS_CHOICE_MAP,
-      GROUP_INFO_PRINT_ORDER,
-      addMemberInfoToRow,
-      checkGroupMatchPatterns,
-      checkGroupShowOwnedBy,
-      finalizeIPSGMGroupRolesMemberDisplayOptions,
-      getGroupFilters,
-      getGroupMatchPatterns,
-      getMemberMatchOptions,
-      getPGGroupRolesMemberDisplayOptions,
-      initIPSGMGroupMemberDisplayOptions,
-      initMemberOptions,
-      setMemberDisplaySortTitles,
-      setMemberDisplayTitles,
-      updateFieldsForGroupMatchPatterns,
-  )
+
   def _printGroupRow(groupEntity, groupSettings, groupMembers):
     nonlocal itemCount
     row = {}
@@ -1867,5 +1827,4 @@ def doPrintGroups():
 
 
 def doInfoGroups():
-  from gam.cmd.groups.members import infoGroups  # deferred: circular
   infoGroups(getEntityList(Cmd.OB_GROUP_ENTITY))

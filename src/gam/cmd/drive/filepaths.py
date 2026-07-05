@@ -7,7 +7,7 @@
 import json
 
 from gam.cmd.drive.core import _getSharedDriveNameFromId, _validateUserGetFileIDs, getDriveFileEntity
-from gam.cmd.drive.filetree import extendFileTree, extendFileTreeParents, initFileTree
+from gam.cmd.drive.filetree import FILEPATH_FIELDS, FILEPATH_FIELDS_TITLES, extendFileTree, extendFileTreeParents, initFileTree
 from gam.cmd.drive.labels import normalizeDriveLabelID
 
 from gam.util.csv_pf import DEFAULT_SKIP_OBJECTS
@@ -69,6 +69,7 @@ from gam.constants import (
     MIMETYPE_GA_FOLDER,
     MIMETYPE_GA_SHORTCUT,
 )
+from gam.util.output import _stripControlCharsFromName
 
 def initFilePathInfo(delimiter):
   return {'ids': {}, 'allPaths': {}, 'localPaths': None, 'delimiter': delimiter}
@@ -508,8 +509,7 @@ DRIVE_SUBFIELDS_CHOICE_MAP = {
 DRIVE_LIST_FIELDS = {'owners', 'parents', 'permissions', 'permissionIds', 'spaces'}
 
 FILEINFO_FIELDS_TITLES = ['name', 'mimeType']
-FILEPATH_FIELDS_TITLES = ['name', 'id', 'mimeType', 'ownedByMe', 'parents', 'sharedWithMeTime', 'driveId']
-FILEPATH_FIELDS = ','.join(FILEPATH_FIELDS_TITLES)
+# FILEPATH_FIELDS_TITLES and FILEPATH_FIELDS imported from filetree.py (see top of file)
 
 DRIVE_TIME_OBJECTS = {'createdTime', 'viewedByMeTime', 'modifiedByMeTime', 'modifiedTime', 'restrictionTime', 'sharedWithMeTime', 'trashedTime'}
 

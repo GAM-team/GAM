@@ -50,10 +50,12 @@ from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import setSysExitRC
 from gam.constants import ALIAS_TARGET_TYPES, ENTITY_IS_NOT_AN_ALIAS_RC, INFO_GROUP_OPTIONS, INFO_USER_OPTIONS, NO_ENTITIES_FOUND_RC
 from gam.util.domain_filters import groupFilters
+from gam.cmd.ciuserinvitations import _getIsInvitableUser
+from gam.util.access import accessErrorExit, duplicateAliasGroupUserWarning
+from gam.util.domain_filters import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
 
 
 def doCreateUpdateAliases():
-  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def verifyAliasTargetExists():
     if targetType != 'group':
       try:
@@ -415,8 +417,6 @@ def infoAliases(entityList):
 # gam info aliases|nicknames <EmailAddressEntity>
 def doInfoAliases():
   infoAliases(getEntityList(Cmd.OB_EMAIL_ADDRESS_ENTITY))
-
-from gam.util.domain_filters import initUserGroupDomainQueryFilters, getUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters  # noqa: F401 - re-exported
 
 def userFilters(kwargs, query, orgUnitPath):
   queryTitle = ''

@@ -45,15 +45,15 @@ from gam.util.entity import (
     checkGroupExists,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,
-    convertUIDtoEmailAddress,
     getCIGroupMemberRoleFixType,
     getEntityList,
     getEntityToModify,
 )
+from gam.util.uid import convertUIDtoEmailAddress
 from gam.util.errors import unknownArgumentExit
-from gam.cmd.groups.groups import doCreateGroup
-from gam.cmd.groups.groups import GROUP_ACCESS_TYPE_CHOICE_MAP, GROUP_CIGROUP_FIELDS_MAP, GROUP_JSON_SKIP_FIELDS, GROUP_PREVIEW_TITLES, GroupIsAbuseOrPostmaster, UPDATE_GROUP_SUBCMDS, checkReplyToCustom, getGroupAttrValue, getSettingsFromGroup, getSyncOperation, mapGroupEmailForSettings
-from gam.cmd.groups.groups import doDeleteGroups
+from gam.cmd.groups.groups import doCreateGroup, doDeleteGroups
+from gam.cmd.groups.groups import GROUP_ACCESS_TYPE_CHOICE_MAP, GROUP_CIGROUP_FIELDS_MAP, GROUP_JSON_SKIP_FIELDS, GROUP_PREVIEW_TITLES, UPDATE_GROUP_SUBCMDS, checkReplyToCustom, getGroupAttrValue, getSettingsFromGroup, getSyncOperation
+from gam.cmd.groups.core import GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
 
 from gam.var import Act, Cmd, Ent, Ind
 

@@ -33,22 +33,23 @@ from gam.util.display import (
     printLine,
 )
 from gam.util.access import entityUnknownWarning
-from gam.util.entity import getEntityList, getEntityArgument, convertUIDtoEmailAddress
+from gam.util.entity import getEntityList, getEntityArgument
 from gam.util.output import setSysExitRC, formatKeyValueList
 from gam.constants import NO_ENTITIES_FOUND_RC
 
-from gam.cmd.calendar import (
+from gam.cmd.calendar.core import (
     validateCalendar,
     CALENDAR_ACL_ROLES_MAP,
     ACL_SCOPE_CHOICES,
     checkCalendarExists,
     getNormalizedCalIdCal,
 )
+from gam.cmd.calendar.core import _validateResourceId, ACLRuleKeyValueList
+from gam.cmd.calendar.calendars import getUserCalendarEntity, _validateUserGetCalendarIds
+from gam.util.uid import convertUIDtoEmailAddress
 
 
 def createCalendarACLs(users):
-  from gam.cmd.calendar.calendars import getUserCalendarEntity  # deferred: circular
-  from gam.cmd.calendar.calendars import _validateUserGetCalendarIds  # deferred: circular
   calendarEntity = getUserCalendarEntity()
   role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   i, count, users = getEntityArgument(users)
@@ -63,7 +64,6 @@ def createCalendarACLs(users):
     Ind.Decrement()
 
 def updateDeleteCalendarACLs(users, calendarEntity, function, modifier, ACLScopeEntity, role, sendNotifications):
-  from gam.cmd.calendar.calendars import _validateUserGetCalendarIds  # deferred: circular
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -77,14 +77,12 @@ def updateDeleteCalendarACLs(users, calendarEntity, function, modifier, ACLScope
 
 # gam <UserTypeEntity> update calendaracls <UserCalendarEntity> <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
 def updateCalendarACLs(users):
-  from gam.cmd.calendar.calendars import getUserCalendarEntity  # deferred: circular
   calendarEntity = getUserCalendarEntity()
   role, ACLScopeEntity, sendNotifications = getCalendarCreateUpdateACLsOptions(True)
   updateDeleteCalendarACLs(users, calendarEntity, 'patch', Act.MODIFIER_IN, ACLScopeEntity, role, sendNotifications)
 
 # gam <UserTypeEntity> delete calendaracls <UserCalendarEntity> [<CalendarACLRole>] <CalendarACLScopeEntity>
 def deleteCalendarACLs(users):
-  from gam.cmd.calendar.calendars import getUserCalendarEntity  # deferred: circular
   calendarEntity = getUserCalendarEntity()
   role, ACLScopeEntity = getCalendarDeleteACLsOptions(True)
   updateDeleteCalendarACLs(users, calendarEntity, 'delete', Act.MODIFIER_FROM, ACLScopeEntity, role, False)
@@ -92,8 +90,6 @@ def deleteCalendarACLs(users):
 # gam <UserTypeEntity> info calendaracls <UserCalendarEntity> <CalendarACLScopeEntity>
 #	[formatjson]
 def infoCalendarACLs(users):
-  from gam.cmd.calendar.calendars import getUserCalendarEntity  # deferred: circular
-  from gam.cmd.calendar.calendars import _validateUserGetCalendarIds  # deferred: circular
   calendarEntity = getUserCalendarEntity()
   ACLScopeEntity = getCalendarSiteACLScopeEntity()
   FJQC = _getCalendarInfoACLOptions()
@@ -115,8 +111,6 @@ def infoCalendarACLs(users):
 #	[noselfowner]
 #	[formatjson]
 def printShowCalendarACLs(users):
-  from gam.cmd.calendar.calendars import getUserCalendarEntity  # deferred: circular
-  from gam.cmd.calendar.calendars import _validateUserGetCalendarIds  # deferred: circular
   calendarEntity = getUserCalendarEntity(default='all')
   csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['primaryEmail', 'calendarId'])
   i, count, users = getEntityArgument(users)
@@ -344,12 +338,7 @@ def doCalendarsPrintShowACLs(calIds):
   if csvPF:
     csvPF.writeCSVfile('Calendar ACLs')
 
-# --- Extracted helper functions from monolith ---
-
-def ACLRuleKeyValueList(rule):
-  if rule['scope']['type'] != 'default':
-    return ['Scope', f'{rule["scope"]["type"]}:{rule["scope"]["value"]}', 'Role', rule['role']]
-  return ['Scope', f'{rule["scope"]["type"]}', 'Role', rule['role']]
+# ACLRuleKeyValueList is imported from core at top of file (line 47)
 
 def formatACLScopeRole(scope, role):
   if role:
@@ -547,7 +536,6 @@ EVENT_TYPE_ENTITY_MAP = {
   }
 
 def _normalizeResourceIdGetRuleIds(cd, resourceId, i, count, ACLScopeEntity, showAction=True):
-  from gam.cmd.calendar.resources import _validateResourceId  # deferred: circular
   calId = _validateResourceId(cd, resourceId, i, count, False)
   if not calId:
     return (None, None, 0)
@@ -632,7 +620,6 @@ def doResourceInfoCalendarACLs(entityList):
 #	[noselfowner]
 #	[formatjson]
 def doResourcePrintShowCalendarACLs(entityList):
-  from gam.cmd.calendar.resources import _validateResourceId  # deferred: circular
   cal = buildGAPIObject(API.CALENDAR)
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF, FJQC, noSelfOwner, addCSVData = _getCalendarPrintShowACLOptions(['resourceId', 'resourceEmail'])

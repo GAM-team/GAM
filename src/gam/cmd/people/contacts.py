@@ -56,7 +56,7 @@ from gam.util.display import (
 )
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import deprecatedArgument, missingArgumentExit, unknownArgumentExit
-from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
+from gam.util.fileio import setFilePath, writeFileReturnError
 from gam.util.output import setSysExitRC, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import (
@@ -74,7 +74,7 @@ from gam.cmd.contacts import (
     normalizeContactGroupResourceName,
     normalizePeopleResourceName,
 )
-from gam.cmd.people import (
+from gam.cmd.people.core import (
     PEOPLE_CONTACTGROUPS_DEFAULT_FIELDS,
     PEOPLE_CONTACTGROUPS_FIELDS_CHOICE_MAP,
     PEOPLE_CONTACTS_DEFAULT_FIELDS,
@@ -85,7 +85,11 @@ from gam.cmd.people import (
     PEOPLE_ORDERBY_CHOICE_MAP,
     PEOPLE_OTHER_CONTACTS_FIELDS_CHOICE_MAP,
 )
-
+from gam.cmd.people.core import (
+    _getPersonFields,
+    _initPersonMetadataParameters,
+    getPersonFieldsList,
+)
 
 def _initPeopleContactQueryAttributes(printShowCmd):
   return {'query': None, 'updateTime': None,
@@ -356,26 +360,8 @@ def createUserPeopleContact(users):
   if csvPF:
     csvPF.writeCSVfile('People Contacts')
 
-def localPeopleContactSelects(contactQuery, contact):
-  if contactQuery['emailMatchPattern']:
-    emailMatchType = contactQuery['emailMatchType']
-    for item in contact.get(PEOPLE_EMAIL_ADDRESSES, []):
-      if contactQuery['emailMatchPattern'].match(item['value']):
-        if (not emailMatchType or emailMatchType == item.get('type', '')):
-          break
-    else:
-      return False
-  return True
-
-def countLocalPeopleContactSelects(contactQuery, contacts):
-  if contacts is not None and contactQuery['emailMatchPattern']:
-    jcount = 0
-    for contact in contacts:
-      if localPeopleContactSelects(contactQuery, contact):
-        jcount += 1
-  else:
-    jcount = len(contacts) if contacts is not None else 0
-  return jcount
+from gam.cmd.people.core import localPeopleContactSelects  # re-export
+from gam.cmd.people.core import countLocalPeopleContactSelects  # re-export
 
 def clearPeopleEmailAddressMatches(contactClear, contact):
   savedAddresses = []
@@ -719,18 +705,10 @@ def deleteUserPeopleContacts(users):
         ClientAPIAccessDeniedExit(str(e))
     Ind.Decrement()
 
-def addContactGroupNamesToContacts(contacts, contactGroupIDs, showContactGroupNamesList):
-  for contact in contacts:
-    if showContactGroupNamesList:
-      contact[PEOPLE_GROUPS_LIST] = []
-    for membership in contact.get('memberships', []):
-      if 'contactGroupMembership' in membership:
-        membership['contactGroupMembership']['contactGroupName'] = contactGroupIDs.get(membership['contactGroupMembership']['contactGroupResourceName'], UNKNOWN)
-        if showContactGroupNamesList:
-          contact[PEOPLE_GROUPS_LIST].append(membership['contactGroupMembership']['contactGroupName'])
+from gam.cmd.people.core import addContactGroupNamesToContacts  # re-export
+from gam.cmd.people.domainprofiles import _infoPeople, _printPersonEntityList
 
 def infoUserPeopleContacts(users):
-  from gam.cmd.people.domainprofiles import _infoPeople  # deferred: circular
   _infoPeople(users, Ent.USER, 'contact')
 
 # gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*] <PeoplePrintShowUserContactSelection>
@@ -742,10 +720,6 @@ def infoUserPeopleContacts(users):
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[countsonly|formatjson]
 def printShowUserPeopleContacts(users):
-  from gam.cmd.people.domainprofiles import (  # deferred: circular
-      _getPersonFields, _initPersonMetadataParameters,
-      _printPersonEntityList, getPersonFieldsList,
-  )
   from gam.cmd.people.othercontacts import queryPeopleOtherContacts  # deferred: circular
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
@@ -1198,9 +1172,6 @@ def _printContactGroup(entityTypeName, user, contactGroup, csvPF, FJQC):
                                                ensure_ascii=False, sort_keys=True)})
 
 def infoUserPeopleContactGroups(users):
-  from gam.cmd.people.domainprofiles import (  # deferred: circular
-      _getPersonFields, _initPersonMetadataParameters, getPersonFieldsList,
-  )
   entityType = Ent.USER
   entityList = getEntityList(Cmd.OB_CONTACT_GROUP_ENTITY, shlexSplit=True)
   contactGroupIdLists = entityList if isinstance(entityList, dict) else None
@@ -1266,10 +1237,6 @@ def infoUserPeopleContactGroups(users):
 #	[allfields|(fields <PeoplaContactGroupFieldList>)] [showmetadata]
 #	[formatjson]
 def printShowUserPeopleContactGroups(users):
-  from gam.cmd.people.domainprofiles import (  # deferred: circular
-      _getPersonFields, _initPersonMetadataParameters,
-      _printPersonEntityList, getPersonFieldsList,
-  )
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
   csvPF = CSVPrintFile([entityTypeName, 'resourceName'], 'sortall') if Act.csvFormat() else None

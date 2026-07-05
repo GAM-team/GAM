@@ -62,6 +62,12 @@ YUBIKEY_NOT_FOUND_RC = 87
 
 PIN_PUK_CHARS = string.ascii_letters+string.digits+string.punctuation
 
+# Register the YubiKey signer factory with util.api so it can create
+# YubiKey signers without importing this module directly.
+from gam.util.api import register_signer_factory  # noqa: E402
+register_signer_factory('yubikey', lambda info: YubiKey(info))
+
+
 class YubiKey:
 
   def __init__(self, service_account_info=None):

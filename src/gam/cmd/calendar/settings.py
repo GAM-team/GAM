@@ -5,15 +5,13 @@ import json
 from gamlib import gapi as GAPI
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api_call import callGAPI, callGAPIpages
-from gam.util.args import getArgument, getString, getBoolean, getStringWithCRsNLs
+from gam.util.args import getArgument
 from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, cleanJSON, flattenJSON, getFieldsFromFieldsList, getFieldsList
-from gam.util.display import entityActionFailedWarning, entityActionPerformed, printEntity, printEntityKVList, printKeyValueList, printKeyValueWithCRsNLs, printLine, userCalServiceNotEnabledWarning
+from gam.util.display import entityActionFailedWarning, entityActionPerformed, printEntityKVList, printKeyValueList, printLine, userCalServiceNotEnabledWarning
 from gam.util.entity import getEntityArgument
-from gam.util.errors import missingArgumentExit, unknownArgumentExit
 
-from gam.cmd.calendar import validateCalendar
+from gam.cmd.calendar.core import validateCalendar, getCalendarSettings, _showCalendarSettings
 from gam.cmd.calendar.calendars import USER_CALENDAR_SETTINGS_FIELDS_CHOICE_MAP
-
 
 def printShowCalSettings(users):
   csvPF = CSVPrintFile(['User'], 'sortall') if Act.csvFormat() else None
@@ -63,32 +61,7 @@ def printShowCalSettings(users):
     csvPF.writeCSVfile('Calendar Settings')
 
 # gam <UserTypeEntity> create calendaracls <UserCalendarEntity> <CalendarACLRole> <CalendarACLScopeEntity> [sendnotifications <Boolean>]
-def _getCalendarSetting(myarg, body):
-  if myarg == 'description':
-    body['description'] = getStringWithCRsNLs()
-  elif myarg == 'location':
-    body['location'] = getString(Cmd.OB_STRING, minLen=0)
-  elif myarg == 'summary':
-    body['summary'] = getString(Cmd.OB_STRING)
-  elif myarg == 'timezone':
-    body['timeZone'] = getString(Cmd.OB_STRING)
-  elif myarg == 'autoacceptinvitations':
-    body['autoAcceptInvitations'] = getBoolean()
-  else:
-    return False
-  return True
-
-def getCalendarSettings(summaryRequired=False):
-  body = {}
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if _getCalendarSetting(myarg, body):
-      pass
-    else:
-      unknownArgumentExit()
-  if summaryRequired and not body.get('summary', None):
-    missingArgumentExit('summary <String>')
-  return body
+# Re-exported from core; kept here for backward compatibility.
 
 # gam calendars <CalendarEntity> modify <CalendarSettings>
 def doCalendarsModifySettings(calIds):
@@ -109,28 +82,6 @@ def doCalendarsModifySettings(calIds):
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
     except GAPI.notACalendarUser:
       userCalServiceNotEnabledWarning(calId, i, count)
-
-def _showCalendarSettings(calendar, j, jcount):
-  printEntity([Ent.CALENDAR, calendar['id']], j, jcount)
-  Ind.Increment()
-  if 'dataOwner' in calendar:
-    printKeyValueList(['Owner', calendar['dataOwner']])
-  if 'summaryOverride' in calendar or 'summary' in calendar:
-    printKeyValueList(['Summary', calendar.get('summaryOverride', calendar.get('summary', ''))])
-  if 'description' in calendar:
-    printKeyValueWithCRsNLs('Description', calendar['description'])
-  if 'location' in calendar:
-    printKeyValueList(['Location', calendar['location']])
-  if 'timeZone' in calendar:
-    printKeyValueList(['Timezone', calendar['timeZone']])
-  if 'conferenceProperties' in calendar:
-    printKeyValueList(['ConferenceProperties', None])
-    Ind.Increment()
-    printKeyValueList(['AllowedConferenceSolutionTypes', ','.join(calendar.get('conferenceProperties', {}).get('allowedConferenceSolutionTypes', []))])
-    Ind.Decrement()
-  if 'autoAcceptInvitations' in calendar:
-    printKeyValueList(['AutoAcceptInvitations', calendar['autoAcceptInvitations']])
-  Ind.Decrement()
 
 CALENDAR_SETTINGS_FIELDS_CHOICE_MAP = {
   'autoacceptinvitations': 'autoAcceptInvitations',

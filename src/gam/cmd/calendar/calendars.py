@@ -34,7 +34,14 @@ from gam.util.errors import invalidChoiceExit, unknownArgumentExit
 from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
 
-from gam.cmd.calendar import checkCalendarExists, validateCalendar, normalizeCalendarId, CALENDAR_ACL_ROLES_MAP
+from gam.cmd.calendar.core import checkCalendarExists, validateCalendar, normalizeCalendarId, CALENDAR_ACL_ROLES_MAP
+from gam.cmd.calendar.core import (
+    ACLRuleKeyValueList,
+    CALENDAR_MIN_COLOR_INDEX,
+    CALENDAR_MAX_COLOR_INDEX,
+    _showCalendarSettings,
+    getCalendarSettings,
+)
 from gam.cmd.courses.courses import _getCourseStates, _getCoursesInfo, _initCourseShowProperties
 
 
@@ -205,7 +212,6 @@ CALENDAR_NOTIFICATION_TYPES_MAP = {
   }
 
 def _getCalendarAttributes(body, returnOnUnknownArgument=False):
-  from gam.cmd.calendar.events import CALENDAR_MIN_COLOR_INDEX, CALENDAR_MAX_COLOR_INDEX  # deferred: circular
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'selected':
@@ -246,8 +252,6 @@ def _getCalendarAttributes(body, returnOnUnknownArgument=False):
       unknownArgumentExit()
 
 def _showCalendar(calendar, j, jcount, FJQC, acls=None):
-  from gam.cmd.calendar.acls import ACLRuleKeyValueList
-  from gam.cmd.calendar.settings import _showCalendarSettings  # deferred: circular
   if FJQC.formatJSON:
     if acls:
       calendar['acls'] = [{'id': rule['id'], 'role': rule['role']} for rule in acls]
@@ -362,7 +366,6 @@ def deleteCalendars(users):
 
 # gam <UserTypeEntity> create calendars <CalendarSettings>
 def createCalendar(users):
-  from gam.cmd.calendar.settings import getCalendarSettings  # deferred: circular
   calendarEntity = initUserCalendarEntity()
   body = getCalendarSettings(summaryRequired=True)
   i, count, users = getEntityArgument(users)
@@ -414,7 +417,6 @@ def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
 
 # gam <UserTypeEntity> modify calendars <UserCalendarEntity> <CalendarSettings>
 def modifyCalendars(users):
-  from gam.cmd.calendar.settings import getCalendarSettings  # deferred: circular
   calendarEntity = getUserCalendarEntity()
   body = getCalendarSettings(summaryRequired=False)
   _modifyRemoveCalendars(users, calendarEntity, 'patch', body=body)

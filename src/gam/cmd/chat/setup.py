@@ -51,11 +51,46 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument, splitEmailAddressOrUID
 from gam.util.errors import entityDoesNotExistExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.fileio import setFilePath
-from gam.util.output import setSysExitRC, systemErrorExit, writeStdout
+from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit, writeStdout
 from gam.constants import ADMIN_ACCESS_OPTIONS, API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NO_ENTITIES_FOUND_RC
 from gam.util.tags import _substituteForUser
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.util.uid import convertUIDtoEmailAddressWithType
+
+
+# Moved from spaces.py — pure string parser with no deps on spaces module.
+def getSpaceName(myarg):
+  if myarg == 'space':
+    chatSpace = getString(Cmd.OB_CHAT_SPACE)
+    if chatSpace.startswith('spaces/'):
+      return chatSpace
+    if not chatSpace.startswith('space/'):
+      return 'spaces/'+chatSpace
+    _, chatSpace = chatSpace.split('/', 1)
+  else: # myarg.startswith('spaces/') or myarg.startswith('space/')
+    _, chatSpace = Cmd.Previous().split('/', 1)
+  return 'spaces/'+chatSpace
+
+# Moved from members.py — only depends on convertUIDtoEmailAddressWithType.
+def _getChatMemberEmail(cd, member):
+  if 'member' in member:
+    if member['member']['type'] == 'HUMAN':
+      _, memberUid = member['member']['name'].split('/')
+      member['member']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['user'])
+      if member['member']['email'].find('@') == -1:
+        member['member']['email'] = 'id:'+member['member']['email']
+  elif 'groupMember' in member:
+    _, memberUid = member['groupMember']['name'].split('/')
+    member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
+
+# Moved from members.py — simple truncation helper.
+def trimChatMessageIfRequired(body):
+  if 'text' in body:
+    msgLen = len(body['text'])
+    if msgLen > 4096:
+      stderrWarningMsg(Msg.TRIMMED_MESSAGE_FROM_LENGTH_TO_MAXIMUM.format(msgLen, 4096))
+      body['text'] = body['text'][:4095]
 
 def buildChatServiceObject(api=API.CHAT, user=None, i=0, count=0, entityTypeList=None, useAdminAccess=False):
   if user is None:

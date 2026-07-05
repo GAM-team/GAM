@@ -24,7 +24,7 @@ from gam.util.display import (
     printKeyValueList,
     userGmailServiceNotEnabledWarning,
 )
-from gam.util.entity import _validateUserGetObjectList, convertUIDtoEmailAddress, getEntityArgument, getUserObjectEntity
+from gam.util.entity import _validateUserGetObjectList, getEntityArgument, getUserObjectEntity
 from gam.util.errors import unknownArgumentExit
 from gam.util.output import writeStdout
 from gam.util.email import send_email
@@ -32,6 +32,7 @@ from gam.cmd.users.manage import getNotifyArguments
 from gam.cmd.delegates import _getDelegateName
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.util.uid import convertUIDtoEmailAddress
 
 UTF8 = 'utf-8'
 

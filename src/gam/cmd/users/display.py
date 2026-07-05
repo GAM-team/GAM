@@ -7,15 +7,9 @@ Part of the _users_tmp sub-package."""
 import re
 import json
 
-from gam.cmd.users.manage import _filterSchemaFields, _filterUserMultiAttributes, _formatLanguagesList, _getUserMultiAttributeFilters, getUserLicenses
-from gam.util.schema_utils import _getSchemaNameList, _initSchemaParms
-
-from gam.util.batch import RI_JCOUNT, RI_ITEM
-
 from gam.cmd.users.manage import (
     USER_ADDRESSES_PROPERTY_PRINT_ORDER,
     USER_ARRAY_PROPERTY_PRINT_ORDER,
-    USER_FIELDS_CHOICE_MAP,
     USER_GUEST_PROPERTY_PRINT_ORDER,
     USER_LANGUAGE_PROPERTY_PRINT_ORDER,
     USER_LOCATIONS_PROPERTY_PRINT_ORDER,
@@ -23,10 +17,17 @@ from gam.cmd.users.manage import (
     USER_ORGANIZATIONS_PROPERTY_PRINT_ORDER,
     USER_POSIX_PROPERTY_PRINT_ORDER,
     USER_SCALAR_PROPERTY_PRINT_ORDER,
-    USER_SKIP_OBJECTS,
     USER_SSH_PROPERTY_PRINT_ORDER,
-    USER_TIME_OBJECTS,
+    _filterSchemaFields,
+    _filterUserMultiAttributes,
+    _formatLanguagesList,
+    _getUserMultiAttributeFilters,
+    getUserLicenses,
 )
+from gam.constants import INFO_GROUP_OPTIONS, USER_FIELDS_CHOICE_MAP, USER_SKIP_OBJECTS, USER_TIME_OBJECTS
+from gam.util.schema_utils import _getSchemaNameList, _initSchemaParms
+
+from gam.util.batch import RI_JCOUNT, RI_ITEM
 
 from gamlib import api as API
 from gamlib import settings as GC
@@ -39,31 +40,8 @@ from gam.var import Cmd, Ent, Ind
 from gamlib import skus as SKU
 from gamlib import uprop as UProp
 from gam.util.html import dehtml
-from gam.cmd.groups.members import INFO_GROUP_OPTIONS
 from gam.util.display import invalidQuery, invalidUserSchema
 
-from gam.cmd.users.manage import (  # cross-module refs
-    USER_ADDRESSES_PROPERTY_PRINT_ORDER,
-    USER_ARRAY_PROPERTY_PRINT_ORDER,
-    USER_FIELDS_CHOICE_MAP,
-    USER_GUEST_PROPERTY_PRINT_ORDER,
-    USER_LANGUAGE_PROPERTY_PRINT_ORDER,
-    USER_LOCATIONS_PROPERTY_PRINT_ORDER,
-    USER_NAME_PROPERTY_PRINT_ORDER,
-    USER_ORGANIZATIONS_PROPERTY_PRINT_ORDER,
-    USER_POSIX_PROPERTY_PRINT_ORDER,
-    USER_SCALAR_PROPERTY_PRINT_ORDER,
-    USER_SKIP_OBJECTS,
-    USER_SSH_PROPERTY_PRINT_ORDER,
-    USER_TIME_OBJECTS,
-    _filterSchemaFields,
-    _filterUserMultiAttributes,
-    _formatLanguagesList,
-    _getSchemaNameList,
-    _getUserMultiAttributeFilters,
-    getUserLicenses,
-    _initSchemaParms,
-)
 from gam.util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
 from gam.util.api import _getAdminEmail, buildGAPIObject, waitOnFailure
 from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError, yieldGAPIpages

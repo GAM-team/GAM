@@ -47,17 +47,28 @@ from gam.util.display import (
 )
 from gam.util.entity import (
     _validateUserGetObjectList,
-    convertEmailAddressToUID,
     convertEntityToList,
-    convertUIDtoEmailAddressWithType,
     getEntityArgument,
     getEntityList,
     getUserObjectEntity,
 )
+from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddressWithType
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.constants import ADMIN_ACCESS_OPTIONS
 
 from gam.var import Act, Cmd, Ent, Ind
+
+# Drive labels constants — defined here (their only consumer) rather than
+# in permissions.py, to avoid a labels→permissions→filepaths cycle.
+DRIVELABELS_PROJECTION_CHOICE_MAP = {'basic': 'LABEL_VIEW_BASIC', 'full': 'LABEL_VIEW_FULL'}
+DRIVELABELS_PERMISSION_ROLE_MAP = {
+  'applier': 'APPLIER',
+  'editor': 'EDITOR',
+  'organizer': 'ORGANIZER',
+  'organiser': 'ORGANIZER',
+  'reader': 'READER',
+}
+DRIVELABELS_TIME_OBJECTS = {'createTime', 'publishTime', 'disableTime', 'revisionCreateTime'}
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'

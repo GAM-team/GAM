@@ -29,11 +29,11 @@ class TestCourseScopes:
         assert removeCourseIdScope('12345') == '12345'
 
     def test_add_course_alias_scope(self):
-        from gam.util.entity import addCourseAliasScope
+        from gam.util.args import addCourseAliasScope
         assert addCourseAliasScope('my-alias') == 'd:my-alias'
 
     def test_add_course_alias_scope_already_prefixed(self):
-        from gam.util.entity import addCourseAliasScope
+        from gam.util.args import addCourseAliasScope
         assert addCourseAliasScope('d:my-alias') == 'd:my-alias'
         assert addCourseAliasScope('p:my-alias') == 'p:my-alias'
 

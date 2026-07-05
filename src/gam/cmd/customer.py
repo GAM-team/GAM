@@ -36,7 +36,19 @@ from gam.util.entity import (
     setTrueCustomerId,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC
-from gam.cmd.domains import CUSTOMER_LICENSE_MAP
+
+# Moved here from domains.py to break the customer↔domains import cycle.
+# customer.py is the sole consumer of this constant.
+CUSTOMER_LICENSE_MAP = {
+  'accounts:num_users': 'Total Users',
+  'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
+  'accounts:gsuite_basic_used_licenses': 'G Suite Basic Users',
+  'accounts:gsuite_enterprise_total_licenses': 'Workspace Enterprise Plus Licenses',
+  'accounts:gsuite_enterprise_used_licenses': 'Workspace Enterprise Plus Users',
+  'accounts:gsuite_unlimited_total_licenses': 'G Suite Business Licenses',
+  'accounts:gsuite_unlimited_used_licenses': 'G Suite Business Users',
+  'accounts:vault_total_licenses': 'Google Vault Licenses',
+}
 from gam.cmd.reports import _adjustTryDate, _checkDataRequiredServices
 from gam.cmd.reseller import _showCustomerAddressPhoneNumber
 from gam.cmd.reseller import ADDRESS_FIELDS_ARGUMENT_MAP

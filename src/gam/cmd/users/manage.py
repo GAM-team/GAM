@@ -95,9 +95,12 @@ from gam.var import Act, Cmd, Ent, Ind
 
 from secrets import SystemRandom
 from passlib.hash import sha512_crypt
+from gam.cmd.aliases import _addUserAliases
+from gam.cmd.ciuserinvitations import _getIsInvitableUser
+from gam.cmd.resources import _getBuildingByNameOrId
+from gam.cmd.userop.usergroups import _addUserToGroups
 UTF8 = 'utf-8'
 UNKNOWN = 'Unknown'
-
 
 def hashPassword(password):
   """Hash a password using SHA-512 crypt for Google's API.
@@ -420,7 +423,6 @@ def getNotifyArguments(myarg, notify, userNotification):
   return True
 
 def getUserAttributes(cd, updateCmd, noUid=False):
-  from gam.cmd.resources import _getBuildingByNameOrId
   def getKeywordAttribute(keywords, attrdict, **opts):
     if Cmd.ArgumentsRemaining():
       keyword = Cmd.Current().strip().lower()
@@ -925,7 +927,6 @@ def getUserAttributes(cd, updateCmd, noUid=False):
           resolveConflictAccount)
 
 def createUserAddToGroups(cd, user, addGroups, i, count):
-  from gam.cmd.userop.usergroups import _addUserToGroups
   action = Act.Get()
   Act.Set(Act.ADD)
   Ind.Increment()
@@ -934,7 +935,6 @@ def createUserAddToGroups(cd, user, addGroups, i, count):
   Act.Set(action)
 
 def createUserAddAliases(cd, user, aliasList, i, count):
-  from gam.cmd.aliases import _addUserAliases
   action = Act.Get()
   Act.Set(Act.ADD)
   Ind.Increment()
@@ -958,7 +958,6 @@ def createUserAddAliases(cd, user, aliasList, i, count):
 #	[logpassword <FileName>] [ignorenullpassword]
 #	[addnumericsuffixonduplicate <Number>]
 def doCreateUser():
-  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   cd = buildGAPIObject(API.DIRECTORY)
   body, notify, tagReplacements, addGroups, addAliases, PwdOpts, \
     _, _, _, \
@@ -1080,7 +1079,6 @@ def doCreateGuestUser():
 #	[notifyonupdate [<Boolean>]]
 #	[logpassword <FileName>] [ignorenullpassword]
 def updateUsers(entityList):
-  from gam.cmd.ciuserinvitations import _getIsInvitableUser
   def waitingForCreationToComplete(sleep_time):
     writeStderr(Ind.Spaces()+Msg.WAITING_FOR_ITEM_CREATION_TO_COMPLETE_SLEEPING.format(Ent.Singular(Ent.USER), sleep_time))
     time.sleep(sleep_time)
@@ -1656,8 +1654,6 @@ USER_SSH_PROPERTY_PRINT_ORDER = [
   'fingerprint',
   ]
 
-from gam.constants import USER_FIELDS_CHOICE_MAP  # noqa: F401 - re-exported
-
 USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
   'address': 'addresses',
   'addresses': 'addresses',
@@ -1684,8 +1680,6 @@ USER_MULTI_ATTR_FILTER_CHOICE_MAP = {
   'website': 'websites',
   'websites': 'websites',
   }
-
-from gam.constants import INFO_USER_OPTIONS, USER_SKIP_OBJECTS, USER_TIME_OBJECTS  # noqa: F401 - re-exported
 
 def _getUserMultiAttributeFilters(myarg, userMultiAttributeFilters):
   up = getChoice(USER_MULTI_ATTR_FILTER_CHOICE_MAP, mapChoice=True)
@@ -1722,8 +1716,6 @@ def _formatLanguagesList(propertyValue, delimiter):
     if lang:
       languages.append(lang)
   return delimiter.join(languages)
-
-from gam.util.schema_utils import _initSchemaParms, _getSchemaNameList  # noqa: F401 - re-exported
 
 def _filterSchemaFields(userEntity, schemaParms):
   schemas = userEntity.pop('customSchemas', None)

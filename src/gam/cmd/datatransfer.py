@@ -30,9 +30,9 @@ from gam.util.display import (
     printKeyValueList,
     printKeyValueListWithCount,
 )
-from gam.util.entity import convertEmailAddressToUID
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import writeStderr, formatLocalTime
+from gam.util.uid import convertEmailAddressToUID
 
 
 def getTransferApplications(dt):

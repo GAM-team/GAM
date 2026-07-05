@@ -69,7 +69,7 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import convertUIDtoEmailAddress, getEntityArgument, getEntityList, getEntityToModify, setTrueCustomerId
+from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify, setTrueCustomerId
 from gam.util.errors import (
     USAGE_ERROR_RC,
     entityActionFailedExit,
@@ -99,10 +99,16 @@ from gam.constants import API_ACCESS_DENIED_RC, GAM, GAM_PROJECT_CREATION, GAM_P
 from gam.cmd.oauth import _getValidateLoginHint
 from gam.cmd.oauth import getScopesFromUser
 
+try:
+    from gam.cmd import yubikey
+except ImportError:
+    yubikey = None  # Optional: requires yubikey-manager
+
 
 from urllib.parse import quote, urlencode
 
 import string
+from gam.util.uid import convertUIDtoEmailAddress
 LOWERNUMERIC_CHARS = string.ascii_lowercase + string.digits
 
 def getCRMService(login_hint):

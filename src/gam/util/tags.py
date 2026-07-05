@@ -204,8 +204,17 @@ def _initTagReplacements():
           'fieldsSet': set(), 'fields': '',
           'schemasSet': set(), 'customFieldMask': None}
 
+# Registry for building-map population. cmd/resources.py registers its
+# _makeBuildingIdNameMap here at import time so tags.py can trigger it
+# without importing from the cmd layer.
+_building_map_factory = None
+
+def register_building_map_factory(factory):
+  """Register a callable that populates the GM building ID↔Name maps."""
+  global _building_map_factory
+  _building_map_factory = factory
+
 def _getTagReplacement(myarg, tagReplacements, allowSubs):
-  from gam.cmd.resources import _makeBuildingIdNameMap
   if myarg == 'replace':
     trregex = None
   elif myarg == 'replaceregex':
@@ -259,7 +268,8 @@ def _getTagReplacement(myarg, tagReplacements, allowSubs):
                                          'matchfield': matchfield, 'matchvalue': matchvalue, 'value': '',
                                          'trregex': trregex}
     if field == 'locations' and subfield == 'buildingName':
-      _makeBuildingIdNameMap()
+      if _building_map_factory is not None:
+        _building_map_factory()
   elif matchReplacement.startswith('schema:'):
     if not allowSubs:
       usageErrorExit(Msg.USER_SUBS_NOT_ALLOWED_TAG_REPLACEMENT)

@@ -23,7 +23,7 @@ from gam.util.output import ISOformatTimeStamp, formatLocalTime
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.access import entityUnknownWarning
 
-from gam.cmd.calendar import checkCalendarExists
+from gam.cmd.calendar.core import checkCalendarExists
 from gam.cmd.calendar.acls import (
     EVENT_TYPE_ENTITY_MAP, EVENT_TYPE_FOCUSTIME, EVENT_TYPE_OUTOFOFFICE,
     EVENT_TYPE_PROPERTIES_NAME_MAP, EVENT_TYPE_WORKINGLOCATION,

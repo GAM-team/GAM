@@ -29,30 +29,28 @@ from gam.util.errors import unknownArgumentExit
 from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.contacts import (
-    PEOPLE_GROUPS_LIST,
     PEOPLE_MEMBERSHIPS,
     PEOPLE_READ_SOURCES_CHOICE_MAP,
     PeopleManager,
     normalizeOtherContactsResourceName,
 )
-from gam.cmd.people import (
+from gam.cmd.people.core import (
+    PEOPLE_GROUPS_LIST,
+    _getPersonFields,
+    _initPersonMetadataParameters,
+    countLocalPeopleContactSelects,
+    getPersonFieldsList,
+    localPeopleContactSelects,
+)
+from gam.cmd.people.core import (
     CONTACTGROUPS_MYCONTACTS_ID,
     CONTACTGROUPS_MYCONTACTS_NAME,
     PEOPLE_CONTACTS_DEFAULT_FIELDS,
     PEOPLE_OTHERCONTACT_SELECT_ARGUMENTS,
     PEOPLE_OTHER_CONTACTS_FIELDS_CHOICE_MAP,
 )
-from gam.cmd.people.contacts import (
-    countLocalPeopleContactSelects,
-    localPeopleContactSelects,
-    validatePeopleContactGroupsList,
-)
-from gam.cmd.people.domainprofiles import (
-    _getPersonFields,
-    _initPersonMetadataParameters,
-    _printPersonEntityList,
-    getPersonFieldsList,
-)
+from gam.cmd.people.domainprofiles import _printPersonEntityList
+from gam.cmd.people.contacts import validatePeopleContactGroupsList
 
 
 def _initPeopleOtherContactQueryAttributes():

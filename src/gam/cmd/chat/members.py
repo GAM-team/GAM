@@ -43,28 +43,36 @@ from gam.util.display import (
     userChatServiceNotEnabledWarning,
 )
 from gam.util.entity import (
-    convertEmailAddressToUID,
-    convertUIDtoEmailAddressWithType,
     getEntityArgument,
     getEntityList,
     getEntityToModify,
     getNormalizedEmailAddressEntity,
 )
+from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddressWithType
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import stderrWarningMsg, writeStdout
 
 from gam.var import Act, Cmd, Ent, Ind
-
-def _getChatMemberEmail(cd, member):
-  if 'member' in member:
-    if member['member']['type'] == 'HUMAN':
-      _, memberUid = member['member']['name'].split('/')
-      member['member']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['user'])
-      if member['member']['email'].find('@') == -1:
-        member['member']['email'] = 'id:'+member['member']['email']
-  elif 'groupMember' in member:
-    _, memberUid = member['groupMember']['name'].split('/')
-    member['groupMember']['email'], _ = convertUIDtoEmailAddressWithType(f'uid:{memberUid}', cd, None, emailTypes=['group'])
+from gam.cmd.chat.setup import (
+    _chkChatAdminAccess,
+    _getChatAdminAccess,
+    _getChatMemberEmail,
+    _getChatPageMessage,
+    _printChatItem,
+    _showChatItem,
+    buildChatServiceObject,
+    exitIfChatNotConfigured,
+    getSpaceName,
+    trimChatMessageIfRequired,
+)
+from gam.cmd.chat.spaces import (
+    CHAT_MEMBER_ROLE_MAP,
+    CHAT_MEMBER_TYPE_MAP,
+    CHAT_ROLE_ENTITY_TYPE_MAP,
+    CHAT_SPACES_ADMIN_ORDERBY_CHOICE_MAP,
+    _getChatSpaceListParms,
+    _getChatSpaceSearchParms,
+)
 
 def _getChatSpaceMembers(cd, chatSpace, ciGroupName):
   if chatSpace.startswith('space/'):

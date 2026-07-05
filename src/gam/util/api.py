@@ -14,6 +14,11 @@ import subprocess
 import sys
 import time
 
+try:
+  import termios
+except ImportError:
+  termios = None  # Not available on Windows
+
 import arrow
 import google.auth
 import google.auth._helpers
@@ -186,20 +191,31 @@ def _getIAMSigner(service_account_info):
   return google.auth.iam.Signer(request, credentials,
                                 service_account_info['client_email'])
 
+# Registry for custom signer factories. Modules register themselves at import
+# time (e.g. gam.cmd.yubikey registers a 'yubikey' factory). This eliminates
+# the util→cmd dependency that a deferred import would create.
+_SIGNER_FACTORIES = {}
+
+def register_signer_factory(key_type, factory):
+  """Register a callable that creates a signer for the given key_type.
+
+  The factory signature must be: factory(service_account_info) -> signer
+  """
+  _SIGNER_FACTORIES[key_type] = factory
+
 def _getSigner(service_account_info):
   '''Return a signer for the given key_type, or None for default keys.
 
   key_type is read from service_account_info:
     - "default": Returns None (caller should use from_service_account_info)
-    - "yubikey": Returns a YubiKey hardware signer
+    - "yubikey": Returns a YubiKey hardware signer (registered by cmd.yubikey)
     - "signjwt": Returns an IAM signBlob signer via ADC
   '''
   key_type = service_account_info.get('key_type', 'default')
   if key_type == 'default':
     return None
-  if key_type == 'yubikey':
-    from gam.cmd.yubikey import YubiKey  # deferred: yubikey-manager is an optional dependency
-    return YubiKey(service_account_info)
+  if key_type in _SIGNER_FACTORIES:
+    return _SIGNER_FACTORIES[key_type](service_account_info)
   if key_type == 'signjwt':
     return _getIAMSigner(service_account_info)
   return None
@@ -373,8 +389,7 @@ def refreshCredentialsWithReauth(credentials):
     handleOAuthTokenError(e, False)
 
   writeStderr(Msg.CALLING_GCLOUD_FOR_REAUTH)
-  if 'termios' in sys.modules:
-    import termios
+  if termios is not None:
     old_settings = termios.tcgetattr(sys.stdin)
   admin_email = _getAdminEmail()
   # First makes sure gcloud has a valid access token and thus
@@ -395,8 +410,7 @@ def refreshCredentialsWithReauth(credentials):
             capture_output=True, check=False)
   except KeyboardInterrupt as e:
     # avoids loss of terminal echo on *nix
-    if 'termios' in sys.modules:
-      import termios
+    if termios is not None:
       termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
     printBlankLine()
     raise KeyboardInterrupt from e

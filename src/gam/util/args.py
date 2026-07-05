@@ -69,9 +69,12 @@ __all__ = [
   'validateREPattern', 'validateREPatternSubstitution',
 ]
 
+import codecs
 import json
+import os
 import re
 import shlex
+import time
 
 import arrow
 
@@ -86,6 +89,7 @@ from util.errors import (
     blankArgumentExit,
     csvFieldErrorExit,
     emptyArgumentExit,
+    entityDoesNotExistExit,
     invalidArgumentExit,
     invalidChoiceExit,
     missingArgumentExit,
@@ -96,6 +100,13 @@ from util.errors import (
 from util.fileio import readFile
 from util.output import ISOformatTimeStamp
 from gam.var import Cmd, Ent
+
+
+def addCourseAliasScope(alias):
+  """Prepend 'd:' scope to course alias if not already scoped."""
+  if alias[:2] not in {'d:', 'p:'}:
+    return f'd:{alias}'
+  return alias
 
 # Lazy accessor for main module
 

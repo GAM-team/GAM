@@ -43,7 +43,7 @@ from gam.util.display import (
     printLine,
     userChatServiceNotEnabledWarning,
 )
-from gam.util.entity import convertEmailAddressToUID, getEntityArgument, getEntityToModify
+from gam.util.entity import getEntityArgument, getEntityToModify
 from gam.util.errors import (
     USAGE_ERROR_RC,
     invalidChoiceExit,
@@ -55,18 +55,19 @@ from gam.util.output import setSysExitRC, systemErrorExit, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
 
 from gam.var import Act, Cmd, Ent, Ind
-
-def getSpaceName(myarg):
-  if myarg == 'space':
-    chatSpace = getString(Cmd.OB_CHAT_SPACE)
-    if chatSpace.startswith('spaces/'):
-      return chatSpace
-    if not chatSpace.startswith('space/'):
-      return 'spaces/'+chatSpace
-    _, chatSpace = chatSpace.split('/', 1)
-  else: # myarg.startswith('spaces/') or myarg.startswith('space/')
-    _, chatSpace = Cmd.Previous().split('/', 1)
-  return 'spaces/'+chatSpace
+from gam.cmd.chat.setup import (
+    CHAT_TIME_OBJECTS,
+    _chkChatAdminAccess,
+    _getChatAdminAccess,
+    _getChatPageMessage,
+    _printChatItem,
+    _showChatItem,
+    buildChatServiceObject,
+    exitIfChatNotConfigured,
+    getSpaceName,
+    trimChatMessageIfRequired,
+)
+from gam.util.uid import convertEmailAddressToUID
 
 def  getChatSpaceParameters(myarg, body, typeChoicesMap, updateMask):
   if myarg == 'displayname':

@@ -46,11 +46,8 @@ from gam.util.display import (
     printGotEntityItemsForWhom,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import (
-    convertUIDtoEmailAddress,
-    getEntitySelection,
-    getEntitySelector,
-)
+from gam.util.entity import getEntitySelection, getEntitySelector
+from gam.util.uid import convertUIDtoEmailAddress
 from gam.util.errors import (
     deprecatedArgument,
     entityActionFailedExit,
@@ -63,6 +60,7 @@ from gam.util.output import setSysExitRC, stderrWarningMsg, systemErrorExit, for
 from gam.constants import (
     ANY_NON_TRASHED_FOLDER_NAME,
     APPLICATION_VND_GOOGLE_APPS,
+    DFA_URL,
     ME_IN_OWNERS,
     ME_IN_OWNERS_AND,
     MIMETYPE_GA_3P_SHORTCUT,
@@ -88,6 +86,8 @@ from gam.constants import (
 )
 
 from gam.var import Cmd, Ent
+import httplib2
+from gam.util.errors import formatChoiceList
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -639,7 +639,6 @@ DFA_MODIFIED_TIME = 'modifiedTime'
 DFA_PRESERVE_FILE_TIMES = 'preserveFileTimes'
 DFA_IGNORE_DEFAULT_VISIBILITY = 'ignoreDefaultVisibility'
 DFA_KEEP_REVISION_FOREVER = 'keepRevisionForever'
-from gam.constants import DFA_URL  # noqa: F401 - re-exported
 DFA_LOCALFILEPATH = 'localFilepath'
 DFA_LOCALFILENAME = 'localFilename'
 DFA_LOCALMIMETYPE = 'localMimeType'

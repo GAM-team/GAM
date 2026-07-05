@@ -27,6 +27,7 @@ from gam.util.args import (
     getREPattern,
     getString,
     getTimeOrDeltaFromNow,
+    shlexSplitList,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
@@ -52,7 +53,7 @@ from gam.util.display import (
     printGettingAllEntityItemsForWhom,
     printLine,
 )
-from gam.util.entity import getEntityList, getNormalizedEmailAddressEntity, shlexSplitList
+from gam.util.entity import getEntityList, getNormalizedEmailAddressEntity
 from gam.util.errors import (
     entityActionFailedExit,
     entityDoesNotExistExit,

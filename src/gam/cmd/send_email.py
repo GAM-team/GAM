@@ -42,47 +42,13 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.output import setSysExitRC
-from gam.util.tags import (  # noqa: F401  # re-export
-    ADDRESS_FIELDS_PRINT_ORDER,
-    CASE_MARKERS,
-    LC_PATTERN,
-    PC_PATTERN,
-    RTL_PATTERN,
-    RT_MARKERS,
-    RT_PATTERN,
-    SKIP_PATTERNS,
-    TAG_ADDRESS_ARGUMENT_TO_FIELD_MAP,
-    TAG_EMAIL_ARGUMENT_TO_FIELD_MAP,
-    TAG_EXTERNALID_ARGUMENT_TO_FIELD_MAP,
-    TAG_FIELD_SUBFIELD_CHOICE_MAP,
-    TAG_GENDER_ARGUMENT_TO_FIELD_MAP,
-    TAG_IM_ARGUMENT_TO_FIELD_MAP,
-    TAG_KEYWORD_ARGUMENT_TO_FIELD_MAP,
-    TAG_LOCATION_ARGUMENT_TO_FIELD_MAP,
-    TAG_NAME_ARGUMENT_TO_FIELD_MAP,
-    TAG_ORGANIZATION_ARGUMENT_TO_FIELD_MAP,
-    TAG_OTHEREMAIL_ARGUMENT_TO_FIELD_MAP,
-    TAG_PHONE_ARGUMENT_TO_FIELD_MAP,
-    TAG_POSIXACCOUNT_ARGUMENT_TO_FIELD_MAP,
-    TAG_RELATION_ARGUMENT_TO_FIELD_MAP,
-    TAG_REPLACE_PATTERN,
-    TAG_SSHPUBLICKEY_ARGUMENT_TO_FIELD_MAP,
-    TAG_WEBSITE_ARGUMENT_TO_FIELD_MAP,
-    UC_PATTERN,
-    _getTagReplacement,
-    _getTagReplacementFieldValues,
-    _initTagReplacements,
-    _processTagReplacements,
-    _substituteForUser,
-    getRecipients,
-    sendCreateUpdateUserNotification,
-)
 from gam.constants import NO_ENTITIES_FOUND_RC
 from gam.cmd.gmail.modify import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP
 from gam.cmd.gmail.modify import SMTP_DATE_HEADERS, SMTP_HEADERS_MAP, _decodeHeader
 
 
 from email.utils import formatdate
+from gam.util.tags import _getTagReplacement, _initTagReplacements, _processTagReplacements, getRecipients, sendCreateUpdateUserNotification
 
 
 # gam sendemail [recipient|to] <RecipientEntity>

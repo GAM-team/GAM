@@ -34,10 +34,11 @@ from gam.util.display import (
     printGettingAllAccountEntities,
     printLine,
 )
-from gam.util.entity import _getCustomersCustomerIdWithC, convertUIDtoEmailAddress, getEntityArgument
+from gam.util.entity import _getCustomersCustomerIdWithC, getEntityArgument
 
 
 from urllib.parse import quote_plus
+from gam.util.uid import convertUIDtoEmailAddress
 
 def isolateCIUserInvitatonsEmail(name):
   ''' converts long name into email address'''

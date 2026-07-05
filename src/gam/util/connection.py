@@ -8,6 +8,11 @@ import ssl
 import struct
 import sys
 
+try:
+  import distro
+except ImportError:
+  distro = None  # Only available on Linux
+
 import arrow
 import google.auth.exceptions
 import httplib2
@@ -129,8 +134,7 @@ def _getServerTLSUsed(location):
 
 def getOSPlatform():
   myos = platform.system()
-  if myos == 'Linux':
-    import distro
+  if myos == 'Linux' and distro is not None:
     pltfrm = ' '.join(distro.linux_distribution(full_distribution_name=False)).title()
   elif myos == 'Windows':
     pltfrm = ' '.join(platform.win32_ver())

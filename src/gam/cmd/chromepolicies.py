@@ -59,7 +59,7 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import _getCustomersCustomerIdWithC, convertEmailAddressToUID, convertOrgUnitIDtoPath, getGroupEmailFromID
+from gam.util.entity import _getCustomersCustomerIdWithC, convertOrgUnitIDtoPath
 from gam.util.errors import (
     entityDoesNotExistExit,
     invalidArgumentExit,
@@ -75,7 +75,14 @@ from gam.util.fileio import UNKNOWN, setFilePath
 from gam.constants import DFA_URL
 
 
-from gam.util.orgunits import _getOrgunitsOrgUnitIdPath  # noqa: F401 - re-exported
+from gam.cmd.chromeapps import getPlatformChannelMap, getRelativeMilestone
+from gam.cmd.cigroups.members import _showPolicy
+from gam.cmd.drive.core import getMediaBody
+from gam.cmd.drive.core import DFA_LOCALFILENAME, DFA_LOCALFILEPATH, DFA_LOCALMIMETYPE
+from gam.util.access import accessErrorExit
+from gam.util.args import escapeCRsNLs
+from gam.util.orgunits import _getOrgunitsOrgUnitIdPath
+from gam.util.uid import convertEmailAddressToUID, getGroupEmailFromID
 
 
 def _getChromePolicySchemaName():
@@ -541,7 +548,6 @@ CHROME_TARGET_VERSION_PATTERN = re.compile(r'^(\d{1,4}\.){1,4}$')
 #	((ou|orgunit <OrgUnitItem>)|(group <GroupItem>))
 #	[(printerid <PrinterID>)|(appid <AppID>)]
 def doUpdateChromePolicy():
-  from gam.cmd.chromeapps import getPlatformChannelMap, getRelativeMilestone
   def getSpecialVtypeValue(vtype, value):
     if vtype in {'duration', 'value', 'downloadUri'}:
       return {vtype: value}
@@ -754,7 +760,6 @@ CHROME_POLICY_SHOW_CHOICE_MAP = {
 #	[show all|direct|inherited] [shownopolicy]
 #	[[formatjson [quotechar <Character>]]
 def doPrintShowChromePolicies():
-  from gam.cmd.cigroups.members import _showPolicy
   def normalizedPolicy(policy):
     norm = {'name': policy['value']['policySchema']}
     if app_id:
@@ -1012,7 +1017,6 @@ CHROME_IMAGE_SCHEMAS_MAP = {
 
 # gam create chromepolicyimage <ChromePolicyImageSchemaName> <FileName>
 def doCreateChromePolicyImage():
-  from gam.cmd.drive.core import getMediaBody
   cp = buildGAPIObject(API.CHROMEPOLICY)
   parent = _getCustomersCustomerIdWithC()
   schema = getChoice(CHROME_IMAGE_SCHEMAS_MAP, mapChoice=True)

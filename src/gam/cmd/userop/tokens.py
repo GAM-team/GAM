@@ -12,8 +12,8 @@ from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
-from gam.util.access import ClientAPIAccessDeniedExit, entityUnknownWarning
-from gam.util.api import _getAdminEmail, buildGAPIObject
+from gam.util.access import entityUnknownWarning
+from gam.util.api import ClientAPIAccessDeniedExit, _getAdminEmail, buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIitems
 from gam.util.args import (
     checkArgumentPresent,

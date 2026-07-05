@@ -6,8 +6,7 @@ Part of the _userop_tmp sub-package."""
 
 
 from gam.cmd.userop.usergroups import LICENSE_PREVIEW_TITLES
-
-from gam.cmd.userop.usergroups import LICENSE_PRODUCT_SKUIDS
+from gam.constants import LICENSE_PRODUCT_SKUIDS
 
 from gamlib import api as API
 from gamlib import settings as GC

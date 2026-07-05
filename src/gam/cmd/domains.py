@@ -8,6 +8,7 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.customer import doInfoInstance
 from gam.util.access import accessErrorExit
 from gam.util.api import ClientAPIAccessDeniedExit, buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIitems
@@ -237,16 +238,8 @@ def doDeleteDomain():
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
 
-CUSTOMER_LICENSE_MAP = {
-  'accounts:num_users': 'Total Users',
-  'accounts:gsuite_basic_total_licenses': 'G Suite Basic Licenses',
-  'accounts:gsuite_basic_used_licenses': 'G Suite Basic Users',
-  'accounts:gsuite_enterprise_total_licenses': 'Workspace Enterprise Plus Licenses',
-  'accounts:gsuite_enterprise_used_licenses': 'Workspace Enterprise Plus Users',
-  'accounts:gsuite_unlimited_total_licenses': 'G Suite Business Licenses',
-  'accounts:gsuite_unlimited_used_licenses': 'G Suite Business Users',
-  'accounts:vault_total_licenses': 'Google Vault Licenses',
-  }
+
+
 
 
 DOMAIN_PRINT_ORDER = ['customerDomain', 'creationTime', 'isPrimary', 'verified']
@@ -279,7 +272,6 @@ def _showDomain(result, FJQC, i=0, count=0):
 # gam info domain [<DomainName>] [formatjson]
 def doInfoDomain():
   if (not Cmd.ArgumentsRemaining()) or (Cmd.Current().lower() == 'formatjson'):
-    from gam.cmd.customer import doInfoInstance
     doInfoInstance()
     return
   cd = buildGAPIObject(API.DIRECTORY)

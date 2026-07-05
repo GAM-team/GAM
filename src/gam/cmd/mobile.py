@@ -7,7 +7,7 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gam.var import Cmd, Ent, Ind
-from gam.util.api import buildGAPIObject
+from gam.util.api import ClientAPIAccessDeniedExit, buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages, yieldGAPIpages
 from gam.util.args import (
     UTF8,
@@ -50,6 +50,8 @@ from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import writeStdout, formatLocalTime, formatLocalTimestamp
 from gam.constants import PROJECTION_CHOICE_MAP
+from gam.cmd.chromeapps import MOBILE_ACTION_CHOICE_MAP
+from gam.util.access import accessErrorExit
 
 
 def getMobileDeviceEntity():
@@ -432,14 +434,4 @@ def doPrintMobileDevices():
     writeStdout(f'{itemCount}\n')
     return
   csvPF.writeCSVfile('Mobile')
-
-from gam.constants import (  # noqa: F401 - re-exported for backward compatibility
-    GROUP_DISCOVER_CHOICES, GROUP_ASSIST_CONTENT_CHOICES, GROUP_MODERATE_CONTENT_CHOICES,
-    GROUP_MODERATE_MEMBERS_CHOICES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES,
-    GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_MODERATE_CONTENT_ATTRIBUTES,
-    GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_BASIC_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES,
-    GROUP_ALIAS_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER,
-    GROUP_MERGED_TO_COMPONENT_MAP, GROUP_ATTRIBUTES_SET, GROUP_FIELDS_WITH_CRS_NLS,
-)
-
 

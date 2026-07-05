@@ -15,6 +15,10 @@ from gamlib import msgs as Msg
 from gam.constants import MY_DRIVE, TEAM_DRIVE
 
 from gam.var import Cmd, Ent
+# File path field constants — defined here (consumed by tree-building)
+# and imported by filepaths.py to avoid filetree↔filepaths cycle.
+FILEPATH_FIELDS_TITLES = ['name', 'id', 'mimeType', 'ownedByMe', 'parents', 'sharedWithMeTime', 'driveId']
+FILEPATH_FIELDS = ','.join(FILEPATH_FIELDS_TITLES)
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -75,6 +79,7 @@ from gam.constants import (
     NOT_ME_IN_OWNERS,
     NOT_ME_IN_OWNERS_AND,
 )
+from gam.util.output import _stripControlCharsFromName
 
 def initFileTree(drive, shareddrive, DLP, shareddriveFields, showParent, user, i, count):
   fileTree = {

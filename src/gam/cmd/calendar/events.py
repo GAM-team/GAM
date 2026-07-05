@@ -42,10 +42,15 @@ from gam.util.display import (
     userCalServiceNotEnabledWarning,
 )
 from gam.util.entity import (
-    convertEntityToList, getEntityArgument, getEntitySelection,
-    getEntitySelector, getEntityToModify, getNormalizedEmailAddressEntity,
-    convertUIDtoEmailAddress, normalizeEmailAddressOrUID,
+    convertEntityToList,
+    getEntityArgument,
+    getEntitySelection,
+    getEntitySelector,
+    getEntityToModify,
+    getNormalizedEmailAddressEntity,
+    normalizeEmailAddressOrUID,
 )
+from gam.util.uid import convertUIDtoEmailAddress
 from gam.util.errors import (
     invalidArgumentExit, invalidChoiceExit, missingArgumentExit,
     systemErrorExit, unknownArgumentExit,
@@ -58,7 +63,8 @@ from gam.constants import (
     NO_ENTITIES_FOUND_RC, UNKNOWN, USAGE_ERROR_RC,
 )
 
-from gam.cmd.calendar import checkCalendarExists, getNormalizedCalIdCal
+from gam.cmd.calendar.core import checkCalendarExists, getNormalizedCalIdCal
+from gam.cmd.calendar.core import _validateResourceId
 from gam.cmd.calendar.acls import EVENT_TYPES_CHOICE_MAP, EVENT_TYPE_BIRTHDAY
 from gam.cmd.calendar.calendars import getUserCalendarEntity, _validateUserGetCalendarIds
 
@@ -571,8 +577,9 @@ def _getCalendarEventReminders(myarg, body):
     return False
   return True
 
-CALENDAR_MIN_COLOR_INDEX = 1
-CALENDAR_MAX_COLOR_INDEX = 24
+# Canonical definitions in core.py; re-exported here for backward compatibility.
+from gam.cmd.calendar.core import CALENDAR_MIN_COLOR_INDEX as CALENDAR_MIN_COLOR_INDEX
+from gam.cmd.calendar.core import CALENDAR_MAX_COLOR_INDEX as CALENDAR_MAX_COLOR_INDEX
 
 CALENDAR_EVENT_MIN_COLOR_INDEX = 1
 CALENDAR_EVENT_MAX_COLOR_INDEX = 11
@@ -1669,7 +1676,6 @@ def initCalendarEventEntity():
           'countsOnly': False, 'eventRowFilter': False, 'countsOnlyTitles': []}
 
 def _getCalendarEventAttribute(myarg, body, parameters, function):
-  from gam.cmd.calendar.resources import _validateResourceId  # deferred: circular
   def clearJSONfields(body, clearFields):
     for field in clearFields:
       body.pop(field, None)

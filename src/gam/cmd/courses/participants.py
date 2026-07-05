@@ -34,7 +34,8 @@ from gam.util.args import (
 from gam.util.batch import batchRequestID
 from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, flattenJSON
 from gam.util.display import entityActionFailedWarning, entityActionPerformed, entityActionPerformedMessage, entityPerformActionNumItems
-from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify, addCourseIdScope, removeCourseIdScope, addCourseAliasScope, removeCourseAliasScope
+from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify, addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
+from gam.util.args import addCourseAliasScope
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.batch import executeBatch
 from gam.util.output import writeStdout

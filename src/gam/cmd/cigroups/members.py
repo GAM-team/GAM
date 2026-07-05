@@ -7,7 +7,6 @@ Part of the _cigroups_tmp sub-package."""
 import re
 import json
 
-
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
@@ -15,7 +14,7 @@ from gamlib import msgs as Msg
 
 from gam.var import Act, Cmd, Ent, Ind
 
-from gam.cmd.groups.groups import (
+from gam.cmd.groups.core import (
     MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED,
     MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE,
 )
@@ -72,11 +71,9 @@ from gam.util.entity import (
     _checkMemberRole,
     _getCIRoleVerification,
     _getCustomersCustomerIdWithC,
-    convertEmailAddressToUID,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,
     convertOrgUnitIDtoPath,
-    convertUIDtoEmailAddress,
     getCIGroupMemberRoleFixType,
     getCIGroupTransitiveMemberRoleFixType,
     getEntityList,
@@ -84,6 +81,7 @@ from gam.util.entity import (
     setTrueCustomerId,
     shlexSplitList,
 )
+from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddress
 from gam.util.errors import (
     USAGE_ERROR_RC,
     entityActionFailedExit,
@@ -95,6 +93,31 @@ from gam.util.errors import (
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import _getOrgunitsOrgUnitIdPath
 from gam.util.output import systemErrorExit, writeStdout, formatLocalTime
+from gam.cmd.chat.members import _getChatSpaceMembers
+from gam.cmd.groups.members import (
+    CIGROUP_FIELDS_CHOICE_MAP,
+    CIGROUP_FULL_FIELDS,
+    CIGROUP_PRINT_ORDER,
+    CIGROUP_TIME_OBJECTS,
+    _checkCIMemberMatch,
+    _showCIGroup,
+    addMemberInfoToRow,
+    checkGroupMatchPatterns,
+    clearUnneededGroupMatchPatterns,
+    finalizeIPSGMGroupRolesMemberDisplayOptions,
+    getGroupAllowExternalMembers,
+    getGroupMatchPatterns,
+    getIPSGMGroupRolesMemberDisplayOptions,
+    getMemberMatchOptions,
+    getPGGroupRolesMemberDisplayOptions,
+    infoGroupMembers,
+    initIPSGMGroupMemberDisplayOptions,
+    initMemberOptions,
+    mapCIGroupFieldNames,
+    mapCIGroupMemberFieldNames,
+    setMemberDisplaySortTitles,
+    setMemberDisplayTitles,
+)
 CIGROUP_DISCUSSION_FORUM_LABEL = 'cloudidentity.googleapis.com/groups.discussion_forum'
 
 UNKNOWN = 'Unknown'
@@ -120,7 +143,6 @@ def getCIGroupMemberTypes(myarg, typesSet):
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[formatjson]
 def doInfoCIGroups():
-  from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP, CIGROUP_TIME_OBJECTS, _checkCIMemberMatch, _showCIGroup, finalizeIPSGMGroupRolesMemberDisplayOptions, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions
   def printCIGroupMemberTree(group_id, showRole):
     if group_id not in cachedGroupMembers:
       try:
@@ -297,7 +319,6 @@ def checkCIGroupShowOwnedBy(showOwnedBy, members):
   return False
 
 def updateFieldsForCIGroupMatchPatterns(matchPatterns, fieldsList, csvPF=None):
-  from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP
   for field in ['displayName', 'description']:
     if field in matchPatterns:
       if csvPF is not None:
@@ -684,7 +705,6 @@ def doPrintShowCIPolicies():
 #	[formatjson [quotechar <Character>]]
 # 	[showitemcountonly]
 def doPrintCIGroups():
-  from gam.cmd.groups.members import CIGROUP_FIELDS_CHOICE_MAP, CIGROUP_FULL_FIELDS, CIGROUP_PRINT_ORDER, CIGROUP_TIME_OBJECTS, addMemberInfoToRow, checkGroupMatchPatterns, finalizeIPSGMGroupRolesMemberDisplayOptions, getGroupAllowExternalMembers, getGroupMatchPatterns, getMemberMatchOptions, getPGGroupRolesMemberDisplayOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions, mapCIGroupFieldNames, setMemberDisplaySortTitles, setMemberDisplayTitles
   def _printGroupRow(groupEntity, groupMembers):
     nonlocal itemCount
     for member in groupMembers:
@@ -972,16 +992,13 @@ def doPrintCIGroups():
 
 # gam <UserTypeEntity> info cimember <GroupEntity>
 def infoCIGroupMembers(entityList):
-  from gam.cmd.groups.members import infoGroupMembers
   infoGroupMembers(entityList, True)
 
 # gam info cimember <UserTypeEntity> <GroupEntity>
 def doInfoCIGroupMembers():
-  from gam.cmd.groups.members import infoGroupMembers
   infoGroupMembers(getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)[1], True)
 
 def getCIGroupMembersEntityList(ci, entityList, query, subTitle, matchPatterns, fieldsList, csvPF):
-  from gam.cmd.groups.members import clearUnneededGroupMatchPatterns
   if query:
     printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP, query)
     parent = 'groups/-'
@@ -1033,8 +1050,7 @@ def getCIGroupTransitiveMembers(ci, groupName, membersList, i, count):
 
 def getCIGroupMembers(cd, ci, groupName, memberRoles, membersList, membersSet, i, count,
                       memberOptions, memberDisplayOptions, level, typesSet, groupEmail, kwargs):
-  from gam.cmd.chat.members import _getChatSpaceMembers
-  from gam.cmd.groups.members import _checkCIMemberMatch
+
   nameToPrint = groupEmail if groupEmail else groupName
   printGettingAllEntityItemsForWhom(memberRoles if memberRoles else Ent.ROLE_MANAGER_MEMBER_OWNER, nameToPrint, i, count)
   validRoles = _getCIRoleVerification(memberRoles)
@@ -1182,7 +1198,6 @@ def _getCIListGroupMembersArgs(listView):
 #	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]]
 def doPrintCIGroupMembers():
-  from gam.cmd.groups.members import checkGroupMatchPatterns, finalizeIPSGMGroupRolesMemberDisplayOptions, getGroupAllowExternalMembers, getGroupMatchPatterns, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions, mapCIGroupMemberFieldNames
   cd = buildGAPIObject(API.DIRECTORY)
   ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
   setTrueCustomerId(cd)
@@ -1390,7 +1405,6 @@ def doPrintCIGroupMembers():
 #	[minimal|basic|full]
 #	[(depth <Number>) | includederivedmembership]
 def doShowCIGroupMembers():
-  from gam.cmd.groups.members import _checkCIMemberMatch, checkGroupMatchPatterns, finalizeIPSGMGroupRolesMemberDisplayOptions, getGroupMatchPatterns, getIPSGMGroupRolesMemberDisplayOptions, getMemberMatchOptions, initIPSGMGroupMemberDisplayOptions, initMemberOptions
   def _roleOrder(key):
     return {Ent.ROLE_OWNER: 0, Ent.ROLE_MANAGER: 1, Ent.ROLE_MEMBER: 2}.get(key, 3)
 
