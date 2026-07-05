@@ -14,15 +14,14 @@ from gam.util.api_call import callGAPI
 from gam.util.output import formatLocalDatestamp
 from gam.util.args import (
     FALSE_VALUES,
-    SORF_MSG_FILE_ARGUMENTS,
     TRUE_VALUES,
     escapeCRsNLs,
     getArgument,
     getBoolean,
     getString,
-    getStringOrFile,
     getYYYYMMDD,
 )
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (
     entityActionFailedWarning,

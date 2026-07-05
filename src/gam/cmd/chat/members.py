@@ -16,7 +16,6 @@ from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     AND_OR_CONJUNCTION_MAP,
     OrderBy,
-    SORF_TEXT_ARGUMENTS,
     StartEndTime,
     getAddCSVData,
     getArgument,
@@ -24,10 +23,10 @@ from gam.util.args import (
     getChoice,
     getEmailAddress,
     getString,
-    getStringOrFile,
     normalizeEmailAddressOrUID,
     substituteQueryTimes,
 )
+from gam.util.gdoc import SORF_TEXT_ARGUMENTS, getStringOrFile
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,

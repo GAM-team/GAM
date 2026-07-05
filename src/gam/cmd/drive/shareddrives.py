@@ -70,7 +70,8 @@ from gam.util.display import (
     printLine,
     userDriveServiceNotEnabledWarning,
 )
-from gam.util.entity import _getCustomersCustomerIdWithC, getEntityArgument, getEntityList
+from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.customer import _getCustomersCustomerIdWithC
 from gam.util.errors import (
     blankArgumentExit,
     invalidArgumentExit,

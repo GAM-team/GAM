@@ -17,7 +17,6 @@ from gamlib import msgs as Msg
 from gam.util.api import buildGAPIObject, waitOnFailure
 from gam.util.api_call import callGAPI, checkGAPIError
 from gam.util.args import (
-    SORF_TEXT_ARGUMENTS,
     checkArgumentPresent,
     checkForExtraneousArguments,
     getArgument,
@@ -26,16 +25,16 @@ from gam.util.args import (
     getInteger,
     getPhraseDNEorSNA,
     getString,
-    getStringOrFile,
     getStringReturnInList,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
 )
+from gam.util.gdoc import SORF_TEXT_ARGUMENTS, getStringOrFile
 from gam.util.batch import batchRequestID
 from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, flattenJSON
 from gam.util.display import entityActionFailedWarning, entityActionPerformed, entityActionPerformedMessage, entityPerformActionNumItems
-from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify, addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
-from gam.util.args import addCourseAliasScope
+from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify
+from gam.util.course_scope import addCourseAliasScope, addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.batch import executeBatch
 from gam.util.output import writeStdout

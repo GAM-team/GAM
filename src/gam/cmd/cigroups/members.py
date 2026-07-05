@@ -64,13 +64,13 @@ from gam.util.display import (
     printKeyValueList,
     printLine,
 )
+from gam.util.customer import _getCustomersCustomerIdWithC, setTrueCustomerId
 from gam.util.entity import (
     ALL_GROUP_ROLES,
     _checkCIMemberCategory,
     _checkMemberIsSuspendedIsArchived,
     _checkMemberRole,
     _getCIRoleVerification,
-    _getCustomersCustomerIdWithC,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,
     convertOrgUnitIDtoPath,
@@ -78,7 +78,6 @@ from gam.util.entity import (
     getCIGroupTransitiveMemberRoleFixType,
     getEntityList,
     getEntityToModify,
-    setTrueCustomerId,
     shlexSplitList,
 )
 from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddress

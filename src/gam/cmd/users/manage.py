@@ -25,7 +25,6 @@ from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
-    SORF_MSG_FILE_ARGUMENTS,
     checkArgumentPresent,
     checkForExtraneousArguments,
     getArgument,
@@ -39,14 +38,13 @@ from gam.util.args import (
     getJSON,
     getREPatternSubstitution,
     getString,
-    getStringOrFile,
     getStringReturnInList,
     getStringWithCRsNLs,
-    getStringWithCRsNLsOrFile,
     makeOrgUnitPathAbsolute,
     normalizeEmailAddressOrUID,
     splitEmailAddress,
 )
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile, getStringWithCRsNLsOrFile
 from gam.util.csv_pf import showJSON
 from gam.util.display import (
     entityActionFailedWarning,

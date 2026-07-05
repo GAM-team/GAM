@@ -41,7 +41,8 @@ from gam.util.display import (
     printKeyValueList,
     printLine,
 )
-from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, convertOrgUnitIDtoPath, getEntitiesFromCSVFile, getEntitiesFromFile
+from gam.util.entity import convertEntityToList, convertOrgUnitIDtoPath, getEntitiesFromCSVFile, getEntitiesFromFile
+from gam.util.customer import _getCustomersCustomerIdWithC
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import writeStdout

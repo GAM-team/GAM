@@ -15,7 +15,6 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.output import formatLocalTime
 from gam.util.args import (
-    SORF_TEXT_ARGUMENTS,
     checkForExtraneousArguments,
     escapeCRsNLs,
     getArgument,
@@ -24,8 +23,8 @@ from gam.util.args import (
     getEmailAddress,
     getJSON,
     getString,
-    getStringOrFile,
 )
+from gam.util.gdoc import SORF_TEXT_ARGUMENTS, getStringOrFile
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,

@@ -15,18 +15,17 @@ from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     OrderBy,
-    SORF_TEXT_ARGUMENTS,
     getAddCSVData,
     getArgument,
     getBoolean,
     getChoice,
     getEmailAddress,
     getString,
-    getStringOrFile,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
     substituteQueryTimes,
 )
+from gam.util.gdoc import SORF_TEXT_ARGUMENTS, getStringOrFile
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,

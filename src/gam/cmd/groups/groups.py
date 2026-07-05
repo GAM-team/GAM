@@ -78,6 +78,7 @@ from gam.util.display import (
     printGettingEntityItem,
     printGettingEntityItemForWhom,
 )
+from gam.util.customer import setTrueCustomerId
 from gam.util.entity import (
     CIGROUP_DISCUSSION_FORUM_LABEL,
     CIGROUP_LOCKED_LABEL,
@@ -89,7 +90,6 @@ from gam.util.entity import (
     convertGroupEmailToCloudID,
     getEntityList,
     getEntityToModify,
-    setTrueCustomerId,
 )
 from gam.util.uid import convertUIDtoEmailAddress
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit

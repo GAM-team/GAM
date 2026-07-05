@@ -10,9 +10,9 @@ from gam.util.args import (
     getChoice,
     getJSON,
     getString,
-    getStringWithCRsNLsOrFile,
     getYYYYMMDD,
 )
+from gam.util.gdoc import getStringWithCRsNLsOrFile
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.output import systemErrorExit

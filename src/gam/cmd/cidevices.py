@@ -47,7 +47,8 @@ from gam.util.display import (
     printGettingAllAccountEntities,
     printLine,
 )
-from gam.util.entity import _getCustomersCustomerIdNoC, _validateDeviceQuery, convertEntityToList, getDeviceQueries, setTrueCustomerId
+from gam.util.entity import _validateDeviceQuery, convertEntityToList, getDeviceQueries
+from gam.util.customer import _getCustomersCustomerIdNoC, setTrueCustomerId
 from gam.util.errors import (
     csvFieldErrorExit,
     invalidArgumentExit,

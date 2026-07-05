@@ -69,7 +69,8 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify, setTrueCustomerId
+from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify
+from gam.util.customer import setTrueCustomerId
 from gam.util.errors import (
     USAGE_ERROR_RC,
     entityActionFailedExit,

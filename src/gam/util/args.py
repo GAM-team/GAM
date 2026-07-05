@@ -22,9 +22,7 @@ __all__ = [
   'MAP_CHOICE', 'MAX_MESSAGE_BYTES_FORMAT_REQUIRED', 'MAX_MESSAGE_BYTES_PATTERN',
   'NAME_EMAIL_ADDRESS_PATTERN', 'NO_DEFAULT',
   'PEOPLE_PATTERN', 'PLUS_MINUS',
-  'SORF_FILE_ARGUMENTS', 'SORF_HTML_ARGUMENTS', 'SORF_MSG_ARGUMENTS',
-  'SORF_MSG_FILE_ARGUMENTS', 'SORF_SIG_ARGUMENTS', 'SORF_SIG_FILE_ARGUMENTS',
-  'SORF_TEXT_ARGUMENTS', 'SORTORDER_CHOICE_MAP',
+  'SORTORDER_CHOICE_MAP',
   'SUSPENDED_ARGUMENTS', 'SUSPENDED_CHOICE_MAP',
   'TIMEZONE_FORMAT_REQUIRED', 'TODAY_NOW',
   'UID_PATTERN', 'WEB_COLOR_MAP',
@@ -56,8 +54,8 @@ __all__ = [
   'getREPattern', 'getREPatternSubstitution',
   'getRowFilterDateOrDeltaFromNow', 'getRowFilterTimeOrDeltaFromNow',
   'getSheetEntity', 'getSheetIdFromSheetEntity',
-  'getString', 'getStringOrFile', 'getStringReturnInList',
-  'getStringWithCRsNLs', 'getStringWithCRsNLsOrFile',
+  'getString', 'getStringReturnInList',
+  'getStringWithCRsNLs',
   'getTimeOrDeltaFromNow', 'getYYYYMMDD', 'getYYYYMMDD_HHMM',
   'integerLimits',
   'makeOrgUnitPathAbsolute', 'makeOrgUnitPathRelative', 'mapQueryRelativeTimes',
@@ -100,13 +98,7 @@ from util.errors import (
 from util.fileio import readFile
 from util.output import ISOformatTimeStamp
 from gam.var import Cmd, Ent
-
-
-def addCourseAliasScope(alias):
-  """Prepend 'd:' scope to course alias if not already scoped."""
-  if alias[:2] not in {'d:', 'p:'}:
-    return f'd:{alias}'
-  return alias
+from util.course_scope import addCourseAliasScope
 
 # Lazy accessor for main module
 
@@ -1000,38 +992,8 @@ def getStringReturnInList(item):
     return [argstr]
   return []
 
-SORF_SIG_ARGUMENTS = {'signature', 'sig', 'textsig', 'htmlsig'}
-SORF_MSG_ARGUMENTS = {'message', 'textmessage', 'htmlmessage'}
-SORF_FILE_ARGUMENTS = {'file', 'textfile', 'htmlfile', 'gdoc', 'ghtml', 'gcsdoc', 'gcshtml'}
-SORF_HTML_ARGUMENTS = {'htmlsig', 'htmlmessage', 'htmlfile', 'ghtml', 'gcshtml'}
-SORF_TEXT_ARGUMENTS = {'text', 'textfile', 'gdoc', 'gcsdoc'}
-SORF_SIG_FILE_ARGUMENTS = SORF_SIG_ARGUMENTS.union(SORF_FILE_ARGUMENTS)
-SORF_MSG_FILE_ARGUMENTS = SORF_MSG_ARGUMENTS.union(SORF_FILE_ARGUMENTS)
 
-def getStringOrFile(myarg, minLen=0, unescapeCRLF=False):
-  if myarg in SORF_SIG_ARGUMENTS:
-    if checkArgumentPresent(SORF_FILE_ARGUMENTS):
-      myarg = Cmd.Previous().strip().lower().replace('_', '')
-  html = myarg in SORF_HTML_ARGUMENTS
-  if myarg in SORF_FILE_ARGUMENTS:
-    if myarg in {'file', 'textfile', 'htmlfile'}:
-      filename = getString(Cmd.OB_FILE_NAME)
-      encoding = getCharSet()
-      return (readFile(setFilePath(filename, GC.INPUT_DIR), encoding=encoding), encoding, html)
-    if myarg in {'gdoc', 'ghtml'}:
-      f = getGDocData(myarg)
-      data = f.read()
-      f.close()
-      return (data, UTF8, html)
-    return (getStorageFileData(myarg), UTF8, html)
-  if not unescapeCRLF:
-    return (getString(Cmd.OB_STRING, minLen=minLen), UTF8, html)
-  return (unescapeCRsNLs(getString(Cmd.OB_STRING, minLen=minLen)), UTF8, html)
 
-def getStringWithCRsNLsOrFile():
-  if checkArgumentPresent(SORF_FILE_ARGUMENTS):
-    return getStringOrFile(Cmd.Previous().strip().lower().replace('_', ''), minLen=0)
-  return (unescapeCRsNLs(getString(Cmd.OB_STRING, minLen=0)), UTF8, False)
 
 def getAddCSVData(addCSVData):
   k = getString(Cmd.OB_STRING)

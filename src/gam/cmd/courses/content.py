@@ -29,7 +29,8 @@ from gam.util.csv_pf import (
     getItemFieldsFromFieldsList,
 )
 from gam.util.display import entityActionFailedWarning, entityDoesNotHaveItemWarning, getPageMessageForWhom, printGettingAllEntityItemsForWhom
-from gam.util.entity import getEntityList, removeCourseIdScope
+from gam.util.entity import getEntityList
+from gam.util.course_scope import removeCourseIdScope
 
 from gam.var import Cmd, Ent
 from gam.cmd.courses.courses import (

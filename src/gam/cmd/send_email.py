@@ -12,7 +12,6 @@ from gam.util.api import _getAdminEmail
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
-    SORF_MSG_FILE_ARGUMENTS,
     UTF8,
     checkArgumentPresent,
     getArgument,
@@ -22,10 +21,10 @@ from gam.util.args import (
     getEmailAddress,
     getFilename,
     getString,
-    getStringOrFile,
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
 )
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile
 from gam.util.display import (
     entityActionFailedWarning,
     entityNumEntitiesActionNotPerformedWarning,

@@ -15,7 +15,6 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIitems
 from gam.util.args import (
     LANGUAGE_CODES_MAP,
-    SORF_SIG_FILE_ARGUMENTS,
     checkArgumentPresent,
     checkForExtraneousArguments,
     escapeCRsNLs,
@@ -24,9 +23,9 @@ from gam.util.args import (
     getChoice,
     getLanguageCode,
     getString,
-    getStringOrFile,
     normalizeEmailAddressOrUID,
 )
+from gam.util.gdoc import SORF_SIG_FILE_ARGUMENTS, getStringOrFile
 from gam.util.csv_pf import CSVPrintFile, flattenJSON, getTodriveOnly
 from gam.util.display import (
     entityActionFailedWarning,

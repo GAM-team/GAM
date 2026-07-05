@@ -1,10 +1,10 @@
 import pytest
-from gam.util.entity import (
+from gam.util.course_scope import (
     addCourseIdScope,
     removeCourseIdScope,
     removeCourseAliasScope,
+    addCourseAliasScope,
 )
-from gam.util.args import addCourseAliasScope
 
 class TestCourseScopes:
     def test_add_course_id_scope_plain(self):

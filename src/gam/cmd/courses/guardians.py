@@ -47,7 +47,8 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify, addCourseIdScope
+from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify
+from gam.util.course_scope import addCourseIdScope
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.output import (
     currentCount,

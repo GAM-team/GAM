@@ -85,7 +85,8 @@ from gam.util.display import (
     printKeyValueWithCRsNLs,
     printLine,
 )
-from gam.util.entity import getCIGroupMembershipGraph, getEntityArgument, getEntityToModify, setTrueCustomerId
+from gam.util.entity import getCIGroupMembershipGraph, getEntityArgument, getEntityToModify
+from gam.util.customer import setTrueCustomerId
 from gam.util.errors import entityActionFailedExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitItem

@@ -63,7 +63,8 @@ from gam.util.display import (
     printKeyValueList,
     printKeyValueWithCRsNLs,
 )
-from gam.util.entity import _getCustomerIdNoC, _getCustomersCustomerIdWithC, getEntityList, getEntityToModify, getItemsToModify
+from gam.util.entity import getEntityList, getEntityToModify, getItemsToModify
+from gam.util.customer import _getCustomerIdNoC, _getCustomersCustomerIdWithC
 from gam.util.errors import (
     entityActionFailedExit,
     entityDoesNotExistExit,

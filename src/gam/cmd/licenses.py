@@ -14,7 +14,7 @@ from gam.util.api_call import callGAPIpages
 from gam.util.args import getArgument, getGoogleProductList, getGoogleSKUList, getInteger
 from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList
 from gam.util.display import entityActionNotPerformedWarning, getPageMessageForWhom, printEntityKVList
-from gam.util.entity import _getCustomerId, setTrueCustomerId
+from gam.util.customer import _getCustomerId, setTrueCustomerId
 from gam.util.errors import unknownArgumentExit
 
 

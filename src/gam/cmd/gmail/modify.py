@@ -33,7 +33,6 @@ from gam.util.api import _getAdminEmail, buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
 from gam.util.args import (
-    SORF_MSG_FILE_ARGUMENTS,
     UTF8,
     checkArgumentPresent,
     getArgument,
@@ -45,11 +44,11 @@ from gam.util.args import (
     getInteger,
     getREPattern,
     getString,
-    getStringOrFile,
     getDateOrDeltaFromNow,
     getTimeOrDeltaFromNow,
     splitEmailAddress
 )
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile
 from gam.util.batch import batchRequestID
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (

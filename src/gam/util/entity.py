@@ -87,6 +87,8 @@ from util.svcacct import buildGAPIServiceObject
 from util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.var import Act, Cmd, Ent
 from gam.util.access import accessErrorExitNonDirectory
+from util.customer import _getCustomerIdNoC
+from util.course_scope import removeCourseIdScope
 
 def getQueries(myarg):
   if myarg in {'query', 'filter'}:
@@ -1399,30 +1401,6 @@ def checkUserSuspended(cd, user, entityType=None, i=0, count=0):
     entityUnknownWarning(entityType, user, i, count)
     return None
 
-def _getCustomerId():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId != GC.MY_CUSTOMER and customerId[0] != 'C':
-    customerId = 'C' + customerId
-  return customerId
-
-def _getCustomerIdNoC():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId[0] == 'C':
-    return customerId[1:]
-  return customerId
-
-def _getCustomersCustomerIdNoC():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId.startswith('C'):
-    customerId = customerId[1:]
-  return f'customers/{customerId}'
-
-def _getCustomersCustomerIdWithC():
-  customerId = GC.Values[GC.CUSTOMER_ID]
-  if customerId != GC.MY_CUSTOMER and customerId[0] != 'C':
-    customerId = 'C' + customerId
-  return f'customers/{customerId}'
-
 def _getDomainList(cd, customer, fields):
   try:
     return callGAPIitems(cd.domains(), 'list', 'domains',
@@ -1434,40 +1412,5 @@ def _getDomainList(cd, customer, fields):
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
     ClientAPIAccessDeniedExit(str(e))
 
-def setTrueCustomerId(cd=None, forceUpdate=False):
-  if GC.Values[GC.CUSTOMER_ID] == GC.MY_CUSTOMER or forceUpdate:
-    if not cd:
-      cd = buildGAPIObject(API.DIRECTORY)
-    try:
-      customerInfo = callGAPI(cd.customers(), 'get',
-                              throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID_INPUT, GAPI.RESOURCE_NOT_FOUND,
-                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
-                              customerKey=GC.MY_CUSTOMER,
-                              fields='id')
-      GC.Values[GC.CUSTOMER_ID] = customerInfo['id']
-    except (GAPI.badRequest, GAPI.invalidInput, GAPI.resourceNotFound):
-      pass
-    except (GAPI.forbidden, GAPI.permissionDenied) as e:
-      ClientAPIAccessDeniedExit(str(e))
-
 PRINT_PRIVILEGES_FIELDS = ['serviceId', 'serviceName', 'privilegeName', 'isOuScopable', 'childPrivileges']
-
-
-
-def addCourseIdScope(courseId):
-  if not courseId.isdigit() and courseId[:2] not in {'d:', 'p:'}:
-    return f'd:{courseId}'
-  return courseId
-
-def removeCourseIdScope(courseId):
-  if courseId.startswith('d:'):
-    return courseId[2:]
-  return courseId
-
-
-
-def removeCourseAliasScope(alias):
-  if alias.startswith('d:'):
-    return alias[2:]
-  return alias
 

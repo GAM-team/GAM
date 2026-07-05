@@ -59,7 +59,8 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
 )
-from gam.util.entity import _getCustomersCustomerIdWithC, convertOrgUnitIDtoPath
+from gam.util.entity import convertOrgUnitIDtoPath
+from gam.util.customer import _getCustomersCustomerIdWithC
 from gam.util.errors import (
     entityDoesNotExistExit,
     invalidArgumentExit,

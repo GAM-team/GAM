@@ -30,10 +30,9 @@ from gam.util.display import (
 from gam.util.errors import unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import printWarningMessage, writeStdout, formatLocalTime, formatLocalTimestampUTC
+from gam.util.customer import _getCustomerId, setTrueCustomerId
 from gam.util.entity import (
-    _getCustomerId,
     _getDomainList,
-    setTrueCustomerId,
 )
 from gam.constants import DATA_NOT_AVALIABLE_RC
 

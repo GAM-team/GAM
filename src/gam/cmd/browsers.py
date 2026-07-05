@@ -45,9 +45,8 @@ from gam.util.display import (
     printGettingEntityItemForWhom,
     printLine,
 )
+from gam.util.customer import _getCustomerId, _getCustomerIdNoC
 from gam.util.entity import (
-    _getCustomerId,
-    _getCustomerIdNoC,
     convertEntityToList,
     getDeviceQueries,
     getEntitiesFromCSVFile,

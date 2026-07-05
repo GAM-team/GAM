@@ -60,7 +60,8 @@ from gam.util.display import (
     printKeyValueList,
     printLine,
 )
-from gam.util.entity import getEntityList, addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
+from gam.util.entity import getEntityList
+from gam.util.course_scope import addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import currentCount, formatKeyValueList, writeStdout

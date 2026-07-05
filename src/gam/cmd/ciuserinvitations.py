@@ -34,7 +34,8 @@ from gam.util.display import (
     printGettingAllAccountEntities,
     printLine,
 )
-from gam.util.entity import _getCustomersCustomerIdWithC, getEntityArgument
+from gam.util.entity import getEntityArgument
+from gam.util.customer import _getCustomersCustomerIdWithC
 
 
 from urllib.parse import quote_plus

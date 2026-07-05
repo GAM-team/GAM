@@ -24,10 +24,10 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Cmd
 from gam.constants import DEFAULT_CSV_READ_MODE, NO_ENTITIES_FOUND_RC
-from util.args import UTF8, checkArgumentPresent, getBoolean, getCharSet, getCharacter, getEmailAddress, getSheetEntity, getSheetIdFromSheetEntity, getString, shlexSplitList
+from util.args import UTF8, checkArgumentPresent, getBoolean, getCharSet, getCharacter, getEmailAddress, getSheetEntity, getSheetIdFromSheetEntity, getString, shlexSplitList, unescapeCRsNLs
 from util.display import ACTION_NOT_PERFORMED_RC, userDriveServiceNotEnabledWarning
 from util.errors import entityActionFailedExit, entityDoesNotExistExit
-from util.fileio import FILE_ERROR_RC, UTF8_SIG, fileErrorMessage, getGDocSheetDataFailedExit, getGDocSheetDataRetryWarning, openFile, setFilePath
+from util.fileio import FILE_ERROR_RC, UTF8_SIG, fileErrorMessage, getGDocSheetDataFailedExit, getGDocSheetDataRetryWarning, openFile, readFile, setFilePath
 from util.output import stderrWarningMsg, systemErrorExit
 from util.api import buildGAPIObject
 from util.svcacct import buildGAPIServiceObject
@@ -281,3 +281,41 @@ def openCSVFileReader(filename, fieldnames=None):
     return (f, csvFile, csvFile.fieldnames if csvFile.fieldnames is not None else [])
   except (csv.Error, UnicodeDecodeError, UnicodeError) as e:
     systemErrorExit(FILE_ERROR_RC, e)
+
+# String-or-file argument constants and functions.
+# Placed here (rather than in args.py) to avoid args ↔ gdoc cycle,
+# since getStringOrFile calls getGDocData / getStorageFileData.
+
+SORF_SIG_ARGUMENTS = {'signature', 'sig', 'textsig', 'htmlsig'}
+SORF_MSG_ARGUMENTS = {'message', 'textmessage', 'htmlmessage'}
+SORF_FILE_ARGUMENTS = {'file', 'textfile', 'htmlfile', 'gdoc', 'ghtml', 'gcsdoc', 'gcshtml'}
+SORF_HTML_ARGUMENTS = {'htmlsig', 'htmlmessage', 'htmlfile', 'ghtml', 'gcshtml'}
+SORF_TEXT_ARGUMENTS = {'text', 'textfile', 'gdoc', 'gcsdoc'}
+SORF_SIG_FILE_ARGUMENTS = SORF_SIG_ARGUMENTS.union(SORF_FILE_ARGUMENTS)
+SORF_MSG_FILE_ARGUMENTS = SORF_MSG_ARGUMENTS.union(SORF_FILE_ARGUMENTS)
+
+def getStringOrFile(myarg, minLen=0, unescapeCRLF=False):
+  if myarg in SORF_SIG_ARGUMENTS:
+    if checkArgumentPresent(SORF_FILE_ARGUMENTS):
+      myarg = Cmd.Previous().strip().lower().replace('_', '')
+  html = myarg in SORF_HTML_ARGUMENTS
+  if myarg in SORF_FILE_ARGUMENTS:
+    if myarg in {'file', 'textfile', 'htmlfile'}:
+      filename = getString(Cmd.OB_FILE_NAME)
+      encoding = getCharSet()
+      return (readFile(setFilePath(filename, GC.INPUT_DIR), encoding=encoding), encoding, html)
+    if myarg in {'gdoc', 'ghtml'}:
+      f = getGDocData(myarg)
+      data = f.read()
+      f.close()
+      return (data, UTF8, html)
+    return (getStorageFileData(myarg), UTF8, html)
+  if not unescapeCRLF:
+    return (getString(Cmd.OB_STRING, minLen=minLen), UTF8, html)
+  return (unescapeCRsNLs(getString(Cmd.OB_STRING, minLen=minLen)), UTF8, html)
+
+def getStringWithCRsNLsOrFile():
+  if checkArgumentPresent(SORF_FILE_ARGUMENTS):
+    return getStringOrFile(Cmd.Previous().strip().lower().replace('_', ''), minLen=0)
+  return (unescapeCRsNLs(getString(Cmd.OB_STRING, minLen=0)), UTF8, False)
+

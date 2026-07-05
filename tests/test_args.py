@@ -8,41 +8,41 @@ class TestCourseScopes:
     """Test course ID and alias scope manipulation."""
 
     def test_add_course_id_scope_plain(self):
-        from gam.util.entity import addCourseIdScope
+        from gam.util.course_scope import addCourseIdScope
         assert addCourseIdScope('12345') == '12345'  # numeric, no prefix
 
     def test_add_course_id_scope_name(self):
-        from gam.util.entity import addCourseIdScope
+        from gam.util.course_scope import addCourseIdScope
         assert addCourseIdScope('my-course') == 'd:my-course'
 
     def test_add_course_id_scope_already_prefixed(self):
-        from gam.util.entity import addCourseIdScope
+        from gam.util.course_scope import addCourseIdScope
         assert addCourseIdScope('d:my-course') == 'd:my-course'
         assert addCourseIdScope('p:my-course') == 'p:my-course'
 
     def test_remove_course_id_scope(self):
-        from gam.util.entity import removeCourseIdScope
+        from gam.util.course_scope import removeCourseIdScope
         assert removeCourseIdScope('d:my-course') == 'my-course'
 
     def test_remove_course_id_scope_no_prefix(self):
-        from gam.util.entity import removeCourseIdScope
+        from gam.util.course_scope import removeCourseIdScope
         assert removeCourseIdScope('12345') == '12345'
 
     def test_add_course_alias_scope(self):
-        from gam.util.args import addCourseAliasScope
+        from gam.util.course_scope import addCourseAliasScope
         assert addCourseAliasScope('my-alias') == 'd:my-alias'
 
     def test_add_course_alias_scope_already_prefixed(self):
-        from gam.util.args import addCourseAliasScope
+        from gam.util.course_scope import addCourseAliasScope
         assert addCourseAliasScope('d:my-alias') == 'd:my-alias'
         assert addCourseAliasScope('p:my-alias') == 'p:my-alias'
 
     def test_remove_course_alias_scope(self):
-        from gam.util.entity import removeCourseAliasScope
+        from gam.util.course_scope import removeCourseAliasScope
         assert removeCourseAliasScope('d:my-alias') == 'my-alias'
 
     def test_remove_course_alias_scope_no_prefix(self):
-        from gam.util.entity import removeCourseAliasScope
+        from gam.util.course_scope import removeCourseAliasScope
         assert removeCourseAliasScope('my-alias') == 'my-alias'
 
 

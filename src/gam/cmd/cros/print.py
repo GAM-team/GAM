@@ -68,8 +68,8 @@ from gam.util.display import (
     printKeyValueWithCRsNLs,
     printLine
 )
+from gam.util.customer import _getCustomersCustomerIdWithC
 from gam.util.entity import (
-    _getCustomersCustomerIdWithC,
     convertEntityToList,
     convertOrgUnitIDtoPath,
     getDeviceQueries,
