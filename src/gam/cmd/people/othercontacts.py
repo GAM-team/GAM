@@ -10,11 +10,10 @@ from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
 from gam.util.api import ClientAPIAccessDeniedExit
 from gam.util.svcacct import buildGAPIServiceObject
-from gam.util.api_call import writeGotMessage, callGAPI, callGAPIpages
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import checkForExtraneousArguments, getArgument, getREPattern, getString
 from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar
 from gam.util.display import (
-    TOTAL_ITEMS_MARKER,
     entityActionFailedWarning,
     entityActionPerformed,
     entityModifierNewValueActionPerformed,
@@ -22,7 +21,6 @@ from gam.util.display import (
     getPageMessageForWhom,
     printEntityKVList,
     printGettingAllEntityItemsForWhom,
-    userPeopleServiceNotEnabledWarning,
 )
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import unknownArgumentExit
