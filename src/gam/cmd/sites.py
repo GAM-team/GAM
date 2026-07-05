@@ -35,6 +35,7 @@ from gam.constants import NETWORK_ERROR_RC
 
 from urllib.parse import unquote
 from urllib.parse import urlencode
+from gam.util.access import accessErrorExitNonDirectory
 
 SITEVERIFICATION_METHOD_CHOICE_MAP = {
   'cname': 'DNS_CNAME',

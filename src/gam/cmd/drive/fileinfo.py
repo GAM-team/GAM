@@ -31,11 +31,12 @@ SHARED_WITHME = 'SharedWithMe'
 SHARED_DRIVES = 'SharedDrives'
 
 from gam.cmd.drive.core import (
+    DRIVEFILE_ORDERBY_CHOICE_MAP,
     _getSharedDriveNameFromId, _simpleFileIdEntityList,
     _validateUserGetFileIDs, _validateUserSharedDrive,
     cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity,
 )
-from gam.cmd.drive.filepaths import DRIVEFILE_ORDERBY_CHOICE_MAP, _setGetCheckFilePermissions
+from gam.cmd.drive.filepaths import _setGetCheckFilePermissions
 from gam.cmd.drive.filetree import (
     DriveListParameters,
     FILECOUNT_SUMMARY_CHOICE_MAP, FILECOUNT_SUMMARY_NONE,
@@ -86,6 +87,8 @@ from gam.constants import (
     MIMETYPE_GA_FOLDER,
     MIMETYPE_GA_SHORTCUT,
 )
+from gam.cmd.drive.transfer.fileops import MICROSOFT_FORMATS_LIST
+from gam.util.output import _stripControlCharsFromName, formatKeyValueList
 
 SHARED_DRIVE_MAX_FILES_FOLDERS = 500000
 TEAM_DRIVE = 'Drive'

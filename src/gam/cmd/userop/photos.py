@@ -48,6 +48,7 @@ from gam.cmd.drive.core import _validateUserGetFileIDs, getDriveFileEntity
 from gam.var import Cmd, Ent
 
 from tempfile import TemporaryFile
+import httplib2
 
 def updatePhoto(users):
   cd = buildGAPIObject(API.DIRECTORY)

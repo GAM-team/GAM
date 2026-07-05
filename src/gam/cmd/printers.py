@@ -45,6 +45,7 @@ from gam.util.entity import _getCustomersCustomerIdWithC, convertEntityToList, c
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import writeStdout
+from gam.util.access import checkEntityDNEorAccessErrorExit
 
 
 def isolatePrinterID(name):

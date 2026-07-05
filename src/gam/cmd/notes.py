@@ -59,6 +59,10 @@ from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import closeFile, openFile, setFilePath, uniqueFilename
 from gam.util.tags import _substituteForUser
 from gam.cmd.drive.core import _driveFileParentSpecified, _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
+import httplib2
+from gam.cmd.drive.transfer.fileops import MIMETYPE_EXTENSION_MAP
+from gam.util.args import unescapeCRsNLs
+from gam.util.fileio import cleanFilename
 
 
 def normalizeNoteName(noteName):

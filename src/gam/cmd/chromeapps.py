@@ -49,6 +49,11 @@ from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
 from gam.cmd.printers import ORGUNIT_ENTITIES_MAP
+from gam.cmd.cros.print import CROS_END_ARGUMENTS, CROS_START_ARGUMENTS
+from gam.util.access import accessErrorExit, checkEntityDNEorAccessErrorExit
+
+CHROME_APPS_TIME_OBJECTS = {'firstPublishTime', 'latestPublishTime'}
+CHROME_APPS_TYPE_CHOICES = ['android', 'chrome', 'web']
 
 
 def doInfoChromeApp():

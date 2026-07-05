@@ -96,6 +96,8 @@ from gam.cmd.resources import _getBuildingNameById
 from gam.util.domain_filters import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
 from gam.cmd.aliases import userFilters
 from gam.cmd.licenses import doPrintLicenses
+import arrow
+from gam.util.batch import RI_J
 
 def infoUsers(entityList):
   def printUserCIGroupMap(parent, group_name_mappings, seen_group_count, edges, direction):

@@ -58,6 +58,23 @@ from gam.constants import MY_DRIVE, MY_NON_TRASHED_FOLDER_NAME, MY_NON_TRASHED_F
 from gam.util.tags import _substituteForUser
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.drive.core import (
+    DRIVEFILE_ORDERBY_CHOICE_MAP,
+    _checkForExistingShortcut,
+    _getDriveFileParentInfo,
+    _validateUserGetFileIDs,
+    escapeDriveFileName,
+    getDriveFileEntity,
+    getDriveFileParentAttribute,
+    initDriveFileAttributes,
+    initDriveFileEntity,
+)
+from gam.cmd.drive.filepaths import (
+    addFilePathsToRow,
+    initFilePathInfo,
+)
+from gam.cmd.drive.filetree import buildFileTree
+from gam.cmd.drive.transfer.fileops import TRANSFER_DRIVEFILE_ACL_ROLES_MAP
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'

@@ -33,6 +33,8 @@ from gam.util.display import (
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import writeStderr, formatLocalTime
 from gam.util.uid import convertEmailAddressToUID
+from gam.util.access import accessErrorExit
+from gam.util.entity import convertUserIDtoEmail
 
 
 def getTransferApplications(dt):

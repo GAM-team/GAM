@@ -60,6 +60,16 @@ from gam.util.output import (
 from gam.constants import ADMIN_ACCESS_OPTIONS
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.courses.courses import (
+    _getCourseOwnerSA,
+    _getCourseSelectionParameters,
+    _getCoursesInfo,
+    _getCoursesOwnerInfo,
+    _initCourseSelectionParameters,
+    _initCourseShowProperties,
+)
+from gam.cmd.users.display import USER_NAME_PROPERTY_PRINT_ORDER
+from gam.util.api import ClientAPIAccessDeniedExit
 
 def studentUnknownWarning(studentId, errMsg, i, count):
   setSysExitRC(SERVICE_NOT_APPLICABLE_RC)

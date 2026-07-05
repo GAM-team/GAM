@@ -36,7 +36,7 @@ __all__ = [
   # Functions
 
   'checkArgumentPresent', 'checkDataField', 'checkForExtraneousArguments',
-  'checkGetArgument', 'checkMatchSkipFields', 'checkSubkeyField',
+  'checkGetArgument', 'checkSubkeyField',
   'encodeOrgUnitPath', 'escapeCRsNLs',
   'floatLimits', 'formatHTTPError',
   'getACLRoles', 'getAddCSVData', 'getAgeTime',
@@ -1445,18 +1445,6 @@ def getMatchSkipFields(fieldNames):
       break
   return (matchFields, skipFields)
 
-def checkMatchSkipFields(row, fieldnames, matchFields, skipFields):
-  for matchField, matchPattern in matchFields.items():
-    if (matchField not in row) or not matchPattern.search(str(row[matchField])):
-      return False
-  for skipField, matchPattern in skipFields.items():
-    if (skipField in row) and matchPattern.search(str(row[skipField])):
-      return False
-  if fieldnames and (GC.Values[GC.CSV_INPUT_ROW_FILTER] or GC.Values[GC.CSV_INPUT_ROW_DROP_FILTER]):
-    return RowFilterMatch(row, fieldnames,
-                          GC.Values[GC.CSV_INPUT_ROW_FILTER], GC.Values[GC.CSV_INPUT_ROW_FILTER_MODE],
-                          GC.Values[GC.CSV_INPUT_ROW_DROP_FILTER], GC.Values[GC.CSV_INPUT_ROW_DROP_FILTER_MODE])
-  return True
 
 def checkSubkeyField():
   if not GM.Globals[GM.CSV_SUBKEY_FIELD]:

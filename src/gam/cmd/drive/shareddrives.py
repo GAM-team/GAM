@@ -85,6 +85,17 @@ from gam.constants import ADMIN_ACCESS_OPTIONS, GOOGLE_API_ERROR_RC, NO_ENTITIES
 from gam.cmd.orgunits import getOrgUnitIdToPathMap
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.drive.copymove.copymove_util import (
+    COPY_NONINHERITED_PERMISSIONS_ALWAYS,
+    COPY_NONINHERITED_PERMISSIONS_SYNC_ALL_FOLDERS,
+    DEST_PARENT_SHAREDDRIVE_ROOT,
+    _copyPermissions,
+    getCopyMoveOptions,
+    initCopyMoveOptions,
+)
+from gam.cmd.drive.files import STAT_FOLDER_PERMISSIONS_FAILED
+from gam.cmd.drive.filetree import PermissionMatch
+from gam.util.access import accessErrorExit
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 ME_IN_OWNERS = "'me' in owners"

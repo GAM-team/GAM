@@ -51,6 +51,13 @@ from gam.util.fileio import UNKNOWN, closeFile
 from gam.util.gdoc import openCSVFileReader
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.drive.core import (
+    CONSOLIDATION_GROUPING_STRATEGY_CHOICE_MAP,
+    DRIVE_ACTIVITY_ACTION_MAP,
+    _mapDrive2QueryToDrive3,
+    getEscapedDriveFileName,
+)
+from gam.util.output import _stripControlCharsFromName
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'

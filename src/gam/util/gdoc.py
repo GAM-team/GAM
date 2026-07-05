@@ -32,6 +32,7 @@ from util.output import stderrWarningMsg, systemErrorExit
 from util.api import buildGAPIObject
 from util.svcacct import buildGAPIServiceObject
 from util.api_call import callGAPI
+from gam.constants import MIMETYPE_GA_SPREADSHEET
 
 
 

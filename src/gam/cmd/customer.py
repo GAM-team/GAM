@@ -52,6 +52,7 @@ CUSTOMER_LICENSE_MAP = {
 from gam.cmd.reports import _adjustTryDate, _checkDataRequiredServices
 from gam.cmd.reseller import _showCustomerAddressPhoneNumber
 from gam.cmd.reseller import ADDRESS_FIELDS_ARGUMENT_MAP
+from gam.util.api import ClientAPIAccessDeniedExit
 
 
 

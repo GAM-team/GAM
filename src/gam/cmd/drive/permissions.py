@@ -6,7 +6,7 @@
 
 import json
 
-from gam.cmd.drive.core import _getEntityMimeType, _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity
+from gam.cmd.drive.core import DRIVEFILE_ORDERBY_CHOICE_MAP, _getEntityMimeType, _getDriveFileNameFromId, _getSharedDriveNameFromId, _validateUserGetFileIDs, _validateUserSharedDrive, cleanFileIDsList, getDriveFileEntity, getSharedDriveEntity, initDriveFileEntity
 from gam.cmd.drive.filepaths import _finalizeIncludePermissionsForView, _getIncludePermissionsForView, _mapDrivePermissionNames
 from gam.cmd.drive.filetree import _validateACLAttributes, _validateACLOwnerType
 
@@ -77,6 +77,14 @@ from gam.util.batch import batchRequestID, executeBatch
 from gam.constants import ADMIN_ACCESS_OPTIONS, WITH_PARENTS
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.drive.copymove.copymove_util import _updateSheetProtectedRangesACLchange
+from gam.cmd.drive.filepaths import (
+    DRIVEFILE_BASIC_PERMISSION_FIELDS,
+    DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP,
+)
+from gam.cmd.drive.filetree import DRIVEFILE_ACL_PERMISSION_TYPES, DRIVEFILE_ACL_ROLES_MAP, DriveListParameters, PermissionMatch
+from gam.cmd.drive.transfer.ownership import getPermissionIdForEmail
+from gam.util.errors import formatChoiceList
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'

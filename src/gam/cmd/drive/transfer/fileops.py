@@ -73,6 +73,8 @@ from gam.constants import MY_NON_TRASHED_FOLDER_NAME
 from gam.util.tags import _substituteForUser
 
 from gam.var import Act, Cmd, Ent, Ind
+import httplib2
+from gam.cmd.drive.core import DRIVEFILE_ORDERBY_CHOICE_MAP, _getDriveFileParentInfo, escapeDriveFileName, initDriveFileAttributes
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -104,6 +106,10 @@ SHARED_DRIVES = 'SharedDrives'
 
 UNKNOWN = 'Unknown'
 ORPHANS_COLLECTED_RC = 30
+
+DELETE_DRIVEFILE_CHOICE_MAP = {'purge': 'delete', 'trash': 'trash', 'untrash': 'untrash'}
+DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {'delete': Act.PURGE, 'trash': Act.TRASH, 'untrash': Act.UNTRASH}
+DELETE_DRIVEFILE_FUNCTION_TO_CAPABILITY_MAP = {'delete': 'canDelete', 'trash': 'canTrash', 'untrash': 'canUntrash'}
 
 def deleteDriveFile(users, function=None):
   fileIdEntity = getDriveFileEntity()

@@ -3,7 +3,7 @@
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from gam.var import Act, Cmd, Ent
+from gam.var import Act, Cmd, Ent, Ind
 from gam.util.args import getArgument, getString, getLanguageCode, BCP47_LANGUAGE_CODES_MAP
 from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, getFieldsList, addFieldToFieldsList
 
@@ -22,6 +22,17 @@ YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
 YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
 from gam.util.display import entityActionFailedWarning
 from gam.util.entity import getEntityList
+import json
+from gam.util.api_call import callGAPIpages
+from gam.util.csv_pf import cleanJSON, flattenJSON, showJSON
+from gam.util.display import (
+    entityPerformActionNumItems,
+    printEntity,
+    printLine,
+    userYouTubeServiceNotEnabledWarning,
+)
+from gam.util.entity import getEntityArgument
+from gam.util.svcacct import buildGAPIServiceObject
 
 def printShowYouTubeChannel(users):
   csvPF = CSVPrintFile(['User', 'id'], 'sortall') if Act.csvFormat() else None

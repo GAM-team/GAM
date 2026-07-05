@@ -59,6 +59,7 @@ from gam.util.entity import (
 from gam.util.errors import entityActionFailedExit, missingArgumentExit, unknownArgumentExit
 from gam.util.orgunits import getOrgUnitItem
 from gam.constants import PROJECTION_CHOICE_MAP
+from gam.util.access import accessErrorExit
 
 
 def doDeleteBrowsers():

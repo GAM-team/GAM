@@ -63,6 +63,7 @@ from gam.cmd.aliases import infoAliases
 from gam.cmd.ciuserinvitations import _getCIUserInvitationsEntity, _getIsInvitableUser, infoCIUserInvitations
 from gam.cmd.groups.members import infoGroups
 from gam.cmd.users.display import infoUsers
+from gam.util.access import checkEntityDNEorAccessErrorExit
 
 
 def doWhatIs():

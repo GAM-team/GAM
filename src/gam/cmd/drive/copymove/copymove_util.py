@@ -55,6 +55,45 @@ from gam.util.output import writeStdout, formatLocalTime
 from gam.constants import ANY_NON_TRASHED_WITH_PARENTS, WITH_PARENTS
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.drive.core import (
+    _checkForExistingShortcut,
+    _getDriveFileParentInfo,
+    _getSharedDriveNameFromId,
+    _validateUserGetFileIDs,
+    escapeDriveFileName,
+    getDriveFileCopyAttribute,
+    getDriveFileEntity,
+    getDriveFileParentAttribute,
+    initDriveFileAttributes,
+    initDriveFileEntity,
+)
+from gam.cmd.drive.files import (
+    STAT_FILE_COPIED_MOVED,
+    STAT_FILE_DUPLICATE,
+    STAT_FILE_FAILED,
+    STAT_FILE_IN_SKIPIDS,
+    STAT_FILE_NOT_COPYABLE_MOVABLE,
+    STAT_FILE_PERMISSIONS_FAILED,
+    STAT_FILE_PROTECTEDRANGES_FAILED,
+    STAT_FILE_SHORTCUT_CREATED,
+    STAT_FILE_SHORTCUT_EXISTS,
+    STAT_FILE_TOTAL,
+    STAT_FOLDER_COPIED_MOVED,
+    STAT_FOLDER_DUPLICATE,
+    STAT_FOLDER_FAILED,
+    STAT_FOLDER_MERGED,
+    STAT_FOLDER_NOT_WRITABLE,
+    STAT_FOLDER_PERMISSIONS_FAILED,
+    STAT_FOLDER_SHORTCUT_CREATED,
+    STAT_FOLDER_SHORTCUT_EXISTS,
+    STAT_FOLDER_TOTAL,
+    STAT_USER_NOT_ORGANIZER,
+    _incrStatistic,
+    _initStatistics,
+    processFilenameReplacements,
+)
+from gam.cmd.drive.filetree import DRIVEFILE_ACL_PERMISSION_TYPES, DRIVEFILE_ACL_ROLES_MAP, MimeTypeCheck
+from gam.cmd.drive.transfer.ownership import getPermissionIdForEmail
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -907,19 +946,6 @@ def _getCopyFolderNonInheritedPermissions(copyMoveOptions, copyNonInherited, sou
     return 'noCopyNonInheritedPermissions'
   return copyNonInherited
 
-def _checkForExistingShortcut(drive, fileId, fileName, parentId):
-  try:
-    existingShortcuts = callGAPI(drive.files(), 'list',
-                                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
-                                 retryReasons=[GAPI.UNKNOWN_ERROR],
-                                 supportsAllDrives=True, includeItemsFromAllDrives=True,
-                                 q=f"shortcutDetails.targetId = '{fileId}' and trashed = False", fields='files(id,name,parents)')['files']
-    for shortcut in existingShortcuts:
-      if parentId in shortcut.get('parents', []) and fileName == shortcut['name']:
-        return shortcut['id']
-  except (GAPI.invalidQuery, GAPI.invalid, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
-    pass
-  return None
 
 copyReturnItemMap = {
   'returnidonly': 'id',

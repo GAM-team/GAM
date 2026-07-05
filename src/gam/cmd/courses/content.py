@@ -32,6 +32,28 @@ from gam.util.display import entityActionFailedWarning, entityDoesNotHaveItemWar
 from gam.util.entity import getEntityList, removeCourseIdScope
 
 from gam.var import Cmd, Ent
+from gam.cmd.courses.courses import (
+    COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP,
+    COURSE_ANNOUNCEMENTS_INDEXED_TITLES,
+    COURSE_ANNOUNCEMENTS_ORDERBY_CHOICE_MAP,
+    COURSE_ANNOUNCEMENTS_SORT_TITLES,
+    COURSE_ANNOUNCEMENTS_TIME_OBJECTS,
+    COURSE_CUS_FILTER_FIELDS_MAP,
+    COURSE_CU_FILTER_FIELDS_MAP,
+    COURSE_U_FILTER_FIELDS_MAP,
+    _convertCourseUserIdToEmailName,
+    _courseItemPassesFilter,
+    _getCourseItemFilter,
+    _getCourseSelectionParameters,
+    _getCourseStates,
+    _getCoursesInfo,
+    _gettingCourseEntityQuery,
+    _initCourseItemFilter,
+    _initCourseSelectionParameters,
+    _initCourseShowProperties,
+    _printCourseItemCount,
+    _setApplyCourseItemFilter,
+)
 
 def doPrintCourseAnnouncements():
   def _printCourseAnnouncement(course, courseAnnouncement, i, count):

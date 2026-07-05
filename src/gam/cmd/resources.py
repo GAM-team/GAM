@@ -126,6 +126,8 @@ def _makeBuildingIdNameMap(cd=None):
 # Register with util/tags.py so it can trigger building map population
 # without importing from the cmd layer.
 from gam.util.tags import register_building_map_factory  # noqa: E402
+from gam.util.access import accessErrorExit
+from gam.util.api import ClientAPIAccessDeniedExit
 register_building_map_factory(_makeBuildingIdNameMap)
 
 def _getBuildingByNameOrId(cd, minLen=1, allowNV=False):

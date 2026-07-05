@@ -9,9 +9,28 @@ Part of the copymove sub-package."""
 """GAM Google Drive file, permission, shared drive, and label management."""
 
 
-from gam.cmd.drive.core import DFA_SEARCHARGS
+from gam.cmd.drive.core import DFA_SEARCHARGS, _checkForExistingShortcut
 
-from gam.cmd.drive.copymove.copymove_util import _checkForDuplicateTargetFile, _checkForExistingShortcut, _copyPermissions, _getCopyFolderNonInheritedPermissions, _getCopyMoveParentInfo, _getCopyMoveTargetInfo, _getUniqueFilename, _identicalSourceTarget, _printStatistics, _targetFilenameExists, _verifyUserIsOrganizer, getCopyMoveOptions, initCopyMoveOptions
+from gam.cmd.drive.copymove.copymove_util import (
+    DEST_PARENT_MYDRIVE_ROOT,
+    DUPLICATE_FILE_OVERWRITE_ALL,
+    DUPLICATE_FILE_OVERWRITE_OLDER,
+    DUPLICATE_FOLDER_MERGE,
+    DUPLICATE_FOLDER_SKIP,
+    DUPLICATE_FOLDER_UNIQUE_NAME,
+    _checkForDuplicateTargetFile,
+    _copyPermissions,
+    _getCopyFolderNonInheritedPermissions,
+    _getCopyMoveParentInfo,
+    _getCopyMoveTargetInfo,
+    _getUniqueFilename,
+    _identicalSourceTarget,
+    _printStatistics,
+    _targetFilenameExists,
+    _verifyUserIsOrganizer,
+    getCopyMoveOptions,
+    initCopyMoveOptions,
+)
 
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
@@ -35,6 +54,34 @@ from gam.util.errors import unknownArgumentExit
 from gam.constants import ANY_NON_TRASHED_WITH_PARENTS, WITH_PARENTS
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.cmd.drive.core import (
+    _getDriveFileParentInfo,
+    _getSharedDriveNameFromId,
+    _validateUserGetFileIDs,
+    getDriveFileEntity,
+    getDriveFileParentAttribute,
+    initDriveFileAttributes,
+)
+from gam.cmd.drive.files import (
+    STAT_FILE_COPIED_MOVED,
+    STAT_FILE_DUPLICATE,
+    STAT_FILE_FAILED,
+    STAT_FILE_NOT_COPYABLE_MOVABLE,
+    STAT_FILE_PERMISSIONS_FAILED,
+    STAT_FILE_SHORTCUT_CREATED,
+    STAT_FILE_SHORTCUT_EXISTS,
+    STAT_FOLDER_COPIED_MOVED,
+    STAT_FOLDER_DUPLICATE,
+    STAT_FOLDER_FAILED,
+    STAT_FOLDER_MERGED,
+    STAT_FOLDER_NOT_WRITABLE,
+    STAT_FOLDER_PERMISSIONS_FAILED,
+    STAT_FOLDER_SHORTCUT_CREATED,
+    STAT_FOLDER_SHORTCUT_EXISTS,
+    STAT_USER_NOT_ORGANIZER,
+    _incrStatistic,
+    _initStatistics,
+)
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -826,8 +873,5 @@ def moveDriveFile(users):
     if copyMoveOptions['summary']:
       _printStatistics(user, statistics, i, count, False)
 
-DELETE_DRIVEFILE_CHOICE_MAP = {'purge': 'delete', 'trash': 'trash', 'untrash': 'untrash'}
-DELETE_DRIVEFILE_FUNCTION_TO_ACTION_MAP = {'delete': Act.PURGE, 'trash': Act.TRASH, 'untrash': Act.UNTRASH}
-DELETE_DRIVEFILE_FUNCTION_TO_CAPABILITY_MAP = {'delete': 'canDelete', 'trash': 'canTrash', 'untrash': 'canUntrash'}
 
 # gam <UserTypeEntity> delete drivefile <DriveFileEntity> [purge|trash|untrash] [shortcutandtarget [<Boolean>]]

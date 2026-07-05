@@ -99,6 +99,7 @@ from gam.cmd.aliases import _addUserAliases
 from gam.cmd.ciuserinvitations import _getIsInvitableUser
 from gam.cmd.resources import _getBuildingByNameOrId
 from gam.cmd.userop.usergroups import _addUserToGroups
+import random
 UTF8 = 'utf-8'
 UNKNOWN = 'Unknown'
 

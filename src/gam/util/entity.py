@@ -73,7 +73,8 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
 
 from gam.constants import DATA_ERROR_RC, INVALID_ENTITY_RC, NO_ENTITIES_FOUND_RC, UNKNOWN_ERROR_RC
 from gamlib import skus as SKU
-from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkMatchSkipFields, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, shlexSplitList, shlexSplitListStatus, splitEmailAddress, validateEmailAddressOrUID
+from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, shlexSplitList, shlexSplitListStatus, splitEmailAddress, validateEmailAddressOrUID
+from util.row_filter import checkMatchSkipFields
 from util.display import ENTITY_DOES_NOT_EXIST_RC, entityActionFailedWarning, entityActionNotPerformedWarning, entityDoesNotExistWarning, entityPerformActionNumItems, getPageMessage, getPageMessageForWhom, printGettingAllAccountEntities, printGettingAllEntityItemsForWhom, printGotEntityItemsForWhom, setGettingAllEntityItemsForWhom
 from util.errors import csvDataAlreadySavedErrorExit, csvFieldErrorExit, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, usageErrorExit
 from util.fileio import closeFile, openFile, setFilePath

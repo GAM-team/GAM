@@ -49,6 +49,7 @@ from gam.util.output import (
 )
 from gam.constants import GOOGLE_API_ERROR_RC
 from gam.cmd.drive.transfer.fileops import HTTP_ERROR_PATTERN
+from gam.util.api import ClientAPIAccessDeniedExit
 
 
 def _copyStorageObjects(objects, target_bucket, target_prefix):

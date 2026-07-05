@@ -185,33 +185,8 @@ def addFilePathsToInfo(drive, fileTree, fileEntryInfo, filePathInfo, addParentsT
     else:
       fileEntryInfo['paths'].append(path)
 
-DRIVEFILE_ORDERBY_CHOICE_MAP = {
-  'createddate': 'createdTime',
-  'createdtime': 'createdTime',
-  'folder': 'folder',
-  'lastviewedbyme': 'viewedByMeTime',
-  'lastviewedbymedate': 'viewedByMeTime',
-  'lastviewedbymetime': 'viewedByMeTime',
-  'lastviewedbyuser': 'viewedByMeTime',
-  'modifiedbyme': 'modifiedByMeTime',
-  'modifiedbymedate': 'modifiedByMeTime',
-  'modifiedbymetime': 'modifiedByMeTime',
-  'modifiedbyuser': 'modifiedByMeTime',
-  'modifieddate': 'modifiedTime',
-  'modifiedtime': 'modifiedTime',
-  'name': 'name',
-  'namenatural': 'name_natural',
-  'quotabytesused': 'quotaBytesUsed',
-  'quotaused': 'quotaBytesUsed',
-  'recency': 'recency',
-  'sharedwithmedate': 'sharedWithMeTime',
-  'sharedwithmetime': 'sharedWithMeTime',
-  'starred': 'starred',
-  'title': 'name',
-  'titlenatural': 'name_natural',
-  'viewedbymedate': 'viewedByMeTime',
-  'viewedbymetime': 'viewedByMeTime',
-  }
+
+from gam.cmd.drive.core import DRIVEFILE_ORDERBY_CHOICE_MAP
 
 def _mapDriveUser(field):
   if 'me' in field:

@@ -36,8 +36,9 @@ from gamlib import msgs as Msg
 from util.csv_pf import CSVPrintFile
 from gam.constants import HARD_ERROR_RC, KEYBOARD_INTERRUPT_RC
 from util.api import buildGAPIObject
-from util.args import UTF8, checkArgumentPresent, checkForExtraneousArguments, checkMatchSkipFields, getBoolean, getCharSet, getDelimiter, getInteger, getMatchSkipFields, getString, normalizeEmailAddressOrUID, todaysTime
+from util.args import UTF8, checkArgumentPresent, checkForExtraneousArguments, getBoolean, getCharSet, getDelimiter, getInteger, getMatchSkipFields, getString, normalizeEmailAddressOrUID, todaysTime
 from util.csv_pf import CheckInputRowFilterHeaders
+from util.row_filter import checkMatchSkipFields
 from util.display import actionPerformedNumItems
 from util.entity import getEntityArgument, getEntityList, getEntityToModify
 from util.errors import USAGE_ERROR_RC, csvFieldErrorExit, formatChoiceList, missingArgumentExit, usageErrorExit
@@ -46,6 +47,9 @@ from util.gdoc import getGDocData, getStorageFileData, openCSVFileReader
 from util.output import ERROR_PREFIX, currentISOformatTimeStamp, flushStderr, flushStdout, readStdin, setSysExitRC, systemErrorExit, writeStderr, writeStdout
 from gam.constants import GAM
 from gam.var import Cmd, Ind
+
+# Multiprocessing lock, initialized at runtime by initGamWorker()
+mplock = None
 
 
 def executeBatch(dbatch):

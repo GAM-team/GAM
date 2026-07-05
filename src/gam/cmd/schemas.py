@@ -31,6 +31,8 @@ from gam.util.entity import getEntityList
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
+from gam.util.access import accessErrorExit
+from gam.util.api import ClientAPIAccessDeniedExit
 
 
 def _showSchema(schema, i=0, count=0):

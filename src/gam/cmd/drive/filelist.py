@@ -45,7 +45,7 @@ SHARED_DRIVES = 'SharedDrives'
 from gam.cmd.drive.filepaths import (
     addFilePathsToInfo,
     addFilePathsToRow,
-    DRIVEFILE_BASIC_PERMISSION_FIELDS, DRIVEFILE_ORDERBY_CHOICE_MAP,
+    DRIVEFILE_BASIC_PERMISSION_FIELDS,
     DRIVE_FIELDS_CHOICE_MAP, DRIVE_LIST_FIELDS, DRIVE_SUBFIELDS_CHOICE_MAP,
     DRIVE_TIME_OBJECTS, DriveFileFields, FILEPATH_FIELDS_TITLES,
     SHOWLABELS_CHOICES, _finalizeIncludeLabels,
@@ -56,6 +56,7 @@ from gam.cmd.drive.filepaths import (
 )
 
 from gam.cmd.drive.core import (
+    DRIVEFILE_ORDERBY_CHOICE_MAP,
     _getSharedDriveNameFromId,
     _mapDrive2QueryToDrive3,
     _simpleFileIdEntityList,

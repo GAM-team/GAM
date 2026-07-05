@@ -682,6 +682,18 @@ def doCourseSyncParticipants(courseIdList, _):
 # Dispatch tables and routing (moved from __init__.py)
 # Additional imports for dispatch
 from gam.constants import CMD_ACTION, CMD_FUNCTION
+from gam.cmd.courses.content import COURSE_PARTICIPANTS_SORT_TITLES
+from gam.cmd.courses.courses import (
+    COURSE_MEMBER_ARGUMENTS,
+    COURSE_STATE_MAPS,
+    _getCourseAliasesMembers,
+    _getCourseOwnerSA,
+    _getCourseSelectionParameters,
+    _getCoursesInfo,
+    _getCoursesOwnerInfo,
+    _initCourseSelectionParameters,
+    _initCourseShowProperties,
+)
 
 # Course command sub-commands
 COURSE_SUBCOMMANDS = {

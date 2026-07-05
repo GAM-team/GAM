@@ -53,6 +53,7 @@ from gam.util.uid import convertEmailAddressToUID, convertUIDtoEmailAddressWithT
 from gam.util.errors import entityActionFailedExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.orgunits import getOrgUnitId
+from gam.util.api import ClientAPIAccessDeniedExit
 
 
 def _listPrivileges(cd):

@@ -109,6 +109,9 @@ from urllib.parse import quote, urlencode
 
 import string
 from gam.util.uid import convertUIDtoEmailAddress
+import arrow
+import random
+from gam.cmd.oauth import Credentials
 LOWERNUMERIC_CHARS = string.ascii_lowercase + string.digits
 
 def getCRMService(login_hint):

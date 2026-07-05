@@ -38,6 +38,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument, getUserObjectEntity
 
 from gam.var import Act, Cmd, Ent, Ind
+from gam.util.output import _stripControlCharsFromName
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'

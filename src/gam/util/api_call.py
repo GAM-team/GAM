@@ -25,6 +25,7 @@ from util.args import UTF8, formatHTTPError
 from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER
 from util.fileio import checkAPICallsRate
 from util.output import ERROR_PREFIX, flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+import google
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')
 

@@ -67,6 +67,9 @@ from gam.util.output import currentCount, formatKeyValueList, writeStdout
 from gam.constants import OWNER_ACCESS_OPTIONS
 
 from gam.var import Act, Cmd, Ent, Ind
+import arrow
+from gam.util.access import entityOrEntityUnknownWarning
+from gam.util.api import ClientAPIAccessDeniedExit
 
 def checkCourseExists(croom, courseId, i=0, count=0, entityType=Ent.COURSE):
   courseId = addCourseIdScope(courseId)

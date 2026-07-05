@@ -1265,3 +1265,45 @@ SHAREDDRIVE_QUERY_SHORTCUTS_MAP = {
   'allnongooglefiles': "not mimeType contains 'vnd.google'",
   'allitems': 'allitems',
   }
+
+DRIVEFILE_ORDERBY_CHOICE_MAP = {
+  'createddate': 'createdTime',
+  'createdtime': 'createdTime',
+  'folder': 'folder',
+  'lastviewedbyme': 'viewedByMeTime',
+  'lastviewedbymedate': 'viewedByMeTime',
+  'lastviewedbymetime': 'viewedByMeTime',
+  'lastviewedbyuser': 'viewedByMeTime',
+  'modifiedbyme': 'modifiedByMeTime',
+  'modifiedbymedate': 'modifiedByMeTime',
+  'modifiedbymetime': 'modifiedByMeTime',
+  'modifiedbyuser': 'modifiedByMeTime',
+  'modifieddate': 'modifiedTime',
+  'modifiedtime': 'modifiedTime',
+  'name': 'name',
+  'namenatural': 'name_natural',
+  'quotabytesused': 'quotaBytesUsed',
+  'quotaused': 'quotaBytesUsed',
+  'recency': 'recency',
+  'sharedwithmedate': 'sharedWithMeTime',
+  'sharedwithmetime': 'sharedWithMeTime',
+  'starred': 'starred',
+  'title': 'name',
+  'titlenatural': 'name_natural',
+  'viewedbymedate': 'viewedByMeTime',
+  'viewedbymetime': 'viewedByMeTime',
+  }
+
+def _checkForExistingShortcut(drive, fileId, fileName, parentId):
+  try:
+    existingShortcuts = callGAPI(drive.files(), 'list',
+                                 throwReasons=GAPI.DRIVE_USER_THROW_REASONS+[GAPI.INVALID_QUERY, GAPI.INVALID],
+                                 retryReasons=[GAPI.UNKNOWN_ERROR],
+                                 supportsAllDrives=True, includeItemsFromAllDrives=True,
+                                 q=f"shortcutDetails.targetId = '{fileId}' and trashed = False", fields='files(id,name,parents)')['files']
+    for shortcut in existingShortcuts:
+      if parentId in shortcut.get('parents', []) and fileName == shortcut['name']:
+        return shortcut['id']
+  except (GAPI.invalidQuery, GAPI.invalid, GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy):
+    pass
+  return None
