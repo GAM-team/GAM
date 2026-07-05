@@ -37,6 +37,21 @@ from gam.constants import MIMETYPE_GA_SPREADSHEET
 
 
 
+def escapeDriveFileName(filename):
+  """Escape single quotes and backslashes for Drive API query strings."""
+  if filename.find("'") == -1 and filename.find('\\') == -1:
+    return filename
+  encfilename = ''
+  for c in filename:
+    if c == "'":
+      encfilename += "\\'"
+    elif c == '\\':
+      encfilename += '\\\\'
+    else:
+      encfilename += c
+  return encfilename
+
+
 GDOC_FORMAT_MIME_TYPES = {
   'gcsv': 'text/csv',
   'gdoc': 'text/plain',

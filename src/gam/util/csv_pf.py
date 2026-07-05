@@ -28,6 +28,7 @@ from util.display import ACTION_FAILED_RC, entityActionFailedWarning, entityActi
 from util.email import send_email
 from util.entity import checkUserExists, getEntityArgument
 from util.row_filter import RowFilterMatch
+from util.gdoc import escapeDriveFileName
 from util.errors import USAGE_ERROR_RC, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
 from util.fileio import FILE_ERROR_RC, StringIOobject, closeFile, fdErrorMessage, openFile
 from util.output import ISOformatTimeStamp, WARNING, currentCountNL, formatKeyValueList, formatLocalTime, formatLocalTimestamp, printWarningMessage, setSysExitRC, stderrErrorMsg, stderrWarningMsg, systemErrorExit, writeStdout

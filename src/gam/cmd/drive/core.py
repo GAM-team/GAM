@@ -232,18 +232,7 @@ def _mapDrive2QueryToDrive3(query):
     query = mapQueryRelativeTimes(query, ['modifiedTime', 'viewedByMeTime'])
   return query
 
-def escapeDriveFileName(filename):
-  if filename.find("'") == -1 and filename.find('\\') == -1:
-    return filename
-  encfilename = ''
-  for c in filename:
-    if c == "'":
-      encfilename += "\\'"
-    elif c == '\\':
-      encfilename += '\\\\'
-    else:
-      encfilename += c
-  return encfilename
+from gam.util.gdoc import escapeDriveFileName
 
 def getEscapedDriveFileName():
   return escapeDriveFileName(getString(Cmd.OB_DRIVE_FILE_NAME))
