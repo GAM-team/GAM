@@ -89,6 +89,7 @@ from gam.cmd.people.core import (
     _getPersonFields,
     _initPersonMetadataParameters,
     getPersonFieldsList,
+    queryPeopleOtherContacts,
 )
 
 def _initPeopleContactQueryAttributes(printShowCmd):
@@ -720,7 +721,6 @@ def infoUserPeopleContacts(users):
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[countsonly|formatjson]
 def printShowUserPeopleContacts(users):
-  from gam.cmd.people.othercontacts import queryPeopleOtherContacts  # deferred: circular
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
   csvPF = CSVPrintFile([entityTypeName, 'resourceName'], 'sortall') if Act.csvFormat() else None

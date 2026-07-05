@@ -6,6 +6,9 @@ NEVER import from those siblings so that it can be imported at the top level
 of any of them without creating a cycle.
 """
 
+from gamlib import gapi as GAPI
+from gamlib import settings as GC
+from gam.var import Ent
 from gam.cmd.contacts import (
     PEOPLE_ADDRESSES,
     PEOPLE_BIOGRAPHIES,
@@ -32,6 +35,7 @@ from gam.cmd.contacts import (
     PEOPLE_ORGANIZATIONS,
     PEOPLE_PHONE_NUMBERS,
     PEOPLE_PHOTOS,
+    PEOPLE_READ_SOURCES_CHOICE_MAP,
     PEOPLE_RELATIONS,
     PEOPLE_SIP_ADDRESSES,
     PEOPLE_SKILLS,
@@ -39,7 +43,16 @@ from gam.cmd.contacts import (
     PEOPLE_URLS,
     PEOPLE_USER_DEFINED,
 )
+from gam.util.access import entityUnknownWarning
+from gam.util.api import ClientAPIAccessDeniedExit
+from gam.util.api_call import writeGotMessage, callGAPI, callGAPIpages
 from gam.util.csv_pf import addFieldToFieldsList, getFieldsList
+from gam.util.display import (
+    TOTAL_ITEMS_MARKER,
+    getPageMessageForWhom,
+    printGettingAllEntityItemsForWhom,
+    userPeopleServiceNotEnabledWarning,
+)
 from gam.util.fileio import UNKNOWN
 
 
@@ -272,3 +285,34 @@ PEOPLE_CONTACTGROUPS_FIELDS_CHOICE_MAP = {
   }
 
 PEOPLE_CONTACTGROUPS_DEFAULT_FIELDS = ['name', 'metadata', 'grouptype', 'membercount']
+
+
+def queryPeopleOtherContacts(people, contactQuery, fields, entityType, user, i=0, count=0):
+  sources = [PEOPLE_READ_SOURCES_CHOICE_MAP['contact']]
+  printGettingAllEntityItemsForWhom(Ent.OTHER_CONTACT, user, i, count, query=contactQuery['query'])
+  pageMessage = getPageMessageForWhom()
+  try:
+    if not contactQuery['query']:
+      entityList = callGAPIpages(people.otherContacts(), 'list', 'otherContacts',
+                                 pageMessage=pageMessage,
+                                 throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                 pageSize=GC.Values[GC.PEOPLE_MAX_RESULTS],
+                                 readMask=fields, fields='nextPageToken,otherContacts', sources=sources)
+    else:
+      results = callGAPI(people.otherContacts(), 'search',
+                         throwReasons=GAPI.PEOPLE_ACCESS_THROW_REASONS,
+                         pageSize=30, readMask=fields, query=contactQuery['query'])
+      entityList = [person['person'] for person in results.get('results', [])]
+      totalItems = len(entityList)
+      if pageMessage:
+        showMessage = pageMessage.replace(TOTAL_ITEMS_MARKER, str(totalItems))
+        writeGotMessage(showMessage.replace('{0}', str(Ent.Choose(Ent.OTHER_CONTACT, totalItems))))
+    return entityList
+  except GAPI.permissionDenied as e:
+    ClientAPIAccessDeniedExit(str(e))
+  except GAPI.forbidden:
+    userPeopleServiceNotEnabledWarning(user, i, count)
+  except GAPI.serviceNotAvailable:
+    entityUnknownWarning(entityType, user, i, count)
+  return None
