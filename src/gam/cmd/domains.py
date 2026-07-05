@@ -9,7 +9,7 @@ from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import accessErrorExit
-from gam.util.api import buildGAPIObject
+from gam.util.api import ClientAPIAccessDeniedExit, buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIitems
 from gam.util.args import checkForExtraneousArguments, getArgument, getString
 from gam.util.csv_pf import (
@@ -30,6 +30,8 @@ from gam.util.display import (
 )
 from gam.util.errors import missingArgumentExit, unknownArgumentExit
 from gam.util.output import writeStdout, formatLocalTimestamp
+
+from gam.util.entity import _getDomainList
 
 
 def doCreateDomainAlias():
@@ -246,3 +248,101 @@ CUSTOMER_LICENSE_MAP = {
   'accounts:vault_total_licenses': 'Google Vault Licenses',
   }
 
+
+DOMAIN_PRINT_ORDER = ['customerDomain', 'creationTime', 'isPrimary', 'verified']
+DOMAIN_SKIP_OBJECTS = {'domainName', 'domainAliases'}
+
+def _showDomain(result, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(result, timeObjects=DOMAIN_TIME_OBJECTS), ensure_ascii=False, sort_keys=True))
+    return
+  skipObjects = DOMAIN_SKIP_OBJECTS
+  printEntity([Ent.DOMAIN, result['domainName']], i, count)
+  Ind.Increment()
+  if 'creationTime' in result:
+    result['creationTime'] = formatLocalTimestamp(result['creationTime'])
+  for field in DOMAIN_PRINT_ORDER:
+    if field in result:
+      printKeyValueList([field, result[field]])
+      skipObjects.add(field)
+  field = 'domainAliases'
+  aliases = result.get(field)
+  if aliases:
+    skipObjects.add(field)
+    aliasSkipObjects = DOMAIN_ALIAS_SKIP_OBJECTS
+    for alias in aliases:
+      _showDomainAlias(alias, FJQC, aliasSkipObjects)
+      showJSON(None, alias, aliasSkipObjects)
+  showJSON(None, result, skipObjects)
+  Ind.Decrement()
+
+# gam info domain [<DomainName>] [formatjson]
+def doInfoDomain():
+  if (not Cmd.ArgumentsRemaining()) or (Cmd.Current().lower() == 'formatjson'):
+    from gam.cmd.customer import doInfoInstance
+    doInfoInstance()
+    return
+  cd = buildGAPIObject(API.DIRECTORY)
+  domainName = getString(Cmd.OB_DOMAIN_NAME)
+  FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
+  try:
+    result = callGAPI(cd.domains(), 'get',
+                      throwReasons=[GAPI.DOMAIN_NOT_FOUND, GAPI.BAD_REQUEST, GAPI.NOT_FOUND,
+                                    GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
+                      customer=GC.Values[GC.CUSTOMER_ID], domainName=domainName)
+    _showDomain(result, FJQC)
+  except GAPI.domainNotFound:
+    entityActionFailedWarning([Ent.DOMAIN, domainName], Msg.DOES_NOT_EXIST)
+  except (GAPI.badRequest, GAPI.notFound):
+    accessErrorExit(cd)
+  except (GAPI.forbidden, GAPI.permissionDenied) as e:
+    ClientAPIAccessDeniedExit(str(e))
+
+DOMAIN_SORT_TITLES = ['domainName', 'parentDomainName', 'creationTime', 'type', 'verified']
+
+# gam print domains [todrive <ToDriveAttribute>*]
+#	[formatjson [quotechar <Character>]]
+#	[showitemcountonly]
+# gam show domains
+#	[formatjson]
+#	[showitemcountonly]
+def doPrintShowDomains():
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['domainName'], DOMAIN_SORT_TITLES) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  showItemCountOnly = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'showitemcountonly':
+      showItemCountOnly = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  domains = _getDomainList(cd, GC.Values[GC.CUSTOMER_ID], '*')
+  count = len(domains)
+  if showItemCountOnly:
+    writeStdout(f'{count}\n')
+    return
+  i = 0
+  for domain in domains:
+    i += 1
+    if not csvPF:
+      _showDomain(domain, FJQC, i, count)
+    elif not FJQC.formatJSON:
+      domain['type'] = 'primary' if domain.pop('isPrimary') else 'secondary'
+      domainAliases = domain.pop('domainAliases', [])
+      _printDomain(domain, csvPF)
+      for domainAlias in domainAliases:
+        domainAlias['type'] = 'alias'
+        domainAlias['domainName'] = domainAlias.pop('domainAliasName')
+        _printDomain(domainAlias, csvPF)
+    else:
+      csvPF.WriteRowNoFilter({'domainName': domain['domainName'],
+                              'JSON': json.dumps(cleanJSON(domain, timeObjects=DOMAIN_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+  if csvPF:
+    csvPF.writeCSVfile('Domains')
+
+
+# gam info customerid

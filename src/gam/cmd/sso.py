@@ -40,7 +40,7 @@ from gam.util.fileio import readFile, setFilePath, writeFile
 from gam.util.orgunits import getOrgUnitId
 from gam.util.output import writeStderr, writeStdout
 from gam.cmd.reseller import normalizeChannelCustomerID
-from gam.cmd.project import _generatePrivateKeyAndPublicCert
+from gam.util.crypto import _generatePrivateKeyAndPublicCert
 
 
 INBOUNDSSO_INPUT_MODE_CHOICE_MAP = {

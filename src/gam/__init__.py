@@ -367,9 +367,7 @@ from gam.cmd.cros import (
 from gam.cmd.customer import (
     doInfoCustomer,
     doInfoCustomerId,
-    doInfoDomain,
     doInfoInstance,
-    doPrintShowDomains,
     doUpdateCustomer,
 )
 from gam.cmd.datatransfer import (
@@ -384,8 +382,10 @@ from gam.cmd.domains import (
     doCreateDomainAlias,
     doDeleteDomain,
     doDeleteDomainAlias,
+    doInfoDomain,
     doInfoDomainAlias,
     doPrintShowDomainAliases,
+    doPrintShowDomains,
     doUpdateDomain,
 )
 from gam.cmd.drive import (
@@ -805,8 +805,6 @@ from gam.cmd.userservices import (
     createFocusTime,
     createOutOfOffice,
     createWorkingLocation,
-    deleteASP,
-    deleteBackupCodes,
     deleteCalendarACLs,
     deleteCalendarEvents,
     deleteCalendars,
@@ -821,8 +819,6 @@ from gam.cmd.userservices import (
     infoCalendars,
     modifyCalendars,
     moveCalendarEvents,
-    printShowASPs,
-    printShowBackupCodes,
     printShowCalSettings,
     printShowCalendarACLs,
     printShowCalendarEvents,
@@ -830,15 +826,23 @@ from gam.cmd.userservices import (
     printShowFocusTime,
     printShowOutOfOffice,
     printShowWorkingLocation,
-    printShowYouTubeChannel,
     purgeCalendarEvents,
     removeCalendars,
-    updateBackupCodes,
     updateCalendarACLs,
     updateCalendarAttendees,
     updateCalendarEvents,
     updateCalendars,
     wipeCalendarEvents,
+)
+from gam.cmd.users.security import (
+    deleteASP,
+    deleteBackupCodes,
+    printShowASPs,
+    printShowBackupCodes,
+    updateBackupCodes,
+)
+from gam.cmd.users.youtube import (
+    printShowYouTubeChannel,
 )
 from gam.cmd.vault import (
     doCloseVaultMatter,

@@ -26,9 +26,8 @@ from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit, entityUnknownWarning
 from gam.util.api import buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
-from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages
+from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
-    BCP47_LANGUAGE_CODES_MAP,
     CALENDAR_COLOR_MAP,
     YYYYMMDD_FORMAT,
     checkArgumentPresent,
@@ -41,19 +40,17 @@ from gam.util.args import (
     getColor,
     getEmailAddress,
     getInteger,
-    getLanguageCode,
     getString,
     getTimeOrDeltaFromNow,
     getYYYYMMDD,
     normalizeEmailAddressOrUID,
     splitEmailAddress,
 )
-from gam.util.output import ISOformatTimeStamp, formatLocalTime, formatLocalTimestamp
+from gam.util.output import ISOformatTimeStamp, formatLocalTime
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
     _getFieldsList,
-    addFieldToFieldsList,
     cleanJSON,
     flattenJSON,
     getFieldsFromFieldsList,
@@ -80,10 +77,8 @@ from gam.util.display import (
     printKeyValueListWithCount,
     printLine,
     userCalServiceNotEnabledWarning,
-    userYouTubeServiceNotEnabledWarning,
 )
 from gam.util.entity import (
-    checkUserSuspended,
     convertEntityToList,
     convertUIDtoEmailAddress,
     getEntityArgument,
@@ -100,7 +95,7 @@ from gam.util.errors import (
     unknownArgumentExit,
     usageErrorExit,
 )
-from gam.util.fileio import UNKNOWN, closeFile
+from gam.util.fileio import closeFile
 from gam.util.gdoc import openCSVFileReader
 from gam.util.output import setSysExitRC, stderrErrorMsg, systemErrorExit
 from gam.constants import NO_ENTITIES_FOUND_RC
@@ -133,244 +128,6 @@ from gam.cmd.calendar import _setEventRecurrenceTimeZone
 from gam.cmd.calendar import checkCalendarExists
 from gam.cmd.calendar import _getEventDaysOfWeek, _printCalendarEvent
 
-
-def _showASPs(user, asps, i=0, count=0):
-  Act.Set(Act.SHOW)
-  jcount = len(asps)
-  entityPerformActionNumItems([Ent.USER, user], jcount, Ent.APPLICATION_SPECIFIC_PASSWORD, i, count)
-  if jcount == 0:
-    setSysExitRC(NO_ENTITIES_FOUND_RC)
-    return
-  Ind.Increment()
-  for asp in asps:
-    if asp['creationTime'] == '0':
-      created_date = UNKNOWN
-    else:
-      created_date = formatLocalTimestamp(asp['creationTime'])
-    if asp['lastTimeUsed'] == '0':
-      used_date = GC.NEVER
-    else:
-      used_date = formatLocalTimestamp(asp['lastTimeUsed'])
-    printKeyValueList(['ID', asp['codeId']])
-    Ind.Increment()
-    printKeyValueList(['Name', asp['name']])
-    printKeyValueList(['Created', created_date])
-    printKeyValueList(['Last Used', used_date])
-    Ind.Decrement()
-  Ind.Decrement()
-
-# gam <UserTypeEntity> delete asps|applicationspecificpasswords all|<AspIDList>
-def deleteASP(users):
-  cd = buildGAPIObject(API.DIRECTORY)
-  codeIdList = getString(Cmd.OB_ASP_ID_LIST).lower()
-  if codeIdList == 'all':
-    allCodeIds = True
-  else:
-    allCodeIds = False
-    codeIds = codeIdList.replace(',', ' ').split()
-    for codeId in codeIds:
-      if not codeId.isdigit():
-        Cmd.Backup()
-        usageErrorExit(Msg.INVALID_ENTITY.format(Ent.Singular(Ent.APPLICATION_SPECIFIC_PASSWORD), Msg.MUST_BE_NUMERIC))
-  checkForExtraneousArguments()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user = normalizeEmailAddressOrUID(user)
-    if allCodeIds:
-      try:
-        asps = callGAPIitems(cd.asps(), 'list', 'items',
-                             throwReasons=[GAPI.USER_NOT_FOUND],
-                             userKey=user, fields='items(codeId)')
-        codeIds = [asp['codeId'] for asp in asps]
-      except GAPI.userNotFound:
-        entityUnknownWarning(Ent.USER, user, i, count)
-        continue
-    jcount = len(codeIds)
-    entityPerformActionNumItems([Ent.USER, user], jcount, Ent.APPLICATION_SPECIFIC_PASSWORD, i, count)
-    if jcount == 0:
-      setSysExitRC(NO_ENTITIES_FOUND_RC)
-      continue
-    Ind.Increment()
-    j = 0
-    for codeId in codeIds:
-      j += 1
-      try:
-        callGAPI(cd.asps(), 'delete',
-                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.INVALID, GAPI.INVALID_PARAMETER, GAPI.FORBIDDEN],
-                 userKey=user, codeId=codeId)
-        entityActionPerformed([Ent.USER, user, Ent.APPLICATION_SPECIFIC_PASSWORD, codeId], j, jcount)
-      except (GAPI.invalid, GAPI.invalidParameter, GAPI.forbidden) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.APPLICATION_SPECIFIC_PASSWORD, codeId], str(e), j, jcount)
-      except GAPI.userNotFound:
-        entityUnknownWarning(Ent.USER, user, i, count)
-        break
-    Ind.Decrement()
-
-# gam <UserTypeEntity> print asps|applicationspecificpasswords [todrive <ToDriveAttribute>*]
-#	[oneitemperrow]
-# gam <UserTypeEntity> show asps|applicationspecificpasswords
-def printShowASPs(users):
-  cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User']) if Act.csvFormat() else None
-  oneItemPerRow = False
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if csvPF and myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    elif csvPF and myarg == 'oneitemperrow':
-      oneItemPerRow = True
-    else:
-      unknownArgumentExit()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user = normalizeEmailAddressOrUID(user)
-    if csvPF:
-      printGettingEntityItemForWhom(Ent.APPLICATION_SPECIFIC_PASSWORD, user, i, count)
-    try:
-      asps = callGAPIitems(cd.asps(), 'list', 'items',
-                           throwReasons=[GAPI.USER_NOT_FOUND],
-                           userKey=user)
-      if not csvPF:
-        _showASPs(user, asps, i, count)
-      else:
-        for asp in asps:
-          asp.pop('userKey', None)
-          if asp['creationTime'] == '0':
-            asp['creationTime'] = UNKNOWN
-          else:
-            asp['creationTime'] = formatLocalTimestamp(asp['creationTime'])
-          if asp['lastTimeUsed'] == '0':
-            asp['lastTimeUsed'] = GC.NEVER
-          else:
-            asp['lastTimeUsed'] = formatLocalTimestamp(asp['lastTimeUsed'])
-        if not oneItemPerRow:
-          csvPF.WriteRowTitles(flattenJSON({'asps': asps}, flattened={'User': user}))
-        else:
-          for asp in asps:
-            csvPF.WriteRowTitles(flattenJSON({'asp': asp}, flattened={'User': user}))
-    except GAPI.userNotFound:
-      entityUnknownWarning(Ent.USER, user, i, count)
-  if csvPF:
-    csvPF.writeCSVfile('Application Specific Passwords')
-
-def _showBackupCodes(user, codes, i, count):
-  Act.Set(Act.SHOW)
-  jcount = 0
-  for code in codes:
-    if code.get('verificationCode'):
-      jcount += 1
-  entityPerformActionNumItems([Ent.USER, user], jcount, Ent.BACKUP_VERIFICATION_CODES, i, count)
-  if jcount == 0:
-    setSysExitRC(NO_ENTITIES_FOUND_RC)
-    return
-  Ind.Increment()
-  j = 0
-  for code in codes:
-    j += 1
-    printKeyValueList([f'{j:2}', code.get('verificationCode')])
-  Ind.Decrement()
-
-# gam <UserTypeEntity> update backupcodes|verificationcodes
-def updateBackupCodes(users):
-  cd = buildGAPIObject(API.DIRECTORY)
-  checkForExtraneousArguments()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user = normalizeEmailAddressOrUID(user)
-    userSuspended = checkUserSuspended(cd, user, Ent.USER, i, count)
-    if userSuspended is None:
-      continue
-    if not userSuspended:
-      try:
-        callGAPI(cd.verificationCodes(), 'generate',
-                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.INVALID, GAPI.INVALID_INPUT],
-                 userKey=user)
-        codes = callGAPIitems(cd.verificationCodes(), 'list', 'items',
-                              throwReasons=[GAPI.USER_NOT_FOUND],
-                              userKey=user, fields='items(verificationCode)')
-        _showBackupCodes(user, codes, i, count)
-      except GAPI.userNotFound:
-        entityUnknownWarning(Ent.USER, user, i, count)
-      except (GAPI.invalid, GAPI.invalidInput) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.BACKUP_VERIFICATION_CODES, None], str(e), i, count)
-    else:
-      entityActionNotPerformedWarning([Ent.USER, user, Ent.BACKUP_VERIFICATION_CODES, None],
-                                      Msg.IS_SUSPENDED_NO_BACKUPCODES, i, count)
-
-# gam <UserTypeEntity> delete backupcodes|verificationcodes
-def deleteBackupCodes(users):
-  cd = buildGAPIObject(API.DIRECTORY)
-  checkForExtraneousArguments()
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user = normalizeEmailAddressOrUID(user)
-    userSuspended = checkUserSuspended(cd, user, Ent.USER, i, count)
-    if userSuspended is None:
-      continue
-    if not userSuspended:
-      try:
-        callGAPI(cd.verificationCodes(), 'invalidate',
-                 throwReasons=[GAPI.USER_NOT_FOUND, GAPI.INVALID, GAPI.INVALID_INPUT],
-                 userKey=user)
-        printEntityKVList([Ent.USER, user], [Ent.Plural(Ent.BACKUP_VERIFICATION_CODES), '', 'Invalidated'], i, count)
-      except GAPI.userNotFound:
-        entityUnknownWarning(Ent.USER, user, i, count)
-      except (GAPI.invalid, GAPI.invalidInput) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.BACKUP_VERIFICATION_CODES, None], str(e), i, count)
-    else:
-      entityActionNotPerformedWarning([Ent.USER, user, Ent.BACKUP_VERIFICATION_CODES, None],
-                                      Msg.IS_SUSPENDED_NO_BACKUPCODES, i, count)
-
-# gam <UserTypeEntity> print backupcodes|verificationcodes [todrive <ToDriveAttribute>*]
-#	[delimiter <Character>] [countsonly]
-# gam <UserTypeEntity> show backupcodes|verificationcodes
-def printShowBackupCodes(users):
-  cd = buildGAPIObject(API.DIRECTORY)
-  csvPF = CSVPrintFile(['User', 'verificationCodesCount', 'verificationCodes']) if Act.csvFormat() else None
-  delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  counts_only = False
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if csvPF and myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    elif myarg == 'delimiter':
-      delimiter = getCharacter()
-    elif myarg == 'countsonly':
-      counts_only = True
-    else:
-      unknownArgumentExit()
-  # if we're only getting counts, we don't want actual codes pulled down
-  if counts_only:
-    csvPF.RemoveTitles('verificationCodes')
-    fields = 'items(etag)'
-  else:
-    fields = 'items(verificationCode)'
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user = normalizeEmailAddressOrUID(user)
-    if csvPF:
-      printGettingEntityItemForWhom(Ent.BACKUP_VERIFICATION_CODES, user, i, count)
-    try:
-      codes = callGAPIitems(cd.verificationCodes(), 'list', 'items',
-                            throwReasons=[GAPI.USER_NOT_FOUND],
-                            userKey=user, fields=fields)
-      if not csvPF:
-        _showBackupCodes(user, codes, i, count)
-      elif counts_only:
-        csvPF.WriteRow({'User': user, 'verificationCodesCount': len(codes)})
-      else:
-        csvPF.WriteRow({'User': user,
-                        'verificationCodesCount': len(codes),
-                        'verificationCodes': delimiter.join([code['verificationCode'] for code in codes if 'verificationCode' in code])})
-    except GAPI.userNotFound:
-      entityUnknownWarning(Ent.USER, user, i, count)
-  if csvPF:
-    csvPF.writeCSVfile('Backup Verification Codes')
 
 def _getCalendarSelectProperty(myarg, kwargs):
   if myarg == 'minaccessrole':
@@ -2061,19 +1818,9 @@ def printShowOutOfOffice(users):
 def printShowWorkingLocation(users):
   printShowStatusEvent(users, EVENT_TYPE_WORKINGLOCATION)
 
-YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
-  'brandingsettings': 'brandingSettings',
-  'contentdetails': 'contentDetails',
-  'contentownerdetails': 'contentOwnerDetails',
-  'id': 'id',
-  'localizations': 'localizations',
-  'snippet': 'snippet',
-  'statistics': 'statistics',
-  'status': 'status',
-  'topicdetails': 'topicDetails',
-  }
 
-YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
+
+
 
 # gam <UserTypeEntity> show youtubechannels
 #	(mine|
@@ -2091,87 +1838,3 @@ YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
 #	[languagecode <BCP47LanguageCode>]
 #	[allfields|(fields <YouTubeChannelFieldNameList>)]
 #	[formatjson [quotechar <Character>]]
-def printShowYouTubeChannel(users):
-  csvPF = CSVPrintFile(['User', 'id'], 'sortall') if Act.csvFormat() else None
-  FJQC = FormatJSONQuoteChar(csvPF)
-  kwargs = {'mine': True}
-  languageCode = ''
-  fieldsList = ['id']
-  while Cmd.ArgumentsRemaining():
-    myarg = getArgument()
-    if csvPF and myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    elif myarg == 'mine':
-      kwargs = {'mine': True}
-    elif myarg in {'id', 'ids', 'channel', 'channels'}:
-      kwargs = {'id': ','.join(getEntityList(Cmd.OB_YOUTUBE_CHANNEL_ID_LIST))}
-    elif myarg == 'forusername':
-      kwargs = {'forUsername': getString(Cmd.OB_USER_NAME)}
-    elif myarg == 'managedbyme':
-      kwargs = {'managedByMe': True, 'onBehalfOfContentOwner': getString(Cmd.OB_USER_NAME)}
-    elif getFieldsList(myarg, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList):
-      pass
-    elif myarg == 'allfields':
-      for field in YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP:
-        addFieldToFieldsList(field, YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP, fieldsList)
-    elif myarg in {'languagecode', 'hl'}:
-      languageCode = getLanguageCode(BCP47_LANGUAGE_CODES_MAP)
-    else:
-      FJQC.GetFormatJSONQuoteChar(myarg, True)
-  kwargs['part'] = ','.join(set(fieldsList))
-  if languageCode:
-    kwargs['hl'] = languageCode
-  i, count, users = getEntityArgument(users)
-  for user in users:
-    i += 1
-    user, yt = buildGAPIServiceObject(API.YOUTUBE, user, i, count)
-    if not yt:
-      continue
-    try:
-      channels = callGAPIpages(yt.channels(), 'list', 'items',
-                               throwReasons=GAPI.YOUTUBE_THROW_REASONS,
-                               fields='nextPageToken,items', **kwargs)
-    except (GAPI.unsupportedSupervisedAccount, GAPI.unsupportedLanguageCode) as e:
-      entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-      continue
-    except GAPI.contentOwnerAccountNotFound as e:
-      if 'managedByMe' in kwargs:
-        entityActionFailedWarning([Ent.USER, user, Ent.OWNER, kwargs['onBehalfOfContentOwner']], str(e), i, count)
-      else:
-        entityActionFailedWarning([Ent.USER, user], str(e), i, count)
-      continue
-    except (GAPI.serviceNotAvailable, GAPI.authError):
-      userYouTubeServiceNotEnabledWarning(user, i, count)
-      continue
-    if not csvPF:
-      jcount = len(channels)
-      if not FJQC.formatJSON:
-        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.YOUTUBE_CHANNEL, i, count)
-      Ind.Increment()
-      j = 0
-      for channel in channels:
-        j += 1
-        if FJQC.formatJSON:
-          printLine(json.dumps(cleanJSON(channel, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS),
-                               ensure_ascii=False, sort_keys=True))
-          break
-        printEntity([Ent.YOUTUBE_CHANNEL, channel['id']], j, jcount)
-        Ind.Increment()
-        showJSON(None, channel, skipObjects={'id'}, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS)
-        Ind.Decrement()
-      Ind.Decrement()
-    elif channels:
-      for channel in channels:
-        row = {'User': user, 'id': channel['id']}
-        flattenJSON(channel, flattened=row, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS)
-        if not FJQC.formatJSON:
-          csvPF.WriteRowTitles(row)
-        elif csvPF.CheckRowTitles(row):
-          row = {'User': user, 'id': channel['id'],
-                 'JSON': json.dumps(cleanJSON(channel, timeObjects=YOUTUBE_CHANNEL_TIME_OBJECTS),
-                                    ensure_ascii=False, sort_keys=True)}
-          csvPF.WriteRowNoFilter(row)
-    elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
-      csvPF.WriteRowNoFilter({'User': user})
-  if csvPF:
-    csvPF.writeCSVfile('YouTube Channels')
