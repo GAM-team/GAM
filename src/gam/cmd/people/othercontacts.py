@@ -8,22 +8,50 @@ from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
+from gam.util.api import ClientAPIAccessDeniedExit
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import writeGotMessage, callGAPI, callGAPIpages
-from gam.util.args import checkForExtraneousArguments, getArgument, getString
+from gam.util.args import checkForExtraneousArguments, getArgument, getREPattern, getString
 from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar
-from gam.util.display import entityActionFailedWarning, entityActionPerformed
+from gam.util.display import (
+    TOTAL_ITEMS_MARKER,
+    entityActionFailedWarning,
+    entityActionPerformed,
+    entityModifierNewValueActionPerformed,
+    entityPerformActionModifierNumItems,
+    getPageMessageForWhom,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    userPeopleServiceNotEnabledWarning,
+)
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import unknownArgumentExit
 from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
-from gam.cmd.contacts import PeopleManager, normalizeOtherContactsResourceName
+from gam.cmd.contacts import (
+    PEOPLE_GROUPS_LIST,
+    PEOPLE_MEMBERSHIPS,
+    PEOPLE_READ_SOURCES_CHOICE_MAP,
+    PeopleManager,
+    normalizeOtherContactsResourceName,
+)
 from gam.cmd.people import (
     CONTACTGROUPS_MYCONTACTS_ID,
     CONTACTGROUPS_MYCONTACTS_NAME,
     PEOPLE_CONTACTS_DEFAULT_FIELDS,
     PEOPLE_OTHERCONTACT_SELECT_ARGUMENTS,
     PEOPLE_OTHER_CONTACTS_FIELDS_CHOICE_MAP,
+)
+from gam.cmd.people.contacts import (
+    countLocalPeopleContactSelects,
+    localPeopleContactSelects,
+    validatePeopleContactGroupsList,
+)
+from gam.cmd.people.domainprofiles import (
+    _getPersonFields,
+    _initPersonMetadataParameters,
+    _printPersonEntityList,
+    getPersonFieldsList,
 )
 
 

@@ -4,9 +4,10 @@ Part of the _groups_tmp sub-package."""
 
 """GAM group management."""
 
+import json
 import re
 
-from gam.util.batch import RI_ENTITY, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
+from gam.util.batch import RI_ENTITY, RI_OPTION, RI_ROLE, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
 
 from gam.util.entity import GROUP_ROLES_MAP
 import time
@@ -16,9 +17,9 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
-from gam.util.access import entityUnknownWarning
-from gam.util.api import buildGAPIObject
-from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
+from gam.util.access import accessErrorExit, duplicateAliasGroupUserWarning, entityUnknownWarning
+from gam.util.api import buildGAPIObject, waitOnFailure
+from gam.util.api_call import _finalizeGAPIpagesResult, _processGAPIpagesResult, callGAPI, callGAPIpages, checkGAPIError
 from gam.util.args import (
     ARCHIVED_ARGUMENTS,
     DELIVERY_SETTINGS_UNDEFINED,
@@ -29,8 +30,11 @@ from gam.util.args import (
     _getOptionalIsSuspendedIsArchived,
     checkArgumentPresent,
     checkForExtraneousArguments,
+    escapeCRsNLs,
+    getAddCSVData,
     getArgument,
     getBoolean,
+    getCharacter,
     getChoice,
     getDeliverySettings,
     getEmailAddress,
@@ -43,11 +47,20 @@ from gam.util.args import (
     getREPatternSubstitution,
     getString,
     getStringWithCRsNLs,
+    normalizeEmailAddressOrUID,
     splitEmailAddress,
 )
-from gam.util.batch import batchRequestID
-from gam.util.csv_pf import CSVPrintFile
+from gam.util.batch import batchRequestID, executeBatch
+from gam.util.csv_pf import (
+    CSVPrintFile,
+    FormatJSONQuoteChar,
+    _getFieldsList,
+    addFieldToFieldsList,
+    cleanJSON,
+    flattenJSON,
+)
 from gam.util.display import (
+    badRequestWarning,
     entityActionFailedWarning,
     entityActionNotPerformedWarning,
     entityActionPerformed,
@@ -55,12 +68,20 @@ from gam.util.display import (
     entityItemValueListActionNotPerformedWarning,
     entityPerformActionNumItems,
     entityPerformActionNumItemsModifier,
+    getPageMessage,
     getPageMessageForWhom,
+    invalidMember,
     performAction,
     printEntityKVList,
+    printGettingAllAccountEntities,
     printGettingAllEntityItemsForWhom,
+    printGettingEntityItem,
+    printGettingEntityItemForWhom,
 )
 from gam.util.entity import (
+    CIGROUP_DISCUSSION_FORUM_LABEL,
+    CIGROUP_LOCKED_LABEL,
+    CIGROUP_SECURITY_LABEL,
     _checkMemberStatusIsSuspendedIsArchived,
     checkGroupExists,
     convertEntityToList,
@@ -71,11 +92,12 @@ from gam.util.entity import (
     getEntityToModify,
     setTrueCustomerId,
 )
-from gam.util.errors import invalidChoiceExit, unknownArgumentExit
-from gam.util.output import writeStderr
-from gam.constants import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_BASIC_ATTRIBUTES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
+from gam.util.errors import entityActionFailedExit, invalidChoiceExit, unknownArgumentExit
+from gam.util.output import writeStderr, writeStdout
+from gam.constants import GROUP_ALIAS_ATTRIBUTES, GROUP_ASSIST_CONTENT_ATTRIBUTES, GROUP_ATTRIBUTES_SET, GROUP_BASIC_ATTRIBUTES, GROUP_DEPRECATED_ATTRIBUTES, GROUP_DISCOVER_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES, GROUP_MERGED_ATTRIBUTES_PRINT_ORDER, GROUP_MERGED_TO_COMPONENT_MAP, GROUP_MODERATE_CONTENT_ATTRIBUTES, GROUP_MODERATE_MEMBERS_ATTRIBUTES, GROUP_SETTINGS_ATTRIBUTES
 from gam.constants import GROUP_FIELDS_WITH_CRS_NLS
 from gam.cmd.ciuserinvitations import _getIsInvitableUser
+from gam.util.domain_filters import groupFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
 
 from gam.var import Act, Cmd, Ent, Ind
 
@@ -1342,6 +1364,25 @@ MEMBEROPTION_DISPLAYMATCH = 8
 
 
 def doPrintGroups():
+  from gam.cmd.groups.members import (  # deferred: circular
+      CIGROUP_FIELDS_CHOICE_MAP,
+      CIGROUP_TIME_OBJECTS,
+      GROUP_FIELDS_CHOICE_MAP,
+      GROUP_INFO_PRINT_ORDER,
+      addMemberInfoToRow,
+      checkGroupMatchPatterns,
+      checkGroupShowOwnedBy,
+      finalizeIPSGMGroupRolesMemberDisplayOptions,
+      getGroupFilters,
+      getGroupMatchPatterns,
+      getMemberMatchOptions,
+      getPGGroupRolesMemberDisplayOptions,
+      initIPSGMGroupMemberDisplayOptions,
+      initMemberOptions,
+      setMemberDisplaySortTitles,
+      setMemberDisplayTitles,
+      updateFieldsForGroupMatchPatterns,
+  )
   def _printGroupRow(groupEntity, groupSettings, groupMembers):
     nonlocal itemCount
     row = {}
@@ -1826,4 +1867,5 @@ def doPrintGroups():
 
 
 def doInfoGroups():
+  from gam.cmd.groups.members import infoGroups  # deferred: circular
   infoGroups(getEntityList(Cmd.OB_GROUP_ENTITY))

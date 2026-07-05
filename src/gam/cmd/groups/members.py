@@ -26,8 +26,8 @@ from gam.constants import ONE_KILO_BYTES, ONE_MEGA_BYTES
 
 from gam.var import Act, Cmd, Ent, Ind
 
-from gam.cmd.groups.groups import ALL_GROUP_MEMBER_TYPES, MEMBEROPTION_DISPLAYMATCH, MEMBEROPTION_GETDELIVERYSETTINGS, MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED, MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_MATCHPATTERN, MEMBEROPTION_MEMBERNAMES, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE, getGroupMemberTypes, GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
-from gam.util.access import entityUnknownWarning
+from gam.cmd.groups.groups import ALL_GROUP_MEMBER_TYPES, GROUP_CIGROUP_ENTITYTYPE_MAP, MEMBEROPTION_DISPLAYMATCH, MEMBEROPTION_GETDELIVERYSETTINGS, MEMBEROPTION_INCLUDEDERIVEDMEMBERSHIP, MEMBEROPTION_ISARCHIVED, MEMBEROPTION_ISSUSPENDED, MEMBEROPTION_MATCHPATTERN, MEMBEROPTION_MEMBERNAMES, MEMBEROPTION_NODUPLICATES, MEMBEROPTION_RECURSIVE, getGroupMemberTypes, GroupIsAbuseOrPostmaster, mapGroupEmailForSettings
+from gam.util.access import accessErrorExit, entityUnknownWarning
 from gam.util.api import buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
@@ -80,6 +80,7 @@ from gam.util.entity import (
     _checkMemberCategory,
     _checkMemberIsSuspendedIsArchived,
     _checkMemberRoleIsSuspendedIsArchived,
+    _getDomainList,
     _getRoleVerification,
     convertGroupCloudIDToEmail,
     convertGroupEmailToCloudID,

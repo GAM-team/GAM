@@ -4,6 +4,7 @@ import re
 import json
 import base64
 import os
+import httplib2
 import google.auth
 import google.auth.exceptions
 from gamlib import api as API
@@ -12,35 +13,67 @@ from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
-from gam.util.api import buildGAPIObject, getHttpObj
+from gam.util.api import buildGAPIObject, getHttpObj, ClientAPIAccessDeniedExit
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import writeGotMessage, callGAPI, callGAPIpages
 from gam.util.args import (
+    SORTORDER_CHOICE_MAP,
+    UID_PATTERN,
+    UTF8,
     checkForExtraneousArguments,
     getArgument,
     getBoolean,
     getChoice,
+    getOrderBySortOrder,
+    getREPattern,
     getString,
-    getStringReturnInList
+    getStringReturnInList,
+    getYYYYMMDD,
+    splitEmailAddress,
 )
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
     cleanJSON,
-    flattenJSON
+    flattenJSON,
+    getFieldsFromFieldsList,
+    showJSON,
 )
 from gam.util.display import (
+    TOTAL_ITEMS_MARKER,
     entityActionFailedWarning,
+    entityActionNotPerformedWarning,
     entityActionPerformed,
+    entityDoesNotHaveItemWarning,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
     printEntity,
-    printLine
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printLine,
+    userPeopleServiceNotEnabledWarning,
 )
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import deprecatedArgument, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN, setFilePath, writeFileReturnError
 from gam.util.output import setSysExitRC, writeStdout
 from gam.constants import NO_ENTITIES_FOUND_RC
-from gam.cmd.contacts import normalizeContactGroupResourceName, PeopleManager, normalizePeopleResourceName
+from gam.cmd.contacts import (
+    CONTACTS_ORDERBY_CHOICE_MAP,
+    CONTACTS_PROJECTION_CHOICE_MAP,
+    PEOPLE_ADD_GROUPS_LIST,
+    PEOPLE_EMAIL_ADDRESSES,
+    PEOPLE_GROUPS_LIST,
+    PEOPLE_GROUP_NAME,
+    PEOPLE_MEMBERSHIPS,
+    PEOPLE_METADATA,
+    PEOPLE_READ_SOURCES_CHOICE_MAP,
+    PEOPLE_REMOVE_GROUPS_LIST,
+    PeopleManager,
+    normalizeContactGroupResourceName,
+    normalizePeopleResourceName,
+)
 from gam.cmd.people import (
     PEOPLE_CONTACTGROUPS_DEFAULT_FIELDS,
     PEOPLE_CONTACTGROUPS_FIELDS_CHOICE_MAP,
@@ -697,6 +730,7 @@ def addContactGroupNamesToContacts(contacts, contactGroupIDs, showContactGroupNa
           contact[PEOPLE_GROUPS_LIST].append(membership['contactGroupMembership']['contactGroupName'])
 
 def infoUserPeopleContacts(users):
+  from gam.cmd.people.domainprofiles import _infoPeople  # deferred: circular
   _infoPeople(users, Ent.USER, 'contact')
 
 # gam <UserTypeEntity> print contacts [todrive <ToDriveAttribute>*] <PeoplePrintShowUserContactSelection>
@@ -708,6 +742,11 @@ def infoUserPeopleContacts(users):
 #	[allfields|(fields <PeopleFieldNameList>)] [showmetadata]
 #	[countsonly|formatjson]
 def printShowUserPeopleContacts(users):
+  from gam.cmd.people.domainprofiles import (  # deferred: circular
+      _getPersonFields, _initPersonMetadataParameters,
+      _printPersonEntityList, getPersonFieldsList,
+  )
+  from gam.cmd.people.othercontacts import queryPeopleOtherContacts  # deferred: circular
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
   csvPF = CSVPrintFile([entityTypeName, 'resourceName'], 'sortall') if Act.csvFormat() else None
@@ -1159,6 +1198,9 @@ def _printContactGroup(entityTypeName, user, contactGroup, csvPF, FJQC):
                                                ensure_ascii=False, sort_keys=True)})
 
 def infoUserPeopleContactGroups(users):
+  from gam.cmd.people.domainprofiles import (  # deferred: circular
+      _getPersonFields, _initPersonMetadataParameters, getPersonFieldsList,
+  )
   entityType = Ent.USER
   entityList = getEntityList(Cmd.OB_CONTACT_GROUP_ENTITY, shlexSplit=True)
   contactGroupIdLists = entityList if isinstance(entityList, dict) else None
@@ -1224,6 +1266,10 @@ def infoUserPeopleContactGroups(users):
 #	[allfields|(fields <PeoplaContactGroupFieldList>)] [showmetadata]
 #	[formatjson]
 def printShowUserPeopleContactGroups(users):
+  from gam.cmd.people.domainprofiles import (  # deferred: circular
+      _getPersonFields, _initPersonMetadataParameters,
+      _printPersonEntityList, getPersonFieldsList,
+  )
   entityType = Ent.USER
   entityTypeName = Ent.Singular(entityType)
   csvPF = CSVPrintFile([entityTypeName, 'resourceName'], 'sortall') if Act.csvFormat() else None

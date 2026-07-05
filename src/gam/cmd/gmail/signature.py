@@ -5,7 +5,7 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 
-from gam.cmd.gmail.settings import _processSendAs, _processSignature, getSendAsAttributes
+from gam.cmd.gmail.settings import SIG_REPLY_FORMAT, SIG_REPLY_HTML, SIG_REPLY_OPTIONS_MAP, _processSendAs, _processSignature, getSendAsAttributes
 
 from gamlib import api as API
 from gamlib import gapi as GAPI

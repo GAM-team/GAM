@@ -1,19 +1,41 @@
 """GAM calendar list commands (create, info, print, etc.)."""
 
+import json
 
 from gamlib import api as API
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
+from gamlib import settings as GC
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import checkEntityAFDNEorAccessErrorExit
+from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPI, callGAPIpages
-from gam.util.args import getArgument, checkForExtraneousArguments, getChoice, getString, getBoolean, getEmailAddress
-from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, _getFieldsList, getFieldsFromFieldsList, getItemFieldsFromFieldsList
-from gam.util.display import entityActionFailedWarning, entityActionPerformed, printKeyValueList, printKeyValueListWithCount
-from gam.util.entity import getEntityList, getEntityArgument
+from gam.util.args import (
+    CALENDAR_COLOR_MAP,
+    getArgument, checkArgumentPresent, checkForExtraneousArguments,
+    getBoolean, getCalendarReminder, getCharacter, getChoice,
+    getColor, getEmailAddress, getInteger, getString, splitEmailAddress,
+)
+from gam.util.csv_pf import (
+    CSVPrintFile, FormatJSONQuoteChar, _getFieldsList, cleanJSON,
+    flattenJSON, getFieldsList, getFieldsFromFieldsList, getItemFieldsFromFieldsList,
+)
+from gam.util.display import (
+    entityActionFailedWarning, entityActionPerformed,
+    entityModifierNewValueActionFailedWarning, entityPerformActionModifierNewValue,
+    entityPerformActionNumItems, entityPerformActionSubItemModifierNumItems,
+    entityPerformActionSubItemModifierNumItemsModifierNewValue,
+    printEntitiesCount, printGettingEntityItemForWhom,
+    printKeyValueList, printKeyValueListWithCount, printLine,
+    userCalServiceNotEnabledWarning,
+)
+from gam.util.entity import convertEntityToList, getEntityList, getEntityArgument, getEntitySelection, getEntitySelector
+from gam.util.errors import invalidChoiceExit, unknownArgumentExit
+from gam.util.output import setSysExitRC
 from gam.constants import NO_ENTITIES_FOUND_RC
 
 from gam.cmd.calendar import checkCalendarExists, validateCalendar, normalizeCalendarId, CALENDAR_ACL_ROLES_MAP
+from gam.cmd.courses.courses import _getCourseStates, _getCoursesInfo, _initCourseShowProperties
 
 
 def _getCalendarSelectProperty(myarg, kwargs):
@@ -183,6 +205,7 @@ CALENDAR_NOTIFICATION_TYPES_MAP = {
   }
 
 def _getCalendarAttributes(body, returnOnUnknownArgument=False):
+  from gam.cmd.calendar.events import CALENDAR_MIN_COLOR_INDEX, CALENDAR_MAX_COLOR_INDEX  # deferred: circular
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'selected':
@@ -224,6 +247,7 @@ def _getCalendarAttributes(body, returnOnUnknownArgument=False):
 
 def _showCalendar(calendar, j, jcount, FJQC, acls=None):
   from gam.cmd.calendar.acls import ACLRuleKeyValueList
+  from gam.cmd.calendar.settings import _showCalendarSettings  # deferred: circular
   if FJQC.formatJSON:
     if acls:
       calendar['acls'] = [{'id': rule['id'], 'role': rule['role']} for rule in acls]
@@ -338,6 +362,7 @@ def deleteCalendars(users):
 
 # gam <UserTypeEntity> create calendars <CalendarSettings>
 def createCalendar(users):
+  from gam.cmd.calendar.settings import getCalendarSettings  # deferred: circular
   calendarEntity = initUserCalendarEntity()
   body = getCalendarSettings(summaryRequired=True)
   i, count, users = getEntityArgument(users)
@@ -389,6 +414,7 @@ def _modifyRemoveCalendars(users, calendarEntity, function, **kwargs):
 
 # gam <UserTypeEntity> modify calendars <UserCalendarEntity> <CalendarSettings>
 def modifyCalendars(users):
+  from gam.cmd.calendar.settings import getCalendarSettings  # deferred: circular
   calendarEntity = getUserCalendarEntity()
   body = getCalendarSettings(summaryRequired=False)
   _modifyRemoveCalendars(users, calendarEntity, 'patch', body=body)

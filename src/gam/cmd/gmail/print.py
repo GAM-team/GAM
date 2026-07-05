@@ -6,13 +6,21 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 
-
+import arrow
 
 import googleapiclient.errors
 import googleapiclient.http
 
 from gam.util.batch import RI_ENTITY, RI_I, RI_COUNT, RI_J, RI_JCOUNT, RI_ITEM
-from gam.cmd.gmail.labels import _getUserGmailLabels
+from gam.cmd.gmail.labels import LABEL_TYPE_SYSTEM, LABEL_TYPE_USER, _getUserGmailLabels
+from gam.cmd.gmail.modify import (
+    SMTP_DATE_HEADERS,
+    SMTP_HEADERS_MAP,
+    _decodeHeader,
+    _finalizeMessageSelectParameters,
+    _getMessageSelectParameters,
+    _initMessageThreadParameters,
+)
 import io
 import base64
 import os
@@ -66,6 +74,7 @@ from gam.util.fileio import (
 from gam.util.batch import executeBatch
 from gam.util.output import setSysExitRC, formatLocalTimestamp
 from gam.constants import IS08601_TIME_FORMAT, NO_ENTITIES_FOUND_RC, RFC2822_TIME_FORMAT
+from gam.util.html import dehtml
 from gam.util.tags import _substituteForUser
 from gam.cmd.drive.core import _getDriveFileParentInfo, getDriveFileParentAttribute, initDriveFileAttributes
 

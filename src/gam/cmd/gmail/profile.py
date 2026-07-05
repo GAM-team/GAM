@@ -24,6 +24,7 @@ from gam.util.display import (
 )
 from gam.util.entity import getEntityArgument
 from gam.util.errors import unknownArgumentExit
+from gam.cmd.project import _getCurrentProjectId
 
 from gam.var import Act, Cmd, Ent
 

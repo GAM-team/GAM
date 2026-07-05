@@ -1,5 +1,6 @@
 """GAM ChromeOS device management."""
 
+import arrow
 import json
 
 
@@ -13,7 +14,7 @@ from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.access import checkEntityAFDNEorAccessErrorExit
+from gam.util.access import accessErrorExit, accessErrorExitNonDirectory, checkEntityAFDNEorAccessErrorExit, checkEntityDNEorAccessErrorExit
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import _finalizeGAPIpagesResult, _processGAPIpagesResult
 from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages, checkGAPIError
@@ -70,6 +71,7 @@ from gam.util.display import (
 from gam.util.entity import (
     _getCustomersCustomerIdWithC,
     convertEntityToList,
+    convertOrgUnitIDtoPath,
     getDeviceQueries,
     getEntityArgument,
     getEntitySelection,
@@ -91,6 +93,30 @@ from gam.util.output import (
     writeStdout
 )
 from gam.constants import PROJECTION_CHOICE_MAP
+from gam.cmd.cros.manage import (
+    CROS_BASIC_FIELDS_LIST,
+    CROS_END_ARGUMENTS,
+    CROS_ENTITIES_MAP,
+    CROS_FIELDS_CHOICE_MAP,
+    CROS_FIELDS_WITH_CRS_NLS,
+    CROS_INDEXED_TITLES,
+    CROS_LIST_FIELDS_CHOICE_MAP,
+    CROS_ORDERBY_CHOICE_MAP,
+    CROS_SCALAR_PROPERTY_PRINT_ORDER,
+    CROS_START_ARGUMENTS,
+    CROS_TIME_OBJECTS,
+    _computeDVRstorageFreePercentage,
+    _filterActiveTimeRanges,
+    _filterBasicList,
+    _filterCPUStatusReports,
+    _filterDeviceFiles,
+    _filterRecentUsers,
+    _filterScreenshotFiles,
+    _filterSystemRamFreeReports,
+    checkTPMVulnerability,
+    getCfgCrOSEntities,
+    getCrOSDeviceEntity,
+)
 
 
 UNKNOWN = 'Unknown'

@@ -2,6 +2,8 @@
 
 from gamlib import settings as GC
 from gam.var import Ent
+from gam.cmd.people.contacts import _processPeopleContactPhotos
+from gam.cmd.people.domainprofiles import _infoPeople, _printShowPeople
 
 
 def doInfoDomainPeopleContacts():

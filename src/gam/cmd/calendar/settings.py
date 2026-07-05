@@ -1,15 +1,18 @@
 """GAM calendar settings commands."""
 
+import json
 
 from gamlib import gapi as GAPI
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api_call import callGAPI, callGAPIpages
-from gam.util.args import getArgument, getString, getBoolean
-from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, getFieldsFromFieldsList
-from gam.util.display import entityActionFailedWarning, entityActionPerformed, printEntity, printKeyValueList
+from gam.util.args import getArgument, getString, getBoolean, getStringWithCRsNLs
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, cleanJSON, flattenJSON, getFieldsFromFieldsList, getFieldsList
+from gam.util.display import entityActionFailedWarning, entityActionPerformed, printEntity, printEntityKVList, printKeyValueList, printKeyValueWithCRsNLs, printLine, userCalServiceNotEnabledWarning
 from gam.util.entity import getEntityArgument
+from gam.util.errors import missingArgumentExit, unknownArgumentExit
 
 from gam.cmd.calendar import validateCalendar
+from gam.cmd.calendar.calendars import USER_CALENDAR_SETTINGS_FIELDS_CHOICE_MAP
 
 
 def printShowCalSettings(users):

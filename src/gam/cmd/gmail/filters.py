@@ -6,7 +6,8 @@ Part of the _gmail_monolith sub-package."""
 
 import json
 
-from gam.cmd.gmail.labels import _getLabelId, _getLabelName, _getLabelSet, _getUserGmailLabels, buildLabelPath
+from gam.cmd.gmail.delegates import FILTER_ADD_LABEL_TO_ARGUMENT_MAP, FILTER_REMOVE_LABEL_TO_ARGUMENT_MAP
+from gam.cmd.gmail.labels import GMAIL_CATEGORY_LABELS, GMAIL_SYSTEM_LABELS, _getLabelId, _getLabelName, _getLabelSet, _getUserGmailLabels, buildLabelPath
 
 from gamlib import api as API
 from gamlib import settings as GC

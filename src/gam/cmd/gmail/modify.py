@@ -6,7 +6,7 @@ Part of the _gmail_monolith sub-package."""
 
 import re
 
-
+import arrow
 
 import googleapiclient.errors
 import googleapiclient.http
@@ -28,6 +28,7 @@ from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
 from gamlib import msgs as Msg
+from gam.util.email import _addAttachmentsToMessage, _addEmbeddedImagesToMessage
 from gam.util.api import _getAdminEmail, buildGAPIObject
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
@@ -45,6 +46,7 @@ from gam.util.args import (
     getREPattern,
     getString,
     getStringOrFile,
+    getDateOrDeltaFromNow,
     getTimeOrDeltaFromNow,
     splitEmailAddress
 )
@@ -65,6 +67,7 @@ from gam.util.entity import (
     _validateUserGetMessageIds,
     getEntityArgument,
     getEntityList,
+    getUserObjectEntity,
     shlexSplitList,
     splitEmailAddressOrUID,
 )

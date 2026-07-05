@@ -1,20 +1,66 @@
 """GAM calendar events commands."""
 
+import json
+import re
+import random
+import uuid
+
+import arrow
 
 from gamlib import api as API
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
-from gam.var import Act, Cmd, Ent, Ind
 from gamlib import settings as GC
-from gam.util.api_call import callGAPI, callGAPIpages
-from gam.util.args import getArgument, checkForExtraneousArguments, getChoice, getString, getBoolean
-from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, _getFieldsList, getFieldsFromFieldsList, getItemFieldsFromFieldsList
-from gam.util.display import entityActionFailedWarning, entityActionPerformed, printEntity, printKeyValueList
-from gam.util.entity import getEntityArgument, convertUIDtoEmailAddress, normalizeEmailAddressOrUID
-from gam.util.errors import systemErrorExit
-from gam.constants import NO_ENTITIES_FOUND_RC
+from gamlib import state as GM
+from gam.var import Act, Cmd, Ent, Ind
+from gam.util.access import entityUnknownWarning
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI, callGAPIpages, checkGAPIError
+from gam.util.args import (
+    CALENDAR_EVENT_COLOR_MAP, YYYYMMDD_FORMAT,
+    getArgument, checkArgumentPresent, checkForExtraneousArguments,
+    getAddCSVData, getBoolean, getCalendarReminder, getChoice,
+    getEmailAddress, getEventID, getEventTime, getHTTPError,
+    getInteger, getJSON, getREPattern, getREPatternSubstitution,
+    getString, getStringWithCRsNLs, getTimeOrDeltaFromNow, getYYYYMMDD,
+)
+from gam.util.batch import batchRequestID, executeBatch, RI_ENTITY, RI_ITEM, RI_J, RI_JCOUNT
+from gam.util.csv_pf import (
+    CSVPrintFile, FormatJSONQuoteChar, _getFieldsList,
+    addFieldToFieldsList, cleanJSON, flattenJSON,
+    getFieldsFromFieldsList, getItemFieldsFromFieldsList, showJSON,
+)
+from gam.util.display import (
+    entityActionFailedWarning, entityActionNotPerformedWarning,
+    entityActionPerformed, entityActionPerformedMessage,
+    entityModifierNewValueActionPerformed,
+    entityNumEntitiesActionNotPerformedWarning,
+    entityPerformAction, entityPerformActionModifierNewValue,
+    entityPerformActionNumItems,
+    printEntity, printGettingEntityItemForWhom,
+    printKeyValueList, printKeyValueWithCRsNLs, printLine,
+    userCalServiceNotEnabledWarning,
+)
+from gam.util.entity import (
+    convertEntityToList, getEntityArgument, getEntitySelection,
+    getEntitySelector, getEntityToModify, getNormalizedEmailAddressEntity,
+    convertUIDtoEmailAddress, normalizeEmailAddressOrUID,
+)
+from gam.util.errors import (
+    invalidArgumentExit, invalidChoiceExit, missingArgumentExit,
+    systemErrorExit, unknownArgumentExit,
+)
+from gam.util.fileio import closeFile
+from gam.util.gdoc import openCSVFileReader
+from gam.util.output import setSysExitRC, stderrErrorMsg
+from gam.constants import (
+    DAYS_OF_WEEK, GOOGLE_MEETID_FORMAT_REQUIRED, GOOGLE_MEETID_PATTERN,
+    NO_ENTITIES_FOUND_RC, UNKNOWN, USAGE_ERROR_RC,
+)
 
 from gam.cmd.calendar import checkCalendarExists, getNormalizedCalIdCal
+from gam.cmd.calendar.acls import EVENT_TYPES_CHOICE_MAP, EVENT_TYPE_BIRTHDAY
+from gam.cmd.calendar.calendars import getUserCalendarEntity, _validateUserGetCalendarIds
 
 
 def _createImportCalendarEvent(users, function):
@@ -639,6 +685,7 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
   return (calId, cal, [], 0)
 
 def _getCalendarCreateImportUpdateEventOptions(function, entityType):
+
   body = {}
   parameters = {'clearAttendees': False, 'replaceMode': False, 'clearResources': False,
                 'attendees': [], 'removeAttendees': set(),
@@ -1622,6 +1669,7 @@ def initCalendarEventEntity():
           'countsOnly': False, 'eventRowFilter': False, 'countsOnlyTitles': []}
 
 def _getCalendarEventAttribute(myarg, body, parameters, function):
+  from gam.cmd.calendar.resources import _validateResourceId  # deferred: circular
   def clearJSONfields(body, clearFields):
     for field in clearFields:
       body.pop(field, None)

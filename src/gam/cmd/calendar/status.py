@@ -1,18 +1,39 @@
 """GAM calendar status events commands (Focus Time, OOO, Working Location)."""
 
+import json
 
 from gamlib import api as API
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
+from gamlib import settings as GC
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.api_call import callGAPI, callGAPIpages
-from gam.util.args import getArgument, getChoice, getString
-from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar
-from gam.util.display import entityActionFailedWarning, entityActionPerformed, printEntity
+from gam.util.args import (
+    YYYYMMDD_FORMAT, checkArgumentPresent, getArgument, getChoice,
+    getInteger, getString, getTimeOrDeltaFromNow, getYYYYMMDD,
+)
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, cleanJSON, showJSON
+from gam.util.display import (
+    entityActionFailedWarning, entityActionPerformed, entityPerformAction,
+    printEntity, printLine, userCalServiceNotEnabledWarning,
+)
 from gam.util.entity import getEntityArgument
-from gam.util.errors import usageErrorExit
+from gam.util.errors import missingArgumentExit, missingChoiceExit, unknownArgumentExit, usageErrorExit
+from gam.util.output import ISOformatTimeStamp, formatLocalTime
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.access import entityUnknownWarning
 
 from gam.cmd.calendar import checkCalendarExists
+from gam.cmd.calendar.acls import (
+    EVENT_TYPE_ENTITY_MAP, EVENT_TYPE_FOCUSTIME, EVENT_TYPE_OUTOFOFFICE,
+    EVENT_TYPE_PROPERTIES_NAME_MAP, EVENT_TYPE_WORKINGLOCATION,
+)
+from gam.cmd.calendar.events import (
+    EVENT_AUTO_DECLINE_MODE_CHOICE_MAP, EVENT_TIME_OBJECTS,
+    _getCalendarEventReminders, _getEventDaysOfWeek,
+    _printCalendarEvent, _setEventRecurrenceTimeZone,
+)
+from gam.cmd.resources import _getBuildingByNameOrId
 
 
 def getStatusEventSummaryDecline(myarg, body, eventProperties):

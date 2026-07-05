@@ -27,6 +27,7 @@ from gam.util.display import (
 from gam.util.entity import _validateUserGetObjectList, convertUIDtoEmailAddress, getEntityArgument, getUserObjectEntity
 from gam.util.errors import unknownArgumentExit
 from gam.util.output import writeStdout
+from gam.util.email import send_email
 from gam.cmd.users.manage import getNotifyArguments
 from gam.cmd.delegates import _getDelegateName
 

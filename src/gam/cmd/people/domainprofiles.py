@@ -7,20 +7,37 @@ from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gam.var import Act, Cmd, Ent, Ind
 from gam.util.access import entityUnknownWarning
-from gam.util.api import buildGAPIObject
+from gam.util.api import buildGAPIObject, ClientAPIAccessDeniedExit
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import getArgument, getChoice, getString
 from gam.util.csv_pf import (
     CSVPrintFile, FormatJSONQuoteChar, addFieldToFieldsList,
-    _getFieldsList, cleanJSON, flattenJSON, getFieldsList
+    _getFieldsList, cleanJSON, flattenJSON, getFieldsList, showJSON
 )
-from gam.util.display import entityActionFailedWarning, printEntity, printLine
+from gam.util.display import (
+    entityActionFailedWarning,
+    entityPerformActionModifierNumItems,
+    entityPerformActionNumItems,
+    getPageMessageForWhom,
+    printEntity,
+    printEntityKVList,
+    printGettingAllEntityItemsForWhom,
+    printGettingEntityItemForWhom,
+    printLine,
+)
 from gam.util.entity import getEntityArgument, getEntityList
 from gam.util.errors import deprecatedArgument, invalidChoiceExit
 from gam.util.output import setSysExitRC, formatLocalTime
 from gam.constants import NO_ENTITIES_FOUND_RC
-from gam.cmd.contacts import normalizePeopleResourceName
+from gam.cmd.contacts import (
+    PEOPLE_DIRECTORY_MERGE_SOURCES_CHOICE_MAP,
+    PEOPLE_DIRECTORY_SOURCES_CHOICE_MAP,
+    PEOPLE_METADATA,
+    PEOPLE_READ_SOURCES_CHOICE_MAP,
+    PEOPLE_UPDATE_TIME,
+    normalizePeopleResourceName,
+)
 from gam.cmd.people import (
     PEOPLE_CONTACTS_DEFAULT_FIELDS,
     PEOPLE_CONTACT_OBJECT_KEYS,
@@ -83,6 +100,7 @@ def _showPerson(userEntityType, user, entityType, person, i, count, FJQC, parame
     printLine(json.dumps(cleanJSON(person), ensure_ascii=False, sort_keys=True))
 
 def _printPersonEntityList(entityType, entityList, userEntityType, user, i, count, csvPF, FJQC, parameters, contactQuery):
+  from gam.cmd.people.contacts import localPeopleContactSelects  # deferred: circular
   if not csvPF:
     jcount = len(entityList)
     if not FJQC.formatJSON:
@@ -123,6 +141,7 @@ def _getPersonFields(fieldsChoiceMap, defaultFields, fieldsList, parameters):
   return ','.join(fieldsList)
 
 def _infoPeople(users, entityType, source):
+  from gam.cmd.people.contacts import addContactGroupNamesToContacts, getPeopleContactGroupsInfo  # deferred: circular
   if entityType == Ent.DOMAIN:
     people = buildGAPIObject(API.PEOPLE)
   peopleEntityType = Ent.DOMAIN_PROFILE if source == 'profile' else Ent.PEOPLE_CONTACT

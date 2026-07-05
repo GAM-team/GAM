@@ -1,6 +1,8 @@
 """GAM calendar dispatch tables."""
 
 from gam.var import Act, Cmd
+from gam.constants import CMD_ACTION, CMD_FUNCTION
+from gam.util.entity import getEntityList
 from gam.cmd.calendar.acls import *
 from gam.cmd.calendar.events import *
 from gam.cmd.calendar.calendars import *
