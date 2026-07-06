@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # GAM
 #
@@ -27,7 +26,7 @@ def main():
   rc = gam.ProcessGAMCommand(sys.argv)
   try:
     sys.stdout.flush()
-  except (IOError, ValueError):
+  except (OSError, ValueError):
     pass
   sys.exit(rc)
 

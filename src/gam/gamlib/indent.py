@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 # Copyright (C) 2023 Ross Scroggs All Rights Reserved.
 #

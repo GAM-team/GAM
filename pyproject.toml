@@ -89,20 +89,17 @@ ignore = [
     "F403",    # Star import — GAM uses `from gam.constants import *`
     "F405",    # Undefined from star import — GAM uses `from gam.constants import *`
     "F811",    # Redefined while unused — GAM reassigns variables in arg-parsing loops
-    "F841",    # Local variable assigned but never used — some GAM patterns use this intentionally
-    # pyupgrade rules that would be too noisy right now
-    "UP009",   # UTF-8 encoding declaration — harmless, not worth a 17-file churn
-    "UP024",   # os.error alias — 37 occurrences, low priority
-    "UP030",   # Format literals — would change string formatting style
-    "UP031",   # printf-string-formatting — 200+ occurrences, too noisy right now
-    "UP032",   # f-string — auto-conversion can break complex expressions
+    "F841",    # Local variable assigned but never used — incomplete function (doPrintShowAdmins)
 ]
 fixable = []  # Don't auto-fix — we want to review changes manually
 
 [tool.ruff.lint.per-file-ignores]
 # __init__.py re-exports cmd/ functions for dispatch tables
-"src/gam/__init__.py" = ["F401", "E402", "F821"]
+"src/gam/__init__.py" = ["F401", "E402"]
 # util/ modules have import ordering constraints
 "src/gam/util/**" = ["E402"]
 # Test files can be more relaxed
 "tests/**" = ["F401", "F811"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

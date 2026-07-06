@@ -844,7 +844,7 @@ def getOrderBySortOrder(choiceMap, defaultSortOrderChoice='ASCENDING', mapSortOr
           getChoice(SORTORDER_CHOICE_MAP, defaultChoice=defaultSortOrderChoice, mapChoice=mapSortOrderChoice))
 
 def orgUnitPathQuery(path, isSuspended, isArchived):
-  query = "orgUnitPath='{0}'".format(path.replace("'", "\\'")) if path != '/' else ''
+  query = "orgUnitPath='{}'".format(path.replace("'", "\\'")) if path != '/' else ''
   if isSuspended is not None:
     query += f' isSuspended={isSuspended}'
   if isArchived is not None:
