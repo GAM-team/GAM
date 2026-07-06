@@ -33,7 +33,7 @@ from gam.util.entity import getEntityList
 from gam.util.course_scope import removeCourseIdScope
 
 from gam.var import Cmd, Ent
-from gam.cmd.courses.courses import (
+from gam.cmd.classroom.courses import (
     COURSE_ANNOUNCEMENTS_FIELDS_CHOICE_MAP,
     COURSE_ANNOUNCEMENTS_INDEXED_TITLES,
     COURSE_ANNOUNCEMENTS_ORDERBY_CHOICE_MAP,

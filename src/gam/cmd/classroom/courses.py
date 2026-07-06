@@ -67,7 +67,7 @@ from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgum
 from gam.util.fileio import UNKNOWN
 from gam.util.output import currentCount, formatKeyValueList, writeStdout
 from gam.constants import OWNER_ACCESS_OPTIONS
-from gam.cmd.courses.batch_ops import _batchAddItemsToCourse
+from gam.cmd.classroom.batch_ops import _batchAddItemsToCourse
 
 from gam.var import Act, Cmd, Ent, Ind
 import arrow

@@ -176,7 +176,7 @@ def doPrintCourseCounts():
         csvPF.WriteRow({'JSON': {keyTitle: key, 'CourseCount': count}})
   csvPF.writeCSVfile(f'{keyTitle} Course Counts')
 
-from gam.cmd.courses.batch_ops import _batchAddItemsToCourse  # noqa: F811
+from gam.cmd.classroom.batch_ops import _batchAddItemsToCourse  # noqa: F811
 
 def _batchRemoveItemsFromCourse(croom, courseId, i, count, removeItems, removeType):
   _REMOVE_PART_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
@@ -568,8 +568,8 @@ def doCourseSyncParticipants(courseIdList, _):
 # Dispatch tables and routing (moved from __init__.py)
 # Additional imports for dispatch
 from gam.constants import CMD_ACTION, CMD_FUNCTION
-from gam.cmd.courses.content import COURSE_PARTICIPANTS_SORT_TITLES
-from gam.cmd.courses.courses import (
+from gam.cmd.classroom.content import COURSE_PARTICIPANTS_SORT_TITLES
+from gam.cmd.classroom.courses import (
     COURSE_MEMBER_ARGUMENTS,
     COURSE_STATE_MAPS,
     _getCourseAliasesMembers,

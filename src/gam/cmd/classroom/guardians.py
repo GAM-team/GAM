@@ -61,7 +61,7 @@ from gam.util.output import (
 from gam.constants import ADMIN_ACCESS_OPTIONS
 
 from gam.var import Act, Cmd, Ent, Ind
-from gam.cmd.courses.courses import (
+from gam.cmd.classroom.courses import (
     _getCourseOwnerSA,
     _getCourseSelectionParameters,
     _getCoursesInfo,

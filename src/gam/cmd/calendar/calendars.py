@@ -42,7 +42,7 @@ from gam.cmd.calendar.core import (
     _showCalendarSettings,
     getCalendarSettings,
 )
-from gam.cmd.courses.courses import _getCourseStates, _getCoursesInfo, _initCourseShowProperties
+from gam.cmd.classroom.courses import _getCourseStates, _getCoursesInfo, _initCourseShowProperties
 
 
 def _getCalendarSelectProperty(myarg, kwargs):
