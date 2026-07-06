@@ -50,7 +50,7 @@ from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import writeStdout, formatLocalTime, formatLocalTimestamp
 from gam.constants import PROJECTION_CHOICE_MAP
-from gam.cmd.chromeapps import MOBILE_ACTION_CHOICE_MAP
+from gam.cmd.chrome.apps import MOBILE_ACTION_CHOICE_MAP
 from gam.util.access import accessErrorExit
 
 

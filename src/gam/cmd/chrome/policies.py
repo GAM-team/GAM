@@ -76,7 +76,7 @@ from gam.util.fileio import UNKNOWN, setFilePath
 from gam.constants import DFA_URL
 
 
-from gam.cmd.chromeapps import getPlatformChannelMap, getRelativeMilestone
+from gam.cmd.chrome.apps import getPlatformChannelMap, getRelativeMilestone
 
 from gam.cmd.drive.core import getMediaBody
 from gam.cmd.drive.core import DFA_LOCALFILENAME, DFA_LOCALFILEPATH, DFA_LOCALMIMETYPE
@@ -1026,7 +1026,7 @@ def doCreateChromePolicyImage():
   try:
     f = open(parameters[DFA_LOCALFILEPATH], 'rb')
     f.close()
-  except IOError as e:
+  except OSError as e:
     Cmd.Backup()
     usageErrorExit(f'{parameters[DFA_LOCALFILEPATH]}: {str(e)}')
   parameters[DFA_LOCALFILENAME] = os.path.basename(parameters[DFA_LOCALFILEPATH])

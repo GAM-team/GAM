@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # GAM7
 #
@@ -140,21 +139,16 @@ from gam.cmd.analytics import (
     printShowAnalyticProperties,
 )
 from gam.cmd.audit import doCreateMonitor, doDeleteMonitor, doShowMonitors
-from gam.cmd.browsers import (
-    doCreateBrowserToken,
-    doCreateChromeProfileCommand,
-    doDeleteBrowsers,
-    doDeleteChromeProfile,
-    doInfoBrowsers,
-    doInfoChromeProfile,
-    doInfoChromeProfileCommand,
-    doMoveBrowsers,
-    doPrintShowBrowserTokens,
-    doPrintShowBrowsers,
-    doPrintShowChromeProfileCommands,
-    doPrintShowChromeProfiles,
-    doRevokeBrowserToken,
-    doUpdateBrowsers,
+from gam.cmd.chrome.apps import (
+    doInfoChromeApp,
+    doPrintChromeSnValidity,
+    doPrintShowChromeAppDevices,
+    doPrintShowChromeApps,
+    doPrintShowChromeAues,
+    doPrintShowChromeDeviceCounts,
+    doPrintShowChromeHistory,
+    doPrintShowChromeNeedsAttn,
+    doPrintShowChromeVersions,
 )
 from gam.cmd.caa import (
     doCreateCAALevel,
@@ -162,7 +156,6 @@ from gam.cmd.caa import (
     doPrintShowCAALevels,
     doUpdateCAALevel,
 )
-
 from gam.cmd.calendar.acls import (
     doCalendarsCreateACL,
     doCalendarsCreateACLs,
@@ -279,18 +272,14 @@ from gam.cmd.chat.spaces import (
     printShowChatSpaces,
     updateChatSpace,
 )
-from gam.cmd.chromeapps import (
-    doInfoChromeApp,
-    doPrintChromeSnValidity,
-    doPrintShowChromeAppDevices,
-    doPrintShowChromeApps,
-    doPrintShowChromeAues,
-    doPrintShowChromeDeviceCounts,
-    doPrintShowChromeHistory,
-    doPrintShowChromeNeedsAttn,
-    doPrintShowChromeVersions,
+from gam.cmd.chrome.browsers import (
+    doDeleteBrowsers,
+    doInfoBrowsers,
+    doMoveBrowsers,
+    doPrintShowBrowsers,
+    doUpdateBrowsers,
 )
-from gam.cmd.chromepolicies import (
+from gam.cmd.chrome.policies import (
     doCreateChromeNetwork,
     doCreateChromePolicyImage,
     doDeleteChromeNetwork,
@@ -299,6 +288,19 @@ from gam.cmd.chromepolicies import (
     doPrintShowChromePolicies,
     doPrintShowChromePolicySchemas,
     doUpdateChromePolicy,
+)
+from gam.cmd.chrome.profiles import (
+    doCreateChromeProfileCommand,
+    doDeleteChromeProfile,
+    doInfoChromeProfile,
+    doInfoChromeProfileCommand,
+    doPrintShowChromeProfileCommands,
+    doPrintShowChromeProfiles,
+)
+from gam.cmd.chrome.tokens import (
+    doCreateBrowserToken,
+    doPrintShowBrowserTokens,
+    doRevokeBrowserToken,
 )
 from gam.cmd.cidevices import (
     doApproveCIDeviceUser,
@@ -354,14 +356,14 @@ from gam.cmd.contacts import (
     doPrintShowDomainContacts,
     doUpdateDomainContacts,
 )
-from gam.cmd.courses.content import (
+from gam.cmd.classroom.content import (
     doPrintCourseAnnouncements,
     doPrintCourseMaterials,
     doPrintCourseSubmissions,
     doPrintCourseTopics,
     doPrintCourseWork,
 )
-from gam.cmd.courses.courses import (
+from gam.cmd.classroom.courses import (
     doCreateCourse,
     doDeleteCourse,
     doDeleteCourses,
@@ -371,7 +373,7 @@ from gam.cmd.courses.courses import (
     doUpdateCourse,
     doUpdateCourses,
 )
-from gam.cmd.courses.guardians import (
+from gam.cmd.classroom.guardians import (
     acceptClassroomInvitations,
     cancelGuardianInvitations,
     clearGuardians,
@@ -397,7 +399,7 @@ from gam.cmd.courses.guardians import (
     printShowGuardians,
     syncGuardians,
 )
-from gam.cmd.courses.participants import (
+from gam.cmd.classroom.participants import (
     doCourseAddItems,
     doCourseClearParticipants,
     doCourseRemoveItems,
@@ -1751,7 +1753,7 @@ from gam.cmd.audit import processAuditCommands
 from gam.cmd.oauth import processOauthCommands
 from gam.cmd.calendar.dispatch import processCalendarsCommands
 from gam.cmd.calendar.resources import processResourceCommands, processResourcesCommands
-from gam.cmd.courses.participants import processCourseCommands, processCoursesCommands
+from gam.cmd.classroom.participants import processCourseCommands, processCoursesCommands
 
 # Multi-step commands (audit, oauth, calendars, courses, resources)
 COMMANDS_MAP = {
