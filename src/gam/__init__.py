@@ -46,6 +46,7 @@ os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = "1"
 if not getattr(sys, 'frozen', False):
   sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
+
 import httplib2
 httplib2.RETRIES = 5
 
@@ -59,9 +60,10 @@ from gam.util.api import SvcAcctAPIDisabledExit  # noqa: E402
 from gam.util.email import send_email  # noqa: E402
 
 
+
 from gam.constants import *
 
-from util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402
+from gam.util.fileio import adjustRedirectedSTDFilesIfNotMultiprocessing, closeSTDFilesIfNotMultiprocessing  # noqa: E402
 
 from gam.var import Act, Cmd, Ent, Ind  # noqa: E402
 
@@ -80,25 +82,26 @@ else:
   GM.Globals[GM.GAM_TYPE] = 'pythonsource'
 
 
-from util.output import showAPICallsRetryData  # noqa: E402
+from gam.util.output import showAPICallsRetryData  # noqa: E402
 
 
 # Multiprocessing lock
 mplock = None
 
 # Imports used by __init__.py's own dispatch tables and functions
-from util.output import setSysExitRC, printErrorMessage  # noqa: E402
-from util.args import getChoice  # noqa: E402
-from util.args import checkArgumentPresent, NO_DEFAULT  # noqa: E402
-from util.connection import doCheckConnection, doComment, doVersion, doUsage  # noqa: E402
-from util.entity import getEntityArgument, getEntityToModify  # noqa: E402
-from util.config import SetGlobalVariables  # noqa: E402
-from util.fileio import closeGAMCommandLog, writeGAMCommandLog  # noqa: E402
-from util.batch import (  # noqa: E402
+from gam.util.output import setSysExitRC, printErrorMessage  # noqa: E402
+from gam.util.args import getChoice  # noqa: E402
+from gam.util.args import checkArgumentPresent, NO_DEFAULT  # noqa: E402
+from gam.util.connection import doCheckConnection, doComment, doVersion, doUsage  # noqa: E402
+from gam.util.entity import getEntityArgument, getEntityToModify  # noqa: E402
+from gam.util.config import SetGlobalVariables  # noqa: E402
+from gam.util.fileio import closeGAMCommandLog, writeGAMCommandLog  # noqa: E402
+from gam.util.batch import (  # noqa: E402
     batchWriteStderr, doBatch, doThreadBatch, doAutoBatch,
     doCSV, doCSVTest, doLoop, doListType, doListCrOS, doListUser,
     showCountCrOS, showCountUser,
 )
+
 
 
 # Command module imports
@@ -2717,5 +2720,5 @@ def CallGAMCommand(args, processGamCfg=True, inLoop=False, closeSTD=False):
 
 # Register ProcessGAMCommand with util/batch.py so it can invoke GAM
 # commands without importing from gam/__init__.py (which would be circular).
-from util.batch import register_process_gam_command  # noqa: E402
+from gam.util.batch import register_process_gam_command  # noqa: E402
 register_process_gam_command(ProcessGAMCommand)

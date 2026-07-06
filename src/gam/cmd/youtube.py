@@ -10,7 +10,6 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPIpages
 from gam.util.args import (
     BCP47_LANGUAGE_CODES_MAP,
-    addFieldToFieldsList,
     getArgument,
     getLanguageCode,
     getString,
@@ -18,6 +17,7 @@ from gam.util.args import (
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,
+    addFieldToFieldsList,
     cleanJSON,
     flattenJSON,
     getFieldsList,

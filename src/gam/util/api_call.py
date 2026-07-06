@@ -20,11 +20,11 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Ent
 from gam.constants import GOOGLE_API_ERROR_RC, HTTP_ERROR_RC, NETWORK_ERROR_RC, SOCKET_ERROR_RC
-from util.api import APIAccessDeniedExit, clearServiceCache, handleOAuthTokenError, handleServerError, transportCreateRequest, waitOnFailure
-from util.args import UTF8, formatHTTPError
-from util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER
-from util.fileio import checkAPICallsRate
-from util.output import ERROR_PREFIX, flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+from gam.util.api import APIAccessDeniedExit, clearServiceCache, handleOAuthTokenError, handleServerError, transportCreateRequest, waitOnFailure
+from gam.util.args import UTF8, formatHTTPError
+from gam.util.display import FIRST_ITEM_MARKER, LAST_ITEM_MARKER, TOTAL_ITEMS_MARKER
+from gam.util.fileio import checkAPICallsRate
+from gam.util.output import ERROR_PREFIX, flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
 import google
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')

@@ -8,7 +8,7 @@ import re
 
 import arrow
 
-from gam.cmd.drive.core import _getSharedDriveNameFromId, _mapDrive2QueryToDrive3, cleanFileIDsList, escapeDriveFileName, getEscapedDriveFileName, initDriveFileEntity
+from gam.cmd.drive.core import _getSharedDriveNameFromId, _mapDrive2QueryToDrive3, cleanFileIDsList, getEscapedDriveFileName, initDriveFileEntity
 from gam.cmd.drive.revisions import _stripMeInOwners, _stripNotMeInOwners, _updateAnyOwnerQuery
 
 from gamlib import gapi as GAPI
@@ -55,7 +55,6 @@ from gam.cmd.drive.core import (
     _getSharedDriveNameFromId,
     _mapDrive2QueryToDrive3,
     cleanFileIDsList,
-    escapeDriveFileName,
     getEscapedDriveFileName,
     initDriveFileEntity,
 )
@@ -64,6 +63,7 @@ from gam.util.args import (
     StartEndTime,
     checkArgumentPresent,
     checkGetArgument,
+    escapeDriveFileName,
     getArgument,
     getBoolean,
     getChoice,

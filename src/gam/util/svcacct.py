@@ -14,7 +14,7 @@ import httplib2
 from gamlib import settings as GC
 from gamlib import state as GM
 from gam.constants import NETWORK_ERROR_RC
-from util.api import (
+from gam.util.api import (
     _getSvcAcctData,
     getHttpObj,
     getService,
@@ -25,9 +25,9 @@ from util.api import (
     transportCreateRequest,
     waitOnFailure,
 )
-from util.args import UTF8
-from util.output import ERROR_PREFIX, writeStdout
-from util.uid import convertUIDtoEmailAddress
+from gam.util.args import UTF8
+from gam.util.output import ERROR_PREFIX, writeStdout
+from gam.util.uid import convertUIDtoEmailAddress
 
 HTML_TITLE_PATTERN = __import__('re').compile(r'.*<title>(.+)</title>')
 

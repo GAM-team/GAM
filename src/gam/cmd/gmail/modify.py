@@ -48,7 +48,8 @@ from gam.util.args import (
     getTimeOrDeltaFromNow,
     splitEmailAddress
 )
-from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS
+from gam.cmd.drive.gdoc_fetch import getStringOrFile
 from gam.util.batch import batchRequestID
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (

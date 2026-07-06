@@ -24,7 +24,8 @@ from gam.util.args import (
     getJSON,
     getString,
 )
-from gam.util.gdoc import SORF_TEXT_ARGUMENTS, getStringOrFile
+from gam.util.gdoc import SORF_TEXT_ARGUMENTS
+from gam.cmd.drive.gdoc_fetch import getStringOrFile
 from gam.util.csv_pf import (
     CSVPrintFile,
     FormatJSONQuoteChar,

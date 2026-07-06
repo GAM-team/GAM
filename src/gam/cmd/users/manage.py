@@ -44,7 +44,8 @@ from gam.util.args import (
     normalizeEmailAddressOrUID,
     splitEmailAddress,
 )
-from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile, getStringWithCRsNLsOrFile
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS
+from gam.cmd.drive.gdoc_fetch import getStringOrFile, getStringWithCRsNLsOrFile
 from gam.util.csv_pf import showJSON
 from gam.util.display import (
     entityActionFailedWarning,
@@ -78,7 +79,7 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import closeFile, writeFile
-from gam.util.gdoc import openCSVFileReader
+from gam.cmd.drive.gdoc_fetch import openCSVFileReader
 from gam.util.orgunits import getOrgUnitItem
 from gam.util.output import readStdin, setSysExitRC, systemErrorExit, writeStderr, formatLocalTime
 from gam.constants import MULTIPLE_DELETED_USERS_FOUND_RC, NO_ENTITIES_FOUND_RC, PASSWORD_SAFE_CHARS, USER_SUSPENDED_RC

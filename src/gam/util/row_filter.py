@@ -10,8 +10,8 @@ both args.py consumers and csv_pf.py can import from without circularity.
 import arrow
 
 from gamlib import settings as GC
-from util.args import NEVER_TIME, TRUE_FALSE, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN
-from util.output import ISOformatTimeStamp
+from gam.util.args import NEVER_TIME, TRUE_FALSE, YYYYMMDD_FORMAT, YYYYMMDD_PATTERN
+from gam.util.output import ISOformatTimeStamp
 
 
 def _stripTimeFromDateTime(rowDate):

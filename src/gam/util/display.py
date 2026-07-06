@@ -12,8 +12,8 @@ from gamlib import msgs as Msg
 
 
 from gam.var import Act, Ent, Ind
-from util.args import escapeCRsNLs
-from util.output import (
+from gam.util.args import escapeCRsNLs
+from gam.util.output import (
     currentCountNL,
     formatKeyValueList,
     printWarningMessage,

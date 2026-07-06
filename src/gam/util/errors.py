@@ -16,7 +16,7 @@ from gam.constants import (
     INVALID_JSON_RC, OAUTH2_TXT_REQUIRED_RC,
     OAUTH2SERVICE_JSON_REQUIRED_RC, USAGE_ERROR_RC,
 )
-from util.output import (
+from gam.util.output import (
     currentCountNL,
     formatKeyValueList,
     stderrErrorMsg,

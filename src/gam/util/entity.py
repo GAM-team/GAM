@@ -73,22 +73,23 @@ def convertOrgUnitIDtoPath(cd, orgUnitId):
 
 from gam.constants import DATA_ERROR_RC, INVALID_ENTITY_RC, NO_ENTITIES_FOUND_RC, UNKNOWN_ERROR_RC
 from gamlib import skus as SKU
-from util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, shlexSplitList, shlexSplitListStatus, splitEmailAddress, validateEmailAddressOrUID
-from util.row_filter import checkMatchSkipFields
-from util.display import ENTITY_DOES_NOT_EXIST_RC, entityActionFailedWarning, entityActionNotPerformedWarning, entityDoesNotExistWarning, entityPerformActionNumItems, getPageMessage, getPageMessageForWhom, printGettingAllAccountEntities, printGettingAllEntityItemsForWhom, printGotEntityItemsForWhom, setGettingAllEntityItemsForWhom
-from util.errors import csvDataAlreadySavedErrorExit, csvFieldErrorExit, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, usageErrorExit
-from util.fileio import closeFile, openFile, setFilePath
-from util.gdoc import getGDocData, getStorageFileData, openCSVFileReader
-from util.output import formatKeyValueList, printErrorMessage, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr
+from gam.util.args import ARCHIVED_ARGUMENTS, FALSE_VALUES, SUSPENDED_ARGUMENTS, TRUE_VALUES, _getIsArchived, _getIsSuspended, checkArgumentPresent, checkDataField, checkSubkeyField, getArgument, getCharSet, getChoice, getDelimiter, getMatchSkipFields, getREPattern, getString, makeOrgUnitPathAbsolute, normalizeEmailAddressOrUID, orgUnitPathQuery, shlexSplitList, shlexSplitListStatus, splitEmailAddress, validateEmailAddressOrUID
+from gam.util.row_filter import checkMatchSkipFields
+from gam.util.display import ENTITY_DOES_NOT_EXIST_RC, entityActionFailedWarning, entityActionNotPerformedWarning, entityDoesNotExistWarning, entityPerformActionNumItems, getPageMessage, getPageMessageForWhom, printGettingAllAccountEntities, printGettingAllEntityItemsForWhom, printGotEntityItemsForWhom, setGettingAllEntityItemsForWhom
+from gam.util.errors import csvDataAlreadySavedErrorExit, csvFieldErrorExit, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, usageErrorExit
+from gam.util.fileio import closeFile, openFile, setFilePath
+from gam.util.output import formatKeyValueList, printErrorMessage, setSysExitRC, stderrErrorMsg, systemErrorExit, writeStderr
 from gam.util.access import accessErrorExit
-from util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
-from util.api import ClientAPIAccessDeniedExit, _getAdminEmail, buildGAPIObject
-from util.svcacct import buildGAPIServiceObject
-from util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
+from gam.util.access import accessErrorExit, checkEntityDNEorAccessErrorExit, entityUnknownWarning
+from gam.util.api import ClientAPIAccessDeniedExit, _getAdminEmail, buildGAPIObject
+from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages, yieldGAPIpages
 from gam.var import Act, Cmd, Ent
 from gam.util.access import accessErrorExitNonDirectory
-from util.customer import _getCustomerIdNoC
-from util.course_scope import removeCourseIdScope
+from gam.util.customer import _getCustomerId, _getCustomerIdNoC, setTrueCustomerId
+from gam.util.licensing import fetchLicensedUserIds
+from gam.util.course_scope import removeCourseIdScope
+from gam.util.classroom import getCoursesOwnerInfo as _getCoursesOwnerInfo
 
 def getQueries(myarg):
   if myarg in {'query', 'filter'}:
@@ -726,7 +727,10 @@ def getItemsToModify(entityType, entity, memberRoles=None, isSuspended=None, isA
       elif (productId, sku) not in skusList:
         skusList.append((productId, sku))
     if skusList:
-      entityList = doPrintLicenses(returnFields=['userId'], skus=skusList)
+      lic = buildGAPIObject(API.LICENSING)
+      setTrueCustomerId()
+      customerId = _getCustomerId()
+      entityList = fetchLicensedUserIds(lic, customerId, skusList)
   elif entityType in {Cmd.ENTITY_COURSEPARTICIPANTS, Cmd.ENTITY_TEACHERS, Cmd.ENTITY_STUDENTS}:
     croom = buildGAPIObject(API.CLASSROOM)
     if not noListConversion:
@@ -1414,3 +1418,6 @@ def _getDomainList(cd, customer, fields):
 
 PRINT_PRIVILEGES_FIELDS = ['serviceId', 'serviceName', 'privilegeName', 'isOuScopable', 'childPrivileges']
 
+# Late import — placed after all function definitions to avoid a circular
+# dependency: entity → gdoc_fetch → core → entity.
+from gam.cmd.drive.gdoc_fetch import getGDocData, getStorageFileData, openCSVFileReader  # noqa: E402

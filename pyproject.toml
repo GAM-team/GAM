@@ -102,11 +102,7 @@ fixable = []  # Don't auto-fix — we want to review changes manually
 [tool.ruff.lint.per-file-ignores]
 # __init__.py re-exports cmd/ functions for dispatch tables
 "src/gam/__init__.py" = ["F401", "E402", "F821"]
-# cmd/ files use `from gam.constants import *`
-"src/gam/cmd/**" = ["F821"]
-# util/ modules have ordered imports and re-exports
-"src/gam/util/**" = ["E402", "F821"]
-# gamlib modules
-"src/gam/gamlib/**" = ["F821"]
+# util/ modules have import ordering constraints
+"src/gam/util/**" = ["E402"]
 # Test files can be more relaxed
 "tests/**" = ["F401", "F811"]

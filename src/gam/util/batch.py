@@ -33,18 +33,18 @@ Ent = entity.GamEntity()
 from gamlib import state as GM
 from gamlib import msgs as Msg
 
-from util.csv_pf import CSVPrintFile
+from gam.util.csv_pf import CSVPrintFile
 from gam.constants import HARD_ERROR_RC, KEYBOARD_INTERRUPT_RC
-from util.api import buildGAPIObject
-from util.args import UTF8, checkArgumentPresent, checkForExtraneousArguments, getBoolean, getCharSet, getDelimiter, getInteger, getMatchSkipFields, getString, normalizeEmailAddressOrUID, todaysTime
-from util.csv_pf import CheckInputRowFilterHeaders
-from util.row_filter import checkMatchSkipFields
-from util.display import actionPerformedNumItems
-from util.entity import getEntityArgument, getEntityList, getEntityToModify
-from util.errors import USAGE_ERROR_RC, csvFieldErrorExit, formatChoiceList, missingArgumentExit, usageErrorExit
-from util.fileio import FILE_ERROR_RC, StringIOobject, adjustRedirectedSTDFilesIfNotMultiprocessing, closeFile, closeGAMCommandLog, fdErrorMessage, fileErrorMessage, openFile, openGAMCommandLog, setFilePath, writeGAMCommandLog
-from util.gdoc import getGDocData, getStorageFileData, openCSVFileReader
-from util.output import ERROR_PREFIX, currentISOformatTimeStamp, flushStderr, flushStdout, readStdin, setSysExitRC, systemErrorExit, writeStderr, writeStdout
+from gam.util.api import buildGAPIObject
+from gam.util.args import UTF8, checkArgumentPresent, checkForExtraneousArguments, getBoolean, getCharSet, getDelimiter, getInteger, getMatchSkipFields, getString, normalizeEmailAddressOrUID, todaysTime
+from gam.util.csv_pf import CheckInputRowFilterHeaders
+from gam.util.row_filter import checkMatchSkipFields
+from gam.util.display import actionPerformedNumItems
+from gam.util.entity import getEntityArgument, getEntityList, getEntityToModify
+from gam.util.errors import USAGE_ERROR_RC, csvFieldErrorExit, formatChoiceList, missingArgumentExit, usageErrorExit
+from gam.util.fileio import FILE_ERROR_RC, StringIOobject, adjustRedirectedSTDFilesIfNotMultiprocessing, closeFile, closeGAMCommandLog, fdErrorMessage, fileErrorMessage, openFile, openGAMCommandLog, setFilePath, writeGAMCommandLog
+from gam.cmd.drive.gdoc_fetch import getGDocData, getStorageFileData, openCSVFileReader
+from gam.util.output import ERROR_PREFIX, currentISOformatTimeStamp, flushStderr, flushStdout, readStdin, setSysExitRC, systemErrorExit, writeStderr, writeStdout
 from gam.constants import GAM
 from gam.var import Cmd, Ind
 

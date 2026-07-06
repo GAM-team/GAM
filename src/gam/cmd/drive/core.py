@@ -232,7 +232,7 @@ def _mapDrive2QueryToDrive3(query):
     query = mapQueryRelativeTimes(query, ['modifiedTime', 'viewedByMeTime'])
   return query
 
-from gam.util.gdoc import escapeDriveFileName
+from gam.util.args import escapeDriveFileName
 
 def getEscapedDriveFileName():
   return escapeDriveFileName(getString(Cmd.OB_DRIVE_FILE_NAME))

@@ -30,6 +30,7 @@ from gam.util.args import (
     UTF8,
     checkArgumentPresent,
     checkForExtraneousArguments,
+    escapeDriveFileName,
     getArgument,
     getBoolean,
     getChoice,
@@ -74,7 +75,7 @@ from gam.util.tags import _substituteForUser
 
 from gam.var import Act, Cmd, Ent, Ind
 import httplib2
-from gam.cmd.drive.core import DRIVEFILE_ORDERBY_CHOICE_MAP, _getDriveFileParentInfo, escapeDriveFileName, initDriveFileAttributes
+from gam.cmd.drive.core import DRIVEFILE_ORDERBY_CHOICE_MAP, _getDriveFileParentInfo, initDriveFileAttributes
 
 APPLICATION_VND_GOOGLE_APPS = 'application/vnd.google-apps.'
 MIMETYPE_GA_DOCUMENT = f'{APPLICATION_VND_GOOGLE_APPS}document'
@@ -293,7 +294,7 @@ MIMETYPE_EXTENSION_MAP = {
   'text/tsv': '.tsv',
   }
 
-HTTP_ERROR_PATTERN = re.compile(r'^.*returned "(.*)">$')
+from gam.util.gdoc import HTTP_ERROR_PATTERN
 
 # gam <UserTypeEntity> get drivefile <DriveFileEntity> [revision <DriveFileRevisionID>]
 #	[(format <FileFormatList>)|(gsheet|csvsheet <SheetEntity>)] [exportsheetaspdf <String>]

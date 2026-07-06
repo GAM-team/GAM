@@ -10,6 +10,8 @@ Rules enforced:
     3. No NEW deferred (function-scope) imports.
     4. gamlib/ modules must NEVER import from gam/ or util/.
     5. Undefined global references must not increase (ratchet).
+    6. No short-path ``from util.X`` imports — use ``from gam.util.X``.
+    7. No ``sys.modules`` manipulation for module aliasing.
 """
 
 import ast
@@ -23,7 +25,7 @@ SRC_DIR = Path(__file__).resolve().parent.parent / 'src'
 GAM_DIR = SRC_DIR / 'gam'
 UTIL_DIR = GAM_DIR / 'util'
 CMD_DIR = GAM_DIR / 'cmd'
-GAMLIB_DIR = SRC_DIR / 'gamlib'
+GAMLIB_DIR = GAM_DIR / 'gamlib'
 
 
 def _iter_python_files(directory: Path):
@@ -77,8 +79,9 @@ class TestUtilNeverImportsCmd:
     KNOWN_VIOLATIONS = {
         # entity.py references cmd-level functions via __init__.py re-exports
         ('entity.py', 'gam.cmd'),
-        # gdoc.py references Drive file operations
-        ('gdoc.py', 'gam.cmd'),
+        # batch.py contains cmd-level handlers (doBatch, doCSV) that import
+        # from cmd/drive/gdoc_fetch.  Should migrate to cmd/ eventually.
+        ('batch.py', 'gam.cmd'),
         # api.py uses yubikey module for hardware key auth
         ('api.py', 'gam.cmd'),
         # tags.py references resources for tag substitution
@@ -257,8 +260,6 @@ class TestGamlibIndependence:
 
     def test_gamlib_does_not_import_gam_or_util(self):
         """gamlib/ modules should never import from gam.* or util.*."""
-        if not GAMLIB_DIR.exists():
-            pytest.skip('gamlib directory not found')
 
         violations = []
         for filepath in _iter_python_files(GAMLIB_DIR):
@@ -357,3 +358,89 @@ class TestUndefinedGlobalsRatchet:
                 f'Update MAX_ALLOWED in test_architecture.py to {count} '
                 f'to lock in progress.'
             )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Rule 6: No short-path "from util.X" imports
+# ──────────────────────────────────────────────────────────────────────
+
+class TestNoShortPathImports:
+    """All internal imports must use fully-qualified paths.
+
+    ``from util.args import ...`` is BANNED.  Use ``from gam.util.args import ...``.
+
+    The short-path style only works because __init__.py adds src/gam/ to
+    sys.path, which causes Python to register modules under *two* names
+    (util.X and gam.util.X).  That dual registration was the root cause of
+    the sys.modules aliasing hacks.  Zero tolerance — no allowlist.
+    """
+
+    def test_no_short_path_util_imports(self):
+        """No file under gam/ may use 'from util.X import ...'."""
+        violations = []
+        for filepath in _iter_python_files(GAM_DIR):
+            for node in _parse_imports(filepath):
+                for mod_name in _get_import_module_names(node):
+                    if not mod_name:
+                        continue
+                    if (mod_name.startswith('util.')
+                            or mod_name == 'util'):
+                        violations.append(
+                            f'  {filepath.relative_to(SRC_DIR)}:{node.lineno}: '
+                            f'{mod_name}  →  use gam.{mod_name}'
+                        )
+
+        assert not violations, (
+            f'\n\nARCHITECTURE VIOLATION: {len(violations)} short-path '
+            f'import(s) found.\n'
+            f'Use "from gam.util.X import ..." not "from util.X import ...".\n'
+            f'Short paths cause dual module registration in sys.modules.\n\n'
+            + '\n'.join(violations)
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Rule 7: No sys.modules manipulation for module aliasing
+# ──────────────────────────────────────────────────────────────────────
+
+class TestNoSysModulesAliasing:
+    """sys.modules must not be manipulated to paper over import path issues.
+
+    The codebase previously used sys.modules aliasing to synchronize
+    short-path (util.X) and fully-qualified (gam.util.X) module objects.
+    That hack is now eliminated.  This test ensures it never returns.
+    """
+
+    # Patterns that are legitimate sys.modules usage (not aliasing)
+    _LEGITIMATE_PATTERNS = {
+        # yubikey.py looks up the gam module for the multiprocessing lock
+        "sys.modules['gam']",
+    }
+
+    def test_no_sys_modules_aliasing(self):
+        """No source file may manipulate sys.modules for aliasing."""
+        import re
+        violations = []
+        for filepath in _iter_python_files(GAM_DIR):
+            source = filepath.read_text(encoding='utf-8')
+            for i, line in enumerate(source.splitlines(), 1):
+                stripped = line.strip()
+                if 'sys.modules' not in stripped:
+                    continue
+                # Skip comments
+                if stripped.startswith('#'):
+                    continue
+                # Skip known legitimate uses
+                if any(pat in stripped for pat in self._LEGITIMATE_PATTERNS):
+                    continue
+                violations.append(
+                    f'  {filepath.relative_to(SRC_DIR)}:{i}: {stripped}'
+                )
+
+        assert not violations, (
+            f'\n\nARCHITECTURE VIOLATION: {len(violations)} sys.modules '
+            f'manipulation(s) found.\n'
+            f'sys.modules aliasing was eliminated — do not reintroduce it.\n'
+            f'Fix the root cause (use canonical import paths) instead.\n\n'
+            + '\n'.join(violations)
+        )

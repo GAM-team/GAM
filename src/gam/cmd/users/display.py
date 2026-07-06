@@ -96,7 +96,8 @@ from gam.util.group_parents import addJsonGroupParents, getGroupParents, showGro
 from gam.cmd.resources import _getBuildingNameById
 from gam.util.domain_filters import getUserGroupDomainQueryFilters, initUserGroupDomainQueryFilters, makeUserGroupDomainQueryFilters
 from gam.cmd.aliases import userFilters
-from gam.cmd.licenses import doPrintLicenses
+from gam.util.licensing import fetchLicensedUserSkuIds
+from gam.util.customer import _getCustomerId, setTrueCustomerId
 import arrow
 from gam.util.batch import RI_J
 
@@ -1005,7 +1006,10 @@ def doPrintUsers(entityList=None):
     if printOptions['getLicenseFeed']:
       if skus is None and GM.Globals[GM.LICENSE_SKUS]:
         skus = GM.Globals[GM.LICENSE_SKUS]
-      licenses = doPrintLicenses(returnFields=['userId', 'skuId'], skus=skus)
+      lic = buildGAPIObject(API.LICENSING)
+      setTrueCustomerId()
+      customerId = _getCustomerId()
+      licenses = fetchLicensedUserSkuIds(lic, customerId, skus)
     elif printOptions['getLicenseFeedByUser']:
       lic = buildGAPIObject(API.LICENSING)
       if skus is None:

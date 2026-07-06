@@ -35,7 +35,7 @@ __all__ = [
 
   'checkArgumentPresent', 'checkDataField', 'checkForExtraneousArguments',
   'checkGetArgument', 'checkSubkeyField',
-  'encodeOrgUnitPath', 'escapeCRsNLs',
+  'encodeOrgUnitPath', 'escapeCRsNLs', 'escapeDriveFileName',
   'floatLimits', 'formatHTTPError',
   'getACLRoles', 'getAddCSVData', 'getAgeTime',
   'getArgument', 'getArgumentEmptyAllowed',
@@ -83,7 +83,7 @@ from gamlib import msgs as Msg
 from gamlib import skus as SKU
 
 
-from util.errors import (
+from gam.util.errors import (
     blankArgumentExit,
     csvFieldErrorExit,
     emptyArgumentExit,
@@ -95,10 +95,10 @@ from util.errors import (
     usageErrorExit,
 )
 
-from util.fileio import readFile
-from util.output import ISOformatTimeStamp
+from gam.util.fileio import readFile
+from gam.util.output import ISOformatTimeStamp
 from gam.var import Cmd, Ent
-from util.course_scope import addCourseAliasScope
+from gam.util.course_scope import addCourseAliasScope
 
 # Lazy accessor for main module
 
@@ -1511,3 +1511,17 @@ def shlexSplitListStatus(entity, dataDelimiter=' ,'):
     return (True, list(lexer))
   except ValueError as e:
     return (False, str(e))
+
+def escapeDriveFileName(filename):
+  """Escape single quotes and backslashes for Drive API query strings."""
+  if filename.find("'") == -1 and filename.find('\\') == -1:
+    return filename
+  encfilename = ''
+  for c in filename:
+    if c == "'":
+      encfilename += "\\'"
+    elif c == '\\':
+      encfilename += '\\\\'
+    else:
+      encfilename += c
+  return encfilename

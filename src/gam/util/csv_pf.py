@@ -20,18 +20,17 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.constants import DEFAULT_FILE_APPEND_MODE, INSUFFICIENT_PERMISSIONS_RC, MAX_GOOGLE_SHEET_CELLS, MIMETYPE_GA_FOLDER, MIMETYPE_GA_SPREADSHEET, NO_CSV_DATA_TO_UPLOAD_RC, ROOT
 from tempfile import TemporaryFile
-from util.api import _getAdminEmail, buildGAPIObject
-from util.svcacct import buildGAPIServiceObject, chooseSaAPI
-from util.api_call import callGAPI, callGAPIpages
-from util.args import LOCALE_CODES_MAP, UTF8, escapeCRsNLs, getArgument, getBoolean, getCharacter, getChoice, getInteger, getLanguageCode, getSheetEntity, getSheetIdFromSheetEntity, getString, normalizeEmailAddressOrUID, protectedSheetId, todaysTime
-from util.display import ACTION_FAILED_RC, entityActionFailedWarning, entityActionPerformed, printBlankLine, printJSONKey, printJSONValue, printKeyValueList, userDriveServiceNotEnabledWarning
-from util.email import send_email
-from util.entity import checkUserExists, getEntityArgument
-from util.row_filter import RowFilterMatch
-from util.gdoc import escapeDriveFileName
-from util.errors import USAGE_ERROR_RC, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
-from util.fileio import FILE_ERROR_RC, StringIOobject, closeFile, fdErrorMessage, openFile
-from util.output import ISOformatTimeStamp, WARNING, currentCountNL, formatKeyValueList, formatLocalTime, formatLocalTimestamp, printWarningMessage, setSysExitRC, stderrErrorMsg, stderrWarningMsg, systemErrorExit, writeStdout
+from gam.util.api import _getAdminEmail, buildGAPIObject
+from gam.util.svcacct import buildGAPIServiceObject, chooseSaAPI
+from gam.util.api_call import callGAPI, callGAPIpages
+from gam.util.args import LOCALE_CODES_MAP, UTF8, escapeCRsNLs, escapeDriveFileName, getArgument, getBoolean, getCharacter, getChoice, getInteger, getLanguageCode, getSheetEntity, getSheetIdFromSheetEntity, getString, normalizeEmailAddressOrUID, protectedSheetId, todaysTime
+from gam.util.display import ACTION_FAILED_RC, entityActionFailedWarning, entityActionPerformed, printBlankLine, printJSONKey, printJSONValue, printKeyValueList, userDriveServiceNotEnabledWarning
+from gam.util.email import send_email
+from gam.util.entity import checkUserExists, getEntityArgument
+from gam.util.row_filter import RowFilterMatch
+from gam.util.errors import USAGE_ERROR_RC, invalidArgumentExit, invalidChoiceExit, missingArgumentExit, unknownArgumentExit, usageErrorExit
+from gam.util.fileio import FILE_ERROR_RC, StringIOobject, closeFile, fdErrorMessage, openFile
+from gam.util.output import ISOformatTimeStamp, WARNING, currentCountNL, formatKeyValueList, formatLocalTime, formatLocalTimestamp, printWarningMessage, setSysExitRC, stderrErrorMsg, stderrWarningMsg, systemErrorExit, writeStdout
 from gam.var import Act, Cmd, Ent, Ind
 
 

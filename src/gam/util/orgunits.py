@@ -7,11 +7,11 @@ OrgUnit path/ID resolution and parent OrgUnit traversal.
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
-from util.access import accessErrorExit, checkEntityAFDNEorAccessErrorExit
-from util.api import buildGAPIObject
-from util.api_call import callGAPI
-from util.args import encodeOrgUnitPath, makeOrgUnitPathAbsolute, makeOrgUnitPathRelative
-from util.errors import entityDoesNotExistExit, invalidArgumentExit, missingArgumentExit
+from gam.util.access import accessErrorExit, checkEntityAFDNEorAccessErrorExit
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI
+from gam.util.args import encodeOrgUnitPath, makeOrgUnitPathAbsolute, makeOrgUnitPathRelative
+from gam.util.errors import entityDoesNotExistExit, invalidArgumentExit, missingArgumentExit
 from gam.var import Cmd, Ent
 
 

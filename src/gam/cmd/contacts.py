@@ -12,7 +12,7 @@ from gam.util.args import (
     getString,
     getYYYYMMDD,
 )
-from gam.util.gdoc import getStringWithCRsNLsOrFile
+from gam.cmd.drive.gdoc_fetch import getStringWithCRsNLsOrFile
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.errors import unknownArgumentExit, usageErrorExit
 from gam.util.output import systemErrorExit

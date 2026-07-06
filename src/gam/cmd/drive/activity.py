@@ -48,7 +48,7 @@ from gam.util.display import (
 from gam.util.entity import getEntityArgument
 from gam.util.errors import invalidChoiceExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN, closeFile
-from gam.util.gdoc import openCSVFileReader
+from gam.cmd.drive.gdoc_fetch import openCSVFileReader
 
 from gam.var import Act, Cmd, Ent, Ind
 from gam.cmd.drive.core import (

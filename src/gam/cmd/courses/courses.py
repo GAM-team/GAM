@@ -62,10 +62,12 @@ from gam.util.display import (
 )
 from gam.util.entity import getEntityList
 from gam.util.course_scope import addCourseIdScope, removeCourseIdScope, removeCourseAliasScope
+from gam.util.classroom import getCourseOwnerServiceObject, getCoursesOwnerInfo
 from gam.util.errors import invalidChoiceExit, missingArgumentExit, unknownArgumentExit
 from gam.util.fileio import UNKNOWN
 from gam.util.output import currentCount, formatKeyValueList, writeStdout
 from gam.constants import OWNER_ACCESS_OPTIONS
+from gam.cmd.courses.batch_ops import _batchAddItemsToCourse
 
 from gam.var import Act, Cmd, Ent, Ind
 import arrow
@@ -997,38 +999,9 @@ def _convertCourseUserIdToEmailName(croom, userId, emails, entityValueList, i, c
                       result.get('name', {}).get('fullName', 'Unknown user'))
   return emails[userId]
 
-def _getCourseOwnerSA(croom, course, useOwnerAccess):
-  if not useOwnerAccess:
-    return croom
-  courseOwnerId = course["ownerId"]
-  if courseOwnerId not in GM.Globals[GM.CLASSROOM_OWNER_SA]:
-    _, GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId] = buildGAPIServiceObject(API.CLASSROOM, f'uid:{courseOwnerId}')
-  return GM.Globals[GM.CLASSROOM_OWNER_SA][courseOwnerId]
-
-def _getCoursesOwnerInfo(croom, courseIds, useOwnerAccess, addCIIdScope=True):
-  coursesInfo = {}
-  for courseId in courseIds:
-    ciCourseId = courseId
-    courseId = addCourseIdScope(courseId)
-    if addCIIdScope:
-      ciCourseId = courseId
-    if courseId not in coursesInfo:
-      try:
-        course = callGAPI(croom.courses(), 'get',
-                          throwReasons=[GAPI.NOT_FOUND, GAPI.SERVICE_NOT_AVAILABLE,
-                                        GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
-                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                          id=courseId, fields='id,name,ownerId')
-        ocroom = _getCourseOwnerSA(croom, course, useOwnerAccess)
-        if ocroom is not None:
-          coursesInfo[ciCourseId] = {'id': course['id'], 'name': course['name'], 'croom': ocroom}
-      except GAPI.notFound:
-        entityDoesNotExistWarning(Ent.COURSE, courseId)
-      except GAPI.serviceNotAvailable as e:
-        entityActionFailedWarning([Ent.COURSE, courseId], str(e))
-      except (GAPI.forbidden, GAPI.permissionDenied) as e:
-        ClientAPIAccessDeniedExit(str(e))
-  return 0, len(coursesInfo), coursesInfo
+# Backward-compatible aliases for internal callers
+_getCourseOwnerSA = getCourseOwnerServiceObject
+_getCoursesOwnerInfo = getCoursesOwnerInfo
 
 def _getCourseAliasesMembers(croom, ocroom, courseId, courseShowProperties, teachersFields, studentsFields, showGettings=False, i=0, count=0):
   aliases = []

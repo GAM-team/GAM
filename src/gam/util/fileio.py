@@ -20,7 +20,7 @@ from gamlib import msgs as Msg
 
 
 from gam.var import Act, Ent, Ind
-from util.output import (currentISOformatTimeStamp,
+from gam.util.output import (currentISOformatTimeStamp,
     stderrErrorMsg,
     stderrWarningMsg,
     setSysExitRC,

@@ -46,11 +46,11 @@ from gamlib import state as GM
 from gamlib import msgs as Msg
 from gam.var import Ent
 from gam.constants import API_ACCESS_DENIED_RC, GOOGLE_API_ERROR_RC, NETWORK_ERROR_RC, NO_SCOPES_FOR_API_RC, REFRESH_EXPIRY, SOCKET_ERROR_RC, SYSTEM_ERROR_RC
-from util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT
-from util.display import SERVICE_NOT_APPLICABLE_RC, entityActionFailedWarning, printBlankLine, userServiceNotEnabledWarning
-from util.errors import INVALID_JSON_RC, OAUTH2SERVICE_JSON_REQUIRED_RC, OAUTH2_TXT_REQUIRED_RC, expiredRevokedOauth2TxtExit, invalidDiscoveryJsonExit, invalidOauth2TxtExit, invalidOauth2serviceJsonExit
-from util.fileio import FILE_ERROR_RC, UNKNOWN, incrAPICallsRetryData, readFile, writeFile
-from util.output import flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
+from gam.util.args import UTF8, YYYYMMDDTHHMMSSZ_FORMAT
+from gam.util.display import SERVICE_NOT_APPLICABLE_RC, entityActionFailedWarning, printBlankLine, userServiceNotEnabledWarning
+from gam.util.errors import INVALID_JSON_RC, OAUTH2SERVICE_JSON_REQUIRED_RC, OAUTH2_TXT_REQUIRED_RC, expiredRevokedOauth2TxtExit, invalidDiscoveryJsonExit, invalidOauth2TxtExit, invalidOauth2serviceJsonExit
+from gam.util.fileio import FILE_ERROR_RC, UNKNOWN, incrAPICallsRetryData, readFile, writeFile
+from gam.util.output import flushStderr, stderrErrorMsg, systemErrorExit, writeStderr, writeStdout
 
 
 HTML_TITLE_PATTERN = re.compile(r'.*<title>(.+)</title>')

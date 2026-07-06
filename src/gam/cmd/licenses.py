@@ -16,6 +16,7 @@ from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList
 from gam.util.display import entityActionNotPerformedWarning, getPageMessageForWhom, printEntityKVList
 from gam.util.customer import _getCustomerId, setTrueCustomerId
 from gam.util.errors import unknownArgumentExit
+from gam.util.licensing import fetchLicenseAssignments
 
 
 def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts=False):
@@ -65,23 +66,25 @@ def doPrintLicenses(returnFields=None, skus=None, countsOnly=False, returnCounts
   else:
     fields = getItemFieldsFromFieldsList('items', returnFields)
   if skus:
-    for sku in skus:
-      Ent.SetGetting(Ent.LICENSE)
-      productId = sku[0]
-      skuId = sku[1]
-      productDisplay = SKU.formatProductIdDisplayName(productId)
-      skuIdDisplay = SKU.formatSKUIdDisplayName(skuId)
-      try:
-        feed += callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items',
-                              pageMessage=getPageMessageForWhom(forWhom=skuIdDisplay),
-                              throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
-                              customerId=customerId, productId=productId, skuId=skuId,
-                              maxResults=maxResults, fields=fields)
-        if countsOnly:
-          licenseCounts.append([Ent.PRODUCT, productId, Ent.SKU, [skuId, skuIdDisplay][returnCounts], Ent.LICENSE, len(feed)])
-          feed = []
-      except (GAPI.invalid, GAPI.forbidden, GAPI.invalidArgument) as e:
-        entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay, Ent.SKU, skuIdDisplay], str(e))
+    if countsOnly:
+      # countsOnly needs per-SKU counts — can't use bulk fetchLicenseAssignments
+      for sku in skus:
+        Ent.SetGetting(Ent.LICENSE)
+        productId = sku[0]
+        skuId = sku[1]
+        productDisplay = SKU.formatProductIdDisplayName(productId)
+        skuIdDisplay = SKU.formatSKUIdDisplayName(skuId)
+        try:
+          skuFeed = callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items',
+                                pageMessage=getPageMessageForWhom(forWhom=skuIdDisplay),
+                                throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                                customerId=customerId, productId=productId, skuId=skuId,
+                                maxResults=maxResults, fields=fields)
+          licenseCounts.append([Ent.PRODUCT, productId, Ent.SKU, [skuId, skuIdDisplay][returnCounts], Ent.LICENSE, len(skuFeed)])
+        except (GAPI.invalid, GAPI.forbidden, GAPI.invalidArgument) as e:
+          entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay, Ent.SKU, skuIdDisplay], str(e))
+    else:
+      feed = fetchLicenseAssignments(lic, customerId, skus, returnFields or ['productId', 'skuId', 'userId'], maxResults)
   else:
     suppressErrorMsg = False
     if not products:

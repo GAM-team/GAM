@@ -57,7 +57,7 @@ from gam.util.errors import (
     usageErrorExit,
 )
 from gam.util.fileio import closeFile
-from gam.util.gdoc import openCSVFileReader
+from gam.cmd.drive.gdoc_fetch import openCSVFileReader
 from gam.util.output import writeStdout
 
 

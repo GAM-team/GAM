@@ -81,13 +81,13 @@ class TestAllModulesImport:
             f"not __init__.py.\n" + "\n".join(stdlib_imports)
         )
 
-    def test_cmd_package_globals(self):
-        """Every function in split cmd/ packages should resolve all global names.
+    def test_all_module_globals(self):
+        """Every function in cmd/, util/, and gamlib/ should resolve all global names.
 
-        After splitting monolithic cmd/ files into packages, submodules may
-        reference names that were in scope in the original file but weren't
-        explicitly imported into the new submodule. These show up as NameError
-        at runtime when the specific code path is hit.
+        After extracting code from the monolithic __init__.py into sub-modules,
+        functions may reference names that were in scope in the original file
+        but weren't explicitly imported into the new module. These show up as
+        NameError at runtime when the specific code path is hit.
 
         This test catches such issues statically by inspecting each function's
         bytecode for LOAD_GLOBAL instructions and verifying the referenced
@@ -96,13 +96,9 @@ class TestAllModulesImport:
         import dis
         import types
         import builtins
+        from pathlib import Path
 
-        CMD_DIR = os.path.join(os.path.dirname(__file__), '..', 'src', 'gam', 'cmd')
-        CMD_DIR = os.path.normpath(CMD_DIR)
-
-        # Packages that were split from monolithic files
-        SPLIT_PACKAGES = ['calendar', 'cros', 'gmail', 'groups', 'people']
-
+        GAM_DIR = Path(__file__).resolve().parent.parent / 'src' / 'gam'
         builtin_names = set(dir(builtins))
 
         def get_global_loads(code_obj):
@@ -118,44 +114,59 @@ class TestAllModulesImport:
                     names.update(get_global_loads(const))
             return names
 
+        def discover_modules(base_dir, package_prefix):
+            """Discover all .py modules under a directory, returning dotted module names."""
+            modules = []
+            for py_file in sorted(base_dir.rglob('*.py')):
+                if '__pycache__' in str(py_file) or py_file.name == '__init__.py':
+                    continue
+                rel = py_file.relative_to(base_dir)
+                parts = list(rel.parts)
+                parts[-1] = parts[-1].removesuffix('.py')
+                mod_name = f'{package_prefix}.{".".join(parts)}'
+                modules.append(mod_name)
+            return modules
+
+        # Discover all modules across cmd/, util/, and gamlib/
+        all_modules = []
+        for subdir, prefix in [('cmd', 'gam.cmd'), ('util', 'gam.util'), ('gamlib', 'gamlib')]:
+            target = GAM_DIR / subdir if subdir != 'gamlib' else GAM_DIR.parent.parent / 'src' / subdir
+            # gamlib lives alongside gam, not inside it
+            if subdir == 'gamlib':
+                target = GAM_DIR.parent / subdir
+            if target.is_dir():
+                all_modules.extend(discover_modules(target, prefix))
+
         errors = []
-        for pkg_name in SPLIT_PACKAGES:
-            pkg_dir = os.path.join(CMD_DIR, pkg_name)
-            if not os.path.isdir(pkg_dir):
+        for mod_name in all_modules:
+            try:
+                mod = importlib.import_module(mod_name)
+            except Exception as e:
+                errors.append(f'{mod_name}: import failed: {e}')
                 continue
 
-            for fname in sorted(os.listdir(pkg_dir)):
-                if not fname.endswith('.py') or fname == '__init__.py':
+            mod_globals = set(dir(mod))
+
+            for attr_name in dir(mod):
+                obj = getattr(mod, attr_name)
+                if not isinstance(obj, types.FunctionType):
                     continue
+                if obj.__module__ != mod.__name__:
+                    continue  # skip re-exported functions
 
-                mod_name = f'gam.cmd.{pkg_name}.{fname[:-3]}'
-                try:
-                    mod = importlib.import_module(mod_name)
-                except Exception as e:
-                    errors.append(f'{mod_name}: import failed: {e}')
-                    continue
-
-                mod_globals = set(dir(mod))
-
-                for attr_name in dir(mod):
-                    obj = getattr(mod, attr_name)
-                    if not isinstance(obj, types.FunctionType):
+                referenced = get_global_loads(obj.__code__)
+                for ref_name in sorted(referenced):
+                    if ref_name in mod_globals or ref_name in builtin_names:
                         continue
-                    if obj.__module__ != mod.__name__:
-                        continue  # skip re-exported functions
-
-                    referenced = get_global_loads(obj.__code__)
-                    for ref_name in sorted(referenced):
-                        if ref_name in mod_globals or ref_name in builtin_names:
-                            continue
-                        errors.append(
-                            f'{mod_name}.{attr_name}() references '
-                            f'undefined global: {ref_name}'
-                        )
+                    errors.append(
+                        f'{mod_name}.{attr_name}() references '
+                        f'undefined global: {ref_name}'
+                    )
 
         assert not errors, (
-            f"Found {len(errors)} undefined global reference(s) in split "
-            f"cmd/ packages (likely missing imports):\n" +
+            f"Found {len(errors)} undefined global reference(s) "
+            f"(likely missing imports):\n" +
             "\n".join(errors)
         )
+
 

@@ -24,7 +24,8 @@ from gam.util.args import (
     getTimeOrDeltaFromNow,
     normalizeEmailAddressOrUID,
 )
-from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS, getStringOrFile
+from gam.util.gdoc import SORF_MSG_FILE_ARGUMENTS
+from gam.cmd.drive.gdoc_fetch import getStringOrFile
 from gam.util.display import (
     entityActionFailedWarning,
     entityNumEntitiesActionNotPerformedWarning,

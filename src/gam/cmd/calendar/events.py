@@ -56,7 +56,7 @@ from gam.util.errors import (
     systemErrorExit, unknownArgumentExit,
 )
 from gam.util.fileio import closeFile
-from gam.util.gdoc import openCSVFileReader
+from gam.cmd.drive.gdoc_fetch import openCSVFileReader
 from gam.util.output import setSysExitRC, stderrErrorMsg
 from gam.constants import (
     DAYS_OF_WEEK, GOOGLE_MEETID_FORMAT_REQUIRED, GOOGLE_MEETID_PATTERN,

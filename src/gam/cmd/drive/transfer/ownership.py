@@ -18,6 +18,7 @@ from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIpages
 from gam.util.args import (
     OrderBy,
+    escapeDriveFileName,
     getArgument,
     getBoolean,
     getCharacter,
@@ -63,7 +64,6 @@ from gam.cmd.drive.core import (
     _checkForExistingShortcut,
     _getDriveFileParentInfo,
     _validateUserGetFileIDs,
-    escapeDriveFileName,
     getDriveFileEntity,
     getDriveFileParentAttribute,
     initDriveFileAttributes,

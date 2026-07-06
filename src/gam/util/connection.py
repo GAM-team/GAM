@@ -32,15 +32,15 @@ from gam.constants import (
     GOOGLE_TIMECHECK_LOCATION, MAX_LOCAL_GOOGLE_TIME_OFFSET, NETWORK_ERROR_RC,
     SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE,
 )
-from util.args import getArgument, getString, todaysTime
-from util.output import ISOformatTimeStamp
-from util.display import printBlankLine, printKeyValueList
-from util.errors import unknownArgumentExit
-from util.output import (
+from gam.util.args import getArgument, getString, todaysTime
+from gam.util.output import ISOformatTimeStamp
+from gam.util.display import printBlankLine, printKeyValueList
+from gam.util.errors import unknownArgumentExit
+from gam.util.output import (
     createGreenText, createRedText, createYellowText,
     flushStdout, setSysExitRC, stderrWarningMsg, systemErrorExit, writeStdout,
 )
-from util.api import getHttpObj, getService, handleServerError, waitOnFailure
+from gam.util.api import getHttpObj, getService, handleServerError, waitOnFailure
 from gam.constants import GAM_USER_AGENT, __author__, __version__
 from gam.var import Cmd, Ent, Ind
 

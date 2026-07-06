@@ -16,10 +16,10 @@ from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gam.var import Cmd, Ent
-from util.api import buildGAPIObject
-from util.api_call import callGAPI
-from util.args import getPhraseDNEorSNA, normalizeEmailAddressOrUID
-from util.errors import entityDoesNotExistExit
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI
+from gam.util.args import getPhraseDNEorSNA, normalizeEmailAddressOrUID
+from gam.util.errors import entityDoesNotExistExit
 
 NON_EMAIL_MEMBER_PREFIXES = (
                               "cbcm-browser.",

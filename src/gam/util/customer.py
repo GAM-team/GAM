@@ -6,9 +6,9 @@ This is a leaf module created to break the entity ↔ licenses import cycle.
 
 from gamlib import gapi as GAPI
 from gamlib import settings as GC
-from util.api import ClientAPIAccessDeniedExit, buildGAPIObject
+from gam.util.api import ClientAPIAccessDeniedExit, buildGAPIObject
 from gamlib import api as API
-from util.api_call import callGAPI
+from gam.util.api_call import callGAPI
 
 
 def _getCustomerId():

@@ -6,7 +6,7 @@
 
 import re
 
-from gam.cmd.drive.core import DFA_IGNORE_DEFAULT_VISIBILITY, DFA_KEEP_REVISION_FOREVER, DFA_LOCALFILENAME, DFA_LOCALFILEPATH, DFA_LOCALMIMETYPE, DFA_OCRLANGUAGE, DFA_PARENTID, DFA_PRESERVE_FILE_TIMES, DFA_REPLACEFILENAME, DFA_SHAREDDRIVE_PARENT, DFA_STRIPNAMEPREFIX, DFA_TIMEFORMAT, DFA_TIMESTAMP, DFA_URL, DFA_USE_CONTENT_AS_INDEXABLE_TEXT, _getDriveFileAddRemoveParentInfo, _getDriveFileParentInfo, _validateUserGetFileIDs, escapeDriveFileName, getDriveFileAddRemoveParentAttribute, getDriveFileAttribute, getDriveFileEntity, getDriveFileParentAttribute, getMediaBody, initDriveFileAttributes, setPreservedFileTimes
+from gam.cmd.drive.core import DFA_IGNORE_DEFAULT_VISIBILITY, DFA_KEEP_REVISION_FOREVER, DFA_LOCALFILENAME, DFA_LOCALFILEPATH, DFA_LOCALMIMETYPE, DFA_OCRLANGUAGE, DFA_PARENTID, DFA_PRESERVE_FILE_TIMES, DFA_REPLACEFILENAME, DFA_SHAREDDRIVE_PARENT, DFA_STRIPNAMEPREFIX, DFA_TIMEFORMAT, DFA_TIMESTAMP, DFA_URL, DFA_USE_CONTENT_AS_INDEXABLE_TEXT, _getDriveFileAddRemoveParentInfo, _getDriveFileParentInfo, _validateUserGetFileIDs, getDriveFileAddRemoveParentAttribute, getDriveFileAttribute, getDriveFileEntity, getDriveFileParentAttribute, getMediaBody, initDriveFileAttributes, setPreservedFileTimes
 from gam.cmd.drive.fileinfo import writeReturnIdLink
 
 from gamlib import api as API
@@ -16,6 +16,7 @@ from gamlib import msgs as Msg
 from gam.util.svcacct import buildGAPIServiceObject
 from gam.util.api_call import callGAPI, callGAPIitems, callGAPIpages
 from gam.util.args import (
+        escapeDriveFileName,
         getAddCSVData,
     getArgument,
     getBoolean,

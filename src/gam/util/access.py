@@ -14,11 +14,11 @@ from gamlib import state as GM
 from gamlib import indent
 from gamlib import msgs as Msg
 from gam.constants import API_ACCESS_DENIED_RC, INVALID_DOMAIN_RC
-from util.api import buildGAPIObject
-from util.api_call import callGAPI
-from util.args import getEmailAddressDomain, getPhraseDNEorSNA
-from util.display import ENTITY_DOES_NOT_EXIST_RC, ENTITY_DUPLICATE_RC, entityActionFailedWarning, entityDoesNotExistWarning, entityServiceNotApplicableWarning
-from util.output import currentCountNL, formatKeyValueList, setSysExitRC, systemErrorExit, writeStderr
+from gam.util.api import buildGAPIObject
+from gam.util.api_call import callGAPI
+from gam.util.args import getEmailAddressDomain, getPhraseDNEorSNA
+from gam.util.display import ENTITY_DOES_NOT_EXIST_RC, ENTITY_DUPLICATE_RC, entityActionFailedWarning, entityDoesNotExistWarning, entityServiceNotApplicableWarning
+from gam.util.output import currentCountNL, formatKeyValueList, setSysExitRC, systemErrorExit, writeStderr
 
 
 

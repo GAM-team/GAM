@@ -25,7 +25,8 @@ from gam.util.args import (
     getString,
     normalizeEmailAddressOrUID,
 )
-from gam.util.gdoc import SORF_SIG_FILE_ARGUMENTS, getStringOrFile
+from gam.util.gdoc import SORF_SIG_FILE_ARGUMENTS
+from gam.cmd.drive.gdoc_fetch import getStringOrFile
 from gam.util.csv_pf import CSVPrintFile, flattenJSON, getTodriveOnly
 from gam.util.display import (
     entityActionFailedWarning,
