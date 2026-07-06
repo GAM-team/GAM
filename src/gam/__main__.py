@@ -20,10 +20,9 @@
 import multiprocessing
 import sys
 
-import gam
-from gam.util.batch import initializeLogging
-
 def main():
+  import gam
+  from gam.util.batch import initializeLogging
   initializeLogging()
   rc = gam.ProcessGAMCommand(sys.argv)
   try:
@@ -45,4 +44,7 @@ if __name__ == '__main__':
   # Python 3.14.4 and PyInstaller 6.19.0 don't play nice with forkserver
   # on Linux. For the time being use spawn everywhere.
   multiprocessing.set_start_method('spawn')
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    sys.exit(8)

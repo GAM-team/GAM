@@ -4,8 +4,7 @@
 
 import multiprocessing
 import platform
-
-from gam.__main__ import main
+import sys
 
 # Run from command line
 if __name__ == '__main__':
@@ -14,4 +13,8 @@ if __name__ == '__main__':
   # Python 3.14.4 and PyInstaller 6.19.0 don't play nice with Linux forkserver
   # use spawn everywhere for now.
   multiprocessing.set_start_method('spawn', force=True)
-  main()
+  try:
+    from gam.__main__ import main
+    main()
+  except KeyboardInterrupt:
+    sys.exit(8)

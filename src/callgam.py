@@ -4,18 +4,22 @@
 
 import multiprocessing
 import platform
-
-from gam import initializeLogging, CallGAMCommand
+import sys
 
 if __name__ == '__main__':
 # One time initialization
   if platform.system() != 'Linux':
     multiprocessing.freeze_support()
     multiprocessing.set_start_method('spawn', force=True)
-  initializeLogging()
+  try:
+    from gam import CallGAMCommand
+    from gam.util.batch import initializeLogging
+    initializeLogging()
 #
-  CallGAMCommand(['gam', 'version'])
-  # Issue command, output goes to stdout/stderr
-  rc = CallGAMCommand(['gam', 'info', 'domain'])
-  # Issue command, redirect stdout/stderr
-  rc = CallGAMCommand(['gam', 'redirect', 'stdout', 'domain.txt', 'redirect', 'stderr', 'stdout', 'info', 'domain'])
+    CallGAMCommand(['gam', 'version'])
+    # Issue command, output goes to stdout/stderr
+    rc = CallGAMCommand(['gam', 'info', 'domain'])
+    # Issue command, redirect stdout/stderr
+    rc = CallGAMCommand(['gam', 'redirect', 'stdout', 'domain.txt', 'redirect', 'stderr', 'stdout', 'info', 'domain'])
+  except KeyboardInterrupt:
+    sys.exit(8)
