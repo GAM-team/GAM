@@ -501,7 +501,7 @@ def _readGamCfgFile(config, fileName):
                                                         [Ent.Singular(Ent.CONFIG_FILE), fileName,
                                                          Msg.INVALID, str(e)],
                                                         ''))
-  except IOError as e:
+  except OSError as e:
     systemErrorExit(FILE_ERROR_RC, fileErrorMessage(fileName, e, Ent.CONFIG_FILE))
 
 def _writeGamCfgFile(config, fileName, action):
@@ -510,7 +510,7 @@ def _writeGamCfgFile(config, fileName, action):
     with open(fileName, DEFAULT_FILE_WRITE_MODE, encoding=GM.Globals[GM.SYS_ENCODING]) as f:
       config.write(f)
     printKeyValueList([Ent.Singular(Ent.CONFIG_FILE), fileName, Act.PerformedName(action)])
-  except IOError as e:
+  except OSError as e:
     stderrErrorMsg(fileErrorMessage(fileName, e, Ent.CONFIG_FILE))
 
 def _verifyValues(sectionName, inputFilterSectionName, outputFilterSectionName):

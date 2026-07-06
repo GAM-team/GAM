@@ -911,7 +911,7 @@ class CSVPrintFile:
       else:
         writer.writerows(self.rows)
       return True
-    except IOError as e:
+    except OSError as e:
       stderrErrorMsg(e)
       return False
 
@@ -941,7 +941,7 @@ class CSVPrintFile:
     if self._writeCSVData(writer, titlesList, extrasaction):
       try:
         GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].write(csvFile.getvalue())
-      except IOError as e:
+      except OSError as e:
         stderrErrorMsg(fdErrorMessage(GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD], 'stdout', e))
         setSysExitRC(FILE_ERROR_RC)
     closeFile(csvFile)

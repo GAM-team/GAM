@@ -122,7 +122,7 @@ def openFile(filename, mode=DEFAULT_FILE_READ_MODE, encoding=None, errors=None, 
     if 'b' not in mode:
       return sys.stdout
     return os.fdopen(os.dup(sys.stdout.fileno()), 'wb')
-  except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
+  except (OSError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     if continueOnError:
       if displayError:
         stderrWarningMsg(fileErrorMessage(filename, e))
@@ -140,7 +140,7 @@ def closeFile(f, forceFlush=False):
       os.fsync(f.fileno())
     f.close()
     return True
-  except IOError as e:
+  except OSError as e:
     stderrErrorMsg(fdErrorMessage(f, UNKNOWN, e))
     setSysExitRC(FILE_ERROR_RC)
     return False
@@ -154,7 +154,7 @@ def readFile(filename, mode=DEFAULT_FILE_READ_MODE, encoding=None, newline=None,
       with open(os.path.expanduser(filename), mode, newline=newline, **kwargs) as f:
         return f.read()
     return str(sys.stdin.read())
-  except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
+  except (OSError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     if continueOnError:
       if displayError:
         stderrWarningMsg(fileErrorMessage(filename, e))
@@ -173,7 +173,7 @@ def writeFile(filename, data, mode=DEFAULT_FILE_WRITE_MODE,
       return True
     GM.Globals[GM.STDOUT].get(GM.REDIRECT_MULTI_FD, sys.stdout).write(data)
     return True
-  except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
+  except (OSError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     if continueOnError:
       if displayError:
         stderrErrorMsg(fileErrorMessage(filename, e))
@@ -188,7 +188,7 @@ def writeFileReturnError(filename, data, mode=DEFAULT_FILE_WRITE_MODE):
     with open(os.path.expanduser(filename), mode, **kwargs) as f:
       f.write(data)
     return (True, None)
-  except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
+  except (OSError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     return (False, e)
 
 # Delete a file
@@ -280,7 +280,7 @@ def adjustRedirectedSTDFilesIfNotMultiprocessing():
         GM.Globals[stdtype][GM.REDIRECT_MULTI_FD] = rdFd
         if (stdtype == GM.STDOUT) and (GM.Globals.get(GM.SAVED_STDOUT) is not None):
           sys.stdout = rdFd
-      except IOError as e:
+      except OSError as e:
         systemErrorExit(FILE_ERROR_RC, e)
 
   adjustRedirectedSTDFile(GM.STDOUT)

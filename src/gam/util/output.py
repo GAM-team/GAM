@@ -34,33 +34,33 @@ def readStdin(prompt):
 def stdErrorExit(e):
   try:
     sys.stderr.write(f'\n{ERROR_PREFIX}{str(e)}\n')
-  except IOError:
+  except OSError:
     pass
   sys.exit(STDOUT_STDERR_ERROR_RC)
 
 def writeStdout(data):
   try:
     GM.Globals[GM.STDOUT].get(GM.REDIRECT_MULTI_FD, sys.stdout).write(data)
-  except IOError as e:
+  except OSError as e:
     stdErrorExit(e)
 
 def flushStdout():
   try:
     GM.Globals[GM.STDOUT].get(GM.REDIRECT_MULTI_FD, sys.stdout).flush()
-  except IOError as e:
+  except OSError as e:
     stdErrorExit(e)
 
 def writeStderr(data):
   flushStdout()
   try:
     GM.Globals[GM.STDERR].get(GM.REDIRECT_MULTI_FD, sys.stderr).write(data)
-  except IOError as e:
+  except OSError as e:
     stdErrorExit(e)
 
 def flushStderr():
   try:
     GM.Globals[GM.STDERR].get(GM.REDIRECT_MULTI_FD, sys.stderr).flush()
-  except IOError as e:
+  except OSError as e:
     stdErrorExit(e)
 
 # Error messages

@@ -243,7 +243,7 @@ def StdQueueHandler(mpQueue, stdtype, gmGlobals, gcValues):
       if GC.Values[GC.SHOW_MULTIPROCESS_INFO]:
         _writeData(PROCESS_MSG.format(pidData[pid]['queue'], pid, 'End', currentISOformatTimeStamp(), data[0], pidData[pid]['cmd']))
       fd.flush()
-    except IOError as e:
+    except OSError as e:
       systemErrorExit(FILE_ERROR_RC, fdErrorMessage(fd, GM.Globals[stdtype][GM.REDIRECT_NAME], e))
 
   if multiprocessing.get_start_method() != 'fork':
@@ -293,7 +293,7 @@ def StdQueueHandler(mpQueue, stdtype, gmGlobals, gcValues):
     try:
       fd.flush()
       fd.close()
-    except IOError:
+    except OSError:
       pass
   GM.Globals[stdtype][GM.REDIRECT_FD] = None
 
@@ -307,7 +307,7 @@ def batchWriteStderr(data):
   try:
     sys.stderr.write(data)
     sys.stderr.flush()
-  except IOError as e:
+  except OSError as e:
     systemErrorExit(FILE_ERROR_RC, fileErrorMessage('stderr', e))
 
 def writeStdQueueHandler(mpQueue, item):
@@ -485,7 +485,7 @@ def MultiprocessGAMCommands(items, showCmds):
       pool = mpManager.Pool(processes=numPoolProcesses, initializer=initGamWorker, initargs=(l,), maxtasksperchild=200)
     else:
       pool = multiprocessing.Pool(processes=numPoolProcesses, initializer=initGamWorker, initargs=(l,), maxtasksperchild=200)
-  except IOError as e:
+  except OSError as e:
     systemErrorExit(FILE_ERROR_RC, e)
   except AssertionError as e:
     Cmd.SetLocation(0)
@@ -818,7 +818,7 @@ def doBatch(threadBatch=False):
           writeStderr(f'Command: >>>{Cmd.QuotedArgumentList([argv[0]])}<<< {Cmd.QuotedArgumentList(argv[1:])}\n')
           writeStderr(f'{ERROR_PREFIX}{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]}: {Msg.EXPECTED} <{formatChoiceList(validCommands)}>\n')
           errors += 1
-  except IOError as e:
+  except OSError as e:
     systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
   closeFile(f)
   if errors == 0:

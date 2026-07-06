@@ -164,7 +164,7 @@ def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
     entityActionFailedWarning([Ent.FILE, filename, Ent.MD5HASH, expected_md5], Msg.DOES_NOT_MATCH.format(actual_hash), j, jcount)
     Act.Set(action)
     return False
-  except IOError as e:
+  except OSError as e:
     systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
 
 def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None, zipToStdout=False, j=0, jcount=0):

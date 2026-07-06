@@ -118,7 +118,7 @@ def updatePhoto(users):
       try:
         with open(filename, 'rb') as f:
           image_data = f.read()
-      except (OSError, IOError) as e:
+      except OSError as e:
         entityActionFailedWarning([Ent.USER, user, Ent.PHOTO, filename], str(e), i, count)
         continue
     body = {'photoData': base64.urlsafe_b64encode(image_data).decode(UTF8)}

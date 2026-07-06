@@ -137,7 +137,7 @@ def getGDocData(gformat):
     return f
   except GAPI.fileNotFound:
     getGDocSheetDataFailedExit([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST)
-  except (IOError, httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
+  except (OSError, httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
     if f:
       f.close()
     getGDocSheetDataFailedExit([Ent.USER, user, Ent.DOCUMENT, fileId], str(e))
@@ -212,7 +212,7 @@ def getGSheetData():
           GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.badRequest,
           GAPI.invalid, GAPI.invalidArgument, GAPI.failedPrecondition) as e:
     getGDocSheetDataFailedExit([Ent.USER, user, Ent.SPREADSHEET, fileId, sheetEntity['sheetType'], sheetEntity['sheetValue']], str(e))
-  except (IOError, httplib2.HttpLib2Error) as e:
+  except (OSError, httplib2.HttpLib2Error) as e:
     if f:
       f.close()
     getGDocSheetDataFailedExit([Ent.USER, user, Ent.SPREADSHEET, fileId, sheetEntity['sheetType'], sheetEntity['sheetValue']], str(e))
@@ -294,7 +294,7 @@ def openCSVFileReader(filename, fieldnames=None):
         stderrWarningMsg(fileErrorMessage(filename, Msg.NO_CSV_FILE_DATA_FOUND))
         sys.exit(NO_ENTITIES_FOUND_RC)
       f.seek(loc)
-    except (IOError, UnicodeDecodeError, UnicodeError) as e:
+    except (OSError, UnicodeDecodeError, UnicodeError) as e:
       systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
   if checkArgumentPresent('columndelimiter'):
     columnDelimiter = getCharacter()

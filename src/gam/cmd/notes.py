@@ -595,7 +595,7 @@ def getNoteAttachments(users):
                 entityActionPerformedMessage(entityValueList, f'{status.progress():>7.2%}', k, kcount)
             entityModifierNewValueActionPerformed(entityValueList, Act.MODIFIER_TO, localFilename, k, kcount)
             downloadOK = True
-          except (IOError, httplib2.HttpLib2Error) as e:
+          except (OSError, httplib2.HttpLib2Error) as e:
             entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, localFilename, str(e), k, kcount)
           except googleapiclient.http.HttpError as e:
             mg = GET_NOTE_HTTP_ERROR_PATTERN.match(str(e))

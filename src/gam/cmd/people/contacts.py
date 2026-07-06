@@ -975,7 +975,7 @@ def _processPeopleContactPhotos(users, function):
         continue
       except GAPI.photoNotFound:
         entityDoesNotHaveItemWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], j, jcount)
-      except (GAPI.invalidArgument, OSError, IOError) as e:
+      except (GAPI.invalidArgument, OSError) as e:
         entityActionFailedWarning([entityType, user, peopleEntityType, resourceName, Ent.PHOTO, filename], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.forbidden, GAPI.permissionDenied, GAPI.failedPrecondition) as e:
         ClientAPIAccessDeniedExit(str(e))

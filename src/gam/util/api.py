@@ -163,6 +163,43 @@ def get_adc_request():
     return request
   return transportCreateRequest()
 
+def _isTransientRefreshError(exc):
+  '''Determine if a google.auth RefreshError is transient and worth retrying.
+
+  Some transient network errors (e.g. OIDC token endpoint returning a
+  502/503, or WIF subject-token retrieval failing due to upstream resets)
+  surface as RefreshError rather than TransportError.  This helper checks
+  three signals, in order of reliability:
+
+    1. The library's own ``retryable`` flag (future-proof).
+    2. A chained ``__cause__`` that is a transport/network exception.
+    3. The exception carrying a response body as a second arg — this is
+       the pattern used by identity_pool._UrlSupplier when the OIDC
+       endpoint returns a non-200 status.  Such failures are transient
+       (upstream resets, 502s, etc.) rather than auth misconfiguration.
+  '''
+  # 1. google-auth may set retryable=True in a future release.
+  if getattr(exc, 'retryable', False):
+    return True
+  # 2. Chained cause is a transport/network error.
+  cause = getattr(exc, '__cause__', None)
+  if isinstance(cause, (OSError, httplib2.HttpLib2Error,
+                         google.auth.exceptions.TransportError)):
+    return True
+  # 3. OIDC/WIF token endpoint returned a non-200 with a response body.
+  #    identity_pool raises RefreshError(message, response_body) — a 2-arg
+  #    tuple.  A genuine auth misconfiguration (bad audience, wrong pool)
+  #    returns a structured JSON error.  A transient upstream failure
+  #    returns raw proxy/envoy error text that is not valid JSON.
+  if len(exc.args) >= 2:
+    response_body = str(exc.args[1])
+    try:
+      json.loads(response_body)
+    except (json.JSONDecodeError, ValueError):
+      # Not a structured API error — likely a transient proxy/network message.
+      return True
+  return False
+
 def _getIAMSigner(service_account_info):
   '''Create an IAM-based signer using Application Default Credentials.
 
@@ -176,7 +213,7 @@ def _getIAMSigner(service_account_info):
                                          request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-  triesLimit = 3
+  triesLimit = 5
   for n in range(1, triesLimit+1):
     try:
       credentials.refresh(request)
@@ -187,6 +224,9 @@ def _getIAMSigner(service_account_info):
         continue
       handleServerError(e)
     except google.auth.exceptions.RefreshError as e:
+      if n != triesLimit and _isTransientRefreshError(e):
+        waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
+        continue
       systemErrorExit(API_ACCESS_DENIED_RC, f'signjwt credentials refresh failed: {e}')
   return google.auth.iam.Signer(request, credentials,
                                 service_account_info['client_email'])
@@ -542,7 +582,7 @@ def getService(api, httpObj):
     return service
   except (googleapiclient.errors.InvalidJsonError, KeyError, ValueError) as e:
     invalidDiscoveryJsonExit(disc_file, str(e))
-  except IOError as e:
+  except OSError as e:
     systemErrorExit(FILE_ERROR_RC, str(e))
 
 def defaultSvcAcctScopes():

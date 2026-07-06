@@ -500,7 +500,7 @@ def getDriveFile(users):
             if not suppressStdoutMsgs:
               entityModifierNewValueKeyValueActionPerformed(entityValueList, Act.MODIFIER_TO, filename, my_line[0], my_line[1], j, jcount)
             break
-          except (IOError, httplib2.HttpLib2Error) as e:
+          except (OSError, httplib2.HttpLib2Error) as e:
             entityModifierNewValueActionFailedWarning(entityValueList, Act.MODIFIER_TO, filename, str(e), j, jcount)
           except googleapiclient.http.HttpError as e:
             mg = HTTP_ERROR_PATTERN.match(str(e))

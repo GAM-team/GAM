@@ -53,7 +53,7 @@ def _addAttachmentsToMessage(message, attachments):
         msg.set_payload(readFile(attachFilename, 'rb'))
       msg.add_header('Content-Disposition', 'attachment', filename=os.path.basename(attachFilename))
       message.attach(msg)
-    except (IOError, UnicodeDecodeError) as e:
+    except (OSError, UnicodeDecodeError) as e:
       usageErrorExit(f'{attachFilename}: {str(e)}')
 
 # Add embedded images to an email message
@@ -73,7 +73,7 @@ def _addEmbeddedImagesToMessage(message, embeddedImages):
       msg.add_header('Content-Disposition', 'attachment', filename=os.path.basename(imageFilename))
       msg.add_header('Content-ID', f'<{embeddedImage[1]}>')
       message.attach(msg)
-    except (IOError, UnicodeDecodeError) as e:
+    except (OSError, UnicodeDecodeError) as e:
       usageErrorExit(f'{imageFilename}: {str(e)}')
 
 # Send an email

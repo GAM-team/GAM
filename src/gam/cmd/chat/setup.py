@@ -224,7 +224,7 @@ def createChatEmoji(users):
     try:
       with open(filename, 'rb') as f:
         image_data = f.read()
-    except (OSError, IOError) as e:
+    except OSError as e:
       entityActionFailedWarning([Ent.USER, user, Ent.CHAT_EMOJI, filename], str(e), i, count)
       continue
     body['payload'] = {'filename': os.path.basename(filename),

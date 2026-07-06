@@ -1086,7 +1086,7 @@ def getDriveFileAttribute(myarg, body, parameters, updateCmd):
               # so we'll settle for when its content was last modified.
               ctime = stat.st_mtime
           parameters[DFA_CREATED_TIME] = formatLocalSecondsTimestamp(ctime)
-      except IOError as e:
+      except OSError as e:
         Cmd.Backup()
         usageErrorExit(f'{parameters[DFA_LOCALFILEPATH]}: {str(e)}')
       parameters[DFA_LOCALFILENAME] = os.path.basename(parameters[DFA_LOCALFILEPATH])
@@ -1153,7 +1153,7 @@ def getMediaBody(parameters):
         entityActionFailedExit([Ent.URL, parameters[DFA_URL]], Msg.URL_ERROR.format(status['status']))
       parameters[DFA_LOCALMIMETYPE] = status['content-type']
       return googleapiclient.http.MediaIoBaseUpload(io.BytesIO(c), mimetype=status['content-type'], resumable=True)
-    except (IOError, httplib2.error.ServerNotFoundError) as e:
+    except (OSError, httplib2.error.ServerNotFoundError) as e:
       systemErrorExit(FILE_ERROR_RC, fileErrorMessage(parameters[DFA_URL], str(e), entityType=Ent.URL))
   else:
     try:
@@ -1164,7 +1164,7 @@ def getMediaBody(parameters):
       if media_body.size() == 0:
         media_body = None
       return media_body
-    except IOError as e:
+    except OSError as e:
       systemErrorExit(FILE_ERROR_RC, fileErrorMessage(parameters[DFA_LOCALFILEPATH], str(e)))
 
 DRIVE_ACTIVITY_ACTION_MAP = {
