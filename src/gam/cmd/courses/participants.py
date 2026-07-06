@@ -4,8 +4,8 @@ Part of the _courses_tmp sub-package."""
 
 """GAM Google Classroom course management."""
 
-import re
 import json
+
 
 from gam.util.batch import RI_ENTITY, RI_J, RI_JCOUNT, RI_ITEM
 
@@ -23,7 +23,6 @@ from gam.util.args import (
     getChoice,
     getHTTPError,
     getInteger,
-    getPhraseDNEorSNA,
     getString,
     getStringReturnInList,
     getTimeOrDeltaFromNow,
