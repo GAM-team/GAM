@@ -1058,7 +1058,7 @@ jobs:
           run_gam print mobile
           run_gam print devices clientstates
           run_gam print browsers formatjson
-          run_gam gam print chromeprofiles fields name,profileId,affiliationState,browserChannel,browserVersion,displayName,extensionCount,firstEnrollmentTime,identityProvider,lastActivityTime,lastPolicyFetchTime,lastPolicySyncTime,lastStatusReportTime,osPlatformType,osPlatformVersion,osVersion,policyCount,profilePermanentId,reportingData todrive tdreturnidonly true tdtitle "Chrome Profiles" tdsheettitle "chromeprofiles" tdparent root
+          run_gam print chromeprofiles fields name,profileId,affiliationState,browserChannel,browserVersion,displayName,extensionCount,firstEnrollmentTime,identityProvider,lastActivityTime,lastPolicyFetchTime,lastPolicySyncTime,lastStatusReportTime,osPlatformType,osPlatformVersion,osVersion,policyCount,profilePermanentId,reportingData todrive tdreturnidonly true tdtitle "Chrome Profiles" tdsheettitle "chromeprofiles" tdparent root
           run_gam print cros allfields orderby serialnumber
           run_gam show crostelemetry storagepercentonly
           run_gam report usageparameters customer
