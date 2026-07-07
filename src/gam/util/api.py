@@ -243,6 +243,19 @@ def register_signer_factory(key_type, factory):
   """
   _SIGNER_FACTORIES[key_type] = factory
 
+def _disableRegionalAccessBoundary(credentials):
+  """Disable Regional Access Boundary (trust boundary) lookups.
+
+  google-auth 2.55+ performs an allowedLocations call to
+  iamcredentials.googleapis.com on every SA token refresh. This adds
+  latency, requires extra IAM permissions, and can produce confusing
+  403 errors. GAM does not use trust boundaries, so we disable the
+  lookup entirely by telling the credentials that no lookup is needed.
+  """
+  if hasattr(credentials, '_is_regional_access_boundary_lookup_required'):
+    credentials._is_regional_access_boundary_lookup_required = lambda: False
+
+
 def _getSigner(service_account_info):
   '''Return a signer for the given key_type, or None for default keys.
 
@@ -681,6 +694,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
     credentials = credentials.with_subject(userEmail)
   GM.Globals[GM.ADMIN] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']
   GM.Globals[GM.OAUTH2SERVICE_CLIENT_ID] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
+  _disableRegionalAccessBoundary(credentials)
   return credentials
 
 
@@ -746,6 +760,7 @@ def buildGAPIObjectGE(project, location):
     credentials = google.oauth2.service_account.Credentials._from_signer_and_info(signer, svcacct_info)
   credentials = credentials.with_scopes([DISCOVERYENGINE_SCOPE])
   credentials = credentials.with_quota_project(project)
+  _disableRegionalAccessBoundary(credentials)
   if location.lower() == 'global':
     endpoint = 'https://discoveryengine.googleapis.com'
   else:
