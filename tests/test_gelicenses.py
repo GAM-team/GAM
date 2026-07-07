@@ -515,7 +515,7 @@ class TestBuildGAPIObjectGE:
     def test_http_error_prints_all_guidance(self, mock_svc, mock_signer,
                                              mock_http, mock_transport,
                                              capsys):
-        """HttpError should print discoveryengine.admin, serviceUsageConsumer, and API enable."""
+        """HttpError should print agentspaceAdmin, serviceUsageConsumer, and API enable."""
         from gam.util.api import buildGAPIObjectGE
         from gamlib import state as GM
         import googleapiclient.errors
@@ -536,7 +536,7 @@ class TestBuildGAPIObjectGE:
                     buildGAPIObjectGE('my-proj', 'global')
 
         captured = capsys.readouterr()
-        assert 'discoveryengine.admin' in captured.err
+        assert 'discoveryengine.agentspaceAdmin' in captured.err
         assert 'serviceusage.serviceUsageConsumer' in captured.err
         assert 'discoveryengine.googleapis.com' in captured.err
 
@@ -876,7 +876,7 @@ class TestMessageStrings:
         msg = Msg.GE_IAM_PERMISSION_DENIED.format('sa@proj.iam.gserviceaccount.com', '123456')
         assert 'sa@proj.iam.gserviceaccount.com' in msg
         assert '123456' in msg
-        assert 'discoveryengine.admin' in msg
+        assert 'discoveryengine.agentspaceAdmin' in msg
 
     def test_api_not_enabled(self):
         from gamlib import msgs as Msg
