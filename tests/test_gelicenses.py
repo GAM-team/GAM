@@ -165,56 +165,74 @@ class TestResolveLocation:
         result = _resolveLocation('my-project', 'eu')
         assert result == 'eu'
 
+    @staticmethod
+    def _make_probe_svc(configs):
+        """Return a mock service whose licenseConfigs().list().execute() returns configs."""
+        svc = MagicMock()
+        svc.projects().locations().licenseConfigs().list().execute.return_value = {
+            'licenseConfigs': configs
+        }
+        return svc
+
+    @staticmethod
+    def _make_probe_svc_error(exc):
+        """Return a mock service whose licenseConfigs().list().execute() raises."""
+        svc = MagicMock()
+        svc.projects().locations().licenseConfigs().list().execute.side_effect = exc
+        return svc
+
     def test_auto_selects_single_location(self, capsys):
         from gam.cmd.gelicenses import _resolveLocation
-        mock_svc = MagicMock()
-        configs_global = [{'name': 'projects/123/locations/global/licenseConfigs/sub-1'}]
+        configs = [{'name': 'projects/123/locations/global/licenseConfigs/sub-1'}]
 
-        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
-            with patch('gam.cmd.gelicenses.callGAPIpages',
-                       side_effect=[configs_global, [], []]):
-                result = _resolveLocation('my-project', None)
+        # global has configs, us and eu have none
+        svcs = [self._make_probe_svc(configs),
+                self._make_probe_svc([]),
+                self._make_probe_svc([])]
+
+        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+            result = _resolveLocation('my-project', None)
         assert result == 'global'
         captured = capsys.readouterr()
         assert 'Auto-selected location: global' in captured.out
 
     def test_errors_on_no_locations(self):
         from gam.cmd.gelicenses import _resolveLocation
-        mock_svc = MagicMock()
 
-        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
-            with patch('gam.cmd.gelicenses.callGAPIpages', return_value=[]):
-                with pytest.raises(SystemExit):
-                    _resolveLocation('my-project', None)
+        svcs = [self._make_probe_svc([]),
+                self._make_probe_svc([]),
+                self._make_probe_svc([])]
+
+        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+            with pytest.raises(SystemExit):
+                _resolveLocation('my-project', None)
 
     def test_errors_on_multiple_locations(self):
         from gam.cmd.gelicenses import _resolveLocation
-        mock_svc = MagicMock()
         configs = [{'name': 'projects/123/locations/x/licenseConfigs/sub-1'}]
 
-        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
-            with patch('gam.cmd.gelicenses.callGAPIpages', return_value=configs):
-                with pytest.raises(SystemExit):
-                    _resolveLocation('my-project', None)
+        svcs = [self._make_probe_svc(configs),
+                self._make_probe_svc(configs),
+                self._make_probe_svc([])]
+
+        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+            with pytest.raises(SystemExit):
+                _resolveLocation('my-project', None)
 
     def test_skips_locations_with_errors(self, capsys):
         from gam.cmd.gelicenses import _resolveLocation
-        from gamlib import gapi as GAPI
-        mock_svc = MagicMock()
         configs_eu = [{'name': 'projects/123/locations/eu/licenseConfigs/sub-1'}]
 
-        def side_effect(*args, **kwargs):
-            parent = kwargs.get('parent', '')
-            if 'global' in parent:
-                raise GAPI.notFound('not found')
-            if 'us' in parent:
-                return []
-            return configs_eu
+        # global errors, us empty, eu has configs
+        svcs = [self._make_probe_svc_error(Exception('wrong region')),
+                self._make_probe_svc([]),
+                self._make_probe_svc(configs_eu)]
 
-        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
-            with patch('gam.cmd.gelicenses.callGAPIpages', side_effect=side_effect):
-                result = _resolveLocation('my-project', None)
+        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+            result = _resolveLocation('my-project', None)
         assert result == 'eu'
+        captured = capsys.readouterr()
+        assert 'global: not available' in captured.out
 
 
 # ---------------------------------------------------------------------------

@@ -95,13 +95,15 @@ def _resolveLocation(project, provided_location):
     try:
       svc = _buildGEService(project, loc)
       parent = _getLicenseConfigsParent(project, loc)
-      configs = callGAPIpages(svc.projects().locations().licenseConfigs(), 'list', 'licenseConfigs',
-                              throwReasons=GE_THROW_REASONS, parent=parent)
+      result = svc.projects().locations().licenseConfigs().list(parent=parent).execute()
+      configs = result.get('licenseConfigs', [])
       if configs:
+        writeStdout(f'  {loc}: found {len(configs)} license config(s)\n')
         found.append(loc)
-    except (GAPI.permissionDenied, GAPI.forbidden, GAPI.notFound):
-      continue
-    except SystemExit:
+      else:
+        writeStdout(f'  {loc}: no license configs\n')
+    except Exception:
+      writeStdout(f'  {loc}: not available\n')
       continue
 
   if not found:
