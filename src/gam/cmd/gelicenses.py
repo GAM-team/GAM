@@ -90,13 +90,17 @@ def _handleGEError(e, project):
   """Handle common GE API errors with actionable IAM guidance."""
   sa_email = GM.Globals.get(GM.ADMIN, 'unknown')
   if isinstance(e, (GAPI.permissionDenied, GAPI.forbidden)):
-    stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
-    stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
-    systemErrorExit(GOOGLE_API_ERROR_RC, '')
+    err_msg = str(e).lower()
+    if 'service_disabled' in err_msg or 'not been used' in err_msg or 'not enabled' in err_msg:
+      stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
+    elif 'user_project_denied' in err_msg or 'serviceusage' in err_msg:
+      stderrErrorMsg(Msg.GE_SERVICE_USAGE_DENIED.format(sa_email, project))
+    else:
+      stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
+    systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
   elif isinstance(e, GAPI.notFound):
     stderrErrorMsg(Msg.GE_USERSTORE_NOT_FOUND.format(project))
-    systemErrorExit(GOOGLE_API_ERROR_RC, '')
-  raise
+    systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
 
 
 def _processLRO(service, op_data):

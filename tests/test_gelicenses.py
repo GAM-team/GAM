@@ -12,6 +12,7 @@ Tests cover:
 - Message string validation
 """
 
+import json
 import sys
 from unittest.mock import MagicMock, patch, call
 
@@ -101,21 +102,38 @@ class TestHandleLROResult:
 # ---------------------------------------------------------------------------
 
 class TestHandleGEError:
-    """_handleGEError routes API exceptions to actionable guidance."""
+    """_handleGEError routes API exceptions to the correct remediation."""
 
-    def test_permission_denied_exits(self):
+    def test_permission_denied_shows_iam_guidance(self, capsys):
         from gam.cmd.gelicenses import _handleGEError
         from gamlib import gapi as GAPI, state as GM
         GM.Globals[GM.ADMIN] = 'sa@proj.iam.gserviceaccount.com'
         with pytest.raises(SystemExit):
-            _handleGEError(GAPI.permissionDenied('denied'), '123456')
+            _handleGEError(GAPI.permissionDenied('Access denied'), '123456')
+        captured = capsys.readouterr()
+        assert 'agentspaceAdmin' in captured.err
+        assert 'serviceusage' not in captured.err
+        assert 'enable discoveryengine' not in captured.err
 
-    def test_forbidden_exits(self):
+    def test_forbidden_with_service_disabled(self, capsys):
         from gam.cmd.gelicenses import _handleGEError
         from gamlib import gapi as GAPI, state as GM
         GM.Globals[GM.ADMIN] = 'sa@proj.iam.gserviceaccount.com'
         with pytest.raises(SystemExit):
-            _handleGEError(GAPI.forbidden('forbidden'), '123456')
+            _handleGEError(GAPI.forbidden('SERVICE_DISABLED: API not enabled'), '123456')
+        captured = capsys.readouterr()
+        assert 'enable discoveryengine.googleapis.com' in captured.err
+        assert 'agentspaceAdmin' not in captured.err
+
+    def test_forbidden_with_user_project_denied(self, capsys):
+        from gam.cmd.gelicenses import _handleGEError
+        from gamlib import gapi as GAPI, state as GM
+        GM.Globals[GM.ADMIN] = 'sa@proj.iam.gserviceaccount.com'
+        with pytest.raises(SystemExit):
+            _handleGEError(GAPI.forbidden('USER_PROJECT_DENIED'), '123456')
+        captured = capsys.readouterr()
+        assert 'serviceusage.serviceUsageConsumer' in captured.err
+        assert 'agentspaceAdmin' not in captured.err
 
     def test_not_found_exits(self):
         from gam.cmd.gelicenses import _handleGEError
@@ -124,16 +142,13 @@ class TestHandleGEError:
         with pytest.raises(SystemExit):
             _handleGEError(GAPI.notFound('not found'), '123456')
 
-    def test_unknown_error_reraised(self):
-        """Unrecognized exceptions pass through to the bare 'raise'.
-        Since _handleGEError is called from except blocks, we simulate that."""
+    def test_unknown_error_type_returns(self):
+        """Unrecognized exception types are not handled — function returns."""
         from gam.cmd.gelicenses import _handleGEError
         from gamlib import state as GM
         GM.Globals[GM.ADMIN] = 'sa@proj.iam.gserviceaccount.com'
-        # The bare `raise` in _handleGEError re-raises the active exception.
-        # When called outside an except block, it becomes RuntimeError.
-        with pytest.raises(RuntimeError):
-            _handleGEError(ValueError('unexpected'), '123456')
+        # Should not raise — just returns
+        _handleGEError(ValueError('unexpected'), '123456')
 
 
 # ---------------------------------------------------------------------------
@@ -512,10 +527,87 @@ class TestBuildGAPIObjectGE:
     @patch('gam.util.api.getHttpObj')
     @patch('gam.util.api._getSigner', return_value=None)
     @patch('gam.util.api._getSvcAcctData')
-    def test_http_error_prints_all_guidance(self, mock_svc, mock_signer,
+    def test_http_error_user_project_denied_shows_service_usage(self, mock_svc, mock_signer,
                                              mock_http, mock_transport,
                                              capsys):
-        """HttpError should print agentspaceAdmin, serviceUsageConsumer, and API enable."""
+        """USER_PROJECT_DENIED should show only serviceUsageConsumer guidance."""
+        from gam.util.api import buildGAPIObjectGE
+        from gamlib import state as GM
+        import googleapiclient.errors
+        import httplib2
+        GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = self._SA_INFO.copy()
+        GM.Globals[GM.CACHE_DIR] = None
+
+        error_body = json.dumps({'error': {
+            'message': 'Permission denied',
+            'details': [
+                {'@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+                 'reason': 'USER_PROJECT_DENIED'},
+                {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage',
+                 'locale': 'en-US',
+                 'message': 'Grant the serviceUsageConsumer role'},
+            ]
+        }}).encode()
+        http_error = googleapiclient.errors.HttpError(
+            httplib2.Response({'status': '403'}), error_body)
+
+        with patch('google.oauth2.service_account.Credentials.from_service_account_info',
+                   return_value=self._setup_mocks()):
+            with patch('gam.util.api.googleapiclient.discovery.build',
+                       side_effect=http_error):
+                with pytest.raises(SystemExit):
+                    buildGAPIObjectGE('my-proj', 'global')
+
+        captured = capsys.readouterr()
+        assert 'serviceusage.serviceUsageConsumer' in captured.err
+        assert 'agentspaceAdmin' not in captured.err
+        assert 'enable discoveryengine' not in captured.err
+
+    @patch('gam.util.api.transportAuthorizedHttp')
+    @patch('gam.util.api.getHttpObj')
+    @patch('gam.util.api._getSigner', return_value=None)
+    @patch('gam.util.api._getSvcAcctData')
+    def test_http_error_service_disabled_shows_api_enable(self, mock_svc, mock_signer,
+                                                          mock_http, mock_transport,
+                                                          capsys):
+        """SERVICE_DISABLED should show only API enable guidance."""
+        from gam.util.api import buildGAPIObjectGE
+        from gamlib import state as GM
+        import googleapiclient.errors
+        import httplib2
+        GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = self._SA_INFO.copy()
+        GM.Globals[GM.CACHE_DIR] = None
+
+        error_body = json.dumps({'error': {
+            'message': 'API disabled',
+            'details': [
+                {'@type': 'type.googleapis.com/google.rpc.ErrorInfo',
+                 'reason': 'SERVICE_DISABLED'},
+            ]
+        }}).encode()
+        http_error = googleapiclient.errors.HttpError(
+            httplib2.Response({'status': '403'}), error_body)
+
+        with patch('google.oauth2.service_account.Credentials.from_service_account_info',
+                   return_value=self._setup_mocks()):
+            with patch('gam.util.api.googleapiclient.discovery.build',
+                       side_effect=http_error):
+                with pytest.raises(SystemExit):
+                    buildGAPIObjectGE('my-proj', 'global')
+
+        captured = capsys.readouterr()
+        assert 'enable discoveryengine.googleapis.com' in captured.err
+        assert 'agentspaceAdmin' not in captured.err
+        assert 'serviceusage' not in captured.err
+
+    @patch('gam.util.api.transportAuthorizedHttp')
+    @patch('gam.util.api.getHttpObj')
+    @patch('gam.util.api._getSigner', return_value=None)
+    @patch('gam.util.api._getSvcAcctData')
+    def test_http_error_generic_403_shows_iam_guidance(self, mock_svc, mock_signer,
+                                                       mock_http, mock_transport,
+                                                       capsys):
+        """Generic 403 without specific reason shows IAM role guidance."""
         from gam.util.api import buildGAPIObjectGE
         from gamlib import state as GM
         import googleapiclient.errors
@@ -525,7 +617,7 @@ class TestBuildGAPIObjectGE:
 
         http_error = googleapiclient.errors.HttpError(
             httplib2.Response({'status': '403'}),
-            b'{"error": {"message": "USER_PROJECT_DENIED"}}',
+            b'{"error": {"message": "Access denied"}}',
         )
 
         with patch('google.oauth2.service_account.Credentials.from_service_account_info',
@@ -536,9 +628,8 @@ class TestBuildGAPIObjectGE:
                     buildGAPIObjectGE('my-proj', 'global')
 
         captured = capsys.readouterr()
-        assert 'discoveryengine.agentspaceAdmin' in captured.err
-        assert 'serviceusage.serviceUsageConsumer' in captured.err
-        assert 'discoveryengine.googleapis.com' in captured.err
+        assert 'agentspaceAdmin' in captured.err
+        assert 'serviceusage' not in captured.err
 
 
 # ---------------------------------------------------------------------------

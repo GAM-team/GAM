@@ -759,10 +759,26 @@ def buildGAPIObjectGE(project, location):
     )
   except googleapiclient.errors.HttpError as e:
     sa_email = svcacct_info.get('client_email', 'UNKNOWN')
-    stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
-    stderrErrorMsg(Msg.GE_SERVICE_USAGE_DENIED.format(sa_email, project))
-    stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
-    systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
+    # Parse the error to show only the relevant remediation
+    reason = ''
+    message = str(e)
+    try:
+      error_data = json.loads(e.content.decode('utf-8'))
+      details = error_data.get('error', {}).get('details', [])
+      for detail in details:
+        if detail.get('@type', '').endswith('ErrorInfo'):
+          reason = detail.get('reason', '')
+        if detail.get('@type', '').endswith('LocalizedMessage'):
+          message = detail.get('message', message)
+    except (json.JSONDecodeError, AttributeError, UnicodeDecodeError):
+      pass
+    if reason == 'USER_PROJECT_DENIED':
+      stderrErrorMsg(Msg.GE_SERVICE_USAGE_DENIED.format(sa_email, project))
+    elif reason == 'SERVICE_DISABLED':
+      stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
+    else:
+      stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
+    systemErrorExit(GOOGLE_API_ERROR_RC, message)
   GM.Globals[GM.ADMIN] = svcacct_info.get('client_email', 'UNKNOWN')
   return service
 
