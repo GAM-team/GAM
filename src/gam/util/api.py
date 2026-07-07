@@ -316,8 +316,11 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
         audience = f'https://{api}.googleapis.com/'
         signer = _getSigner(jsonDict)
         if signer is None:
-          return (True, JWTCredentials.from_service_account_info(jsonDict, audience=audience))
-        return (True, JWTCredentials._from_signer_and_info(signer, jsonDict, audience=audience))
+          credentials = JWTCredentials.from_service_account_info(jsonDict, audience=audience)
+        else:
+          credentials = JWTCredentials._from_signer_and_info(signer, jsonDict, audience=audience)
+        _disableRegionalAccessBoundary(credentials)
+        return (True, credentials)
       except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
         invalidOauth2serviceJsonExit(str(e))
     invalidOauth2serviceJsonExit(Msg.NO_DATA)
