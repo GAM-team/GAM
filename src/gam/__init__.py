@@ -582,6 +582,14 @@ from gam.cmd.forms import (
     printShowForms,
     updateForm,
 )
+from gam.cmd.gelicenses import (
+    doCreateGELicense,
+    doDeleteGELicense,
+    doPrintShowGELicenses,
+    doPrintShowGESubscriptions,
+    doShowGEUserStore,
+    doSyncGELicenses,
+)
 from gam.cmd.gmail.labels import (
     createLabel,
     createLabelList,
@@ -1036,6 +1044,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_FEATURE:		doCreateFeature,
   Cmd.ARG_GCPFOLDER:		doCreateGCPFolder,
   Cmd.ARG_GCPSERVICEACCOUNT:	doCreateGCPServiceAccount,
+  Cmd.ARG_GELICENSE:		doCreateGELicense,
   Cmd.ARG_GROUP:		doCreateGroup,
   Cmd.ARG_GUARDIAN:		doInviteGuardian,
   Cmd.ARG_GUARDIANINVITATION:	doInviteGuardian,
@@ -1160,6 +1169,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVEFILEACL:	doDeleteDriveFileACLs,
       Cmd.ARG_DRIVELABELPERMISSION:	doDeleteDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doDeleteFeature,
+      Cmd.ARG_GELICENSE:		doDeleteGELicense,
       Cmd.ARG_GROUP:		doDeleteGroups,
       Cmd.ARG_GUARDIAN:		doDeleteGuardian,
       Cmd.ARG_INBOUNDSSOASSIGNMENT:	doDeleteInboundSSOAssignment,
@@ -1351,6 +1361,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVELABEL:	doPrintShowDriveLabels,
       Cmd.ARG_DRIVELABELPERMISSION:	doPrintShowDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doPrintShowFeatures,
+      Cmd.ARG_GELICENSES:		doPrintShowGELicenses,
+      Cmd.ARG_GESUBSCRIPTIONS:	doPrintShowGESubscriptions,
       Cmd.ARG_GROUP:		doPrintGroups,
       Cmd.ARG_GROUPMEMBERS:	doPrintGroupMembers,
       Cmd.ARG_GROUPTREE:	doPrintShowGroupTree,
@@ -1473,6 +1485,9 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVELABEL:	doPrintShowDriveLabels,
       Cmd.ARG_DRIVELABELPERMISSION:	doPrintShowDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doPrintShowFeatures,
+      Cmd.ARG_GELICENSES:		doPrintShowGELicenses,
+      Cmd.ARG_GESUBSCRIPTIONS:	doPrintShowGESubscriptions,
+      Cmd.ARG_GEUSERSTORE:	doShowGEUserStore,
       Cmd.ARG_GROUPMEMBERS:	doShowGroupMembers,
       Cmd.ARG_GROUPTREE:	doPrintShowGroupTree,
       Cmd.ARG_GUARDIAN:		doPrintShowGuardians,
@@ -1519,6 +1534,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
   'sync':
     (Act.SYNC,
      {Cmd.ARG_DEVICE:		doSyncCIDevices,
+      Cmd.ARG_GELICENSES:		doSyncGELicenses,
       Cmd.ARG_SHAREDDRIVEACLS:	copySyncSharedDriveACLs,
       Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doProcessCourseStudentGroupMembers,
      }
@@ -1681,6 +1697,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_EXPORTS:		Cmd.ARG_VAULTEXPORT,
   Cmd.ARG_FEATURES:		Cmd.ARG_FEATURE,
   Cmd.ARG_FORMS:		Cmd.ARG_FORM,
+  Cmd.ARG_GESUBSCRIPTION:	Cmd.ARG_GESUBSCRIPTIONS,
   Cmd.ARG_GROUPS:		Cmd.ARG_GROUP,
   Cmd.ARG_GROUPSMEMBERS:	Cmd.ARG_GROUPMEMBERS,
   Cmd.ARG_GUARDIANINVITATIONS:	Cmd.ARG_GUARDIANINVITATION,

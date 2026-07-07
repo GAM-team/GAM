@@ -729,6 +729,36 @@ def buildGAPIObjectNoAuthentication(api):
   service = getService(api, httpObj)
   return service
 
+def buildGAPIObjectGE(project, location):
+  """Build Discovery Engine API client using SA credentials with quota project.
+
+  Uses the service account acting as itself (no DwD) with the
+  discoveryengine.readwrite scope. The quota project is set to the
+  GE project so billing is routed correctly.
+  """
+  DISCOVERYENGINE_SCOPE = 'https://www.googleapis.com/auth/discoveryengine.readwrite'
+  _getSvcAcctData()
+  svcacct_info = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]
+  signer = _getSigner(svcacct_info)
+  if signer is None:
+    credentials = google.oauth2.service_account.Credentials.from_service_account_info(svcacct_info)
+  else:
+    credentials = google.oauth2.service_account.Credentials._from_signer_and_info(signer, svcacct_info)
+  credentials = credentials.with_scopes([DISCOVERYENGINE_SCOPE])
+  credentials = credentials.with_quota_project(project)
+  if location.lower() == 'global':
+    endpoint = 'https://discoveryengine.googleapis.com'
+  else:
+    endpoint = f'https://{location.lower()}-discoveryengine.googleapis.com'
+  httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(cache=GM.Globals[GM.CACHE_DIR]))
+  service = googleapiclient.discovery.build(
+    'discoveryengine', 'v1', http=httpObj, cache_discovery=False,
+    discoveryServiceUrl=f'{endpoint}/$discovery/rest?version=v1',
+    static_discovery=False,
+  )
+  GM.Globals[GM.ADMIN] = svcacct_info.get('client_email', 'UNKNOWN')
+  return service
+
 
 # API access denied handlers (moved from access.py to break cycle)
 def ClientAPIAccessDeniedExit(errMsg=None):

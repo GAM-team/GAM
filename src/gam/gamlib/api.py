@@ -54,6 +54,7 @@ CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CLOUDRESOURCEMANAGERV1 = 'cloudresourcemanagerv1'
 CONTACTDELEGATION = 'contactdelegation'
+DISCOVERYENGINE = 'discoveryengine'
 DATATRANSFER = 'datatransfer'
 DIRECTORY = 'directory'
 DOCS = 'docs'
@@ -261,6 +262,7 @@ _INFO = {
   CLOUDRESOURCEMANAGER: {'name': 'Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CLOUDRESOURCEMANAGERV1: {'name': 'Resource Manager API v1', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudresourcemanager'},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
+  DISCOVERYENGINE: {'name': 'Discovery Engine API', 'version': 'v1', 'v2discovery': True},
   DATATRANSFER: {'name': 'Data Transfer API', 'version': 'datatransfer_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DIRECTORY: {'name': 'Directory API', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DOCS: {'name': 'Docs API', 'version': 'v1', 'v2discovery': True},
