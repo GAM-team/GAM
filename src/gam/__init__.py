@@ -4641,19 +4641,24 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
     if jsonData:
       try:
         if api in API.APIS_NEEDING_ACCESS_TOKEN:
-          return (False, getSvcAcctCredentials(API.APIS_NEEDING_ACCESS_TOKEN[api], userEmail=None, forceOauth=True))
-        jsonDict = json.loads(jsonData)
-        api, _, _ = API.getVersion(api)
-        audience = f'https://{api}.googleapis.com/'
-        key_type = jsonDict.get('key_type', 'default')
-        if key_type == 'default':
-          return (True, JWTCredentials.from_service_account_info(jsonDict, audience=audience))
-        if key_type == 'yubikey':
-          yksigner = yubikey.YubiKey(jsonDict)
-          return (True, JWTCredentials._from_signer_and_info(yksigner, jsonDict, audience=audience))
-        if key_type == 'signjwt':
-          sjsigner = signjwtSignJwt(jsonDict)
-          return (True, signjwtJWTCredentials._from_signer_and_info(sjsigner, jsonDict, audience=audience))
+          writeCreds = False
+          credentials = getSvcAcctCredentials(API.APIS_NEEDING_ACCESS_TOKEN[api], userEmail=None, forceOauth=True)
+        else:
+          writeCreds = True
+          jsonDict = json.loads(jsonData)
+          api, _, _ = API.getVersion(api)
+          audience = f'https://{api}.googleapis.com/'
+          key_type = jsonDict.get('key_type', 'default')
+          if key_type == 'default':
+            credentials = JWTCredentials.from_service_account_info(jsonDict, audience=audience)
+          if key_type == 'yubikey':
+            yksigner = yubikey.YubiKey(jsonDict)
+            credentials = JWTCredentials._from_signer_and_info(yksigner, jsonDict, audience=audience)
+          if key_type == 'signjwt':
+            sjsigner = signjwtSignJwt(jsonDict)
+            credentials = signjwtJWTCredentials._from_signer_and_info(sjsigner, jsonDict, audience=audience)
+        _disableRegionalAccessBoundary(credentials)
+        return (writeCreds, credentials)
       except (IndexError, KeyError, SyntaxError, TypeError, ValueError) as e:
         invalidOauth2serviceJsonExit(str(e))
     invalidOauth2serviceJsonExit(Msg.NO_DATA)
@@ -4983,6 +4988,18 @@ def _getSvcAcctData():
       GM.Globals[GM.SVCACCT_SCOPES_DEFINED] = True
       GM.Globals[GM.SVCACCT_SCOPES] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA].pop(API.OAUTH2SA_SCOPES)
 
+def _disableRegionalAccessBoundary(credentials):
+  """Disable Regional Access Boundary (trust boundary) lookups.
+
+  google-auth 2.55+ performs an allowedLocations call to
+  iamcredentials.googleapis.com on every SA token refresh. This adds
+  latency, requires extra IAM permissions, and can produce confusing
+  403 errors. GAM does not use trust boundaries, so we disable the
+  lookup entirely by telling the credentials that no lookup is needed.
+  """
+  if hasattr(credentials, '_is_regional_access_boundary_lookup_required'):
+    credentials._is_regional_access_boundary_lookup_required = lambda: False
+
 def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=False):
   _getSvcAcctData()
   if isinstance(scopesOrAPI, str):
@@ -5047,6 +5064,7 @@ def getSvcAcctCredentials(scopesOrAPI, userEmail, softErrors=False, forceOauth=F
   GM.Globals[GM.CURRENT_SVCACCT_USER] = userEmail
   if userEmail:
     credentials = credentials.with_subject(userEmail)
+  _disableRegionalAccessBoundary(credentials)
   GM.Globals[GM.ADMIN] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_email']
   GM.Globals[GM.OAUTH2SERVICE_CLIENT_ID] = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]['client_id']
   return credentials
