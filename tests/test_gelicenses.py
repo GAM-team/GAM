@@ -160,17 +160,19 @@ class TestHandleGEError:
 class TestResolveSubscriptionId:
     """_resolveSubscriptionId validates or auto-discovers subscriptions."""
 
-    def test_provided_id_returned_immediately(self):
+    def test_provided_id_matched_against_api(self):
         from gam.cmd.gelicenses import _resolveSubscriptionId
-        result = _resolveSubscriptionId(None, '123', 'us', 'my-sub-id')
-        assert result == 'my-sub-id'
+        configs = [{'name': 'projects/99999/locations/us/licenseConfigs/my-sub-id'}]
+        with patch('gam.cmd.gelicenses._fetchSubscriptions', return_value=configs):
+            result = _resolveSubscriptionId(MagicMock(), '123', 'us', 'my-sub-id')
+        assert result == 'projects/99999/locations/us/licenseConfigs/my-sub-id'
 
     def test_auto_selects_single_subscription(self, capsys):
         from gam.cmd.gelicenses import _resolveSubscriptionId
         configs = [{'name': 'projects/123/locations/us/licenseConfigs/sub-abc'}]
         with patch('gam.cmd.gelicenses._fetchSubscriptions', return_value=configs):
             result = _resolveSubscriptionId(MagicMock(), '123', 'us', None)
-        assert result == 'sub-abc'
+        assert result == 'projects/123/locations/us/licenseConfigs/sub-abc'
         captured = capsys.readouterr()
         assert 'Auto-selected' in captured.out
 
@@ -259,14 +261,15 @@ class TestBatchUpdateLicenses:
             assert mock_call.call_args[1]['parent'] == \
                 'projects/789/locations/eu/userStores/default_user_store'
 
-    def test_license_config_path_includes_project_location_sub(self):
+    def test_license_config_uses_full_resource_name(self):
         from gam.cmd.gelicenses import _batchUpdateLicenses
 
+        full_name = 'projects/99999/locations/global/licenseConfigs/my-sub'
         with patch('gam.cmd.gelicenses.callGAPI', return_value={'done': True, 'response': {}}) as mock_call:
-            _batchUpdateLicenses(MagicMock(), '456', 'global', 'my-sub',
+            _batchUpdateLicenses(MagicMock(), '456', 'global', full_name,
                                  assigns=['a@b.com'], removes=[], delete_record=False)
             lic = mock_call.call_args[1]['body']['inlineSource']['userLicenses'][0]
-            assert lic['licenseConfig'] == 'projects/456/locations/global/licenseConfigs/my-sub'
+            assert lic['licenseConfig'] == full_name
 
     def test_update_mask_present(self):
         from gam.cmd.gelicenses import _batchUpdateLicenses

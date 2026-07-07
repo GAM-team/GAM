@@ -176,23 +176,36 @@ def _fetchSubscriptions(service, project, location):
 
 
 def _resolveSubscriptionId(service, project, location, provided_id):
-  """Validate or auto-discover the subscription ID."""
+  """Validate or auto-discover the subscription ID.
+
+  Returns the full licenseConfig resource name from the API (which uses
+  the project number) rather than the short ID. The API rejects license
+  config paths reconstructed with the project ID string.
+  """
+  configs = _fetchSubscriptions(service, project, location)
+
   if provided_id:
-    return provided_id
+    # Match the provided short ID against the API's full resource names
+    for config in configs:
+      name = config.get('name', '')
+      if name.split('/')[-1] == provided_id:
+        return name
+    # Fall back to constructing the path (will use project ID — may fail)
+    return f'projects/{project}/locations/{location}/licenseConfigs/{provided_id}'
 
   writeStdout('No subscriptionid provided. Checking available subscriptions...\n')
-  configs = _fetchSubscriptions(service, project, location)
 
   if not configs:
     systemErrorExit(GOOGLE_API_ERROR_RC,
                     'No subscriptions found for this project and location.')
 
+  if len(configs) == 1:
+    full_name = configs[0].get('name', '')
+    short_id = full_name.split('/')[-1]
+    writeStdout(f'Auto-selected subscription: {short_id}\n')
+    return full_name
+
   sub_ids = [config.get('name', '').split('/')[-1] for config in configs]
-
-  if len(sub_ids) == 1:
-    writeStdout(f'Auto-selected subscription: {sub_ids[0]}\n')
-    return sub_ids[0]
-
   systemErrorExit(GOOGLE_API_ERROR_RC,
                   f'Multiple subscriptions found ({", ".join(sub_ids)}). '
                   f'Specify one with subscriptionid <ID>.')
@@ -200,16 +213,20 @@ def _resolveSubscriptionId(service, project, location, provided_id):
 
 
 def _batchUpdateLicenses(service, project, location, subscription_id, assigns, removes, delete_record):
-  """Perform a batch license update (assign and/or remove)."""
+  """Perform a batch license update (assign and/or remove).
+
+  Args:
+    subscription_id: Full licenseConfig resource name from the API
+      (e.g. projects/123456/locations/global/licenseConfigs/free_trial_gemini).
+  """
   parent = _getGEParent(project, location)
 
   user_licenses = []
   if assigns and subscription_id:
-    license_config_path = f'projects/{project}/locations/{location}/licenseConfigs/{subscription_id}'
     for email in assigns:
       user_licenses.append({
         'userPrincipal': email,
-        'licenseConfig': license_config_path,
+        'licenseConfig': subscription_id,
         'licenseAssignmentState': 'ASSIGNED',
       })
   for email in removes:
