@@ -132,6 +132,8 @@ class TestHandleGEError:
         with pytest.raises(SystemExit):
             _handleGEError(GAPI.forbidden('USER_PROJECT_DENIED'), '123456')
         captured = capsys.readouterr()
+        # Ambiguous error — should show both possible fixes
+        assert 'enable discoveryengine.googleapis.com' in captured.err
         assert 'serviceusage.serviceUsageConsumer' in captured.err
         assert 'agentspaceAdmin' not in captured.err
 
@@ -530,7 +532,7 @@ class TestBuildGAPIObjectGE:
     def test_http_error_user_project_denied_shows_service_usage(self, mock_svc, mock_signer,
                                              mock_http, mock_transport,
                                              capsys):
-        """USER_PROJECT_DENIED should show only serviceUsageConsumer guidance."""
+        """USER_PROJECT_DENIED should show API enable and serviceUsageConsumer guidance."""
         from gam.util.api import buildGAPIObjectGE
         from gamlib import state as GM
         import googleapiclient.errors
@@ -559,9 +561,10 @@ class TestBuildGAPIObjectGE:
                     buildGAPIObjectGE('my-proj', 'global')
 
         captured = capsys.readouterr()
+        # USER_PROJECT_DENIED is ambiguous — show both possible fixes
+        assert 'enable discoveryengine.googleapis.com' in captured.err
         assert 'serviceusage.serviceUsageConsumer' in captured.err
         assert 'agentspaceAdmin' not in captured.err
-        assert 'enable discoveryengine' not in captured.err
 
     @patch('gam.util.api.transportAuthorizedHttp')
     @patch('gam.util.api.getHttpObj')

@@ -773,6 +773,9 @@ def buildGAPIObjectGE(project, location):
     except (json.JSONDecodeError, AttributeError, UnicodeDecodeError):
       pass
     if reason == 'USER_PROJECT_DENIED':
+      # This error is ambiguous — it fires when the API isn't enabled OR
+      # when the SA lacks serviceusage.services.use on the project.
+      stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
       stderrErrorMsg(Msg.GE_SERVICE_USAGE_DENIED.format(sa_email, project))
     elif reason == 'SERVICE_DISABLED':
       stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))

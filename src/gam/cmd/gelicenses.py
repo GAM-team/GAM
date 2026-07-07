@@ -94,6 +94,8 @@ def _handleGEError(e, project):
     if 'service_disabled' in err_msg or 'not been used' in err_msg or 'not enabled' in err_msg:
       stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
     elif 'user_project_denied' in err_msg or 'serviceusage' in err_msg:
+      # Ambiguous — can mean API not enabled OR missing serviceUsageConsumer
+      stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
       stderrErrorMsg(Msg.GE_SERVICE_USAGE_DENIED.format(sa_email, project))
     else:
       stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
