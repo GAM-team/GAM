@@ -482,6 +482,64 @@ class TestBuildGAPIObjectGE:
             buildGAPIObjectGE('123456', 'global')
             assert GM.Globals[GM.ADMIN] == 'mysa@myproject.iam.gserviceaccount.com'
 
+    @patch('gam.util.api.transportAuthorizedHttp')
+    @patch('gam.util.api.getHttpObj')
+    @patch('gam.util.api._getSigner', return_value=None)
+    @patch('gam.util.api._getSvcAcctData')
+    def test_http_error_403_exits_with_guidance(self, mock_svc, mock_signer,
+                                                 mock_http, mock_transport):
+        """When discovery.build() gets a 403, exit with actionable IAM guidance."""
+        from gam.util.api import buildGAPIObjectGE
+        from gamlib import state as GM
+        import googleapiclient.errors
+        import httplib2
+        GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = self._SA_INFO.copy()
+        GM.Globals[GM.CACHE_DIR] = None
+
+        http_error = googleapiclient.errors.HttpError(
+            httplib2.Response({'status': '403'}),
+            b'{"error": {"message": "Caller does not have required permission"}}',
+        )
+
+        with patch('google.oauth2.service_account.Credentials.from_service_account_info',
+                   return_value=self._setup_mocks()):
+            with patch('gam.util.api.googleapiclient.discovery.build',
+                       side_effect=http_error):
+                with pytest.raises(SystemExit):
+                    buildGAPIObjectGE('123456', 'global')
+
+    @patch('gam.util.api.transportAuthorizedHttp')
+    @patch('gam.util.api.getHttpObj')
+    @patch('gam.util.api._getSigner', return_value=None)
+    @patch('gam.util.api._getSvcAcctData')
+    def test_http_error_prints_all_guidance(self, mock_svc, mock_signer,
+                                             mock_http, mock_transport,
+                                             capsys):
+        """HttpError should print discoveryengine.admin, serviceUsageConsumer, and API enable."""
+        from gam.util.api import buildGAPIObjectGE
+        from gamlib import state as GM
+        import googleapiclient.errors
+        import httplib2
+        GM.Globals[GM.OAUTH2SERVICE_JSON_DATA] = self._SA_INFO.copy()
+        GM.Globals[GM.CACHE_DIR] = None
+
+        http_error = googleapiclient.errors.HttpError(
+            httplib2.Response({'status': '403'}),
+            b'{"error": {"message": "USER_PROJECT_DENIED"}}',
+        )
+
+        with patch('google.oauth2.service_account.Credentials.from_service_account_info',
+                   return_value=self._setup_mocks()):
+            with patch('gam.util.api.googleapiclient.discovery.build',
+                       side_effect=http_error):
+                with pytest.raises(SystemExit):
+                    buildGAPIObjectGE('my-proj', 'global')
+
+        captured = capsys.readouterr()
+        assert 'discoveryengine.admin' in captured.err
+        assert 'serviceusage.serviceUsageConsumer' in captured.err
+        assert 'discoveryengine.googleapis.com' in captured.err
+
 
 # ---------------------------------------------------------------------------
 # Sync delta computation
@@ -830,4 +888,11 @@ class TestMessageStrings:
         from gamlib import msgs as Msg
         msg = Msg.GE_USERSTORE_NOT_FOUND.format('123456')
         assert 'location' in msg.lower()
+        assert '123456' in msg
+
+    def test_service_usage_denied(self):
+        from gamlib import msgs as Msg
+        msg = Msg.GE_SERVICE_USAGE_DENIED.format('sa@proj.iam.gserviceaccount.com', '123456')
+        assert 'serviceusage.serviceUsageConsumer' in msg
+        assert 'sa@proj.iam.gserviceaccount.com' in msg
         assert '123456' in msg

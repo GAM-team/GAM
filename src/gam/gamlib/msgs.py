@@ -291,6 +291,7 @@ GAM_OUT_OF_MEMORY = 'GAM has run out of memory. If this is a large Google Worksp
 GE_API_NOT_ENABLED = 'Discovery Engine API may not be enabled on project {0}.\n\nTo fix:\n  gcloud services enable discoveryengine.googleapis.com --project={0}\n'
 GE_IAM_PERMISSION_DENIED = 'Service account {0} does not have permission on GE project {1}.\n\nTo fix:\n  gcloud projects add-iam-policy-binding {1} \\\n    --member="serviceAccount:{0}" \\\n    --role="roles/discoveryengine.admin"\n'
 GE_PROJECT_LOCATION_REQUIRED = 'project and location are required arguments.\n  Usage: gam {0} {1} project <NUMBER> location <REGION>\n'
+GE_SERVICE_USAGE_DENIED = 'Service account {0} may also need the Service Usage Consumer role on project {1}.\n\nTo fix:\n  gcloud projects add-iam-policy-binding {1} \\\n    --member="serviceAccount:{0}" \\\n    --role="roles/serviceusage.serviceUsageConsumer"\n'
 GE_USERSTORE_NOT_FOUND = 'UserStore not found. Verify the location is correct for project {0}.\n'
 GENERATING_NEW_PRIVATE_KEY = 'Generating new private key'
 GETTING = 'Getting'

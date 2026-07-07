@@ -751,11 +751,18 @@ def buildGAPIObjectGE(project, location):
   else:
     endpoint = f'https://{location.lower()}-discoveryengine.googleapis.com'
   httpObj = transportAuthorizedHttp(credentials, http=getHttpObj(cache=GM.Globals[GM.CACHE_DIR]))
-  service = googleapiclient.discovery.build(
-    'discoveryengine', 'v1', http=httpObj, cache_discovery=False,
-    discoveryServiceUrl=f'{endpoint}/$discovery/rest?version=v1',
-    static_discovery=False,
-  )
+  try:
+    service = googleapiclient.discovery.build(
+      'discoveryengine', 'v1', http=httpObj, cache_discovery=False,
+      discoveryServiceUrl=f'{endpoint}/$discovery/rest?version=v1',
+      static_discovery=False,
+    )
+  except googleapiclient.errors.HttpError as e:
+    sa_email = svcacct_info.get('client_email', 'UNKNOWN')
+    stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
+    stderrErrorMsg(Msg.GE_SERVICE_USAGE_DENIED.format(sa_email, project))
+    stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
+    systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
   GM.Globals[GM.ADMIN] = svcacct_info.get('client_email', 'UNKNOWN')
   return service
 
