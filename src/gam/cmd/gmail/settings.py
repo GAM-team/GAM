@@ -5,7 +5,7 @@ Part of the _gmail_monolith sub-package."""
 """GAM Gmail management: labels, messages, filters, forwarding, sendas, S/MIME, CSE, vacation."""
 
 
-from gam.cmd.gmail.forms import EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP
+from gam.cmd.forms import EMAILSETTINGS_OLD_NEW_OLD_FORWARD_ACTION_MAP
 from gam.cmd.gmail.modify import forwardMessagesThreads
 
 from gamlib import api as API

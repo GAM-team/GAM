@@ -1,67 +1,39 @@
-"""GAM YouTube channel management."""
-
-import json
+"""GAM user YouTube Channel commands."""
 
 from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gam.var import Act, Cmd, Ent, Ind
-from gam.util.svcacct import buildGAPIServiceObject
+from gam.util.args import getArgument, getString, getLanguageCode, BCP47_LANGUAGE_CODES_MAP
+from gam.util.csv_pf import CSVPrintFile, FormatJSONQuoteChar, getFieldsList, addFieldToFieldsList
+
+YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
+  'brandingsettings': 'brandingSettings',
+  'contentdetails': 'contentDetails',
+  'contentownerdetails': 'contentOwnerDetails',
+  'id': 'id',
+  'localizations': 'localizations',
+  'snippet': 'snippet',
+  'statistics': 'statistics',
+  'status': 'status',
+  'topicdetails': 'topicDetails',
+  }
+
+YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
+from gam.util.display import entityActionFailedWarning
+from gam.util.entity import getEntityList
+import json
 from gam.util.api_call import callGAPIpages
-from gam.util.args import (
-    BCP47_LANGUAGE_CODES_MAP,
-    getArgument,
-    getLanguageCode,
-    getString,
-)
-from gam.util.csv_pf import (
-    CSVPrintFile,
-    FormatJSONQuoteChar,
-    addFieldToFieldsList,
-    cleanJSON,
-    flattenJSON,
-    getFieldsList,
-    showJSON,
-)
+from gam.util.csv_pf import cleanJSON, flattenJSON, showJSON
 from gam.util.display import (
-    entityActionFailedWarning,
     entityPerformActionNumItems,
     printEntity,
     printLine,
     userYouTubeServiceNotEnabledWarning,
 )
-from gam.util.entity import getEntityArgument, getEntityList
+from gam.util.entity import getEntityArgument
+from gam.util.svcacct import buildGAPIServiceObject
 
-YOUTUBE_CHANNEL_FIELDS_CHOICE_MAP = {
-    'brandingsettings': 'brandingSettings',
-    'contentdetails': 'contentDetails',
-    'contentownerdetails': 'contentOwnerDetails',
-    'id': 'id',
-    'localizations': 'localizations',
-    'snippet': 'snippet',
-    'statistics': 'statistics',
-    'status': 'status',
-    'topicdetails': 'topicDetails',
-    }
-
-YOUTUBE_CHANNEL_TIME_OBJECTS = {'publishedAt'}
-
-# gam <UserTypeEntity> show youtubechannels
-#	(mine|
-#	 (ids|channels <YouTubeChannelIDList>)|
-#	 (forusername <String>)|
-#	 (managedbyme <String>))
-#	[languagecode <BCP47LanguageCode>]
-#	[allfields|(fields <YouTubeChannelFieldNameList>)]
-#	[formatjson]
-# gam <UserTypeEntity> print youtubechannels [todrive <ToDriveAttribute>*]
-#	(mine|
-#	 (ids|channels <YouTubeChannelIDList>)|
-#	 (forusername <String>)|
-#	 (managedbyme <String>))
-#	[languagecode <BCP47LanguageCode>]
-#	[allfields|(fields <YouTubeChannelFieldNameList>)]
-#	[formatjson [quotechar <Character>]]
 def printShowYouTubeChannel(users):
   csvPF = CSVPrintFile(['User', 'id'], 'sortall') if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)

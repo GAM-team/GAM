@@ -576,7 +576,7 @@ from gam.cmd.gmail.filters import (
     infoFilters,
     printShowFilters,
 )
-from gam.cmd.gmail.forms import (
+from gam.cmd.forms import (
     createForm,
     printShowFormResponses,
     printShowForms,
@@ -927,7 +927,7 @@ from gam.cmd.users.security import (
     printShowBackupCodes,
     updateBackupCodes,
 )
-from gam.cmd.users.youtube import (
+from gam.cmd.youtube import (
     printShowYouTubeChannel,
 )
 from gam.cmd.vault.holds import (
