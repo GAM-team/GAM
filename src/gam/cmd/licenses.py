@@ -5,17 +5,19 @@ from gamlib import api as API
 from gamlib import settings as GC
 from gamlib import gapi as GAPI
 from gamlib import state as GM
+from gamlib import msgs as Msg
 
 
 from gamlib import skus as SKU
 from gam.var import Cmd, Ent
 from gam.util.api import buildGAPIObject
 from gam.util.api_call import callGAPIpages
-from gam.util.args import getArgument, getGoogleProductList, getGoogleSKUList, getInteger
+from gam.util.args import checkArgumentPresent, checkForExtraneousArguments, getArgument, getGoogleProductList, getGoogleSKUList, getInteger
 from gam.util.csv_pf import CSVPrintFile, getItemFieldsFromFieldsList
 from gam.util.display import entityActionNotPerformedWarning, getPageMessageForWhom, printEntityKVList
 from gam.util.customer import _getCustomerId, setTrueCustomerId
 from gam.util.errors import unknownArgumentExit
+from gam.util.output import flushStderr, writeStderr, writeStdout
 from gam.util.licensing import fetchLicenseAssignments
 
 
@@ -150,5 +152,33 @@ def doShowLicenses():
   for u_license in licenseCounts:
     printEntityKVList(u_license[:-2], [Ent.Plural(u_license[-2]), u_license[-1]])
 
-# gam delete alert <AlertID>
-# gam undelete alert <AlertID>
+# gam show configlicenseskus [quiet]
+def doShowConfigLicenseSKUs():
+  lic = buildGAPIObject(API.LICENSING)
+  setTrueCustomerId()
+  customerId = _getCustomerId()
+  licenseSKUcounts = []
+  maxResults = GC.Values[GC.LICENSE_MAX_RESULTS]
+  quiet = checkArgumentPresent('quiet')
+  checkForExtraneousArguments()
+  fields = getItemFieldsFromFieldsList('items', ['userId'])
+  for sku in SKU.getAllSKUs():
+    Ent.SetGetting(Ent.LICENSE)
+    productId = sku[0]
+    skuId = sku[1]
+    productDisplay = SKU.formatProductIdDisplayName(productId)
+    skuIdDisplay = SKU.formatSKUIdDisplayName(skuId)
+    pageMessage = getPageMessageForWhom(forWhom=skuIdDisplay) if not quiet else None
+    try:
+      feed = callGAPIpages(lic.licenseAssignments(), 'listForProductAndSku', 'items',
+                           pageMessage=pageMessage,
+                           throwReasons=[GAPI.INVALID, GAPI.FORBIDDEN, GAPI.INVALID_ARGUMENT],
+                           customerId=customerId, productId=productId, skuId=skuId,
+                           maxResults=maxResults, fields=fields)
+      if len(feed) > 0:
+        licenseSKUcounts.append(skuId)
+    except (GAPI.invalid, GAPI.forbidden, GAPI.invalidArgument) as e:
+      entityActionNotPerformedWarning([Ent.PRODUCT, productDisplay, Ent.SKU, skuIdDisplay], str(e))
+  writeStderr(Msg.CONFIG_LICENSE_SKUS)
+  flushStderr()
+  writeStdout(f"gam config license_skus \\\"{','.join(licenseSKUcounts)}\\\" save verify variables license_skus\n")

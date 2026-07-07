@@ -655,7 +655,7 @@ from gam.cmd.groups.members import (
     doShowGroupMembers,
     infoGroupMembers,
 )
-from gam.cmd.licenses import doPrintLicenses, doShowLicenses
+from gam.cmd.licenses import doPrintLicenses, doShowLicenses, doShowConfigLicenseSKUs
 from gam.cmd.meet import (
     createMeetSpace,
     endMeetConference,
@@ -1462,6 +1462,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
       Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
+      Cmd.ARG_CONFIGLICENSESKUS:	doShowConfigLicenseSKUs,
       Cmd.ARG_CONTACT:		doPrintShowDomainContacts,
       Cmd.ARG_CROSTELEMETRY:	doInfoPrintShowCrOSTelemetry,
       Cmd.ARG_DATATRANSFER:	doPrintShowDataTransfers,
@@ -1659,6 +1660,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CLASSCOUNTS:		Cmd.ARG_COURSECOUNTS,
   Cmd.ARG_CLASSPARTICIPANTS:	Cmd.ARG_COURSEPARTICIPANTS,
   Cmd.ARG_CLASSROOMINVITATIONS:	Cmd.ARG_CLASSROOMINVITATION,
+  Cmd.ARG_CONFIGLICENCESKUS:	Cmd.ARG_CONFIGLICENSESKUS,
   Cmd.ARG_CONTACTS:		Cmd.ARG_CONTACT,
   Cmd.ARG_CONTACTPHOTOS:	Cmd.ARG_CONTACTPHOTO,
   Cmd.ARG_COURSESTUDENTGROUPS:	Cmd.ARG_COURSESTUDENTGROUP,

@@ -1,5 +1,5 @@
 
-# Copyright (C) 2025 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -22,6 +22,7 @@
 GAM_VER_LIBS = [
   'arrow',
   'chardet',
+  'charset_normalizer',
   'cryptography',
   'filelock',
   'google-api-python-client',
@@ -33,5 +34,6 @@ GAM_VER_LIBS = [
   'passlib',
   'pathvalidate',
   'pyscard',
+  'urllib3',
   'yubikey-manager',
 ]

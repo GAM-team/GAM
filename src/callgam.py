@@ -15,7 +15,7 @@ if __name__ == '__main__':
     from gam.util.batch import initializeLogging
     initializeLogging()
 #
-    CallGAMCommand(['gam', 'version'])
+    CallGAMCommand(['gam', 'version', 'extended'])
     # Issue command, output goes to stdout/stderr
     rc = CallGAMCommand(['gam', 'info', 'domain'])
     # Issue command, redirect stdout/stderr

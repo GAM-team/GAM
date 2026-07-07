@@ -215,6 +215,7 @@ COLUMN_DOES_NOT_MATCH_ANY_OUTPUT_COLUMNS = '{0} column "{1}" does not match any 
 COMMAND_NOT_COMPATIBLE_WITH_ENABLE_DASA = 'gam {0} {1} is not compatible with enable_dasa = true in gam.cfg'
 COMMIT_BATCH_COMPLETE = '{0},0/{1},commit-batch - running {2} finished, proceeding\n'
 COMMIT_BATCH_WAIT_N_PROCESSES = '{0},0/{1},commit-batch - waiting for {2} running {3} to finish before proceeding\n'
+CONFIG_LICENSE_SKUS = 'To set license_skus in gam.cfg, execute the following command:\n'
 CONFIRM_WIPE_YUBIKEY_PIV = 'This will wipe all YubiKey PIV keys and configuration from your YubiKey. Are you sure? (y/N) '
 CONTACT_ADMINISTRATOR_FOR_PASSWORD = 'Contact administrator for password'
 CONTACT_PHOTO_NOT_FOUND = 'Contact photo not found'
