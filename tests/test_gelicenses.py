@@ -154,6 +154,70 @@ class TestHandleGEError:
 
 
 # ---------------------------------------------------------------------------
+# _resolveLocation
+# ---------------------------------------------------------------------------
+
+class TestResolveLocation:
+    """_resolveLocation auto-detects GE location when not provided."""
+
+    def test_provided_location_returned_immediately(self):
+        from gam.cmd.gelicenses import _resolveLocation
+        result = _resolveLocation('my-project', 'eu')
+        assert result == 'eu'
+
+    def test_auto_selects_single_location(self, capsys):
+        from gam.cmd.gelicenses import _resolveLocation
+        mock_svc = MagicMock()
+        configs_global = [{'name': 'projects/123/locations/global/licenseConfigs/sub-1'}]
+
+        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
+            with patch('gam.cmd.gelicenses.callGAPIpages',
+                       side_effect=[configs_global, [], []]):
+                result = _resolveLocation('my-project', None)
+        assert result == 'global'
+        captured = capsys.readouterr()
+        assert 'Auto-selected location: global' in captured.out
+
+    def test_errors_on_no_locations(self):
+        from gam.cmd.gelicenses import _resolveLocation
+        mock_svc = MagicMock()
+
+        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
+            with patch('gam.cmd.gelicenses.callGAPIpages', return_value=[]):
+                with pytest.raises(SystemExit):
+                    _resolveLocation('my-project', None)
+
+    def test_errors_on_multiple_locations(self):
+        from gam.cmd.gelicenses import _resolveLocation
+        mock_svc = MagicMock()
+        configs = [{'name': 'projects/123/locations/x/licenseConfigs/sub-1'}]
+
+        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
+            with patch('gam.cmd.gelicenses.callGAPIpages', return_value=configs):
+                with pytest.raises(SystemExit):
+                    _resolveLocation('my-project', None)
+
+    def test_skips_locations_with_errors(self, capsys):
+        from gam.cmd.gelicenses import _resolveLocation
+        from gamlib import gapi as GAPI
+        mock_svc = MagicMock()
+        configs_eu = [{'name': 'projects/123/locations/eu/licenseConfigs/sub-1'}]
+
+        def side_effect(*args, **kwargs):
+            parent = kwargs.get('parent', '')
+            if 'global' in parent:
+                raise GAPI.notFound('not found')
+            if 'us' in parent:
+                return []
+            return configs_eu
+
+        with patch('gam.cmd.gelicenses._buildGEService', return_value=mock_svc):
+            with patch('gam.cmd.gelicenses.callGAPIpages', side_effect=side_effect):
+                result = _resolveLocation('my-project', None)
+        assert result == 'eu'
+
+
+# ---------------------------------------------------------------------------
 # _resolveSubscriptionId
 # ---------------------------------------------------------------------------
 

@@ -4,14 +4,14 @@ Uses the Discovery Engine API (discoveryengine.googleapis.com) to manage
 GE licenses. Authenticates as the GAM service account (no DwD).
 
 Admin-scoped (read-only):
-  gam show geuserstore project <N> location <R>
-  gam show|print gesubscriptions project <N> location <R> [todrive]
-  gam show|print gelicenses project <N> location <R> [todrive]
+  gam show geuserstore project <N> [location <R>]
+  gam show|print gesubscriptions project <N> [location <R>] [todrive]
+  gam show|print gelicenses project <N> [location <R>] [todrive]
 
 User-scoped (mutating, receive users from <UserTypeEntity>):
-  gam <UserTypeEntity> create gelicense project <N> location <R> [subscriptionid <ID>]
-  gam <UserTypeEntity> delete gelicense project <N> location <R> [deleterecord]
-  gam <UserTypeEntity> sync gelicense project <N> location <R> [subscriptionid <ID>] [deleterecord]
+  gam <UserTypeEntity> create gelicense project <N> [location <R>] [subscriptionid <ID>]
+  gam <UserTypeEntity> delete gelicense project <N> [location <R>] [deleterecord]
+  gam <UserTypeEntity> sync gelicense project <N> [location <R>] [subscriptionid <ID>] [deleterecord]
 """
 
 import time
@@ -50,11 +50,14 @@ GE_LICENSE_PAGE_SIZE = 1000
 
 GE_THROW_REASONS = [GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND, GAPI.FORBIDDEN]
 
+# Known GE locations to probe when auto-detecting
+KNOWN_GE_LOCATIONS = ['global', 'us', 'eu']
+
 
 # --- Internal Helpers ---
 
 def _getProjectAndLocation(action, entity):
-  """Parse required project and location arguments from the command line."""
+  """Parse project and optional location arguments from the command line."""
   project = None
   location = None
   while Cmd.ArgumentsRemaining():
@@ -66,7 +69,7 @@ def _getProjectAndLocation(action, entity):
     else:
       Cmd.Backup()
       break
-  if not project or not location:
+  if not project:
     systemErrorExit(GOOGLE_API_ERROR_RC, Msg.GE_PROJECT_LOCATION_REQUIRED.format(action, entity))
   return project, location
 
@@ -74,6 +77,44 @@ def _getProjectAndLocation(action, entity):
 def _buildGEService(project, location):
   """Build the Discovery Engine service client."""
   return buildGAPIObjectGE(project, location)
+
+
+def _resolveLocation(project, provided_location):
+  """Auto-detect the GE location if not provided.
+
+  Probes known locations by building a service for each and checking
+  whether any licenseConfigs exist. Auto-selects if exactly one location
+  has configs.
+  """
+  if provided_location:
+    return provided_location
+
+  writeStdout('No location provided. Detecting available locations...\n')
+  found = []
+  for loc in KNOWN_GE_LOCATIONS:
+    try:
+      svc = _buildGEService(project, loc)
+      parent = _getLicenseConfigsParent(project, loc)
+      configs = callGAPIpages(svc.projects().locations().licenseConfigs(), 'list', 'licenseConfigs',
+                              throwReasons=GE_THROW_REASONS, parent=parent)
+      if configs:
+        found.append(loc)
+    except (GAPI.permissionDenied, GAPI.forbidden, GAPI.notFound):
+      continue
+    except SystemExit:
+      continue
+
+  if not found:
+    systemErrorExit(GOOGLE_API_ERROR_RC,
+                    f'No GE license configs found in any known location ({", ".join(KNOWN_GE_LOCATIONS)}). '
+                    f'Specify one with location <LOCATION>.')
+  if len(found) == 1:
+    writeStdout(f'Auto-selected location: {found[0]}\n')
+    return found[0]
+  systemErrorExit(GOOGLE_API_ERROR_RC,
+                  f'Multiple locations have license configs ({", ".join(found)}). '
+                  f'Specify one with location <LOCATION>.')
+  return None  # unreachable
 
 
 def _getGEParent(project, location):
@@ -262,6 +303,7 @@ def _batchUpdateLicenses(service, project, location, subscription_id, assigns, r
 def doShowGEUserStore():
   project, location = _getProjectAndLocation('show', 'geuserstore')
   checkForExtraneousArguments()
+  location = _resolveLocation(project, location)
   service = _buildGEService(project, location)
   name = _getGEParent(project, location)
   try:
@@ -287,6 +329,7 @@ def doShowGEUserStore():
 # gam show|print gesubscriptions project <Number> location <Region> [todrive]
 def doPrintShowGESubscriptions():
   project, location = _getProjectAndLocation('show', 'gesubscriptions')
+  location = _resolveLocation(project, location)
   csvPF = CSVPrintFile(['subscriptionId', 'state', 'activeLicenseCount', 'totalLicenseCount']) if Act.csvFormat() else None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -325,6 +368,7 @@ def doPrintShowGESubscriptions():
 # gam show|print gelicenses project <Number> location <Region> [todrive]
 def doPrintShowGELicenses():
   project, location = _getProjectAndLocation('show', 'gelicenses')
+  location = _resolveLocation(project, location)
   csvPF = CSVPrintFile(['userPrincipal', 'licenseAssignmentState', 'updateTime',
                         'lastLoginTime', 'licenseConfig']) if Act.csvFormat() else None
   while Cmd.ArgumentsRemaining():
@@ -369,6 +413,7 @@ def doPrintShowGELicenses():
 # gam <UserTypeEntity> create gelicense project <N> location <R> [subscriptionid <ID>]
 def createGELicense(users):
   project, location = _getProjectAndLocation('create', 'gelicense')
+  location = _resolveLocation(project, location)
   subscription_id = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -396,6 +441,7 @@ def createGELicense(users):
 # gam <UserTypeEntity> delete gelicense project <N> location <R> [deleterecord]
 def deleteGELicense(users):
   project, location = _getProjectAndLocation('delete', 'gelicense')
+  location = _resolveLocation(project, location)
   delete_record = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -422,6 +468,7 @@ def deleteGELicense(users):
 # gam <UserTypeEntity> sync gelicense project <N> location <R> [subscriptionid <ID>] [deleterecord]
 def syncGELicense(users):
   project, location = _getProjectAndLocation('sync', 'gelicense')
+  location = _resolveLocation(project, location)
   subscription_id = None
   delete_record = False
   while Cmd.ArgumentsRemaining():
