@@ -3,24 +3,24 @@
 Uses the Discovery Engine API (discoveryengine.googleapis.com) to manage
 GE licenses. Authenticates as the GAM service account (no DwD).
 
-Commands:
+Admin-scoped (read-only):
   gam show geuserstore project <N> location <R>
   gam show|print gesubscriptions project <N> location <R> [todrive]
   gam show|print gelicenses project <N> location <R> [todrive]
-  gam create gelicense project <N> location <R> user <Email> [subscriptionid <ID>]
-  gam delete gelicense project <N> location <R> user <Email> [deleterecord]
-  gam sync gelicenses project <N> location <R> csvfile <F> column <C>
-                       [subscriptionid <ID>] [deleterecord]
+
+User-scoped (mutating, receive users from <UserTypeEntity>):
+  gam <UserTypeEntity> create gelicense project <N> location <R> [subscriptionid <ID>]
+  gam <UserTypeEntity> delete gelicense project <N> location <R> [deleterecord]
+  gam <UserTypeEntity> sync gelicense project <N> location <R> [subscriptionid <ID>] [deleterecord]
 """
 
-import csv
 import time
 
 from gamlib import gapi as GAPI
 from gamlib import msgs as Msg
 from gamlib import state as GM
 
-from gam.var import Act, Cmd
+from gam.var import Act, Cmd, Ent, Ind
 
 from gam.util.api import buildGAPIObjectGE
 from gam.util.api_call import callGAPI, callGAPIpages
@@ -28,11 +28,15 @@ from gam.util.args import (
     checkForExtraneousArguments,
     getArgument,
     getString,
+    normalizeEmailAddressOrUID,
 )
 from gam.util.csv_pf import CSVPrintFile
 from gam.util.display import (
+    entityActionPerformed,
+    entityPerformActionModifierNumItems,
     printKeyValueList,
 )
+from gam.util.entity import getEntityArgument
 from gam.util.errors import systemErrorExit
 from gam.util.output import stderrErrorMsg, writeStderr, writeStdout
 
@@ -85,7 +89,7 @@ def _getLicenseConfigsParent(project, location):
 def _handleGEError(e, project):
   """Handle common GE API errors with actionable IAM guidance."""
   sa_email = GM.Globals.get(GM.ADMIN, 'unknown')
-  if isinstance(e, GAPI.permissionDenied) or isinstance(e, GAPI.forbidden):
+  if isinstance(e, (GAPI.permissionDenied, GAPI.forbidden)):
     stderrErrorMsg(Msg.GE_IAM_PERMISSION_DENIED.format(sa_email, project))
     stderrErrorMsg(Msg.GE_API_NOT_ENABLED.format(project))
     systemErrorExit(GOOGLE_API_ERROR_RC, '')
@@ -229,7 +233,7 @@ def _batchUpdateLicenses(service, project, location, subscription_id, assigns, r
     _handleGEError(e, project)
 
 
-# --- Public Command Functions ---
+# --- Admin-Scoped Commands (read-only) ---
 
 # gam show geuserstore project <Number> location <Region>
 def doShowGEUserStore():
@@ -337,108 +341,98 @@ def doPrintShowGELicenses():
     csvPF.writeCSVfile('Gemini Enterprise Licenses')
 
 
-# gam create gelicense project <N> location <R> user <Email> [subscriptionid <ID>]
-def doCreateGELicense():
+# --- User-Scoped Commands (mutating, receive users from <UserTypeEntity>) ---
+
+# gam <UserTypeEntity> create gelicense project <N> location <R> [subscriptionid <ID>]
+def createGELicense(users):
   project, location = _getProjectAndLocation('create', 'gelicense')
-  emails = []
   subscription_id = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'user':
-      emails.append(getString(Cmd.OB_EMAIL_ADDRESS))
-    elif myarg == 'subscriptionid':
+    if myarg == 'subscriptionid':
       subscription_id = getString(Cmd.OB_STRING)
     else:
       systemErrorExit(GOOGLE_API_ERROR_RC, f'Unknown argument: {myarg}')
-  if not emails:
-    systemErrorExit(GOOGLE_API_ERROR_RC, 'At least one user email is required.')
   service = _buildGEService(project, location)
   subscription_id = _resolveSubscriptionId(service, project, location, subscription_id)
-  writeStdout(f'Assigning GE license to {len(emails)} user(s)...\n')
-  _batchUpdateLicenses(service, project, location, subscription_id,
-                       assigns=emails, removes=[], delete_record=False)
+  j, jcount, users = getEntityArgument(users)
+  entityPerformActionModifierNumItems([Ent.LICENSE, 'Gemini Enterprise'], Msg.TO_LC, jcount, Ent.USER)
+  Ind.Increment()
+  emails = []
+  for user in users:
+    j += 1
+    user = normalizeEmailAddressOrUID(user)
+    emails.append(user)
+    entityActionPerformed([Ent.USER, user, Ent.LICENSE, 'Gemini Enterprise'], j, jcount)
+  Ind.Decrement()
+  if emails:
+    _batchUpdateLicenses(service, project, location, subscription_id,
+                         assigns=emails, removes=[], delete_record=False)
 
 
-# gam delete gelicense project <N> location <R> user <Email> [deleterecord]
-def doDeleteGELicense():
+# gam <UserTypeEntity> delete gelicense project <N> location <R> [deleterecord]
+def deleteGELicense(users):
   project, location = _getProjectAndLocation('delete', 'gelicense')
-  emails = []
   delete_record = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'user':
-      emails.append(getString(Cmd.OB_EMAIL_ADDRESS))
-    elif myarg == 'deleterecord':
+    if myarg == 'deleterecord':
       delete_record = True
     else:
       systemErrorExit(GOOGLE_API_ERROR_RC, f'Unknown argument: {myarg}')
-  if not emails:
-    systemErrorExit(GOOGLE_API_ERROR_RC, 'At least one user email is required.')
   service = _buildGEService(project, location)
-  action = 'Removing and deleting' if delete_record else 'Removing'
-  writeStdout(f'{action} GE license from {len(emails)} user(s)...\n')
-  _batchUpdateLicenses(service, project, location, subscription_id=None,
-                       assigns=[], removes=emails, delete_record=delete_record)
+  j, jcount, users = getEntityArgument(users)
+  entityPerformActionModifierNumItems([Ent.LICENSE, 'Gemini Enterprise'], Msg.FROM_LC, jcount, Ent.USER)
+  Ind.Increment()
+  emails = []
+  for user in users:
+    j += 1
+    user = normalizeEmailAddressOrUID(user)
+    emails.append(user)
+    entityActionPerformed([Ent.USER, user, Ent.LICENSE, 'Gemini Enterprise'], j, jcount)
+  Ind.Decrement()
+  if emails:
+    _batchUpdateLicenses(service, project, location, subscription_id=None,
+                         assigns=[], removes=emails, delete_record=delete_record)
 
 
-# gam sync gelicenses project <N> location <R> csvfile <F> column <C>
-#                       [subscriptionid <ID>] [deleterecord]
-def doSyncGELicenses():
-  project, location = _getProjectAndLocation('sync', 'gelicenses')
-  csv_file = None
-  column_name = None
+# gam <UserTypeEntity> sync gelicense project <N> location <R> [subscriptionid <ID>] [deleterecord]
+def syncGELicense(users):
+  project, location = _getProjectAndLocation('sync', 'gelicense')
   subscription_id = None
   delete_record = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'csvfile':
-      csv_file = getString(Cmd.OB_FILE_NAME)
-    elif myarg == 'column':
-      column_name = getString(Cmd.OB_STRING)
-    elif myarg == 'subscriptionid':
+    if myarg == 'subscriptionid':
       subscription_id = getString(Cmd.OB_STRING)
     elif myarg == 'deleterecord':
       delete_record = True
     else:
       systemErrorExit(GOOGLE_API_ERROR_RC, f'Unknown argument: {myarg}')
-  if not csv_file or not column_name:
-    systemErrorExit(GOOGLE_API_ERROR_RC, 'csvfile and column arguments are required.')
-
-  # Read target emails from CSV
-  target_emails = set()
-  try:
-    with open(csv_file, encoding='utf-8') as f:
-      reader = csv.DictReader(f)
-      if column_name not in reader.fieldnames:
-        systemErrorExit(GOOGLE_API_ERROR_RC,
-                        f'Column "{column_name}" not found in CSV. '
-                        f'Available: {", ".join(reader.fieldnames)}')
-      for row in reader:
-        email = row[column_name].strip()
-        if email:
-          target_emails.add(email)
-  except FileNotFoundError:
-    systemErrorExit(GOOGLE_API_ERROR_RC, f'CSV file not found: {csv_file}')
-
   service = _buildGEService(project, location)
   subscription_id = _resolveSubscriptionId(service, project, location, subscription_id)
 
-  # Fetch current state
+  # Resolve target user set from <UserTypeEntity>
+  _, _, users = getEntityArgument(users)
+  target_emails = set()
+  for user in users:
+    target_emails.add(normalizeEmailAddressOrUID(user))
+
+  # Fetch current GE license state
   writeStdout('Fetching current GE license state...\n')
   current_licenses = _getAllLicenses(service, project, location)
-  current_emails = set()
+  current_assigned = set()
   for lic in current_licenses:
     state = lic.get('licenseAssignmentState')
-    if delete_record or state == 'ASSIGNED':
-      name = lic.get('name', '')
-      email = lic.get('userPrincipal', name.split('/')[-1])
-      current_emails.add(email)
+    if state == 'ASSIGNED':
+      email = lic.get('userPrincipal', lic.get('name', '').split('/')[-1])
+      current_assigned.add(email)
 
-  to_assign = list(target_emails - current_emails)
-  to_remove = list(current_emails - target_emails)
+  to_assign = list(target_emails - current_assigned)
+  to_remove = list(current_assigned - target_emails)
 
-  writeStdout(f'CSV target users:  {len(target_emails)}\n')
-  writeStdout(f'Currently active:  {len(current_emails)}\n')
+  writeStdout(f'Target users:      {len(target_emails)}\n')
+  writeStdout(f'Currently assigned: {len(current_assigned)}\n')
   writeStdout(f'To assign:         {len(to_assign)}\n')
   writeStdout(f'To remove:         {len(to_remove)}\n')
 

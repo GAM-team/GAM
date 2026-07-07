@@ -583,12 +583,12 @@ from gam.cmd.forms import (
     updateForm,
 )
 from gam.cmd.gelicenses import (
-    doCreateGELicense,
-    doDeleteGELicense,
+    createGELicense,
+    deleteGELicense,
     doPrintShowGELicenses,
     doPrintShowGESubscriptions,
     doShowGEUserStore,
-    doSyncGELicenses,
+    syncGELicense,
 )
 from gam.cmd.gmail.labels import (
     createLabel,
@@ -1044,7 +1044,6 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_FEATURE:		doCreateFeature,
   Cmd.ARG_GCPFOLDER:		doCreateGCPFolder,
   Cmd.ARG_GCPSERVICEACCOUNT:	doCreateGCPServiceAccount,
-  Cmd.ARG_GELICENSE:		doCreateGELicense,
   Cmd.ARG_GROUP:		doCreateGroup,
   Cmd.ARG_GUARDIAN:		doInviteGuardian,
   Cmd.ARG_GUARDIANINVITATION:	doInviteGuardian,
@@ -1169,7 +1168,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_DRIVEFILEACL:	doDeleteDriveFileACLs,
       Cmd.ARG_DRIVELABELPERMISSION:	doDeleteDriveLabelPermissions,
       Cmd.ARG_FEATURE:		doDeleteFeature,
-      Cmd.ARG_GELICENSE:		doDeleteGELicense,
       Cmd.ARG_GROUP:		doDeleteGroups,
       Cmd.ARG_GUARDIAN:		doDeleteGuardian,
       Cmd.ARG_INBOUNDSSOASSIGNMENT:	doDeleteInboundSSOAssignment,
@@ -1534,7 +1532,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
   'sync':
     (Act.SYNC,
      {Cmd.ARG_DEVICE:		doSyncCIDevices,
-      Cmd.ARG_GELICENSES:		doSyncGELicenses,
       Cmd.ARG_SHAREDDRIVEACLS:	copySyncSharedDriveACLs,
       Cmd.ARG_COURSESTUDENTGROUPMEMBERS:	doProcessCourseStudentGroupMembers,
      }
@@ -1875,6 +1872,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_LABEL:		createLabel,
   Cmd.ARG_LABELLIST:		createLabelList,
   Cmd.ARG_LICENSE:		createLicense,
+  Cmd.ARG_GELICENSE:		createGELicense,
   Cmd.ARG_MEETSPACE:		createMeetSpace,
   Cmd.ARG_NOTE:			createNote,
   Cmd.ARG_NOTEACL:		createNotesACLs,
@@ -1993,6 +1991,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_LABELID:		deleteLabelId,
       Cmd.ARG_LABELIDLIST:	deleteLabelIdList,
       Cmd.ARG_LICENSE:		deleteLicense,
+      Cmd.ARG_GELICENSE:		deleteGELicense,
       Cmd.ARG_MESSAGE:		processMessages,
       Cmd.ARG_NOTE:		deleteInfoNotes,
       Cmd.ARG_NOTEACL:		deleteNotesACLs,
@@ -2371,6 +2370,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_GROUP:		syncUserWithGroups,
       Cmd.ARG_GUARDIAN:		syncGuardians,
       Cmd.ARG_LICENSE:		syncLicense,
+      Cmd.ARG_GELICENSE:		syncGELicense,
       Cmd.ARG_SHAREDDRIVEACLS:	copySyncSharedDriveACLs,
      }
     ),
