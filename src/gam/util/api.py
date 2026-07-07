@@ -733,10 +733,10 @@ def buildGAPIObjectGE(project, location):
   """Build Discovery Engine API client using SA credentials with quota project.
 
   Uses the service account acting as itself (no DwD) with the
-  discoveryengine.readwrite scope. The quota project is set to the
+  discoveryengine.serving.readwrite scope. The quota project is set to the
   GE project so billing is routed correctly.
   """
-  DISCOVERYENGINE_SCOPE = 'https://www.googleapis.com/auth/discoveryengine.readwrite'
+  DISCOVERYENGINE_SCOPE = 'https://www.googleapis.com/auth/discoveryengine.serving.readwrite'
   _getSvcAcctData()
   svcacct_info = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]
   signer = _getSigner(svcacct_info)

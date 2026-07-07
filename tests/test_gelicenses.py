@@ -446,7 +446,7 @@ class TestBuildGAPIObjectGE:
     @patch('gam.util.api.getHttpObj')
     @patch('gam.util.api._getSigner', return_value=None)
     @patch('gam.util.api._getSvcAcctData')
-    def test_scope_is_discoveryengine_readwrite(self, mock_svc, mock_signer,
+    def test_scope_is_discoveryengine_serving_readwrite(self, mock_svc, mock_signer,
                                                  mock_http, mock_transport,
                                                  mock_build):
         from gam.util.api import buildGAPIObjectGE
@@ -459,7 +459,7 @@ class TestBuildGAPIObjectGE:
                    return_value=mock_cred):
             buildGAPIObjectGE('123456', 'eu')
             mock_cred.with_scopes.assert_called_once_with(
-                ['https://www.googleapis.com/auth/discoveryengine.readwrite']
+                ['https://www.googleapis.com/auth/discoveryengine.serving.readwrite']
             )
 
     @patch('gam.util.api.googleapiclient.discovery.build')
