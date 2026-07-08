@@ -316,6 +316,9 @@ By default, information for all visible, non-deleted calendars is shown.
 By default, list items are separated by the `csv_output_field_delimiter' from `gam.cfg`.
 * `delimiter <Character>` - Separate list items with `<Character>`
 
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>`
+
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
