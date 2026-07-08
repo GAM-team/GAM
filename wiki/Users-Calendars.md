@@ -264,12 +264,14 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display as an indented list of keys and values.
 ```
 gam <UserTypeEntity> show calendars
-         [primary] <CalendarSelectProperty>*
-         [noprimary] [nogroups] [noresources] [nosystem] [nousers]
-         [fields <CalendarListFieldList>] [permissions]
-         [formatjson]
+        [ownedsecondary]
+        [primary] <CalendarSelectProperty>*
+        [noprimary] [nogroups] [noresources] [nosystem] [nousers]
+        [fields <CalendarListFieldList>] [permissions]
+        [formatjson]
 ```
 By default, information for all visible, non-deleted calendars is shown.
+* `ownedsecondary` - Limits the selection to secondary calendars where `<UserTypeEntity>` is the `dataOwner`
 * `primary` - Limits the selection to the user's primary calendar
 * `<CalendarSelectProperty>`
     * `minaccessrole <CalendarACLRole>`- Limits the selection to those calendars where the user's role is at least `<CalendarACLRole>`
@@ -289,12 +291,15 @@ By default, Gam displays the information as an indented list of keys and values.
 ### Display as a CSV file.
 ```
 gam <UserTypeEntity> print calendars [todrive <ToDriveAttribute>*]
-         [primary] <CalendarSelectProperty>*
-         [noprimary] [nogroups] [noresources] [nosystem] [nousers]
-         [fields <CalendarListFieldList>] [permissions] [oneitemperrow]
-         [formatjson] [delimiter <Character>] [quotechar <Character>]
+        [ownedsecondary]
+        [primary] <CalendarSelectProperty>*
+        [noprimary] [nogroups] [noresources] [nosystem] [nousers]
+        [fields <CalendarListFieldList>] [permissions] [oneitemperrow]
+        (addcsvdata <FieldName> <String>)*
+        [formatjson] [delimiter <Character>] [quotechar <Character>]
 ```
 By default, information for all visible, non-deleted calendars is shown.
+* `ownedsecondary` - Limits the selection to secondary calendars where `<UserTypeEntity>` is the `dataOwner`
 * `primary` - Limits the selection to the user's primary calendar
 * `<CalendarSelectProperty>`
     * `minaccessrole <CalendarACLRole>`- Limits the selection to those calendars where the user's role is at least `<CalendarACLRole>`

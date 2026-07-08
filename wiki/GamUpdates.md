@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.46.08
+
+Added option `(addcsvdata <FieldName> <String>)*` to `gam <UserTypeEntity> print calendars`
+that adds additional columns of data to the CSV file output.
+
+Added option `ownedsecondary` to `gam <UserTypeEntity> print|show calendars` that causes
+GAM to only display secondary calendars where `<UserTypeEntity>` is the `dataOwner`.
+
+Added option `showenabled` to `gam <UserTypeEntity> print|show forwardingaddresses` that causes
+GAM to display the enabled status for each forwarding address.
+
+Disabled unnecessary Regional Access Boundary (trust boundary) lookups to improve performance.
+
 ### 7.46.07
 
 Added command `gam show configlicenseskus` that can be used to generate a command

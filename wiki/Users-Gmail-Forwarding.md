@@ -38,8 +38,12 @@ gam <UserTypeEntity> delete forwardingaddress|forwardingaddresses <EmailAddressE
 ```
 gam <UserTypeEntity> info forwardingaddress|forwardingaddresses <EmailAddressEntity>
 gam <UserTypeEntity> show forwardingaddress|forwardingaddresses
+        [showenabled]
 gam <UserTypeEntity> print forwardingaddress|forwardingaddresses [todrive <ToDriveAttribute>*]
+        [showenabled]
 ```
+The `showenabled` option causes GAM to display the enabled status for each forwarding address.
+
 ## Manage forwarding
 ```
 gam <UserTypeEntity> forward <FalseValues>
