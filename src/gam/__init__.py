@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.07'
+__version__ = '7.46.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -2982,11 +2982,11 @@ def uniqueFilename(targetFolder, filetitle, overwrite, extension=None):
 def cleanFilepath(filepath):
   return sanitize_filepath(filepath, platform='auto')
 
-def fileErrorMessage(filename, e, entityType=Ent.FILE):
-  return f'{Ent.Singular(entityType)}: {filename}, {str(e)}'
+def fileErrorMessage(mode, filename, e, entityType=Ent.FILE):
+  return f'Unable to {mode} {Ent.Singular(entityType)}: {filename}, {str(e)}'
 
-def fdErrorMessage(f, defaultFilename, e):
-  return fileErrorMessage(getattr(f, 'name') if hasattr(f, 'name') else defaultFilename, e)
+def fdErrorMessage(mode, f, defaultFilename, e):
+  return fileErrorMessage(mode, getattr(f, 'name') if hasattr(f, 'name') else defaultFilename, e)
 
 # Set file encoding to handle UTF8 BOM
 def setEncoding(mode, encoding):
@@ -3029,10 +3029,10 @@ def openFile(filename, mode=DEFAULT_FILE_READ_MODE, encoding=None, errors=None, 
   except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     if continueOnError:
       if displayError:
-        stderrWarningMsg(fileErrorMessage(filename, e))
+        stderrWarningMsg(fileErrorMessage('read' if 'r' in mode else 'write', filename, e))
         setSysExitRC(FILE_ERROR_RC)
       return None
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read' if 'r' in mode else 'write', filename, e))
 
 # Close a file
 def closeFile(f, forceFlush=False):
@@ -3045,7 +3045,7 @@ def closeFile(f, forceFlush=False):
     f.close()
     return True
   except IOError as e:
-    stderrErrorMsg(fdErrorMessage(f, UNKNOWN, e))
+    stderrErrorMsg(fdErrorMessage('write', f, UNKNOWN, e))
     setSysExitRC(FILE_ERROR_RC)
     return False
 
@@ -3061,10 +3061,10 @@ def readFile(filename, mode=DEFAULT_FILE_READ_MODE, encoding=None, newline=None,
   except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     if continueOnError:
       if displayError:
-        stderrWarningMsg(fileErrorMessage(filename, e))
+        stderrWarningMsg(fileErrorMessage('read', filename, e))
         setSysExitRC(FILE_ERROR_RC)
       return None
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', filename, e))
 
 # Write a file
 def writeFile(filename, data, mode=DEFAULT_FILE_WRITE_MODE,
@@ -3080,10 +3080,10 @@ def writeFile(filename, data, mode=DEFAULT_FILE_WRITE_MODE,
   except (IOError, LookupError, UnicodeDecodeError, UnicodeError) as e:
     if continueOnError:
       if displayError:
-        stderrErrorMsg(fileErrorMessage(filename, e))
+        stderrErrorMsg(fileErrorMessage('write', filename, e))
       setSysExitRC(FILE_ERROR_RC)
       return False
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('write', filename, e))
 
 # Write a file, return error
 def writeFileReturnError(filename, data, mode=DEFAULT_FILE_WRITE_MODE):
@@ -3103,9 +3103,9 @@ def deleteFile(filename, continueOnError=False, displayError=True):
     except OSError as e:
       if continueOnError:
         if displayError:
-          stderrWarningMsg(fileErrorMessage(filename, e))
+          stderrWarningMsg(fileErrorMessage('delete', filename, e))
         return
-      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage('delete', filename, e))
 
 def getGDocSheetDataRetryWarning(entityValueList, errMsg, i=0, count=0):
   action = Act.Get()
@@ -3336,11 +3336,11 @@ def openCSVFileReader(filename, fieldnames=None):
     loc = f.tell()
     try:
       if not f.readline() or not f.readline():
-        stderrWarningMsg(fileErrorMessage(filename, Msg.NO_CSV_FILE_DATA_FOUND))
+        stderrWarningMsg(fileErrorMessage('read', filename, Msg.NO_CSV_FILE_DATA_FOUND))
         sys.exit(NO_ENTITIES_FOUND_RC)
       f.seek(loc)
     except (IOError, UnicodeDecodeError, UnicodeError) as e:
-      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', filename, e))
   if checkArgumentPresent('columndelimiter'):
     columnDelimiter = getCharacter()
   else:
@@ -3862,7 +3862,7 @@ def SetGlobalVariables():
                                                            Msg.INVALID, str(e)],
                                                           ''))
     except IOError as e:
-      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(fileName, e, Ent.CONFIG_FILE))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', fileName, e, Ent.CONFIG_FILE))
 
   def _writeGamCfgFile(config, fileName, action):
     GM.Globals[GM.SECTION] = None # No need to save section for inner gams
@@ -3871,7 +3871,7 @@ def SetGlobalVariables():
         config.write(f)
       printKeyValueList([Ent.Singular(Ent.CONFIG_FILE), fileName, Act.PerformedName(action)])
     except IOError as e:
-      stderrErrorMsg(fileErrorMessage(fileName, e, Ent.CONFIG_FILE))
+      stderrErrorMsg(fileErrorMessage('write', fileName, e, Ent.CONFIG_FILE))
 
   def _verifyValues(sectionName, inputFilterSectionName, outputFilterSectionName):
     itemNamePattern = getREPattern() if checkArgumentPresent('variables') else None
@@ -8852,7 +8852,7 @@ class CSVPrintFile():
         try:
           GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].write(csvFile.getvalue())
         except IOError as e:
-          stderrErrorMsg(fdErrorMessage(GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD], 'stdout', e))
+          stderrErrorMsg(fdErrorMessage('write', GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD], 'stdout', e))
           setSysExitRC(FILE_ERROR_RC)
       closeFile(csvFile)
 
@@ -9980,7 +9980,7 @@ def StdQueueHandler(mpQueue, stdtype, gmGlobals, gcValues):
         _writeData(PROCESS_MSG.format(pidData[pid]['queue'], pid, 'End', currentISOformatTimeStamp(), data[0], pidData[pid]['cmd']))
       fd.flush()
     except IOError as e:
-      systemErrorExit(FILE_ERROR_RC, fdErrorMessage(fd, GM.Globals[stdtype][GM.REDIRECT_NAME], e))
+      systemErrorExit(FILE_ERROR_RC, fdErrorMessage('write', fd, GM.Globals[stdtype][GM.REDIRECT_NAME], e))
 
   if multiprocessing.get_start_method() != 'fork':
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -10044,7 +10044,7 @@ def batchWriteStderr(data):
     sys.stderr.write(data)
     sys.stderr.flush()
   except IOError as e:
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('stderr', e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('write', 'stderr', e))
 
 def writeStdQueueHandler(mpQueue, item):
   while True:
@@ -10555,7 +10555,7 @@ def doBatch(threadBatch=False):
           writeStderr(f'{ERROR_PREFIX}{Cmd.ARGUMENT_ERROR_NAMES[Cmd.ARGUMENT_INVALID][1]}: {Msg.EXPECTED} <{formatChoiceList(validCommands)}>\n')
           errors += 1
   except IOError as e:
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', filename, e))
   closeFile(f)
   if errors == 0:
     if not threadBatch:
@@ -43530,7 +43530,7 @@ def md5MatchesFile(filename, expected_md5, j=0, jcount=0):
     Act.Set(action)
     return False
   except IOError as e:
-    systemErrorExit(FILE_ERROR_RC, fileErrorMessage(filename, e))
+    systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', filename, e))
 
 def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None, zipToStdout=False, j=0, jcount=0):
   if not zipToStdout:
@@ -43562,7 +43562,7 @@ def _getCloudStorageObject(s, bucket, s_object, localFilename, expectedMd5=None,
       entityModifierNewValueActionPerformed([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, j, jcount)
       closeFile(f, True)
     if expectedMd5 and not md5MatchesFile(localFilename, expectedMd5):
-      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(localFilename, Msg.CORRUPT_FILE))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage('write', localFilename, Msg.CORRUPT_FILE))
   except googleapiclient.http.HttpError as e:
     mg = HTTP_ERROR_PATTERN.match(str(e))
     entityModifierNewValueActionFailedWarning([Ent.CLOUD_STORAGE_FILE, s_object], Act.MODIFIER_TO, localFilename, mg.group(1) if mg else str(e), j, jcount)
@@ -55118,16 +55118,17 @@ CALENDAR_EXCLUDE_DOMAINS = {
   }
 
 # gam <UserTypeEntity> print calendars <UserCalendarEntity> [todrive <ToDriveAttribute>*]
-#	[primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers]
+#	[ownedsecondary | ([primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers])
 #	[fields <CalendarFieldList>] [permissions] [oneitemperrow]
+#	(addcsvdata <FieldName> <String>)*
 #	[formatjson [quotechar <Character>]] [delimiter <Character>]
 # gam <UserTypeEntity> show calendars <UserCalendarEntity>
-#	[primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers]
+#	[ownedsecondary | ([primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers])
 #	[fields <CalendarFieldList>] [permissions]
 #	[formatjson]
 def printShowCalendars(users):
   acls = []
-  getCalPermissions = oneItemPerRow = noPrimary = primaryOnly = False
+  getCalPermissions = oneItemPerRow = ownedSecondary = noPrimary = primaryOnly = False
   excludes = set()
   excludeDomains = set()
   csvPF = CSVPrintFile(['primaryEmail', 'calendarId'], 'sortall') if Act.csvFormat() else None
@@ -55135,6 +55136,7 @@ def printShowCalendars(users):
   kwargs = {}
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   fieldsList = []
+  addCSVData = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -55147,6 +55149,8 @@ def printShowCalendars(users):
       pass
     elif myarg == 'primary':
       primaryOnly = True
+    elif myarg == 'ownedsecondary':
+      ownedSecondary = True
     elif _getCalendarSelectProperty(myarg, kwargs):
       pass
     elif myarg in CALENDAR_EXCLUDE_OPTIONS:
@@ -55155,6 +55159,8 @@ def printShowCalendars(users):
       delimiter = getCharacter()
     elif getFieldsList(myarg, CALENDAR_LIST_FIELDS_CHOICE_MAP, fieldsList, initialField='id'):
       pass
+    elif myarg == 'addcsvdata':
+      getAddCSVData(addCSVData)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   for exclude in excludes:
@@ -55169,7 +55175,16 @@ def printShowCalendars(users):
       fieldsList.append('accessRole')
     if noPrimary or primaryOnly:
       fieldsList.append('primary')
+    if ownedSecondary:
+      fieldsList.append('dataOwner')
   fields = getItemFieldsFromFieldsList('items', fieldsList)
+  if addCSVData:
+    if not FJQC.formatJSON:
+      csvPF.AddTitles(sorted(addCSVData.keys()))
+      csvPF.SetSortAllTitles()
+    else:
+      csvPF.AddJSONTitles(sorted(addCSVData.keys()))
+      csvPF.MoveJSONTitlesToEnd(['JSON'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -55185,7 +55200,13 @@ def printShowCalendars(users):
     except GAPI.notACalendarUser:
       userCalServiceNotEnabledWarning(user, i, count)
       continue
-    if primaryOnly:
+    if ownedSecondary:
+      allCalendars = calendars[:]
+      calendars = []
+      for calendar in allCalendars:
+        if calendar.get('dataOwner', '') == user:
+          calendars.append(calendar)          
+    elif primaryOnly:
       for calendar in calendars:
         if calendar.get('primary', False):
           calendars = [calendar]
@@ -55219,33 +55240,38 @@ def printShowCalendars(users):
     elif calendars:
       if not getCalPermissions or not oneItemPerRow:
         for calendar in calendars:
-          row = {'primaryEmail': user, 'calendarId': calendar['id']}
+          baserow = {'primaryEmail': user, 'calendarId': calendar['id']}
+          if addCSVData:
+            baserow.update(addCSVData)
+          row = baserow.copy()
           if getCalPermissions:
             calPerms = _getCalendarPermissions(cal, calendar)
-            flattenJSON({'permissions': calPerms}, flattened=row)
+            calendar.update({'permissions': calPerms})
           flattenJSON(calendar, flattened=row, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
           if not FJQC.formatJSON:
             row.pop('id')
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
-            if getCalPermissions:
-              calendar.update({'permissions': calPerms})
-            csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
-                                    'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
+            baserow['JSON'] = json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)
+            csvPF.WriteRowNoFilter(baserow)
       else:
         for calendar in calendars:
           baserow = {'primaryEmail': user, 'calendarId': calendar['id']}
-          flattenJSON(calendar, flattened=baserow, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
+          if addCSVData:
+            baserow.update(addCSVData)
+          calrow = baserow.copy()
+          flattenJSON(calendar, flattened=calrow, simpleLists=CALENDAR_SIMPLE_LISTS, delimiter=delimiter)
           for permission in _getCalendarPermissions(cal, calendar):
-            row = baserow.copy()
+            row = calrow.copy()
             flattenJSON({'permission': permission}, flattened=row)
             if not FJQC.formatJSON:
               row.pop('id')
               csvPF.WriteRowTitles(row)
             elif csvPF.CheckRowTitles(row):
               calendar.update({'permission': permission})
-              csvPF.WriteRowNoFilter({'primaryEmail': user, 'calendarId': calendar['id'],
-                                      'JSON': json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)})
+              row = baserow.copy()
+              row['JSON'] = json.dumps(cleanJSON(calendar), ensure_ascii=False, sort_keys=True)
+              csvPF.WriteRowNoFilter(row)
     elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
       csvPF.WriteRowNoFilter({'primaryEmail': user})
   if csvPF:
@@ -57560,7 +57586,7 @@ def getMediaBody(parameters):
       parameters[DFA_LOCALMIMETYPE] = status['content-type']
       return googleapiclient.http.MediaIoBaseUpload(io.BytesIO(c), mimetype=status['content-type'], resumable=True)
     except (IOError, httplib2.error.ServerNotFoundError) as e:
-      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(parameters[DFA_URL], str(e), entityType=Ent.URL))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', parameters[DFA_URL], str(e), entityType=Ent.URL))
   else:
     try:
       if parameters[DFA_LOCALFILEPATH] != '-':
@@ -57571,7 +57597,7 @@ def getMediaBody(parameters):
         media_body = None
       return media_body
     except IOError as e:
-      systemErrorExit(FILE_ERROR_RC, fileErrorMessage(parameters[DFA_LOCALFILEPATH], str(e)))
+      systemErrorExit(FILE_ERROR_RC, fileErrorMessage('read', parameters[DFA_LOCALFILEPATH], str(e)))
 
 DRIVE_ACTIVITY_ACTION_MAP = {
   'comment': 'COMMENT',
@@ -77539,8 +77565,14 @@ def printShowForward(users):
     csvPF.writeCSVfile('Forward')
 
 # Process ForwardingAddresses functions
-def _showForwardingAddress(j, jcount, result):
-  printEntityKVList([Ent.FORWARDING_ADDRESS, result['forwardingEmail']], ['Verification Status', result['verificationStatus']], j, jcount)
+def _showForwardingAddress(j, jcount, result, curFwd=None):
+  kvList = ['Verification Status', result['verificationStatus']]
+  if curFwd is not None:
+    if not curFwd['enabled'] or curFwd['emailAddress'] != result['forwardingEmail']:
+      kvList.extend(['Enabled', False])
+    else:
+      kvList.extend(['Enabled', True,'Disposition', curFwd['disposition']])
+  printEntityKVList([Ent.FORWARDING_ADDRESS, result['forwardingEmail']], kvList, j, jcount)
 
 def _processForwardingAddress(user, i, count, emailAddress, j, jcount, gmail, function, **kwargs):
   userDefined = True
@@ -77607,10 +77639,23 @@ def infoForwardingAddresses(users):
   _deleteInfoForwardingAddreses(users, 'get')
 
 # gam <UserTypeEntity> print forwardingaddresses [todrive <ToDriveAttribute>*]
+#	[showenabled]
 # gam <UserTypeEntity> show forwardingaddresses
+#	[showenabled]
 def printShowForwardingAddresses(users):
   csvPF = CSVPrintFile(['User', 'forwardingEmail', 'verificationStatus']) if Act.csvFormat() else None
-  getTodriveOnly(csvPF)
+  showEnabled = False
+  curFwd = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'showenabled':
+      showEnabled = True
+    else:
+      unknownArgumentExit()
+  if showEnabled and csvPF:
+    csvPF.AddTitles(['enabled', 'disposition'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -77620,6 +77665,10 @@ def printShowForwardingAddresses(users):
     if csvPF:
       printGettingEntityItemForWhom(Ent.FORWARDING_ADDRESS, user, i, count)
     try:
+      if showEnabled:
+        curFwd = callGAPI(gmail.users().settings(), 'getAutoForwarding',
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
+                          userId='me')
       results = callGAPIitems(gmail.users().settings().forwardingAddresses(), 'list', 'forwardingAddresses',
                               throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.FAILED_PRECONDITION],
                               userId='me')
@@ -77630,11 +77679,17 @@ def printShowForwardingAddresses(users):
         j = 0
         for forward in results:
           j += 1
-          _showForwardingAddress(j, jcount, forward)
+          _showForwardingAddress(j, jcount, forward, curFwd)
         Ind.Decrement()
       elif results:
         for forward in results:
-          csvPF.WriteRow({'User': user, 'forwardingEmail': forward['forwardingEmail'], 'verificationStatus': forward['verificationStatus']})
+          row = {'User': user, 'forwardingEmail': forward['forwardingEmail'], 'verificationStatus': forward['verificationStatus']}
+          if curFwd is not None:
+            if not curFwd['enabled'] or curFwd['emailAddress'] != forward['forwardingEmail']:
+              row['enabled'] = False
+            else:
+              row.update({'enabled': True, 'disposition': curFwd['disposition']})
+          csvPF.WriteRow(row)
       elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
         csvPF.WriteRowNoFilter({'User': user})
     except GAPI.failedPrecondition as e:

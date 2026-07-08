@@ -6249,12 +6249,13 @@ gam <UserTypeEntity> info calendars <UserCalendarEntity>
         [fields <CalendarListFieldList>] [permissions]
         [formatjson]
 gam <UserTypeEntity> show calendars
-        [primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers]
+        [ownedsecondary | ([primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers])
         [fields <CalendarListFieldList>] [permissions]
         [formatjson]
 gam <UserTypeEntity> print calendars [todrive <ToDriveAttribute>*]
-        [primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers]
+        [ownedsecondary | ([primary] <CalendarSelectProperty>* [noprimary] [nogroups] [noresources] [nosystem] [nousers])
         [fields <CalendarListFieldList>] [permissions] [oneitemperrow]
+        (addcsvdata <FieldName> <String>)*
         [formatjson] [delimiter <Character>] [quotechar <Character>]
 
 Display a users calendar settings
@@ -7880,9 +7881,11 @@ gam <UserTypeEntity> show formresponses <DriveFileEntity>
 gam <UserTypeEntity> create|add forwardingaddress|forwardingaddresses <EmailAddressEntity>
 gam <UserTypeEntity> delete forwardingaddress|forwardingaddresses <EmailAddressEntity>
 
-gam <UserTypeEntity> show forwardingaddress|forwardingaddresses
 gam <UserTypeEntity> info forwardingaddress|forwardingaddresses <EmailAddressEntity>
+gam <UserTypeEntity> show forwardingaddress|forwardingaddresses
+        [showenabled]
 gam <UserTypeEntity> print forwardingaddress|forwardingaddresses [todrive <ToDriveAttribute>*]
+        [showenabled]
 
 gam <UserTypeEntity> forward <FalseValues>
 gam <UserTypeEntity> forward <TrueValues> keep|leaveininbox|archive|delete|trash|markread <EmailAddress>
