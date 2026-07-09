@@ -49,6 +49,11 @@ jobs:
             freethreaded: false
             goal: build
             name: Build Intel Ubuntu Noble
+          - os: ubuntu-26.04
+            jid: 7
+            freethreaded: false
+            goal: build
+            name: Build Intel Ubuntu Resolute
           - os: ubuntu-24.04-arm
             jid: 3
             freethreaded: false
@@ -59,6 +64,11 @@ jobs:
             freethreaded: false
             goal: build
             name: Build Arm Ubuntu Jammy
+          - os: ubuntu-26.04-arm
+            jid: 15
+            freethreaded: false
+            goal: build
+            name: Build Arm Ubuntu Resolute
           - os: ubuntu-22.04
             jid: 5
             freethreaded: false
@@ -106,12 +116,6 @@ jobs:
             freethreaded: false
             goal: build
             name: Build Arm Windows
-          - os: ubuntu-24.04
-            goal: test
-            python: "3.10"
-            freethreaded: false
-            jid: 15
-            name: Test Python 3.10
           - os: ubuntu-24.04
             goal: test
             python: "3.11"
