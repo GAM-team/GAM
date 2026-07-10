@@ -49,88 +49,98 @@ jobs:
             freethreaded: false
             goal: build
             name: Build Intel Ubuntu Noble
-          - os: ubuntu-24.04-arm
+          - os: ubuntu-26.04
             jid: 3
+            freethreaded: false
+            goal: build
+            name: Build Intel Ubuntu Resolute
+          - os: ubuntu-24.04-arm
+            jid: 4
             freethreaded: false
             goal: build
             name: Build Arm Ubuntu Noble
           - os: ubuntu-22.04-arm
-            jid: 4
+            jid: 5
             freethreaded: false
             goal: build
             name: Build Arm Ubuntu Jammy
+          - os: ubuntu-26.04-arm
+            jid: 6
+            freethreaded: false
+            goal: build
+            name: Build Arm Ubuntu Resolute
           - os: ubuntu-22.04
-            jid: 5
+            jid: 7
             freethreaded: false
             goal: build
             staticx: yes
             name: Build Intel StaticX Legacy
           - os: ubuntu-22.04-arm
-            jid: 6
+            jid: 8
             freethreaded: false
             goal: build
             staticx: yes
             name: Build Arm StaticX Legacy
           - os: macos-14
-            jid: 8
+            jid: 9
             freethreaded: false
             goal: build
             name: Build Arm MacOS 14
           - os: macos-15
-            jid: 9
+            jid: 10
             freethreaded: false
             goal: build
             name: Build Arm MacOS 15
           - os: macos-15-intel
-            jid: 10
+            jid: 11
             freethreaded: false
             goal: build
             name: Build x86_64 macOS 15
           - os: macos-26-intel
-            jid: 11
+            jid: 12
             freethreaded: false
             goal: build
             name: Build x86_64 macOS 26
           - os: macos-26
-            jid: 12
+            jid: 13
             freethreaded: false
             goal: build
             name: Build Arm MacOS 26
           - os: windows-2025-vs2026
-            jid: 13
+            jid: 14
             freethreaded: false
             goal: build
             name: Build Intel Windows
           - os: windows-11-arm
-            jid: 14
+            jid: 15
             freethreaded: false
             goal: build
             name: Build Arm Windows
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             goal: test
             python: "3.11"
             freethreaded: false
             jid: 16
             name: Test Python 3.11
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             goal: test
             python: "3.12"
             freethreaded: false
             jid: 17
             name: Test Python 3.12
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             goal: test
             python: "3.13"
             freethreaded: false
             jid: 18
             name: Test Python 3.13
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             goal: test
             python: "3.15-dev"
             freethreaded: false
             jid: 19
             name: Test Python 3.15-dev
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             goal: test
             python: "3.14"
             freethreaded: true
