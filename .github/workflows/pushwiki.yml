@@ -9,7 +9,7 @@ on:
 
 jobs:
   pushwiki:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout GAM source
         run: |
