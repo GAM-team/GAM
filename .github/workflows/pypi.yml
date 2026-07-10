@@ -8,7 +8,7 @@ on:
 jobs:
   pypi:
     name: Upload release to PyPI
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     environment:
       name: pypi
       url: https://pypi.org/p/gam7
