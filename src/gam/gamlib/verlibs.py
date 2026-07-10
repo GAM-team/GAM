@@ -29,7 +29,6 @@ GAM_VER_LIBS = [
   'google-auth-httplib2',
   'google-auth-oauthlib',
   'google-auth',
-  'lxml',
   'httplib2',
   'passlib',
   'pathvalidate',

@@ -190,8 +190,9 @@ class TestResolveLocation:
                 self._make_probe_svc([]),
                 self._make_probe_svc([])]
 
-        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
-            result = _resolveLocation('my-project', None)
+        with patch('gam.cmd.gelicenses._fetchAvailableLocations', return_value=['global', 'us', 'eu']):
+            with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+                result = _resolveLocation('my-project', None)
         assert result == 'global'
         captured = capsys.readouterr()
         assert 'Auto-selected location: global' in captured.out
@@ -203,9 +204,10 @@ class TestResolveLocation:
                 self._make_probe_svc([]),
                 self._make_probe_svc([])]
 
-        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
-            with pytest.raises(SystemExit):
-                _resolveLocation('my-project', None)
+        with patch('gam.cmd.gelicenses._fetchAvailableLocations', return_value=['global', 'us', 'eu']):
+            with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+                with pytest.raises(SystemExit):
+                    _resolveLocation('my-project', None)
 
     def test_errors_on_multiple_locations(self):
         from gam.cmd.gelicenses import _resolveLocation
@@ -215,9 +217,10 @@ class TestResolveLocation:
                 self._make_probe_svc(configs),
                 self._make_probe_svc([])]
 
-        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
-            with pytest.raises(SystemExit):
-                _resolveLocation('my-project', None)
+        with patch('gam.cmd.gelicenses._fetchAvailableLocations', return_value=['global', 'us', 'eu']):
+            with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+                with pytest.raises(SystemExit):
+                    _resolveLocation('my-project', None)
 
     def test_skips_locations_with_errors(self, capsys):
         from gam.cmd.gelicenses import _resolveLocation
@@ -228,8 +231,9 @@ class TestResolveLocation:
                 self._make_probe_svc([]),
                 self._make_probe_svc(configs_eu)]
 
-        with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
-            result = _resolveLocation('my-project', None)
+        with patch('gam.cmd.gelicenses._fetchAvailableLocations', return_value=['global', 'us', 'eu']):
+            with patch('gam.cmd.gelicenses._buildGEService', side_effect=svcs):
+                result = _resolveLocation('my-project', None)
         assert result == 'eu'
         captured = capsys.readouterr()
         assert 'global: not available' in captured.out

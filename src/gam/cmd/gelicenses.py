@@ -50,8 +50,8 @@ GE_LICENSE_PAGE_SIZE = 1000
 
 GE_THROW_REASONS = [GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND, GAPI.FORBIDDEN]
 
-# Known GE locations to probe when auto-detecting
-KNOWN_GE_LOCATIONS = ['global', 'us', 'eu']
+# Fallback GE locations if dynamic discovery fails
+_FALLBACK_GE_LOCATIONS = ['global', 'us', 'eu']
 
 
 # --- Internal Helpers ---
@@ -79,19 +79,40 @@ def _buildGEService(project, location):
   return buildGAPIObjectGE(project, location)
 
 
+def _fetchAvailableLocations(project):
+  """Dynamically discover available GE locations from the API.
+
+  Calls projects.locations.list on the global Discovery Engine endpoint
+  to get the current set of locations, so we don't need to maintain a
+  hardcoded list. Falls back to _FALLBACK_GE_LOCATIONS on failure.
+  """
+  try:
+    svc = _buildGEService(project, 'global')
+    result = callGAPIpages(svc.projects().locations(), 'list', 'locations',
+                           name=f'projects/{project}')
+    locations = [loc.get('locationId') for loc in result if loc.get('locationId')]
+    if locations:
+      return locations
+  except Exception:
+    pass
+  writeStdout('  Could not fetch locations dynamically, using fallback list.\n')
+  return list(_FALLBACK_GE_LOCATIONS)
+
+
 def _resolveLocation(project, provided_location):
   """Auto-detect the GE location if not provided.
 
-  Probes known locations by building a service for each and checking
-  whether any licenseConfigs exist. Auto-selects if exactly one location
-  has configs.
+  Dynamically fetches available locations from the API, then probes each
+  by checking whether any licenseConfigs exist. Auto-selects if exactly
+  one location has configs.
   """
   if provided_location:
     return provided_location
 
   writeStdout('No location provided. Detecting available locations...\n')
+  locations = _fetchAvailableLocations(project)
   found = []
-  for loc in KNOWN_GE_LOCATIONS:
+  for loc in locations:
     try:
       svc = _buildGEService(project, loc)
       parent = _getLicenseConfigsParent(project, loc)
@@ -108,7 +129,7 @@ def _resolveLocation(project, provided_location):
 
   if not found:
     systemErrorExit(GOOGLE_API_ERROR_RC,
-                    f'No GE license configs found in any known location ({", ".join(KNOWN_GE_LOCATIONS)}). '
+                    f'No GE license configs found in any location ({", ".join(locations)}). '
                     f'Specify one with location <LOCATION>.')
   if len(found) == 1:
     writeStdout(f'Auto-selected location: {found[0]}\n')

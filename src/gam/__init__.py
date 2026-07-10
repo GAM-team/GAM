@@ -858,7 +858,7 @@ from gam.cmd.tasks import (
     processTasklists,
     processTasks,
 )
-from gam.cmd.userop.licenses import (
+from gam.cmd.licenses import (
     createLicense,
     deleteLicense,
     syncLicense,
