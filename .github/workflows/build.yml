@@ -942,7 +942,6 @@ jobs:
           run_gam config enable_dasa false save
           # don't expose policy output
           run_gam show policies > policies.csv
-          run_gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
           run_gam print privileges
           run_gam config enable_dasa true save
           run_gam update cigroup $newgroup security memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
