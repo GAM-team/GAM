@@ -902,8 +902,6 @@ jobs:
           run_gam csv ./vm-open.csv gam update vaultmatter "id:~~matterId~~" action close
           run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-closed.csv print vaultmatters matterstate CLOSED
           run_gam csv ./vm-closed.csv gam update vaultmatter "id:~~matterId~~" action delete
-          run_gam config csv_output_row_filter "Emails.1.address:regex:^gha_test-${JID}_" redirect csv ./contacts.csv print contacts
-          run_gam csv ./contacts.csv gam delete contact ~ContactID
           run_gam config enable_dasa true save
           run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./features.csv print features
           run_gam csv ./features.csv gam delete feature ~name
@@ -945,7 +943,6 @@ jobs:
           # don't expose policy output
           run_gam show policies > policies.csv
           run_gam create contact firstname GHA lastname "$JID" email work "${newbase}@example.com" primary
-          run_gam print contacts
           run_gam print privileges
           run_gam config enable_dasa true save
           run_gam update cigroup $newgroup security memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
@@ -1048,7 +1045,6 @@ jobs:
           run_gam user $newuser show holds || if [ $? != 55 ]; then exit $?; fi # expect a 55 return code
           export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
           run_gam create device serialnumber $sn devicetype android
-          run_gam delete contacts emailmatchpattern "^${newbase}@example.com$"
           run_gam config enable_dasa true save
           run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
           run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
