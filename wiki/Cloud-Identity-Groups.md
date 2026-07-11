@@ -345,7 +345,7 @@ gam print cigroups [todrive <ToDriveAttribute>*]
         [roles <GroupRoleList>] [memberrestrictions]
         [internal] [internaldomains all|primary|<DomainNameList>] [external]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
-        [types <CIGroupMemberTypeList>]
+        [types <CIGroupMemberTypeList>] [showmembertypes]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>]
         (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
@@ -400,6 +400,15 @@ By default, no members, managers or owners in the group are displayed; these opt
 By default, when displaying members from a group, all types of members (customer, group, serviceaccount, user) in the group are displayed; this option modifies that behavior:
 * `types <CIGroupMemberTypeList>` - Display specified types
 
+Use option `showmembertypes` to expand Members fields to include type information.
+```
+Members -> MembersTypeCustomer, MembersTypeGroup, MembersTypeUser
+MembersCount -> MembersTypeCustomerCount, MembersTypeGroupCount, MembersTypeUserCount
+InternalMembers -> InternalMembersTypeCustomer, InternalMembersTypeGroup, InternalMembersTypeUser
+InternalMembersCount -> InternalMembersTypeCustomerCount, InternalMembersTypeGroupCount, InternalMembersTypeUserCount
+ExternalMembers -> ExternalMembersTypeGroup, ExternalMembersTypeUser
+ExternalMembersCount -> ExternalMembersTypeGroupCount, ExternalMembersTypeUserCount
+```
 Which domains are considered internal domains:
   * `internaldomains all` - All of your workspace domains; this is the default
   * `internaldomains primary` - Your workspace primary domain

@@ -10,6 +10,18 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.46.09
+
+Added option `showmembertypes` to `gam print cigroup|groups` that expands Members fields
+to include type information.
+```
+Members -> MembersTypeCustomer, MembersTypeGroup, MembersTypeUser
+MembersCount -> MembersTypeCustomerCount, MembersTypeGroupCount, MembersTypeUserCount
+InternalMembers -> InternalMembersTypeCustomer, InternalMembersTypeGroup, InternalMembersTypeUser
+InternalMembersCount -> InternalMembersTypeCustomerCount, InternalMembersTypeGroupCount, InternalMembersTypeUserCount
+ExternalMembers -> ExternalMembersTypeGroup, ExternalMembersTypeUser
+ExternalMembersCount -> ExternalMembersTypeGroupCount, ExternalMembersTypeUserCount
+
 ### 7.46.08
 
 Added option `(addcsvdata <FieldName> <String>)*` to `gam <UserTypeEntity> print calendars`

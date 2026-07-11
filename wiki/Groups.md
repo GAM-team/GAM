@@ -521,7 +521,7 @@ gam print groups [todrive <ToDriveAttribute>*]
         [members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
         [includederivedmembership]
         [notsuspended|suspended] [notarchived|archived]
-        [types <GroupMemberTypeList>]
+        [types <GroupMemberTypeList>] [showmembertypes]
         [memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
         [convertcrnl] [delimiter <Character>] [sortheaders]
         (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
@@ -607,6 +607,16 @@ By default, when displaying members from a group, all members, whether suspended
 
 By default, when displaying members from a group, all types of members (customer, group, user) in the group are displayed; this option modifies that behavior:
 * `types <GroupMemberTypeList>` - Display specified types
+
+Use option `showmembertypes` to expand Members fields to include type information.
+```
+Members -> MembersTypeCustomer, MembersTypeGroup, MembersTypeUser
+MembersCount -> MembersTypeCustomerCount, MembersTypeGroupCount, MembersTypeUserCount
+InternalMembers -> InternalMembersTypeCustomer, InternalMembersTypeGroup, InternalMembersTypeUser
+InternalMembersCount -> InternalMembersTypeCustomerCount, InternalMembersTypeGroupCount, InternalMembersTypeUserCount
+ExternalMembers -> ExternalMembersTypeGroup, ExternalMembersTypeUser
+ExternalMembersCount -> ExternalMembersTypeGroupCount, ExternalMembersTypeUserCount
+```
 
 Which domains are considered internal domains:
   * `internaldomains all` - All of your workspace domains; this is the default
