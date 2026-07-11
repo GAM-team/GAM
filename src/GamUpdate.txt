@@ -1,3 +1,16 @@
+7.46.09
+
+Added option `showmembertypes` to `gam print cigroup|groups` that expands Members fields
+to include type information.
+```
+Members -> MembersTypeCustomer, MembersTypeGroup, MembersTypeUser
+MembersCount -> MembersTypeCustomerCount, MembersTypeGroupCount, MembersTypeUserCount
+InternalMembers -> InternalMembersTypeCustomer, InternalMembersTypeGroup, InternalMembersTypeUser
+InternalMembersCount -> InternalMembersTypeCustomerCount, InternalMembersTypeGroupCount, InternalMembersTypeUserCount
+ExternalMembers -> ExternalMembersTypeGroup, ExternalMembersTypeUser
+ExternalMembersCount -> ExternalMembersTypeGroupCount, ExternalMembersTypeUserCount
+```
+
 7.46.08
 
 Added option `(addcsvdata <FieldName> <String>)*` to `gam <UserTypeEntity> print calendars`

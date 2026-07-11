@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.08'
+__version__ = '7.46.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -12615,6 +12615,7 @@ def checkServiceAccount(users):
     testFail = 'FAIL'
     testWarn = 'WARN'
     testDeprecated = 'DEPRECATED'
+#  if Act.Get() == Act.CHECK and GM.Globals[GM.SVCACCT_SCOPES_DEFINED]:
   if Act.Get() == Act.CHECK:
     if not checkScopesSet:
       for scope in GM.Globals[GM.SVCACCT_SCOPES].values():
@@ -35528,6 +35529,7 @@ def initIPSGMGroupMemberDisplayOptions():
           'checkShowCategory': False,
           'internal': False, 'external': False,
           'internalDomains': 'all',
+          'showMemberTypes': False,
           'gs': None}
 
 def getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
@@ -35563,6 +35565,8 @@ def getIPSGMGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions
     memberDisplayOptions['external'] = memberDisplayOptions['checkCategory'] = memberDisplayOptions['showCategory'] = True
   elif myarg == 'internaldomains':
     memberDisplayOptions['internalDomains'] = getString(Cmd.OB_DOMAIN_NAME_LIST).replace(',', ' ').lower()
+  elif myarg == 'showmembertypes':
+    memberDisplayOptions['showMemberTypes'] = True
   else:
     return False
   return True
@@ -36041,25 +36045,38 @@ def checkGroupMatchPatterns(groupEmail, group, matchPatterns):
 MEMBERS_TITLES = {
   'combined': {
     'total': ['TotalCount', ''],
-    Ent.ROLE_MEMBER: ['MembersCount', 'Members'],
+    Ent.ROLE_MEMBER: {'': ['MembersCount', 'Members'],
+                      Ent.TYPE_CUSTOMER: ['MembersTypeCustomerCount', 'MembersTypeCustomer'],
+                      Ent.TYPE_GROUP: ['MembersTypeGroupCount', 'MembersTypeGroup'],
+                      Ent.TYPE_USER: ['MembersTypeUserCount', 'MembersTypeUser']},
     Ent.ROLE_MANAGER: ['ManagersCount', 'Managers'],
     Ent.ROLE_OWNER: ['OwnersCount', 'Owners']
     },
   'internal': {
     'total': ['TotalInternalCount', ''],
-    Ent.ROLE_MEMBER: ['InternalMembersCount', 'InternalMembers'],
+    Ent.ROLE_MEMBER: {'': ['InternalMembersCount', 'InternalMembers'],
+                      Ent.TYPE_CUSTOMER: ['InternalMembersTypeCustomerCount', 'InternalMembersTypeCustomer'],
+                      Ent.TYPE_GROUP: ['InternalMembersTypeGroupCount', 'InternalMembersTypeGroup'],
+                      Ent.TYPE_USER: ['InternalMembersTypeUserCount', 'InternalMembersTypeUser']},
     Ent.ROLE_MANAGER: ['InternalManagersCount', 'InternalManagers'],
     Ent.ROLE_OWNER: ['InternalOwnersCount', 'InternalOwners']
     },
   'external': {
     'total': ['TotalExternalCount', ''],
-    Ent.ROLE_MEMBER: ['ExternalMembersCount', 'ExternalMembers'],
+    Ent.ROLE_MEMBER: {'': ['ExternalMembersCount', 'ExternalMembers'],
+                      Ent.TYPE_GROUP: ['ExternalMembersTypeGroupCount', 'ExternalMembersTypeGroup'],
+                      Ent.TYPE_USER: ['ExternalMembersTypeUserCount', 'ExternalMembersTypeUser']},
     Ent.ROLE_MANAGER: ['ExternalManagersCount', 'ExternalManagers'],
     Ent.ROLE_OWNER: ['ExternalOwnersCount', 'ExternalOwners']
     }
   }
+CATEGORY_MEMBER_TYPES = {
+  'combined': [Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP, Ent.TYPE_USER],
+  'internal': [Ent.TYPE_CUSTOMER, Ent.TYPE_GROUP, Ent.TYPE_USER],
+  'external': [Ent.TYPE_GROUP, Ent.TYPE_USER],
+  }
 
-def setMemberDisplayTitles(memberDisplayOptions, csvPF):
+def setMemberDisplayTitles(memberDisplayOptions, typesSet, csvPF):
   if memberDisplayOptions['totalCount']:
     csvPF.AddTitles(MEMBERS_TITLES['combined']['total'][0])
   if not memberDisplayOptions['internal'] and not memberDisplayOptions['external']:
@@ -36074,11 +36091,23 @@ def setMemberDisplayTitles(memberDisplayOptions, csvPF):
       csvPF.AddTitles(MEMBERS_TITLES[category]['total'][0])
     for role in Ent.ROLE_LIST:
       if memberDisplayOptions[role]['show']:
-        csvPF.AddTitles(MEMBERS_TITLES[category][role][0])
-        if not memberDisplayOptions[role]['countOnly']:
-          csvPF.AddTitles(MEMBERS_TITLES[category][role][1])
+        if role == Ent.ROLE_MEMBER:
+          if not memberDisplayOptions['showMemberTypes']:
+            csvPF.AddTitles(MEMBERS_TITLES[category][role][''][0])
+            if not memberDisplayOptions[role]['countOnly']:
+              csvPF.AddTitles(MEMBERS_TITLES[category][role][''][1])
+          else:
+            for memberType in CATEGORY_MEMBER_TYPES[category]:
+              if memberType in typesSet:
+                csvPF.AddTitles(MEMBERS_TITLES[category][role][memberType][0])
+                if not memberDisplayOptions[role]['countOnly']:
+                  csvPF.AddTitles(MEMBERS_TITLES[category][role][memberType][1])
+        else:
+          csvPF.AddTitles(MEMBERS_TITLES[category][role][0])
+          if not memberDisplayOptions[role]['countOnly']:
+            csvPF.AddTitles(MEMBERS_TITLES[category][role][1])
 
-def setMemberDisplaySortTitles(memberDisplayOptions, sortTitles):
+def setMemberDisplaySortTitles(memberDisplayOptions, typesSet, sortTitles):
   if memberDisplayOptions['totalCount']:
     sortTitles.append(MEMBERS_TITLES['combined']['total'][0])
   for category in memberDisplayOptions['categories']:
@@ -36086,35 +36115,64 @@ def setMemberDisplaySortTitles(memberDisplayOptions, sortTitles):
       sortTitles.append(MEMBERS_TITLES[category]['total'][0])
     for role in Ent.ROLE_LIST:
       if memberDisplayOptions[role]['show']:
-        sortTitles.append(MEMBERS_TITLES[category][role][0])
-      if not memberDisplayOptions[role]['countOnly']:
-        sortTitles.append(MEMBERS_TITLES[category][role][1])
+        if role == Ent.ROLE_MEMBER:
+          if not memberDisplayOptions['showMemberTypes']:
+            sortTitles.append(MEMBERS_TITLES[category][role][''][0])
+            if not memberDisplayOptions[role]['countOnly']:
+              sortTitles.append(MEMBERS_TITLES[category][role][''][1])
+          else:
+            for memberType in CATEGORY_MEMBER_TYPES[category]:
+              if memberType in typesSet:
+                sortTitles.append(MEMBERS_TITLES[category][role][memberType][0])
+                if not memberDisplayOptions[role]['countOnly']:
+                  sortTitles.append(MEMBERS_TITLES[category][role][memberType][1])
+        else:
+          sortTitles.append(MEMBERS_TITLES[category][role][0])
+          if not memberDisplayOptions[role]['countOnly']:
+            sortTitles.append(MEMBERS_TITLES[category][role][1])
 
 def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplayOptions, delimiter,
                        isSuspended, isArchived, ciGroupsAPI):
   membersInfo = {
     'combined': {'totalTitle': 'TotalCount',
-                 Ent.ROLE_MEMBER: {'titles': ['MembersCount', 'Members'],
-                                   'count': 0, 'email': []},
+                 Ent.ROLE_MEMBER: {'': {'titles': ['MembersCount', 'Members'],
+                                        'count': 0, 'email': []},
+                                   Ent.TYPE_CUSTOMER: {'titles': ['MembersTypeCustomerCount', 'MembersTypeCustomer'],
+                                                       'count': 0, 'email': []},
+                                   Ent.TYPE_GROUP: {'titles': ['MembersTypeGroupCount', 'MembersTypeGroup'],
+                                                    'count': 0, 'email': []},
+                                   Ent.TYPE_USER: {'titles': ['MembersTypeUserCount', 'MembersTypeUser'],
+                                                   'count': 0, 'email': []}},
                  Ent.ROLE_MANAGER: {'titles': ['ManagersCount', 'Managers'],
                                     'count': 0, 'email': []},
                  Ent.ROLE_OWNER: {'titles': ['OwnersCount', 'Owners'],
                                   'count': 0, 'email': []}},
     'internal': {'totalTitle': 'TotalInternalCount',
-                 Ent.ROLE_MEMBER: {'titles': ['InternalMembersCount', 'InternalMembers'],
-                                   'count': 0, 'email': []},
+                 Ent.ROLE_MEMBER: {'': {'titles': ['InternalMembersCount', 'InternalMembers'],
+                                        'count': 0, 'email': []},
+                                   Ent.TYPE_CUSTOMER: {'titles': ['InternalMembersTypeCustomerCount', 'InternalMembersTypeCustomer'],
+                                                       'count': 0, 'email': []},
+                                   Ent.TYPE_GROUP: {'titles': ['InternalMembersTypeGroupCount', 'InternalMembersTypeGroup'],
+                                                    'count': 0, 'email': []},
+                                   Ent.TYPE_USER: {'titles': ['InternalMembersTypeUserCount', 'InternalMembersTypeUser'],
+                                                   'count': 0, 'email': []}},
                  Ent.ROLE_MANAGER: {'titles': ['InternalManagersCount', 'InternalManagers'],
                                     'count': 0, 'email': []},
                  Ent.ROLE_OWNER: {'titles': ['InternalOwnersCount', 'InternalOwners'],
                                   'count': 0, 'email': []}},
     'external': {'totalTitle': 'TotalExternalCount',
-                 Ent.ROLE_MEMBER: {'titles': ['ExternalMembersCount', 'ExternalMembers'],
-                                   'count': 0, 'email': []},
+                 Ent.ROLE_MEMBER: {'': {'titles': ['ExternalMembersCount', 'ExternalMembers'],
+                                        'count': 0, 'email': []},
+                                   Ent.TYPE_GROUP: {'titles': ['ExternalMembersTypeGroupCount', 'ExternalMembersTypeGroup'],
+                                                    'count': 0, 'email': []},
+                                   Ent.TYPE_USER: {'titles': ['ExternalMembersTypeUserCount', 'ExternalMembersTypeUser'],
+                                                   'count': 0, 'email': []}},
                  Ent.ROLE_MANAGER: {'titles': ['ExternalManagersCount', 'ExternalManagers'],
                                     'count': 0, 'email': []},
                  Ent.ROLE_OWNER: {'titles': ['ExternalOwnersCount', 'ExternalOwners'],
                                   'count': 0, 'email': []}}}
   _checkMatch = _checkMemberMatch if not ciGroupsAPI else _checkCIMemberMatch
+  memberType = ''
   for member in groupMembers:
     if not ciGroupsAPI:
       member_email = member.get('email', member.get('id', None))
@@ -36133,25 +36191,49 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
         category = 'internal'
       if not memberDisplayOptions[category]:
         continue
-    if ((member['type'] in typesSet) and
+    memberType = member['type']
+    if ((memberType in typesSet) and
         (ciGroupsAPI or _checkMemberIsSuspendedIsArchived(member, isSuspended, isArchived)) and
         _checkMatch(member, memberOptions)):
       role = member.get('role', Ent.ROLE_MEMBER)
       if role not in {Ent.ROLE_MEMBER, Ent.ROLE_MANAGER, Ent.ROLE_OWNER}:
         role = Ent.ROLE_MEMBER
-      if memberDisplayOptions[role]['show']:
-        membersInfo[category][role]['count'] += 1
-        if not memberDisplayOptions[role]['countOnly']:
-          membersInfo[category][role]['email'].append(member_email)
+      if role == Ent.ROLE_MEMBER:
+        if not memberDisplayOptions['showMemberTypes']:
+          memberType = ''
+        if memberDisplayOptions[role]['show']:
+          membersInfo[category][role][memberType]['count'] += 1
+          if not memberDisplayOptions[role]['countOnly']:
+            membersInfo[category][role][memberType]['email'].append(member_email)
+      else:
+        if memberDisplayOptions[role]['show']:
+          membersInfo[category][role]['count'] += 1
+          if not memberDisplayOptions[role]['countOnly']:
+            membersInfo[category][role]['email'].append(member_email)
   totalCount = 0
   for category in memberDisplayOptions['categories']:
     categoryCount = 0
     for role in Ent.ROLE_LIST:
       if memberDisplayOptions[role]['show']:
-        categoryCount += membersInfo[category][role]['count']
-        row[membersInfo[category][role]['titles'][0]] = membersInfo[category][role]['count']
-        if not memberDisplayOptions[role]['countOnly']:
-          row[membersInfo[category][role]['titles'][1]] = delimiter.join(membersInfo[category][role]['email'])
+        if role == Ent.ROLE_MEMBER:
+          if not memberDisplayOptions['showMemberTypes']:
+            memberType = ''
+            categoryCount += membersInfo[category][role][memberType]['count']
+            row[membersInfo[category][role][memberType]['titles'][0]] = membersInfo[category][role][memberType]['count']
+            if not memberDisplayOptions[role]['countOnly']:
+              row[membersInfo[category][role][memberType]['titles'][1]] = delimiter.join(membersInfo[category][role][memberType]['email'])
+          else:
+            for memberType in CATEGORY_MEMBER_TYPES[category]:
+              if memberType in typesSet:
+                categoryCount += membersInfo[category][role][memberType]['count']
+                row[membersInfo[category][role][memberType]['titles'][0]] = membersInfo[category][role][memberType]['count']
+                if not memberDisplayOptions[role]['countOnly']:
+                  row[membersInfo[category][role][memberType]['titles'][1]] = delimiter.join(membersInfo[category][role][memberType]['email'])
+        else:
+          categoryCount += membersInfo[category][role]['count']
+          row[membersInfo[category][role]['titles'][0]] = membersInfo[category][role]['count']
+          if not memberDisplayOptions[role]['countOnly']:
+            row[membersInfo[category][role]['titles'][1]] = delimiter.join(membersInfo[category][role]['email'])
     if memberDisplayOptions['totalCount'] and category != 'combined':
       row[membersInfo[category]['totalTitle']] = categoryCount
     totalCount += categoryCount
@@ -36174,7 +36256,7 @@ def addMemberInfoToRow(row, groupMembers, typesSet, memberOptions, memberDisplay
 #	[internal] [internaldomains all|primary|<DomainNameList>] [external]
 #	[includederivedmembership]
 #	[notsuspended|suspended] [notarchived|archived]
-#	[types <GroupMemberTypeList>]
+#	[types <GroupMemberTypeList>] [showmembertypes]
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[convertcrnl] [delimiter <Character>] [sortheaders]
 #	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
@@ -36519,7 +36601,7 @@ def doPrintGroups():
   getRoles = ','.join(sorted(getRolesSet))
   showDetails = getRoles or getSettings or getCloudIdentity
   if rolesSet:
-    setMemberDisplayTitles(memberDisplayOptions, csvPF)
+    setMemberDisplayTitles(memberDisplayOptions, typesSet, csvPF)
   if entitySelection is None:
     entityList = []
     for kwargsQuery in makeUserGroupDomainQueryFilters(kwargsDict, None, None, None):
@@ -36658,7 +36740,7 @@ def doPrintGroups():
       if not deprecatedAttributesSet:
         sortTitles += sorted([attr[0] for attr in GROUP_DEPRECATED_ATTRIBUTES.values()])
     if rolesSet:
-      setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
+      setMemberDisplaySortTitles(memberDisplayOptions, typesSet, sortTitles)
     csvPF.SetSortTitles(sortTitles)
   csvPF.SortRows('email', False)
   csvPF.writeCSVfile('Groups')
@@ -38807,7 +38889,7 @@ def doPrintShowCIPolicies():
 #	[roles <GroupRoleList>] [memberrestrictions]
 #	[members|memberscount] [managers|managerscount] [owners|ownerscount] [totalcount] [countsonly]
 #	[internal] [internaldomains all|primary|<DomainNameList>] [external]
-#	[types <CIGroupMemberTypeList>]
+#	[types <CIGroupMemberTypeList>] [showmembertypes]
 #	[memberemaildisplaypattern|memberemailskippattern <REMatchPattern>]
 #	[convertcrnl] [delimiter <Character>]
 #	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
@@ -38966,7 +39048,7 @@ def doPrintCIGroups():
     getRolesSet.add(Ent.ROLE_OWNER)
   getRoles = ','.join(sorted(getRolesSet))
   if rolesSet:
-    setMemberDisplayTitles(memberDisplayOptions, csvPF)
+    setMemberDisplayTitles(memberDisplayOptions, typesSet, csvPF)
   if memberQuery:
     printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP, memberQuery)
     try:
@@ -39094,7 +39176,7 @@ def doPrintCIGroups():
       sortTitles.extend(sorted(addCSVData.keys()))
     sortTitles.extend(CIGROUP_PRINT_ORDER)
     if rolesSet:
-      setMemberDisplaySortTitles(memberDisplayOptions, sortTitles)
+      setMemberDisplaySortTitles(memberDisplayOptions, typesSet, sortTitles)
     csvPF.SetSortTitles(sortTitles)
   csvPF.SortRows('email', False)
   csvPF.writeCSVfile('Cloud Identity Groups')
@@ -55205,7 +55287,7 @@ def printShowCalendars(users):
       calendars = []
       for calendar in allCalendars:
         if calendar.get('dataOwner', '') == user:
-          calendars.append(calendar)          
+          calendars.append(calendar)
     elif primaryOnly:
       for calendar in calendars:
         if calendar.get('primary', False):
