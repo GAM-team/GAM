@@ -21,8 +21,6 @@
 
 GAM_VER_LIBS = [
   'arrow',
-  'chardet',
-  'charset_normalizer',
   'cryptography',
   'filelock',
   'google-api-python-client',

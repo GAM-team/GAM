@@ -972,11 +972,13 @@ jobs:
           driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
           echo "Created shared drive ${driveid}"
           run_gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password uniquerandom recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "$newou"
+          run_gam create scimuser $newscimuser firstname "GHA SCIM" lastname "$JID"
           run_gam user $newuser update photo https://dummyimage.com/98x98/000/fff.jpg
           run_gam user $newuser get photo
           run_gam user $newuser delete photo
           run_gam create alias $newalias user $newuser
           run_gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
+          run_gam create scimgroup $newscimgroup name "GHA SCIM group $JID" externalid "gha-scimgrp-${JID}"
           run_gam user $gam_user sendemail recipient dev-null@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
           run_gam user $newuser add license workspaceenterpriseplus
           run_gam update user $newuser ou root # GAM synonym for / root OU 
@@ -1137,12 +1139,10 @@ jobs:
           run_gam show scimschemas
           run_gam show scimresourcetypes
           run_gam show scimconfig
-          run_gam create scimuser $newscimuser firstname "GHA SCIM" lastname "$JID"
+          run_gam update user $newscimuser gha.jid $JID
           run_gam info scimuser $newscimuser
           run_gam show scimusers filter "userName eq \"$newscimuser\""
           run_gam print scimusers filter "userName eq \"$newscimuser\""
-          run_gam update scimuser $newscimuser externalid "gha-${JID}"
-          run_gam create scimgroup $newscimgroup name "GHA SCIM group $JID" externalid "gha-scimgrp-${JID}"
           run_gam info scimgroup $newscimgroup formatjson
           run_gam show scimgroups filter "externalId eq \"gha-scimgrp-${JID}\""
           run_gam print scimgroups filter "displayName eq \"GHA SCIM group $JID\""
