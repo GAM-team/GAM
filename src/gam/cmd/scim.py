@@ -656,7 +656,66 @@ def doPrintShowSCIMGroups():
 # Schema commands
 # ---------------------------------------------------------------------------
 
-SCHEMA_PRINT_ORDER = ['id', 'name', 'description', 'attributes']
+
+def _formatAttrFlags(attr):
+  """Build a compact flags string like (string, required, unique:server, readWrite)."""
+  parts = []
+  atype = attr.get('type', 'string')
+  if attr.get('multiValued'):
+    atype += '[]'
+  parts.append(atype)
+  if attr.get('required'):
+    parts.append('required')
+  mutability = attr.get('mutability')
+  if mutability and mutability != 'readWrite':
+    parts.append(mutability)
+  uniqueness = attr.get('uniqueness')
+  if uniqueness and uniqueness != 'none':
+    parts.append(f'unique:{uniqueness}')
+  returned = attr.get('returned')
+  if returned and returned != 'default':
+    parts.append(f'returned:{returned}')
+  if attr.get('caseExact'):
+    parts.append('caseExact')
+  return ', '.join(parts)
+
+
+def _showSchemaAttributes(attributes, depth=0):
+  """Recursively display schema attributes in human-readable format."""
+  for attr in attributes:
+    name = attr.get('name', '?')
+    flags = _formatAttrFlags(attr)
+    printKeyValueList([name, f'({flags})'])
+    desc = attr.get('description')
+    if desc:
+      Ind.Increment()
+      printKeyValueList([desc])
+      Ind.Decrement()
+    sub_attrs = attr.get('subAttributes', [])
+    if sub_attrs:
+      Ind.Increment()
+      _showSchemaAttributes(sub_attrs, depth + 1)
+      Ind.Decrement()
+
+
+def _showSCIMSchema(schema, FJQC, i=0, count=0):
+  """Display a SCIM schema in human-readable format."""
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(schema), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.SCIM_SCHEMA, schema.get('id', '')], i, count)
+  Ind.Increment()
+  printKeyValueList(['Name', schema.get('name', '')])
+  desc = schema.get('description')
+  if desc:
+    printKeyValueList(['Description', desc])
+  attributes = schema.get('attributes', [])
+  if attributes:
+    printKeyValueList([f'Attributes ({len(attributes)})', ''])
+    Ind.Increment()
+    _showSchemaAttributes(attributes)
+    Ind.Decrement()
+  Ind.Decrement()
 
 
 # gam info scimschema <schemaURN> [formatjson]
@@ -672,8 +731,7 @@ def doInfoSCIMSchema():
                       throwReasons=[GAPI.NOT_FOUND,
                                     GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       customerId=customerId(), schemaId=schemaId)
-    _showSCIMResource(result, Ent.SCIM_SCHEMA, result.get('id', schemaId),
-                      SCHEMA_PRINT_ORDER, FJQC)
+    _showSCIMSchema(result, FJQC)
   except GAPI.notFound:
     entityDoesNotExistWarning(Ent.SCIM_SCHEMA, schemaId)
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
@@ -710,8 +768,7 @@ def doPrintShowSCIMSchemas():
       else:
         _printSCIMResourceCSV(schema, csvPF)
     else:
-      _showSCIMResource(schema, Ent.SCIM_SCHEMA, schema.get('id', ''),
-                        SCHEMA_PRINT_ORDER, FJQC, i, jcount)
+      _showSCIMSchema(schema, FJQC, i, jcount)
   if csvPF:
     csvPF.writeCSVfile('SCIM Schemas')
 
