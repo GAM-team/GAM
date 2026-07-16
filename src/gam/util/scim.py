@@ -21,8 +21,6 @@ SCHEMA_ENTERPRISE_USER = (
     'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User')
 SCHEMA_CI_GROUP = (
     'urn:ietf:params:scim:schemas:extension:google:2.0:CloudIdentityGroup')
-SCHEMA_CI_CUSTOM_USER = (
-    'urn:ietf:params:scim:schemas:extension:google:2.0:CloudIdentityCustomUser')
 SCHEMA_PATCH_OP = 'urn:ietf:params:scim:api:messages:2.0:PatchOp'
 
 # Max operations per PATCH request (documented in discovery doc)
@@ -118,7 +116,7 @@ def batchOps(operations, max_ops):
 # User body builder
 # ---------------------------------------------------------------------------
 
-def newUserBody(email, name=None, enterprise=None, custom=None, **kwargs):
+def newUserBody(email, name=None, enterprise=None, **kwargs):
   """Build a SCIM User creation body.
 
   No password field — SCIM users are passwordless.
@@ -132,9 +130,6 @@ def newUserBody(email, name=None, enterprise=None, custom=None, **kwargs):
   if enterprise:
     body['schemas'].append(SCHEMA_ENTERPRISE_USER)
     body[SCHEMA_ENTERPRISE_USER] = enterprise
-  if custom:
-    body['schemas'].append(SCHEMA_CI_CUSTOM_USER)
-    body[SCHEMA_CI_CUSTOM_USER] = custom
   body.update(kwargs)
   return body
 
