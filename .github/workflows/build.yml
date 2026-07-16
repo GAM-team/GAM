@@ -928,6 +928,8 @@ jobs:
           export newbuilding="${newbase}-building"
           export newresource="${newbase}-resource"
           export newou="aaaGithub Actions/${newbase}"
+          export newscimuser="${newbase}-scim@pdl.jaylee.us"
+          export newscimgroup="${newbase}-scimgrp@pdl.jaylee.us"
 
           echo "### GAM Execution Report" >> $GITHUB_STEP_SUMMARY
           echo "| Command | Status |" >> $GITHUB_STEP_SUMMARY
@@ -1130,6 +1132,24 @@ jobs:
           printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
           run_gam info printer "$printerid"
           run_gam delete printer "$printerid"
+
+          # ── SCIM API tests ──
+          run_gam show scimschemas
+          run_gam show scimresourcetypes
+          run_gam show scimconfig
+          run_gam create scimuser $newscimuser firstname "GHA SCIM" lastname "$JID"
+          run_gam info scimuser $newscimuser
+          run_gam update scimuser $newscimuser externalid "gha-${JID}"
+          run_gam show scimusers filter "userName eq \"$newscimuser\""
+          run_gam print scimusers filter "userName eq \"$newscimuser\""
+          run_gam create scimgroup $newscimgroup name "GHA SCIM group $JID" externalid "gha-scimgrp-${JID}"
+          run_gam info scimgroup "id:$(run_gam print scimgroups filter "displayName eq \"GHA SCIM group $JID\"" | tail -1 | cut -d, -f1)" formatjson
+          run_gam show scimgroups filter "externalId eq \"gha-scimgrp-${JID}\""
+          run_gam print scimgroups filter "displayName eq \"GHA SCIM group $JID\""
+          run_gam delete scimuser $newscimuser
+          run_gam -a "0 3 50" config csv_output_row_filter "'displayName:regex:GHA SCIM group $JID'" redirect csv ./scimgroups-cleanup.csv print scimgroups filter "displayName eq \"GHA SCIM group $JID\""
+          run_gam csv ./scimgroups-cleanup.csv gam delete scimgroup "id:~~id~~"
+
           run_gam delete ou "${newou}"
 
       - name: Tar Cache archive
