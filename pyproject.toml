@@ -10,14 +10,14 @@ authors = [
 dependencies = [
     "arrow==1.4.0",
     "chardet==7.4.3",
-    "cryptography==48.0.1",
+    "cryptography==49.0.0",
     "distro==1.9.0 ; sys_platform=='linux'",
     "filelock==3.29.4",
-    "google-api-python-client==2.197.0",
+    "google-api-python-client==2.198.0",
     "google-auth-httplib2==0.4.0",
     "google-auth-oauthlib==1.4.0",
     "google-auth==2.55.1",
-    "httplib2==0.31.2",
+    "httplib2==0.32.0",
     "passlib==1.7.4",
     "pathvalidate==3.3.1",
     "pysocks==1.7.1",
@@ -43,7 +43,7 @@ text = "Apache License (2.0)"
 
 [project.optional-dependencies]
 yubikey = [
-    "yubikey-manager==5.9.1",
+    "yubikey-manager==5.9.2",
 ]
 
 [project.scripts]
