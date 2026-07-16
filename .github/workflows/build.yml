@@ -33,8 +33,22 @@ env:
   WINDOWS_CODESIGN_CERT_HASH: 3B11D9340A45CF078FF7FD984F1C3E30DA82FD05
 
 jobs:
+  set-version:
+    runs-on: ubuntu-latest
+    outputs:
+      gamversion: ${{ steps.version.outputs.gamversion }}
+    steps:
+      - id: version
+        run: |
+          GAMVERSION="7.$(date -u +'%Y.%m%d.%H%M')"
+          echo "gamversion=${GAMVERSION}" >> $GITHUB_OUTPUT
+          echo "GAM Version: ${GAMVERSION}"
+
   build:
+    needs: set-version
     runs-on: ${{ matrix.os }}
+    env:
+      GAMVERSION: ${{ needs.set-version.outputs.gamversion }}
     strategy:
       fail-fast: false
       matrix:
@@ -153,6 +167,10 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+
+      - name: Inject version into source
+        run: |
+          python3 tools/set_version.py gam/__init__.py "${GAMVERSION}"
 
       - id: auth
         name: Authenticate to Google Cloud
@@ -673,9 +691,12 @@ jobs:
         id: basictests
         run: |
           $gam version extended nooffseterror
-          export GAMVERSION=$($gam version simple)
           echo "GAM Version ${GAMVERSION}"
-          echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
+          export reported=$($gam version simple)
+          if [[ "${reported}" != "${GAMVERSION}" ]]; then
+            echo "ERROR: Expected version ${GAMVERSION} but gam reports ${reported}"
+            exit 1
+          fi
 
       - name: Install NPM deps
         if: runner.os == 'Windows'
@@ -1162,7 +1183,7 @@ jobs:
         with:
           draft: true
           prerelease: false
-          tag_name: "${{ steps.dateversion.outputs.dateversion }}"
+          tag_name: "${{ needs.set-version.outputs.gamversion }}"
           fail_on_unmatched_files: true
           files: |
             gam-binaries/*
