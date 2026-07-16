@@ -32,13 +32,18 @@ VALID_EMAIL_TYPES = ('home', 'work', 'other')
 VALID_PHONE_TYPES = ('home', 'work', 'mobile', 'fax', 'pager', 'other')
 VALID_ADDRESS_TYPES = ('home', 'work', 'other')
 
-# ---------------------------------------------------------------------------
-# Service + Resource Accessors
-# ---------------------------------------------------------------------------
+# Map config setting values to API constants
+_SCIM_VERSION_MAP = {
+    'v1': API.CLOUDIDENTITYSCIM,
+    'v1beta1': API.CLOUDIDENTITYSCIM_BETA,
+    'v1alpha1': API.CLOUDIDENTITYSCIM_ALPHA,
+}
 
 def buildSCIMObject():
-  """Build the SCIM service via standard authenticated discovery."""
-  return buildGAPIObject(API.CLOUDIDENTITYSCIM)
+  """Build the SCIM service using the version from gam.cfg scim_api_version."""
+  version = GC.Values.get(GC.SCIM_API_VERSION, 'v1')
+  api = _SCIM_VERSION_MAP.get(version, API.CLOUDIDENTITYSCIM)
+  return buildGAPIObject(api)
 
 
 def scimUsers(scim):

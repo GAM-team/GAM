@@ -249,6 +249,8 @@ RESELLER_ID = 'reseller_id'
 RETRY_API_SERVICE_NOT_AVAILABLE = 'retry_api_service_not_available'
 # Default section to use for processing
 SECTION = 'section'
+# SCIM API version: v1, v1beta1, v1alpha1
+SCIM_API_VERSION = 'scim_api_version'
 # Show API calls retry data
 SHOW_API_CALLS_RETRY_DATA = 'show_api_calls_retry_data'
 # Show commands when processing batch/csv/loop
@@ -438,6 +440,7 @@ Defaults = {
   RESELLER_ID: '',
   RETRY_API_SERVICE_NOT_AVAILABLE: FALSE,
   SECTION: '',
+  SCIM_API_VERSION: 'v1',
   SHOW_API_CALLS_RETRY_DATA: FALSE,
   SHOW_COMMANDS: FALSE,
   SHOW_CONVERT_CR_NL: FALSE,
@@ -612,6 +615,7 @@ VAR_INFO = {
   RESELLER_ID: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   RETRY_API_SERVICE_NOT_AVAILABLE: {VAR_TYPE: TYPE_BOOLEAN},
   SECTION: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
+  SCIM_API_VERSION: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'v1': 'v1', 'v1beta1': 'v1beta1', 'v1alpha1': 'v1alpha1'}},
   SHOW_API_CALLS_RETRY_DATA: {VAR_TYPE: TYPE_BOOLEAN},
   SHOW_COMMANDS: {VAR_TYPE: TYPE_BOOLEAN},
   SHOW_CONVERT_CR_NL: {VAR_TYPE: TYPE_BOOLEAN},

@@ -1,0 +1,1431 @@
+{
+  "auth": {
+    "oauth2": {
+      "scopes": {
+        "https://www.googleapis.com/auth/admin.directory.user": {
+          "description": "View and manage the provisioning of users on your domain"
+        },
+        "https://www.googleapis.com/auth/admin.directory.user.readonly": {
+          "description": "See info about users on your domain"
+        },
+        "https://www.googleapis.com/auth/cloud-identity.groups": {
+          "description": "See, change, create, and delete any of the Cloud Identity Groups that you can access, including the members of each group"
+        },
+        "https://www.googleapis.com/auth/cloud-identity.groups.readonly": {
+          "description": "See any Cloud Identity Groups that you can access, including group members and their emails"
+        },
+        "https://www.googleapis.com/auth/cloud-platform": {
+          "description": "See, edit, configure, and delete your Google Cloud data and see the email address for your Google Account."
+        }
+      }
+    }
+  },
+  "basePath": "",
+  "baseUrl": "https://cloudidentityscim.googleapis.com/",
+  "batchPath": "batch",
+  "canonicalName": "Cloud Identity SCIM",
+  "description": "cloudidentityscim.googleapis.com API.",
+  "discoveryVersion": "v1",
+  "documentationLink": "https://cloud.google.com/identity/",
+  "fullyEncodeReservedExpansion": true,
+  "icons": {
+    "x16": "http://www.google.com/images/icons/product/search-16.gif",
+    "x32": "http://www.google.com/images/icons/product/search-32.gif"
+  },
+  "id": "cloudidentityscim:v1beta1",
+  "kind": "discovery#restDescription",
+  "mtlsRootUrl": "https://cloudidentityscim.mtls.googleapis.com/",
+  "name": "cloudidentityscim",
+  "ownerDomain": "google.com",
+  "ownerName": "Google",
+  "parameters": {
+    "$.xgafv": {
+      "description": "V1 error format.",
+      "enum": [
+        "1",
+        "2"
+      ],
+      "enumDescriptions": [
+        "v1 error format",
+        "v2 error format"
+      ],
+      "location": "query",
+      "type": "string"
+    },
+    "access_token": {
+      "description": "OAuth access token.",
+      "location": "query",
+      "type": "string"
+    },
+    "alt": {
+      "default": "json",
+      "description": "Data format for response.",
+      "enum": [
+        "json",
+        "media",
+        "proto"
+      ],
+      "enumDescriptions": [
+        "Responses with Content-Type of application/json",
+        "Media download with context-dependent Content-Type",
+        "Responses with Content-Type of application/x-protobuf"
+      ],
+      "location": "query",
+      "type": "string"
+    },
+    "callback": {
+      "description": "JSONP",
+      "location": "query",
+      "type": "string"
+    },
+    "fields": {
+      "description": "Selector specifying which fields to include in a partial response.",
+      "location": "query",
+      "type": "string"
+    },
+    "key": {
+      "description": "API key. Your API key identifies your project and provides you with API access, quota, and reports. Required unless you provide an OAuth 2.0 token.",
+      "location": "query",
+      "type": "string"
+    },
+    "oauth_token": {
+      "description": "OAuth 2.0 token for the current user.",
+      "location": "query",
+      "type": "string"
+    },
+    "prettyPrint": {
+      "default": "true",
+      "description": "Returns response with indentations and line breaks.",
+      "location": "query",
+      "type": "boolean"
+    },
+    "quotaUser": {
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters.",
+      "location": "query",
+      "type": "string"
+    },
+    "uploadType": {
+      "description": "Legacy upload protocol for media (e.g. \"media\", \"multipart\").",
+      "location": "query",
+      "type": "string"
+    },
+    "upload_protocol": {
+      "description": "Upload protocol for media (e.g. \"raw\", \"multipart\").",
+      "location": "query",
+      "type": "string"
+    }
+  },
+  "protocol": "rest",
+  "resources": {
+    "customers": {
+      "resources": {
+        "v2": {
+          "resources": {
+            "Groups": {
+              "methods": {
+                "create": {
+                  "description": "Creates a Group.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Groups",
+                  "httpMethod": "POST",
+                  "id": "cloudidentityscim.customers.v2.Groups.create",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Groups",
+                  "request": {
+                    "$ref": "Group"
+                  },
+                  "response": {
+                    "$ref": "Group"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "delete": {
+                  "description": "Deletes a Group.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Groups/{groupId}",
+                  "httpMethod": "DELETE",
+                  "id": "cloudidentityscim.customers.v2.Groups.delete",
+                  "parameterOrder": [
+                    "customerId",
+                    "groupId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "groupId": {
+                      "description": "Required. The group ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Groups/{groupId}",
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "get": {
+                  "description": "Retrieves a Group.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Groups/{groupId}",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.Groups.get",
+                  "parameterOrder": [
+                    "customerId",
+                    "groupId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "groupId": {
+                      "description": "Required. The group ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Groups/{groupId}",
+                  "response": {
+                    "$ref": "Group"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "list": {
+                  "description": "Retrieves a list of Groups. * Requests must specify a filter. Requests without a `filter` parameter return a `tooMany` error. * The `filter` parameter only supports equality on `displayName` (for example, `displayName eq \"Group Name\"`) or `externalId` (for example, `externalId eq \"ddaafa46e2b6\"`). * Sub-string matches (`co`, `sw`, `ew`), logical operators (`and`, `or`), and complex value filters are not supported. * Pagination is not supported. If there are more than 50 group matches, only the first 50 results will be returned.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Groups",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.Groups.list",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "filter": {
+                      "description": "The filter parameter.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Groups",
+                  "response": {
+                    "$ref": "ListGroupsResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "patch": {
+                  "description": "Updates a Group using SCIM patch semantics. * A maximum of **2** operations is supported per Group patch request. * A maximum of **1** member addition or removal is supported per Group patch request. * Supported operations and attributes: * `add`: Supported for `displayName`, `description`, `members`, and `externalId`. * `remove`: Supported for `description` and `members` (requires a value filter using the `eq` operator on the `value` sub-attribute, for example, `\"path\": \"members[value eq \\\"\\\"]\"`). * `replace`: Supported for `displayName` and `description`.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Groups/{groupId}",
+                  "httpMethod": "PATCH",
+                  "id": "cloudidentityscim.customers.v2.Groups.patch",
+                  "parameterOrder": [
+                    "customerId",
+                    "groupId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "groupId": {
+                      "description": "Required. The group ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Groups/{groupId}",
+                  "request": {
+                    "$ref": "PatchBody"
+                  },
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+            },
+            "ResourceTypes": {
+              "methods": {
+                "get": {
+                  "description": "Retrieves a specific resource type.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/ResourceTypes/{resourceTypeId}",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.ResourceTypes.get",
+                  "parameterOrder": [
+                    "customerId",
+                    "resourceTypeId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "resourceTypeId": {
+                      "description": "Required. The resource type ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/ResourceTypes/{resourceTypeId}",
+                  "response": {
+                    "$ref": "ResourceType"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly",
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "list": {
+                  "description": "Retrieves all resource types.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/ResourceTypes",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.ResourceTypes.list",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/ResourceTypes",
+                  "response": {
+                    "$ref": "ListResourceTypesResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly",
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+            },
+            "Schemas": {
+              "methods": {
+                "get": {
+                  "description": "Retrieves a Schema.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Schemas/{schemaId}",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.Schemas.get",
+                  "parameterOrder": [
+                    "customerId",
+                    "schemaId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "schemaId": {
+                      "description": "Required. The schema's ID. Example: `urn:ietf:params:scim:schemas:core:2.0:User`.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Schemas/{schemaId}",
+                  "response": {
+                    "$ref": "Schema"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly",
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                },
+                "list": {
+                  "description": "Retrieves all Schemas.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Schemas",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.Schemas.list",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Schemas",
+                  "response": {
+                    "$ref": "ListSchemasResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly",
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+            },
+            "ServiceProviderConfig": {
+              "methods": {
+                "get": {
+                  "description": "Retrieves the Service Provider Configuration.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/ServiceProviderConfig",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.ServiceProviderConfig.get",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/ServiceProviderConfig",
+                  "response": {
+                    "$ref": "ServiceProviderConfig"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly",
+                    "https://www.googleapis.com/auth/cloud-identity.groups",
+                    "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+                    "https://www.googleapis.com/auth/cloud-platform"
+                  ]
+                }
+              }
+            },
+            "Users": {
+              "methods": {
+                "create": {
+                  "description": "Creates a User. * When creating a user that conflicts with an existing unmanaged consumer account, the API response depends on your conflicting [account management settings](https://knowledge.workspace.google.com/admin/users/find-and-add-unmanaged-users#set_option): * `201 Created`: Returned if no settings are configured, or the option is set to **Replace their conflicting account with managed one**. * `202 Accepted`: Returned if the option is set to **Automatically invite users**. * `409 Conflict`: Returned if the option is set to **Preserve their conflicting account**.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Users",
+                  "httpMethod": "POST",
+                  "id": "cloudidentityscim.customers.v2.Users.create",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Users",
+                  "request": {
+                    "$ref": "User"
+                  },
+                  "response": {
+                    "$ref": "User"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user"
+                  ]
+                },
+                "delete": {
+                  "description": "Deletes a User.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Users/{userId}",
+                  "httpMethod": "DELETE",
+                  "id": "cloudidentityscim.customers.v2.Users.delete",
+                  "parameterOrder": [
+                    "customerId",
+                    "userId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "userId": {
+                      "description": "Required. The user ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Users/{userId}",
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user"
+                  ]
+                },
+                "get": {
+                  "description": "Retrieves a User.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Users/{userId}",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.Users.get",
+                  "parameterOrder": [
+                    "customerId",
+                    "userId"
+                  ],
+                  "parameters": {
+                    "attributes": {
+                      "description": "Optional. The attributes parameter as described in RFC 7644 Section 3.4.2.5. Must be a comma-separated list (without spaces) of top-level attributes. Must contain only top-level attributes. Sub-attributes (for example, `name.familyName`) are not supported within the `attributes` parameter.",
+                      "location": "query",
+                      "type": "string"
+                    },
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "userId": {
+                      "description": "Required. The user ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Users/{userId}",
+                  "response": {
+                    "$ref": "User"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly"
+                  ]
+                },
+                "list": {
+                  "description": "Retrieves a list of Users. * Requests must specify a filter. Requests without a `filter` parameter return a `tooMany` error. * The `filter` parameter only supports equality on `userName` (for example, `userName eq \"user@domain.com\"`). * Sub-string matches (`co`, `sw`, `ew`), logical operators (`and`, `or`), and complex value filters are not supported. * Pagination is not supported.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Users",
+                  "httpMethod": "GET",
+                  "id": "cloudidentityscim.customers.v2.Users.list",
+                  "parameterOrder": [
+                    "customerId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "filter": {
+                      "description": "The filter parameter. Currently only supports equality on userName.",
+                      "location": "query",
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Users",
+                  "response": {
+                    "$ref": "ListUsersResponse"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user",
+                    "https://www.googleapis.com/auth/admin.directory.user.readonly"
+                  ]
+                },
+                "patch": {
+                  "description": "Updates a User using SCIM patch semantics. * A maximum of **20** operations is supported per User patch request.",
+                  "flatPath": "v1beta1/customers/{customerId}/v2/Users/{userId}",
+                  "httpMethod": "PATCH",
+                  "id": "cloudidentityscim.customers.v2.Users.patch",
+                  "parameterOrder": [
+                    "customerId",
+                    "userId"
+                  ],
+                  "parameters": {
+                    "customerId": {
+                      "description": "Required. The customer ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    },
+                    "userId": {
+                      "description": "Required. The user ID.",
+                      "location": "path",
+                      "required": true,
+                      "type": "string"
+                    }
+                  },
+                  "path": "v1beta1/customers/{customerId}/v2/Users/{userId}",
+                  "request": {
+                    "$ref": "PatchBody"
+                  },
+                  "response": {
+                    "$ref": "Empty"
+                  },
+                  "scopes": [
+                    "https://www.googleapis.com/auth/admin.directory.user"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "retrieved_from": "https://cloudidentityscim.googleapis.com/$discovery/rest?version=v1beta1&key=****",
+  "rootUrl": "https://cloudidentityscim.googleapis.com/",
+  "schemas": {
+    "Address": {
+      "description": "SCIM representation of a user's address.",
+      "id": "Address",
+      "properties": {
+        "country": {
+          "description": "The country.",
+          "type": "string"
+        },
+        "formatted": {
+          "description": "Full address, formatted for display.",
+          "type": "string"
+        },
+        "locality": {
+          "description": "The city or locality.",
+          "type": "string"
+        },
+        "postalCode": {
+          "description": "The postal code or zip code.",
+          "type": "string"
+        },
+        "primary": {
+          "description": "Indicates if this is the user's primary address.",
+          "type": "boolean"
+        },
+        "region": {
+          "description": "The region or state.",
+          "type": "string"
+        },
+        "streetAddress": {
+          "description": "The street address.",
+          "type": "string"
+        },
+        "type": {
+          "description": "The type of the address. Valid values are `home`, `work`, and `other`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Attribute": {
+      "description": "From [RFC 7643 Section 7](https://datatracker.ietf.org/doc/html/rfc7643#section-7:~:text=attribute%20is%20defined%3A-,attributes,-A%20complex%20type). Defines the characteristics of an attribute.",
+      "id": "Attribute",
+      "properties": {
+        "canonicalValues": {
+          "description": "Optional. A collection of suggested canonical values that can be used (for example, `work` and `home`). In some cases, service providers might choose to ignore unsupported values.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "caseExact": {
+          "description": "Specifies whether or not a string attribute is case sensitive. The server uses case sensitivity when evaluating filters. For attributes that are case exact, the server preserves case for any value submitted. If the attribute is case-insensitive, the server might alter case for a submitted value. Case sensitivity also impacts how attribute values might be compared against filter values (see [RFC 7644 Section 3.4.2.2](https://datatracker.ietf.org/doc/html/rfc7644#section-3.4.2.2)). As per [RFC 7643 Section 2.3.6](https://datatracker.ietf.org/doc/html/rfc7643#section-2.3.6) and [RFC 7643 Section 2.3.7](https://datatracker.ietf.org/doc/html/rfc7643#section-2.3.7), `binary` and `reference` types are `caseExact`.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "The attribute's human-readable description. When applicable, service providers must specify the description.",
+          "type": "string"
+        },
+        "multiValued": {
+          "description": "Indicates the attribute's plurality.",
+          "type": "boolean"
+        },
+        "mutability": {
+          "description": "A single keyword indicating the circumstances under which the value of the attribute can be (re)defined: * `readOnly`: The attribute is not modifiable. * `readWrite`: Default. The attribute can be updated and read at any time. * `immutable`: The attribute can be defined at resource creation (for example, POST) or at record replacement via a request (for example, a PUT). The attribute is not modifiable after initial definition. * `writeOnly`: The attribute can be updated at any time. Attribute values are not returned (for example, because the value is a stored hash). Note: An attribute with a mutability of `writeOnly` usually also has a returned setting of `never`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The attribute's name.",
+          "type": "string"
+        },
+        "referenceTypes": {
+          "description": "A multi-valued array of JSON strings that indicate the SCIM resource types that can be referenced. Valid values are as follows: * A SCIM resource type (for example, `User` or `Group`), * `external` - indicating that the resource is an external resource (for example, a photo), or * `uri` - indicating that the reference is to a service endpoint or an identifier (for example, a schema URN). This attribute is only applicable for attributes that are of type `reference` (Section 2.3.7).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "required": {
+          "description": "Specifies whether or not the attribute is required.",
+          "type": "boolean"
+        },
+        "returned": {
+          "description": "A single keyword that indicates when an attribute and associated values are returned in response to a GET request or in response to a PUT, POST, or PATCH request. Valid keywords are as follows: * `always`: The attribute is always returned, regardless of the contents of the `attributes` parameter. For example, `id` is always returned to identify a SCIM resource. * `never`: The attribute is never returned. This might occur because the original attribute value (for example, a hashed value) is not retained by the service provider. A service provider can allow attributes to be used in a search filter. * `default`: Default. The attribute is returned by default in all SCIM operation responses where attribute values are returned. If the GET request `attributes` parameter is specified, attribute values are only returned if the attribute is named in the `attributes` parameter. * `request`: The attribute is returned in response to any PUT, POST, or PATCH operations if the attribute was specified by the client (for example, the attribute was modified). The attribute is returned in a SCIM query operation only if specified in the `attributes` parameter.",
+          "type": "string"
+        },
+        "subAttributes": {
+          "description": "When an attribute is of type `complex`, `subAttributes` defines a set of sub-attributes. `subAttributes` has the same schema sub-attributes as `attributes`.",
+          "items": {
+            "$ref": "Attribute"
+          },
+          "type": "array"
+        },
+        "type": {
+          "description": "The attribute's data type. Valid values are `string`, `boolean`, `decimal`, `integer`, `dateTime`, `reference`, and `complex`. When an attribute is of type `complex`, there should be a corresponding schema attribute `subAttributes` defined, listing the sub-attributes of the attribute.",
+          "type": "string"
+        },
+        "uniqueness": {
+          "description": "A single keyword value that specifies how the service provider enforces uniqueness of attribute values. A server might reject an invalid value based on uniqueness by returning HTTP response code `400 Bad Request`. A client can enforce uniqueness on the client side to a greater degree than the service provider enforces. For example, a client could make a value unique while the server has uniqueness of `none`. Valid keywords are as follows: * `none`: Default. The values are not intended to be unique in any way. * `server`: The value should be unique within the context of the current SCIM endpoint (or tenancy) and might be globally unique (for example, a user name, email address, or other server-generated key or counter). No two resources on the same server should possess the same value. * `global`: The value should be globally unique (for example, an email address, a GUID, or other value). No two resources on any server should possess the same value. As specified in [RFC 7643 Section 2.3](https://datatracker.ietf.org/doc/html/rfc7643#section-2.3), `Boolean`, `DateTime`, `Binary`, and `Complex` data types do not have uniqueness.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "AuthenticationScheme": {
+      "description": "A multi-valued complex type that specifies supported authentication schemes.",
+      "id": "AuthenticationScheme",
+      "properties": {
+        "description": {
+          "description": "Output only. A description of the authentication scheme.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "documentationUri": {
+          "description": "Output only. An HTTP-addressable URL pointing to the authentication scheme's documentation.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "name": {
+          "description": "Output only. The name of the authentication scheme.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "primary": {
+          "description": "Output only. Indicates the `primary` or preferred authentication scheme.",
+          "readOnly": true,
+          "type": "boolean"
+        },
+        "specUri": {
+          "description": "Output only. An HTTP-addressable URL pointing to the authentication scheme's specification.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "type": {
+          "description": "Output only. The authentication scheme type.",
+          "readOnly": true,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "BulkFeature": {
+      "description": "A complex type that specifies bulk operation support.",
+      "id": "BulkFeature",
+      "properties": {
+        "maxOperations": {
+          "description": "Output only. Specifies the maximum number of operations.",
+          "format": "int32",
+          "readOnly": true,
+          "type": "integer"
+        },
+        "maxPayloadSize": {
+          "description": "Output only. Specifies the maximum payload size in bytes.",
+          "format": "int32",
+          "readOnly": true,
+          "type": "integer"
+        },
+        "supported": {
+          "description": "Output only. Specifies whether or not the operation is supported.",
+          "readOnly": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ChangePasswordFeature": {
+      "description": "A complex type that specifies change password support.",
+      "id": "ChangePasswordFeature",
+      "properties": {
+        "supported": {
+          "description": "Output only. Specifies whether or not the operation is supported.",
+          "readOnly": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "CloudIdentityGroupExtension": {
+      "description": "Defines the attributes for the Google Cloud Identity Group extension. The schema URN for this extension is: `urn:ietf:params:scim:schemas:extension:google:2.0:CloudIdentityGroup`.",
+      "id": "CloudIdentityGroupExtension",
+      "properties": {
+        "description": {
+          "description": "Optional. An extended description to help users determine the purpose of a `Group`. Limit: 4,096 characters.",
+          "type": "string"
+        },
+        "email": {
+          "description": "Required. The group's email address. If your account has multiple domains, select the appropriate domain for the email address. The `email` must be unique. Group email addresses are subject to the same character usage rules as usernames. For details, see the [help center documentation](https://support.google.com/a/answer/9193374).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Email": {
+      "description": "SCIM representation of a user's email.",
+      "id": "Email",
+      "properties": {
+        "primary": {
+          "description": "Output only. Indicates if this is the user's primary email. This value is set to `true` only for the email which corresponds to `userName`.",
+          "readOnly": true,
+          "type": "boolean"
+        },
+        "type": {
+          "description": "The type of the email account. Valid values are `home`, `work`, and `other`.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Required. The user's email address.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Empty": {
+      "description": "A generic empty message that you can re-use to avoid defining duplicated empty messages in your APIs. A typical example is to use it as the request or the response type of an API method. For instance: service Foo { rpc Bar(google.protobuf.Empty) returns (google.protobuf.Empty); }",
+      "id": "Empty",
+      "properties": {},
+      "type": "object"
+    },
+    "EnterpriseUserExtension": {
+      "description": "Defines the attributes for the SCIM Enterprise User extension. The schema URN for this extension is: `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User`. See [RFC 7643 Section 4.3](https://datatracker.ietf.org/doc/html/rfc7643#section-4.3) for more details.",
+      "id": "EnterpriseUserExtension",
+      "properties": {
+        "costCenter": {
+          "description": "Optional. Identifier for the cost center to which the user's expenditures are attributed.",
+          "type": "string"
+        },
+        "department": {
+          "description": "Optional. The name of a department user belongs to in the text format.",
+          "type": "string"
+        },
+        "employeeNumber": {
+          "description": "Optional. Identifier, typically assigned by the organization, used to identify the user inside the organization.",
+          "type": "string"
+        },
+        "organization": {
+          "description": "Optional. The name of an organization a user belongs to.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "EtagFeature": {
+      "description": "A complex type that specifies ETag support.",
+      "id": "EtagFeature",
+      "properties": {
+        "supported": {
+          "description": "Output only. Specifies whether or not the operation is supported.",
+          "readOnly": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "FilterFeature": {
+      "description": "A complex type that specifies filter support.",
+      "id": "FilterFeature",
+      "properties": {
+        "maxResults": {
+          "description": "Output only. Specifies the maximum number of results.",
+          "format": "int32",
+          "readOnly": true,
+          "type": "integer"
+        },
+        "supported": {
+          "description": "Output only. Specifies whether or not the operation is supported.",
+          "readOnly": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "Group": {
+      "description": "SCIM representation of a group.",
+      "id": "Group",
+      "properties": {
+        "displayName": {
+          "description": "Required. The group's display name.",
+          "type": "string"
+        },
+        "externalId": {
+          "description": "Optional. An identifier for the resource as defined by the provisioning client.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Identifier. The unique ID for the group. The attribute characteristics are `caseExact` as `true`, a mutability of `readOnly`, and a `returned` characteristic of `always`.",
+          "type": "string"
+        },
+        "members": {
+          "description": "Optional. The list of members in this group. This attribute is not currently returned. Group memberships can be modified through PATCH requests.",
+          "items": {
+            "$ref": "Member"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "$ref": "Meta",
+          "description": "Output only. Resource metadata. All sub-attributes have a mutability of `readOnly` and a `returned` characteristic of `default`.",
+          "readOnly": true
+        },
+        "schemas": {
+          "description": "Required. A list of URIs which indicate the namespaces of the SCIM schemas that define the attributes present in the current JSON structure. Must only contain values defined as `schema` and `schemaExtensions` for the Group ResourceType.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "urn:ietf:params:scim:schemas:extension:google:2.0:CloudIdentityGroup": {
+          "$ref": "CloudIdentityGroupExtension",
+          "description": "Required. Cloud Identity specific group attributes."
+        }
+      },
+      "type": "object"
+    },
+    "GroupReference": {
+      "description": "SCIM representation of a user's group membership.",
+      "id": "GroupReference",
+      "properties": {
+        "$ref": {
+          "description": "Output only. The URI of the SCIM resource representing the group.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "type": {
+          "description": "Output only. The type of group membership. Valid values are `direct` and `indirect`.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "value": {
+          "description": "Output only. The `id` of the SCIM resource representing the group.",
+          "readOnly": true,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ListGroupsResponse": {
+      "description": "Response message from listing Groups.",
+      "id": "ListGroupsResponse",
+      "properties": {
+        "resources": {
+          "description": "The list of requested resources.",
+          "items": {
+            "$ref": "Group"
+          },
+          "type": "array"
+        },
+        "schemas": {
+          "description": "The schemas for the returned resources.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "totalResults": {
+          "description": "The total number of results.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ListResourceTypesResponse": {
+      "description": "Response message from listing resource types.",
+      "id": "ListResourceTypesResponse",
+      "properties": {
+        "resources": {
+          "description": "The list of requested resources.",
+          "items": {
+            "$ref": "ResourceType"
+          },
+          "type": "array"
+        },
+        "schemas": {
+          "description": "The schemas for the returned resources.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "totalResults": {
+          "description": "The total number of results.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ListSchemasResponse": {
+      "description": "Response message from listing Schemas.",
+      "id": "ListSchemasResponse",
+      "properties": {
+        "resources": {
+          "description": "The list of requested resources.",
+          "items": {
+            "$ref": "Schema"
+          },
+          "type": "array"
+        },
+        "schemas": {
+          "description": "The schemas for the returned resources.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "totalResults": {
+          "description": "The total number of results.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ListUsersResponse": {
+      "description": "Response message from listing Users.",
+      "id": "ListUsersResponse",
+      "properties": {
+        "resources": {
+          "description": "The list of requested resources.",
+          "items": {
+            "$ref": "User"
+          },
+          "type": "array"
+        },
+        "schemas": {
+          "description": "The schemas for the returned resources.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "totalResults": {
+          "description": "The total number of results.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "Member": {
+      "description": "SCIM representation of a group member.",
+      "id": "Member",
+      "properties": {
+        "$ref": {
+          "description": "Immutable. The URI for the member.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Immutable. Identifier of the member of this Group.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Meta": {
+      "description": "Resource metadata assigned by the service provider.",
+      "id": "Meta",
+      "properties": {
+        "created": {
+          "description": "The `DateTime` that the resource was added to the service provider. This attribute MUST be a `DateTime` as defined in [RFC 7643 Section 2.3.5](https://datatracker.ietf.org/doc/html/rfc7643#section-2.3.5). Example: 2008-01-23T04:56:22Z.",
+          "type": "string"
+        },
+        "location": {
+          "description": "The URI of the resource being returned.",
+          "type": "string"
+        },
+        "resourceType": {
+          "description": "The resource type of the resource. This attribute has a mutability of `readOnly` and `caseExact` as `true`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Name": {
+      "description": "SCIM representation of a User's name.",
+      "id": "Name",
+      "properties": {
+        "familyName": {
+          "description": "Required. The user's family name.",
+          "type": "string"
+        },
+        "givenName": {
+          "description": "Required. The user's given name.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Operation": {
+      "description": "The operation to perform.",
+      "id": "Operation",
+      "properties": {
+        "op": {
+          "description": "Required. The type of operation to perform.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Attribute path describing the target of the operation. Examples of valid paths: `\"path\":\"members\"` `\"path\":\"name.familyName\"` `\"path\":\"emails[type eq \\\"work\\\"]\"`",
+          "type": "string"
+        },
+        "value": {
+          "description": "Must be set for `add` or `replace` operations. Can be a single value, an object (containing sub-attributes of a complex attribute), or an array depending on the target path.",
+          "type": "any"
+        }
+      },
+      "type": "object"
+    },
+    "PatchBody": {
+      "description": "The structure for the body of a PATCH request.",
+      "id": "PatchBody",
+      "properties": {
+        "Operations": {
+          "description": "Required. Each operation represents a single action to be applied to the SCIM resource.",
+          "items": {
+            "$ref": "Operation"
+          },
+          "type": "array"
+        },
+        "schemas": {
+          "description": "Required. This attribute must contain the URI value of `urn:ietf:params:scim:api:messages:2.0:PatchOp`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "PatchFeature": {
+      "description": "A complex type that specifies PATCH feature support.",
+      "id": "PatchFeature",
+      "properties": {
+        "supported": {
+          "description": "Output only. Specifies whether or not the operation is supported.",
+          "readOnly": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "Phone": {
+      "description": "SCIM representation of a user's phone number.",
+      "id": "Phone",
+      "properties": {
+        "primary": {
+          "description": "Indicates if this is the user's primary phone number.",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "The type of the phone number. Valid values are `home`, `work`, `mobile`, `fax`, `pager`, and `other`.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Required. The phone number.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ResourceType": {
+      "description": "From [RFC 7643 section 6](https://datatracker.ietf.org/doc/html/rfc7643#section-6). Specifies the metadata about a resource type.",
+      "id": "ResourceType",
+      "properties": {
+        "description": {
+          "description": "Output only. The resource type's human-readable description.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "endpoint": {
+          "description": "Output only. The resource type's HTTP-addressable endpoint relative to the base URL.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "id": {
+          "description": "Identifier. The resource type's unique ID. This is the same value as the `name` attribute.",
+          "type": "string"
+        },
+        "meta": {
+          "$ref": "Meta",
+          "description": "Output only. Resource metadata assigned by the service provider.",
+          "readOnly": true
+        },
+        "name": {
+          "description": "Output only. The resource type name. For example, `User` or `Group`.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "schema": {
+          "description": "Output only. The resource type's primary/base schema URI.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "schemaExtensions": {
+          "description": "Output only. A list of schema extensions for this resource type.",
+          "items": {
+            "$ref": "SchemaExtension"
+          },
+          "readOnly": true,
+          "type": "array"
+        },
+        "schemas": {
+          "description": "Output only. The `schemas` attribute contains URIs that are used to indicate the namespaces of the SCIM schemas that define the attributes present in the current JSON structure.",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Schema": {
+      "description": "From [RFC 7643 Section 7](https://datatracker.ietf.org/doc/html/rfc7643#section-7). Specifies the metadata about a schema.",
+      "id": "Schema",
+      "properties": {
+        "attributes": {
+          "description": "Required. The schema's list of attributes.",
+          "items": {
+            "$ref": "Attribute"
+          },
+          "type": "array"
+        },
+        "description": {
+          "description": "Optional. The schema's human-readable description. When applicable, service providers must specify the description.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Required. The unique URI of the schema. When applicable, service providers must specify the URI, for example, `urn:ietf:params:scim:schemas:core:2.0:User`. Unlike most other schemas, which use some sort of Globally Unique Identifier (GUID) for the `id`, the schema `id` is a URI so that it can be registered and is portable between different service providers and clients.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Optional. The schema's human-readable name. When applicable, service providers must specify the name, for example, `User` or `Group`.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SchemaExtension": {
+      "description": "From [RFC 7643 Section 6](https://datatracker.ietf.org/doc/html/rfc7643#section-6:~:text=Schema%22%20resource.%0A%20%20%20%20%20%20REQUIRED.-,schemaExtensions,-A%20list%20of). Defines a schema extension supported or required for a SCIM resource type.",
+      "id": "SchemaExtension",
+      "properties": {
+        "required": {
+          "description": "Required. Specifies whether or not the schema extension is required for the resource type. If `true`, a resource of this type must include this schema extension and also include any attributes declared as required in this schema extension. If `false`, a resource of this type may omit this schema extension.",
+          "type": "boolean"
+        },
+        "schema": {
+          "description": "Required. The URI of an extended schema, for example, `urn:edu:2.0:Staff`. This must be equal to the `id` attribute of a `Schema` resource.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ServiceProviderConfig": {
+      "description": "From [RFC 7643 section 5](https://datatracker.ietf.org/doc/html/rfc7643#section-5). The service provider configuration resource enables a service provider to discover SCIM specification features in a standardized form as well as provide additional implementation details to clients.",
+      "id": "ServiceProviderConfig",
+      "properties": {
+        "authenticationSchemes": {
+          "description": "Output only. A multi-valued complex type that specifies supported authentication schemes.",
+          "items": {
+            "$ref": "AuthenticationScheme"
+          },
+          "readOnly": true,
+          "type": "array"
+        },
+        "bulk": {
+          "$ref": "BulkFeature",
+          "description": "Output only. A complex type that specifies bulk operation support.",
+          "readOnly": true
+        },
+        "changePassword": {
+          "$ref": "ChangePasswordFeature",
+          "description": "Output only. A complex type that specifies change password support.",
+          "readOnly": true
+        },
+        "documentationUri": {
+          "description": "Output only. An HTTP-addressable URL pointing to the service provider's human-consumable help documentation.",
+          "readOnly": true,
+          "type": "string"
+        },
+        "etag": {
+          "$ref": "EtagFeature",
+          "description": "Output only. A complex type that specifies ETag support.",
+          "readOnly": true
+        },
+        "filter": {
+          "$ref": "FilterFeature",
+          "description": "Output only. A complex type that specifies filter support.",
+          "readOnly": true
+        },
+        "meta": {
+          "$ref": "Meta",
+          "description": "Output only. Resource metadata assigned by the service provider.",
+          "readOnly": true
+        },
+        "patch": {
+          "$ref": "PatchFeature",
+          "description": "Output only. A complex type that specifies PATCH feature support.",
+          "readOnly": true
+        },
+        "schemas": {
+          "description": "Output only. The `schemas` attribute contains URIs that are used to indicate the namespaces of the SCIM schemas that define the attributes present in the current JSON structure.",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true,
+          "type": "array"
+        },
+        "sort": {
+          "$ref": "SortFeature",
+          "description": "Output only. A complex type that specifies sort support.",
+          "readOnly": true
+        }
+      },
+      "type": "object"
+    },
+    "SortFeature": {
+      "description": "A complex type that specifies sort support.",
+      "id": "SortFeature",
+      "properties": {
+        "supported": {
+          "description": "Output only. Specifies whether or not the operation is supported.",
+          "readOnly": true,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "User": {
+      "description": "SCIM representation of a user.",
+      "id": "User",
+      "properties": {
+        "active": {
+          "description": "Optional. The user's account status (`false` means the account is suspended). Default: `true`.",
+          "type": "boolean"
+        },
+        "addresses": {
+          "description": "Optional. The list of the user's physical addresses. The maximum allowed data size is 10KB.",
+          "items": {
+            "$ref": "Address"
+          },
+          "type": "array"
+        },
+        "displayName": {
+          "description": "Optional. The user's display name. Limit: 256 characters.",
+          "type": "string"
+        },
+        "emails": {
+          "description": "Optional. The list of the user's email addresses. The maximum allowed data size is 10KB. The email corresponding to `userName` will automatically be added to this list with its `primary` sub-attribute set to `true`. This primary email entry is read-only and cannot be modified through this attribute.",
+          "items": {
+            "$ref": "Email"
+          },
+          "type": "array"
+        },
+        "externalId": {
+          "description": "Optional. A client-defined identifier for the SCIM user. This field is case-sensitive and mutable. The client is responsible for ensuring uniqueness, as the server does not enforce it.",
+          "type": "string"
+        },
+        "groups": {
+          "description": "Output only. The list of groups the user has direct membership in, truncated to a maximum of 1000 groups. This attribute is not returned by default and must be requested using the `attributes` query parameter. Reading this attribute requires customer allowlisting. Please contact support to explain your use case and request access.",
+          "items": {
+            "$ref": "GroupReference"
+          },
+          "readOnly": true,
+          "type": "array"
+        },
+        "id": {
+          "description": "Identifier. The unique ID for the user. The attribute characteristics are `caseExact` as `true`, a mutability of `readOnly`, and a `returned` characteristic of `always`.",
+          "type": "string"
+        },
+        "meta": {
+          "$ref": "Meta",
+          "description": "Output only. A complex attribute containing resource metadata. All `meta` sub-attributes are assigned by the service provider (have a `mutability` of `readOnly`), and all of these sub-attributes have a `returned` characteristic of `default`. This attribute is ignored when provided by clients.",
+          "readOnly": true
+        },
+        "name": {
+          "$ref": "Name",
+          "description": "Required. The user's name."
+        },
+        "phoneNumbers": {
+          "description": "Optional. A list of the user's phone numbers. The maximum allowed data size is 1KB.",
+          "items": {
+            "$ref": "Phone"
+          },
+          "type": "array"
+        },
+        "schemas": {
+          "description": "Required. A list of URIs which indicate the namespaces of the SCIM schemas that define the attributes present in the current JSON structure. Must only contain values defined as `schema` and `schemaExtensions` for the User ResourceType.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+          "$ref": "EnterpriseUserExtension",
+          "description": "Optional. SCIM Enterprise User extension attributes."
+        },
+        "userName": {
+          "description": "Required. The user's primary email address. Used as the unique identifier for the user.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "servicePath": "",
+  "title": "Cloud Identity SCIM API",
+  "version": "v1beta1",
+  "version_module": true
+}
