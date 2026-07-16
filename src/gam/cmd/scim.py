@@ -40,6 +40,7 @@ from gam.util.display import (
 )
 from gam.util.errors import missingArgumentExit, unknownArgumentExit, usageErrorExit
 from gam.util.scim import (
+    SCHEMA_CI_CUSTOM_USER,
     SCHEMA_CI_GROUP,
     SCHEMA_ENTERPRISE_USER,
     MAX_GROUP_PATCH_OPS,
@@ -217,6 +218,7 @@ def doCreateSCIMUser():
   emails_list = []
   phones = []
   addresses = []
+  custom = {}
   kwargs = {}
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
@@ -244,12 +246,17 @@ def doCreateSCIMUser():
       phones.append(_parsePhoneEntry())
     elif myarg == 'address':
       addresses.append(_parseAddressEntry())
+    elif myarg == 'custom':
+      key = getString(Cmd.OB_STRING)
+      value = getString(Cmd.OB_STRING)
+      custom.setdefault(key, value)
     elif myarg == 'password':
       usageErrorExit(Msg.SCIM_USER_PASSWORDLESS)
     else:
       unknownArgumentExit()
   body = newUserBody(email, name=name or None,
-                     enterprise=enterprise or None, **kwargs)
+                     enterprise=enterprise or None,
+                     custom=custom or None, **kwargs)
   if emails_list:
     body['emails'] = emails_list
   if phones:
@@ -327,6 +334,13 @@ def doUpdateSCIMUser():
       operations.append(addOp('addresses', [_parseAddressEntry()]))
     elif myarg == 'clearaddress':
       operations.append(removeOp('addresses'))
+    elif myarg == 'custom':
+      key = getString(Cmd.OB_STRING)
+      value = getString(Cmd.OB_STRING)
+      operations.append(replaceOp(
+          f'{SCHEMA_CI_CUSTOM_USER}.{key}', value))
+    elif myarg == 'clearcustom':
+      operations.append(removeOp(SCHEMA_CI_CUSTOM_USER))
     elif myarg == 'password':
       usageErrorExit(Msg.SCIM_USER_PASSWORDLESS)
     else:
