@@ -166,24 +166,10 @@ def _showSCIMResource(result, entityType, entityName, print_order,
   for field in print_order:
     if field in result:
       value = result[field]
-      if isinstance(value, dict):
+      if isinstance(value, (dict, list)):
         printKeyValueList([field, ''])
         Ind.Increment()
-        for k, v in value.items():
-          printKeyValueList([k, v])
-        Ind.Decrement()
-      elif isinstance(value, list):
-        printKeyValueList([field, ''])
-        Ind.Increment()
-        for j, item in enumerate(value):
-          if isinstance(item, dict):
-            printKeyValueList([f'{field}[{j}]', ''])
-            Ind.Increment()
-            for k, v in item.items():
-              printKeyValueList([k, v])
-            Ind.Decrement()
-          else:
-            printKeyValueList([j, item])
+        showJSON(None, value)
         Ind.Decrement()
       else:
         printKeyValueList([field, value])
