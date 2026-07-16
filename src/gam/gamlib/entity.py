@@ -340,6 +340,11 @@ class GamEntity:
   ROLE = 'role'
   ROW = 'row '
   SCOPE = 'scop'
+  SCIM_CONFIG = 'scco'
+  SCIM_GROUP = 'scgr'
+  SCIM_RESOURCE_TYPE = 'scrt'
+  SCIM_SCHEMA = 'scsc'
+  SCIM_USER = 'scus'
   SECTION = 'sect'
   SENDAS_ADDRESS = 'sasa'
   SENDER = 'send'
@@ -712,6 +717,11 @@ class GamEntity:
     ROLE: ['Roles', 'Role'],
     ROW: ['Rows', 'Row'],
     SCOPE: ['Scopes', 'Scope'],
+    SCIM_CONFIG: ['SCIM Configurations', 'SCIM Configuration'],
+    SCIM_GROUP: ['SCIM Groups', 'SCIM Group'],
+    SCIM_RESOURCE_TYPE: ['SCIM Resource Types', 'SCIM Resource Type'],
+    SCIM_SCHEMA: ['SCIM Schemas', 'SCIM Schema'],
+    SCIM_USER: ['SCIM Users', 'SCIM User'],
     SECTION: ['Sections', 'Section'],
     SENDAS_ADDRESS: ['SendAs Addresses', 'SendAs Address'],
     SENDER: ['Senders', 'Sender'],

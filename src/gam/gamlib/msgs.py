@@ -497,6 +497,7 @@ RETRYING_GOOGLE_SHEET_EXPORT_SLEEPING = 'Retrying Google Sheet export {0}/{1}. S
 ROLE_MUST_BE_ORGANIZER = 'Role must be organizer'
 ROLE_NOT_IN_SET = 'Role not in set: {0})'
 SCHEMA_WOULD_HAVE_NO_FIELDS = '{0} would have no {1}'
+SCIM_USER_PASSWORDLESS = 'SCIM users are passwordless; the "password" keyword is not supported for scimuser commands. Use "gam create user" with the Directory API if you need to set a password.'
 SELECTED = 'Selected'
 SERVICE_NOT_APPLICABLE = 'Service not applicable/Does not exist'
 SERVICE_NOT_APPLICABLE_THIS_ADDRESS = 'Service not applicable for this address: {0}'

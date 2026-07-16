@@ -51,6 +51,7 @@ CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
 CLOUDIDENTITY_POLICY = 'cloudidentitypolicy'
 CLOUDIDENTITY_USERINVITATIONS = 'cloudidentityuserinvitations'
+CLOUDIDENTITYSCIM = 'cloudidentityscim'
 CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CLOUDRESOURCEMANAGERV1 = 'cloudresourcemanagerv1'
 CONTACTDELEGATION = 'contactdelegation'
@@ -259,6 +260,7 @@ _INFO = {
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity API - OrgUnits Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_POLICY: {'name': 'Cloud Identity API - Policy', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_USERINVITATIONS: {'name': 'Cloud Identity API - User Invitations', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITYSCIM: {'name': 'Cloud Identity SCIM API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   CLOUDRESOURCEMANAGER: {'name': 'Resource Manager API v3', 'version': 'v3', 'v2discovery': True},
   CLOUDRESOURCEMANAGERV1: {'name': 'Resource Manager API v1', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudresourcemanager'},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
