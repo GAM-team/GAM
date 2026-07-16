@@ -472,20 +472,20 @@ def doPrintShowSCIMUsers():
 # Group commands
 # ---------------------------------------------------------------------------
 
-# gam create scimgroup <displayName> email <email>
-#   [externalid <String>] [description <String>]
+# gam create scimgroup <email>
+#   [name <String>] [externalid <String>] [description <String>]
 #   [member <email> ...]
 def doCreateSCIMGroup():
   scim = buildSCIMObject()
-  display_name = getString(Cmd.OB_STRING)
-  email = None
+  email = getEmailAddress()
+  display_name = None
   external_id = None
   description = None
   members = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'email':
-      email = getEmailAddress()
+    if myarg == 'name':
+      display_name = getString(Cmd.OB_STRING)
     elif myarg == 'externalid':
       external_id = getString(Cmd.OB_STRING)
     elif myarg == 'description':
@@ -494,8 +494,8 @@ def doCreateSCIMGroup():
       members.append({'value': getEmailAddress()})
     else:
       unknownArgumentExit()
-  if not email:
-    missingArgumentExit('email')
+  if not display_name:
+    display_name = email.split('@')[0]
   body = newGroupBody(display_name, email,
                       external_id=external_id, description=description,
                       members=members or None)
@@ -505,13 +505,13 @@ def doCreateSCIMGroup():
                            GAPI.INVALID, GAPI.BAD_REQUEST,
                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
              customerId=customerId(), body=body)
-    entityActionPerformed([Ent.SCIM_GROUP, display_name])
+    entityActionPerformed([Ent.SCIM_GROUP, email])
   except (GAPI.duplicate, GAPI.alreadyExists):
-    entityDuplicateWarning([Ent.SCIM_GROUP, display_name])
+    entityDuplicateWarning([Ent.SCIM_GROUP, email])
   except (GAPI.invalid, GAPI.badRequest) as e:
-    entityActionFailedWarning([Ent.SCIM_GROUP, display_name], str(e))
+    entityActionFailedWarning([Ent.SCIM_GROUP, email], str(e))
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
-    entityActionFailedWarning([Ent.SCIM_GROUP, display_name], str(e))
+    entityActionFailedWarning([Ent.SCIM_GROUP, email], str(e))
 
 
 # gam update scimgroup <id:|uid:|displayName>
