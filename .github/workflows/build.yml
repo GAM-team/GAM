@@ -1143,7 +1143,7 @@ jobs:
           run_gam print scimusers filter "userName eq \"$newscimuser\""
           run_gam update scimuser $newscimuser externalid "gha-${JID}"
           run_gam create scimgroup $newscimgroup name "GHA SCIM group $JID" externalid "gha-scimgrp-${JID}"
-          run_gam info scimgroup "id:$(run_gam print scimgroups filter "displayName eq \"GHA SCIM group $JID\"" | tail -1 | cut -d, -f1)" formatjson
+          run_gam info scimgroup $newscimgroup formatjson
           run_gam show scimgroups filter "externalId eq \"gha-scimgrp-${JID}\""
           run_gam print scimgroups filter "displayName eq \"GHA SCIM group $JID\""
           run_gam delete scimuser $newscimuser
