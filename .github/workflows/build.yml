@@ -39,7 +39,7 @@ jobs:
       gamversion: ${{ steps.version.outputs.gamversion }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v     7.0.0
-          with:
+        with:
             persist-credentials: false
             fetch-depth: 0
       - id: version
