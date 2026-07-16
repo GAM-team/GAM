@@ -283,7 +283,7 @@ def doCreateSCIMUser():
 #   [clearexternalid]
 def doUpdateSCIMUser():
   scim = buildSCIMObject()
-  email = getEmailAddress()
+  email = getEmailAddress(returnUIDprefix='id:')
   userId = resolveUserId(scim, email)
   if not userId:
     entityDoesNotExistWarning(Ent.SCIM_USER, email)
@@ -353,7 +353,7 @@ def doUpdateSCIMUser():
 # gam delete scimuser <email>
 def doDeleteSCIMUser():
   scim = buildSCIMObject()
-  email = getEmailAddress()
+  email = getEmailAddress(returnUIDprefix='id:')
   checkForExtraneousArguments()
   userId = resolveUserId(scim, email)
   if not userId:
@@ -374,7 +374,7 @@ def doDeleteSCIMUser():
 # gam info scimuser <email> [attributes <comma-separated>] [formatjson]
 def doInfoSCIMUser():
   scim = buildSCIMObject()
-  email = getEmailAddress()
+  email = getEmailAddress(returnUIDprefix='id:')
   FJQC = FormatJSONQuoteChar(formatJSONOnly=True)
   attributes = None
   while Cmd.ArgumentsRemaining():

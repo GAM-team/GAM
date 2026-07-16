@@ -162,14 +162,18 @@ def newGroupBody(display_name, email, external_id=None,
 # ID resolution helpers
 # ---------------------------------------------------------------------------
 
-def resolveUserId(scim, email):
-  """Resolve email address → SCIM user ID via filter lookup.
+def resolveUserId(scim, user_key):
+  """Resolve user key → SCIM user ID.
 
-  Returns the SCIM id string, or None if not found.
+  Accepts:
+    id:abc123  → returns 'abc123' directly (raw SCIM ID, from id: or uid: input)
+    <email>    → searches by userName filter
   """
+  if user_key.startswith('id:'):
+    return user_key[3:]
   result = callGAPI(scimUsers(scim), 'list',
                     customerId=customerId(),
-                    filter=f'userName eq "{email}"')
+                    filter=f'userName eq "{user_key}"')
   resources = result.get('resources', result.get('Resources', []))
   return resources[0]['id'] if resources else None
 
