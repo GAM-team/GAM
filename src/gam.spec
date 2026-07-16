@@ -29,6 +29,9 @@ datas = []
 for pkg in GAM_VER_LIBS:
     datas += copy_metadata(pkg, recursive=True)
 datas += [('gam/cbcm-v1.1beta1.json', '.')]
+datas += [('gam/cloudidentityscim-v1.json', '.')]
+datas += [('gam/cloudidentityscim-v1alpha1.json', '.')]
+datas += [('gam/cloudidentityscim-v1beta1.json', '.')]
 datas += [('gam/contactdelegation-v1.json', '.')]
 datas += [('gam/datastudio-v1.json', '.')]
 datas += [('gam/meet-v2beta.json', '.')]
