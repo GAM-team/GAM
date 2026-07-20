@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.09'
+__version__ = '7.46.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -42227,14 +42227,16 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
         event = callGAPI(cal.events(), 'insert',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN,
-                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST],
+                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE],
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          calendarId=calId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True, body=body, fields=fields)
       else:
         event = callGAPI(cal.events(), 'import_',
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.DUPLICATE, GAPI.FORBIDDEN,
-                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST,
+                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.BAD_REQUEST, GAPI.SERVICE_NOT_AVAILABLE,
                                                                    GAPI.PARTICIPANT_IS_NEITHER_ORGANIZER_NOR_ATTENDEE],
+                         retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                          calendarId=calId, conferenceDataVersion=1, supportsAttachments=True, body=body, fields=fields)
       if parameters['csvPF'] is None:
         entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, event['id']], i, count)
@@ -42244,7 +42246,7 @@ def _createCalendarEvents(user, origCal, function, calIds, count, body, paramete
         _printCalendarEvent(user, calId, event, parameters['csvPF'], parameters['FJQC'], {}, False)
     except (GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
             GAPI.requiredAccessLevel, GAPI.participantIsNeitherOrganizerNorAttendee,
-            GAPI.malformedWorkingLocationEvent, GAPI.badRequest) as e:
+            GAPI.malformedWorkingLocationEvent, GAPI.badRequest, GAPI.serviceNotAvailable) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
     except GAPI.duplicate as e:
       entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, event['id']], str(e), i, count)
@@ -42336,7 +42338,8 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
                          throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN, GAPI.BACKEND_ERROR,
                                                                    GAPI.INVALID, GAPI.REQUIRED, GAPI.TIME_RANGE_EMPTY, GAPI.EVENT_DURATION_EXCEEDS_LIMIT,
                                                                    GAPI.REQUIRED_ACCESS_LEVEL, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE,
-                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.EVENT_TYPE_RESTRICTION, GAPI.BAD_REQUEST],
+                                                                   GAPI.MALFORMED_WORKING_LOCATION_EVENT, GAPI.EVENT_TYPE_RESTRICTION, GAPI.BAD_REQUEST,
+                                                                   GAPI.SERVICE_NOT_AVAILABLE],
                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.BACKEND_ERROR],
                          calendarId=calId, eventId=eventId, conferenceDataVersion=1, sendUpdates=parameters['sendUpdates'], supportsAttachments=True,
                          body=body, fields=pfields)
@@ -42353,7 +42356,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except (GAPI.forbidden, GAPI.backendError, GAPI.invalid, GAPI.required, GAPI.timeRangeEmpty, GAPI.eventDurationExceedsLimit,
               GAPI.requiredAccessLevel, GAPI.cannotChangeOrganizerOfInstance, GAPI.malformedWorkingLocationEvent,
-              GAPI.eventTypeRestriction, GAPI.badRequest) as e:
+              GAPI.eventTypeRestriction, GAPI.badRequest, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
       except GAPI.notACalendarUser:
         userCalServiceNotEnabledWarning(calId, i, count)
@@ -42419,7 +42422,8 @@ def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
         try:
           callGAPI(cal.events(), 'delete',
                    throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.DELETED, GAPI.FORBIDDEN,
-                                                             GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL],
+                                                             GAPI.INVALID, GAPI.REQUIRED, GAPI.REQUIRED_ACCESS_LEVEL, GAPI.SERVICE_NOT_AVAILABLE],
+                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                    calendarId=calId, eventId=eventId, sendUpdates=parameters['sendUpdates'])
           entityActionPerformed([Ent.CALENDAR, calId, Ent.EVENT, eventId], j, jcount)
         except (GAPI.notFound, GAPI.deleted) as e:
@@ -42427,7 +42431,7 @@ def _deleteCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
             entityUnknownWarning(Ent.CALENDAR, calId, i, count)
             break
           entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
-        except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel) as e:
+        except (GAPI.forbidden, GAPI.invalid, GAPI.required, GAPI.requiredAccessLevel, GAPI.serviceNotAvailable) as e:
           entityActionFailedWarning([Ent.CALENDAR, calId, Ent.EVENT, eventId], str(e), j, jcount)
         except GAPI.notACalendarUser:
           userCalServiceNotEnabledWarning(calId, i, count)
@@ -42500,7 +42504,9 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
         callGAPI(cal.events(), 'move',
                  throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.REQUIRED_ACCESS_LEVEL,
                                                            GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.EVENT_TYPE_RESTRICTION,
-                                                           GAPI.CANNOT_CHANGE_ORGANIZER, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE],
+                                                           GAPI.CANNOT_CHANGE_ORGANIZER, GAPI.CANNOT_CHANGE_ORGANIZER_OF_INSTANCE,
+                                                           GAPI.SERVICE_NOT_AVAILABLE],
+                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                  calendarId=calId, eventId=eventId, destination=newCalId, sendUpdates=parameters['sendUpdates'], fields='')
         entityModifierNewValueActionPerformed(kvListEvent, Act.MODIFIER_TO, f'{Ent.Singular(Ent.CALENDAR)}: {newCalId}', j, jcount)
       except GAPI.notFound as e:
@@ -42512,7 +42518,7 @@ def _moveCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEnt
 # Correct "You need to have reader access to this calendar." to "Writer access required to both calendars."
         entityActionFailedWarning(kvListEventNewCal, Msg.WRITER_ACCESS_REQUIRED_TO_BOTH_CALENDARS, j, jcount)
       except (GAPI.forbidden, GAPI.invalid, GAPI.badRequest, GAPI.eventTypeRestriction,
-              GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance) as e:
+              GAPI.cannotChangeOrganizer, GAPI.cannotChangeOrganizerOfInstance, GAPI.serviceNotAvailable) as e:
         entityActionFailedWarning(kvListEventNewCal, str(e), j, jcount)
       except GAPI.notACalendarUser:
         userCalServiceNotEnabledWarning(calId, i, count)
