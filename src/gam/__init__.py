@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.46.10'
+__version__ = '7.46.11'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -47033,7 +47033,7 @@ def updateUsers(entityList):
                                             GAPI.FORBIDDEN, GAPI.BAD_REQUEST, GAPI.ADMIN_CANNOT_UNSUSPEND,
                                             GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.INVALID_PARAMETER,
                                             GAPI.INVALID_ORGUNIT, GAPI.INVALID_SCHEMA_VALUE, GAPI.DUPLICATE,
-                                            GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, GAPI.CONFLICT],
+                                            GAPI.INSUFFICIENT_ARCHIVED_USER_LICENSES, GAPI.CONFLICT, GAPI.RESOURCE_NOT_FOUND],
                               userKey=userKey, body=body, fields=fields)
             entityActionPerformed([Ent.USER, user], i, count)
             if PwdOpts.filename and PwdOpts.password:

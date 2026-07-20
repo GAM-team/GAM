@@ -1,3 +1,8 @@
+7.46.11
+
+Updated `gam <UserTypeEntity> update user` to handle the following error:
+`ERROR: 404: resourceNotFound - Does not exist`
+
 7.46.10
 
 Updated `gam calendars <CalendarEntity> create event` and `gam <UserTypeEntity> create event`
