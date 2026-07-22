@@ -102,7 +102,7 @@ Use `sendnotifications false` to suppress sending the notification.
 You can transfer ownership of secondary calendars from one user to another.
 
 ```
-gam <CalendarEntity> transfer ownership <UserItem>
+gam calendars <CalendarEntity> transfer ownership <UserItem>
 ```
 
 See: https://workspaceupdates.googleblog.com/2026/06/secondary-calendar-management-API.html
