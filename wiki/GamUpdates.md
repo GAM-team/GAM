@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.47.00
+
+Added commands to update|display a user's chat availability.
+
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-user-availability
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#display-chat-user-availability
+
+You'll need to run `gam user user@domain.com update serviceaccount` and
+select `12)  Chat API - User Availability (supports readonly)`.
+
 ### 7.46.11
 
 Updated `gam <UserTypeEntity> update user` to handle the following error:
