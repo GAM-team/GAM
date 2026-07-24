@@ -71,6 +71,7 @@ Google requires that you have a Chat Bot configured in order to use the Chat API
 * [Chat API - Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/list)
 * [Chat API - Search Messages](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/search)
 * [Chat API - Events](https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.spaceEvents/list)
+* [Chat API - User Availability](https://developers.google.com/workspace/chat/api/reference/rest/v1/users.availability)
 * [Chat API - User Sections](https://developers.google.com/workspace/chat/api/reference/rest/v1/users.sections)
 * [Apps in Google Chat](https://support.google.com/chat/answer/7655820)
 * [Manage customemoji permissions](https://support.google.com/a/answer/12850085)
@@ -483,6 +484,8 @@ gam <UserTypeEntity> update chatavailability
          clearcustom]
         [formatjson]
 ```
+`ttl <Integer>` specifies seconds.
+
 `<EmojiString>` is of the form `U+#####` wher `#####` is four or five hex digits.
 
 * See: https://www.unicode.org/emoji/charts/full-emoji-list.html
