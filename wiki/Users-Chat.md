@@ -483,6 +483,10 @@ gam <UserTypeEntity> update chatavailability
          clearcustom]
         [formatjson]
 ```
+`<EmojiString>` is of the form `U+#####` wher `#####` is four or five hex digits.
+
+* See: https://www.unicode.org/emoji/charts/full-emoji-list.html
+
 ## Display Chat User Availability
 ### Display information about a user's chat availability
 
