@@ -486,7 +486,7 @@ gam <UserTypeEntity> update chatavailability
 ```
 `ttl <Integer>` specifies seconds.
 
-`<EmojiString>` is of the form `U+#####` wher `#####` is four or five hex digits.
+`<EmojiString>` is of the form `U+#####` where `#####` is four or five hex digits.
 
 * See: https://www.unicode.org/emoji/charts/full-emoji-list.html
 
