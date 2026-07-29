@@ -171,7 +171,7 @@ gam update policy
         [(ou|orgunit <OrgUnitItem>)|(group <GroupItem>)|(query <String>)]
 ```
 ```
-gam redirect stdout ./policy.json info policies policies/akajj264aoclblvncu
+gam redirect stdout ./policy.json info policies <CIPolicyName> formatjson
 Make changes to policy.json and update the policy.
 gam update policy json file policy.json
 
