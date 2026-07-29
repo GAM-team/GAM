@@ -159,7 +159,7 @@ gam redirect csv ./StaffPolicies.csv print policies ou "^/Staff"
 ```
 
 ## Create and Update Cloud Identity Policies
-Policies can be complex objects, it is probably easiest to create template policies in the Admin console (under Rules),
+Policies can be complex objects, it is probably easiest to create template policies in the Admin console (under `Security/Access and data control/Data protection`),
 output the JSON format data for those policies to be used in subsequent create and update commands.
 
 ```
