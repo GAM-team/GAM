@@ -14,13 +14,13 @@
 
 ## Notes
 To use these commands you must update your client access authentication.
-You'll enter 23 or 23r to turn on the Cloud Identity Policy scope; then continue
+You'll enter 22 or 22r to turn on the Cloud Identity Policy scope; then continue
 with authentication.
 ```
 gam oauth delete
 gam oauth create
 ...
-[R] 23)  Cloud Identity - Policy (supports readonly)
+[R] 22)  Cloud Identity - Policy (supports readonly)
 ```
 You must enable access to policies in the GCP cloud console.
 
