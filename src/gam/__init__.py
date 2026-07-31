@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.00'
+__version__ = '7.47.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -69964,7 +69964,9 @@ def createSharedDrive(users, useDomainAdminAccess=False):
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
-    if not (doUpdate or updateBody or hide or orgUnit):
+    if not doUpdate:
+      continue
+    if not (updateBody or hide or orgUnit):
       continue
     waitingForCreationToComplete(updateInitialDelay)
     created = False
