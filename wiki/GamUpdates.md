@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+### 7.47.01
+
+Fixed bug in `gam <UserTypeEntity> create shareddrive` where GAM was unnecessarily
+waiting for the shared drive creation to complete when not required.
+
 ### 7.47.00
 
 Added commands to update|display a user's chat availability.
