@@ -9932,6 +9932,9 @@ def CSVFileQueueHandler(mpQueue, mpQueueStdout, mpQueueStderr, csvPF, datetimeNo
       clearRowFilters = dataItem
     else: #GM.REDIRECT_QUEUE_EOF
       break
+  if GC.Values[GC.DEBUG_LEVEL] > 0:
+    httplib2.debuglevel = GC.Values[GC.DEBUG_LEVEL]
+    sys.stdout = GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]
   csvPF.writeCSVfile(list_type)
   if mpQueueStdout:
     mpQueueStdout.put((0, GM.REDIRECT_QUEUE_DATA, GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].getvalue()))
