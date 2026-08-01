@@ -266,6 +266,7 @@ gam <UserTypeEntity> draft message
         (<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
+        [threadid <String>]
 ```
 `<MessageContent>` is the message, there are five ways to specify it:
 * `message|textmessage|htmlmessage <String>` - Use `<String>` as the message
@@ -302,6 +303,7 @@ gam <UserTypeEntity> import message
         (addlabel <LabelName>)* [labels <LabelNameList>]
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
+        [threadid <String>]
         [deleted [<Boolean>]] [checkspam [<Boolean>]] [processforcalendar [<Boolean>]]
 ```
 
@@ -352,6 +354,7 @@ gam <UserTypeEntity> insert message
         (addlabel <LabelName>)* [labels <LabelNameList>]
         (attach <FileName> [charset <Charset>])*
         (embedimage <FileName> <String>)*
+        [threadid <String>]
         [deleted [<Boolean>]]
 ```
 
