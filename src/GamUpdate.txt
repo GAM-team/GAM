@@ -1,3 +1,7 @@
+7.47.02
+
+Added option `threadid <String>` to `gam <UserTypeEntity> draft|import|insert message`.
+
 7.47.01
 
 Fixed bug in `gam <UserTypeEntity> create shareddrive` where GAM was unnecessarily

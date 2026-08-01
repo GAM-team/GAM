@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.01'
+__version__ = '7.47.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -75576,6 +75576,7 @@ def _draftImportInsertMessage(users, operation):
   neverMarkSpam = True
   emlFile = False
   emlEncoding = 'ascii'
+  threadId = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in SMTP_HEADERS_MAP:
@@ -75633,6 +75634,8 @@ def _draftImportInsertMessage(users, operation):
       neverMarkSpam = not getBoolean()
     elif operation == 'import' and myarg == 'processforcalendar':
       processForCalendar = getBoolean()
+    elif myarg == 'threadid':
+      threadId = getString(Cmd.OB_STRING)
     else:
       unknownArgumentExit()
   if not msgText and not msgHTML:
@@ -75727,6 +75730,8 @@ def _draftImportInsertMessage(users, operation):
       message_bytes = msgText.encode(emlEncoding)
       base64_bytes = base64.b64encode(message_bytes)
       body = {'raw': base64_bytes.decode(emlEncoding)}
+    if threadId is not None:
+      body['threadId'] = threadId
     try:
       if operation != 'draft':
         if addLabelNames:
@@ -75757,6 +75762,7 @@ def _draftImportInsertMessage(users, operation):
 #	(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*
 #	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
+#	[threadid <String>]
 def draftMessage(users):
   _draftImportInsertMessage(users, 'draft')
 
@@ -75768,6 +75774,7 @@ def draftMessage(users):
 #	(addlabel <LabelName>)* [labels <LabelNameList>]
 #	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
+#	[threadid <String>]
 #	[deleted [<Boolean>]] [nevermarkspam [<Boolean>]] [processforcalendar [<Boolean>]]
 def importMessage(users):
   _draftImportInsertMessage(users, 'import')
@@ -75780,6 +75787,7 @@ def importMessage(users):
 #	(addlabel <LabelName>)* [labels <LabelNameList>]
 #	(attach <FileName> [charset <CharSet>])*
 #	(embedimage <FileName> <String>)*
+#	[threadid <String>]
 #	[deleted [<Boolean>]]
 def insertMessage(users):
   _draftImportInsertMessage(users, 'insert')
