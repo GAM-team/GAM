@@ -244,7 +244,7 @@ Select the view of devices to display:
 * `personal|nocompanydevices` - Personal devices
 
 By default, Gam makes additional API calls to display the device users for the devices;
-use `nodeviceuser` to suppress making the additional calls.
+use `nodeviceusers` to suppress making the additional calls.
 
 By default, when device users are displayed, they are all displayed on one row;
 use `oneuserperrow` to have each of a device's users displayed on a separate row with all of the other device fields.
