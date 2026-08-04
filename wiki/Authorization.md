@@ -1250,7 +1250,7 @@ gam select <Section> save
 ## Delete old versions of GAM from Configured Apps
 
 ```
-In the Admin console, go to Security/Access and Data Control/API Controls/MANAGE THIRD-PARTY APP ACCESS
+In the Admin console, go to Security/Access and Data Control/API Controls/MANAGE APP ACCESS
 Click Download list
 Select Comma-separated values (.csv)
 Click Download
