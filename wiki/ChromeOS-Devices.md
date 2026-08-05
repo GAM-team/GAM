@@ -473,18 +473,22 @@ is configurable from 0 to some large number. If the status reaches `EXPIRED`, `C
         take_a_screenshot
 
 gam <CrOSTypeEntity> issuecommand command <CrOSCommand>
-        [times_to_check_status <Integer>] [csv] [doit]
+        [times_to_check_status <Integer>] [doit]
+        [csv (addcsvdata <FieldName> <String>)*]
 ```
 By default, when a Chrome command is issued, GAM outputs details of the command status as indented keywords and values.
 * `csv` - Output the details in CSV format.
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 If the final status is not reached before GAM exits, you can issue the following commands to continue checking the status.
 ```
 gam <CrOSTypeEntity> getcommand commandid <CommandID>
-        [times_to_check_status <Integer>] [csv]
+        [times_to_check_status <Integer>]
+        [csv (addcsvdata <FieldName> <String>)*]
 ```
 By default, when a Chrome command status is read, GAM outputs details of the command status as indented keywords and values.
 * `csv` - Output the details in CSV format.
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
 
 ### Action Examples
 Remove user profile data from the device; the device will remain enrolled and connected.
