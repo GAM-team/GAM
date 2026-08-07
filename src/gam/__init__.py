@@ -38579,7 +38579,7 @@ def doInfoCIGroups():
   if not typesSet:
     typesSet = ALL_CIGROUP_MEMBER_TYPES
   fields = getFieldsFromFieldsList(groupFieldsLists['ci'])
-  cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS if 'externalIds' not in fields else API.CLOUDIDENTITY_GROUPS_BETA)
+  cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS if not fields or 'externalIds' not in fields else API.CLOUDIDENTITY_GROUPS_BETA)
   if not showJoinDate and not showUpdateDate:
     view = 'BASIC'
     pageSize = 1000
