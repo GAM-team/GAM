@@ -1351,6 +1351,7 @@ class GamCLArgs():
   OB_EVENT_ID_ENTITY = 'EventIDEntity'
   OB_EVENT_NAME_LIST = "EventNameList"
   OB_EXPORT_ITEM = 'ExportItem'
+  OB_EXTERNALIDS_LIST = "ExternalIdsList"
   OB_FIELD_NAME = 'FieldName'
   OB_FIELD_NAME_LIST = "FieldNameList"
   OB_FIELDS = 'Fields'

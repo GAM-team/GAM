@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.02'
+__version__ = '7.47.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -10123,14 +10123,12 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
       GM.Globals[GM.STDOUT] = {GM.REDIRECT_NAME: '', GM.REDIRECT_FD: None, GM.REDIRECT_MULTI_FD: StringIOobject()}
       if debugLevel:
         sys.stdout = GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]
-#      mpQueueStdout.put((pid, GM.REDIRECT_QUEUE_START, args))
       writeStdQueueHandler(mpQueueStdout,(pid, GM.REDIRECT_QUEUE_START, args))
     else:
       GM.Globals[GM.STDOUT] = {}
     if mpQueueStderr:
       if mpQueueStderr is not mpQueueStdout:
         GM.Globals[GM.STDERR] = {GM.REDIRECT_NAME: '', GM.REDIRECT_FD: None, GM.REDIRECT_MULTI_FD: StringIOobject()}
-#        mpQueueStderr.put((pid, GM.REDIRECT_QUEUE_START, args))
         writeStdQueueHandler(mpQueueStderr, (pid, GM.REDIRECT_QUEUE_START, args))
       else:
         GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD] = GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD]
@@ -10139,12 +10137,10 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
   sysRC = ProcessGAMCommand(args)
   with mplock:
     if mpQueueStdout:
-#      mpQueueStdout.put((pid, GM.REDIRECT_QUEUE_END, [sysRC, GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].getvalue()]))
       writeStdQueueHandler(mpQueueStdout, (pid, GM.REDIRECT_QUEUE_END, [sysRC, GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].getvalue()]))
       GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD].close()
       GM.Globals[GM.STDOUT][GM.REDIRECT_MULTI_FD] = None
     if mpQueueStderr and mpQueueStderr is not mpQueueStdout:
-#      mpQueueStderr.put((pid, GM.REDIRECT_QUEUE_END, [sysRC, GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD].getvalue()]))
       writeStdQueueHandler(mpQueueStderr, (pid, GM.REDIRECT_QUEUE_END, [sysRC, GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD].getvalue()]))
       GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD].close()
       GM.Globals[GM.STDERR][GM.REDIRECT_MULTI_FD] = None
@@ -15692,7 +15688,8 @@ def doSendEmail(users=None):
         j += 1
         send_email(notify['subject'], notify['message'], recipient, j, jcount,
                    msgFrom=msgFrom, msgReplyTo=msgReplyTo, html=notify['html'], charset=notify['charset'],
-                   attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders, mailBox=mailBox, threadId=threadId)
+                   attachments=attachments, embeddedImages=embeddedImages, msgHeaders=msgHeaders,
+                   mailBox=mailBox, threadId=threadId)
       Ind.Decrement()
 
 # gam <UserTypeEntity> sendreply
@@ -34525,10 +34522,9 @@ def doCreateGroup(ciGroupsAPI=False):
   groupEmail = getEmailAddress(noUid=True)
   entityType = GROUP_CIGROUP_ENTITYTYPE_MAP[ciGroupsAPI]
   if not ciGroupsAPI:
-    ci = None
+    cib = None
     body = {'email': groupEmail}
   else:
-    ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
     initialGroupConfig = 'EMPTY'
     setTrueCustomerId(cd)
     parent = f'customers/{GC.Values[GC.CUSTOMER_ID]}'
@@ -34559,6 +34555,10 @@ def doCreateGroup(ciGroupsAPI=False):
       body['labels'][CIGROUP_SECURITY_LABEL] = ''
     elif ciGroupsAPI and myarg in ['locked']:
       body['labels'][CIGROUP_LOCKED_LABEL] = ''
+    elif ciGroupsAPI and myarg == 'externalids':
+      body.setdefault('externalIds', [])
+      for externalId in set(getString(Cmd.OB_EXTERNALIDS_LIST, minLen=0).replace(',', ' ').split()):
+        body['externalIds'].append({'id': externalId, 'namespace': 'system/external'})
     elif myarg == 'verifynotinvitable':
       verifyNotInvitable = True
     elif myarg == 'recentdeleteretries':
@@ -34583,6 +34583,9 @@ def doCreateGroup(ciGroupsAPI=False):
       if k in gs_body:
         body[v] = gs_body.pop(k)
     body.setdefault('displayName', groupEmail)
+    if 'externalIds' in body and not body['externalIds']:
+      body.pop('externalIds')
+    cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS if 'externalIds' not in body else API.CLOUDIDENTITY_GROUPS_BETA)
   if gs_body:
     gs_body.setdefault('name', body.get('displayName', groupEmail))
     gs = buildGAPIObject(API.GROUPSSETTINGS)
@@ -34599,7 +34602,7 @@ def doCreateGroup(ciGroupsAPI=False):
                  throwReasons=GAPI.GROUP_CREATE_THROW_REASONS,
                  body=body, fields='')
       else:
-        callGAPI(ci.groups(), 'create',
+        callGAPI(cib.groups(), 'create',
                  throwReasons=GAPI.CIGROUP_CREATE_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                  initialGroupConfig=initialGroupConfig, body=body, fields='')
       if gs_body and not GroupIsAbuseOrPostmaster(groupEmail):
@@ -35776,6 +35779,7 @@ CIGROUP_FIELDS_CHOICE_MAP = {
   'displayname': 'displayName',
   'dynamicgroupmetadata': 'dynamicGroupMetadata',
   'email': 'groupKey',
+  'externalids': 'externalIds',
   'groupkey': 'groupKey',
   'id': 'name',
   'labels': 'labels',
@@ -35783,12 +35787,14 @@ CIGROUP_FIELDS_CHOICE_MAP = {
   'parent': 'parent',
   'updatetime': 'updateTime',
   }
-CIGROUP_FULL_FIELDS = {'additionalGroupKeys', 'createTime', 'dynamicGroupMetadata', 'parent', 'updateTime'}
+CIGROUP_LIST_FIELDS = {'additionalgroupkeys', 'externalids'}
+
+CIGROUP_FULL_FIELDS = {'additionalGroupKeys', 'dynamicGroupMetadata', 'parent'}
 CIGROUP_FIELDS_WITH_CRS_NLS = {'description'}
-CIGROUP_INFO_ORDER = ['id', 'name', 'description', 'createTime', 'updateTime',
+CIGROUP_INFO_ORDER = ['id', 'name', 'description', 'createTime', 'updateTime', 'externalIds',
                       'groupKey', 'additionalGroupKeys', 'labels', 'parent', 'dynamicGroupMetadata',
                       'SecuritySettings']
-CIGROUP_PRINT_ORDER = ['id', 'name', 'description', 'createTime', 'updateTime',
+CIGROUP_PRINT_ORDER = ['id', 'name', 'description', 'createTime', 'updateTime', 'externalIds',
                        'groupKey', 'additionalGroupKeys', 'parent', 'dynamicGroupMetadata',
                        'memberRestrictionQuery', 'memberRestrictionEvaluation']
 CIGROUP_TIME_OBJECTS = {'createTime', 'updateTime', 'statusTime'}
@@ -35938,9 +35944,9 @@ def infoGroups(entityList):
   if groupFieldsLists['ci']:
     getCloudIdentity = True
     cifields = getFieldsFromFieldsList(groupFieldsLists['ci'])
-    ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
+    cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS if 'externalIds' not in cifields else API.CLOUDIDENTITY_GROUPS_BETA)
   else:
-    cifields = None
+    cib = cifields = None
   showCategory, checkShowCategory = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
   i = 0
   count = len(entityList)
@@ -35956,7 +35962,7 @@ def infoGroups(entityList):
         _, name, groupEmail = convertGroupEmailToCloudID(ci, group, i, count)
         if not name or not groupEmail:
           continue
-        cigInfo = callGAPI(ci.groups(), 'get',
+        cigInfo = callGAPI(cib.groups(), 'get',
                            throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                            name=name, fields=cifields)
       else:
@@ -36716,6 +36722,7 @@ def doPrintGroups():
       groupFieldsLists['ci'].append('groupKey(id)')
     cifields = ','.join(set(groupFieldsLists['ci']))
     ci = buildGAPIObject(API.CLOUDIDENTITY_GROUPS)
+    cib = ci if 'externalIds' not in cifields else buildGAPIObject(API.CLOUDIDENTITY_GROUPS_BETA)
   if FJQC.formatJSON:
     sortHeaders = False
     if showCategory:
@@ -36818,7 +36825,7 @@ def doPrintGroups():
       printGettingEntityItemForWhom(Ent.CLOUD_IDENTITY_GROUP, groupEmail, i, count)
       if name and groupEmail:
         try:
-          ciGroup = callGAPI(ci.groups(), 'get',
+          ciGroup = callGAPI(cib.groups(), 'get',
                              throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                              name=name, fields=cifields)
           key = ciGroup['groupKey']['id']
@@ -37710,6 +37717,7 @@ def doPrintShowGroupTree():
 #	[makeowner] [alias|aliases <CIGroupAliasList>]
 #	[security|makesecuritygroup] [locked]
 #	[dynamic <QueryDynamicGroup>]
+#	[externalids <StringList>]
 def doCreateCIGroup():
   doCreateGroup(ciGroupsAPI=True)
 
@@ -37717,9 +37725,10 @@ def doCreateCIGroup():
 #	[updateprimaryemail <RESEarchPattern> <RESubstitution> [preview]]
 #	[copyfrom <GroupItem>] <GroupAttribute>*
 #	[security|makesecuritygroup|dynamicsecurity|makedynamicsecuritygroup]
-#	[dynamic <QueryDynamicGroup>]
-#	[memberrestrictions <QueryMemberRestrictions>]
 #	[locked|unlocked]
+#	[dynamic <QueryDynamicGroup>]
+#	[externalids <StringList>]
+#	[memberrestrictions <QueryMemberRestrictions>]
 # gam update cigroups <GroupEntity> add|create [<GroupRole>]
 #	[usersonly|groupsonly]
 #	[notsuspended|suspended] [notarchived|archived]
@@ -37928,6 +37937,10 @@ def doUpdateCIGroups():
         ci_body['labels'] = {CIGROUP_DISCUSSION_FORUM_LABEL: '',
                              CIGROUP_LOCKED_LABEL: '',
                              CIGROUP_SECURITY_LABEL: ''}
+      elif myarg == 'externalids':
+        ci_body.setdefault('externalIds', [])
+        for externalId in set(getString(Cmd.OB_EXTERNALIDS_LIST, minLen=0).replace(',', ' ').split()):
+          ci_body['externalIds'].append({'id': externalId, 'namespace': 'system/external'})
       elif myarg in ['memberrestriction', 'memberrestrictions']:
         query = getString(Cmd.OB_QUERY, minLen=0)
         member_types = {'USER': '1', 'SERVICE_ACCOUNT': '2', 'GROUP': '3',}
@@ -37957,6 +37970,7 @@ def doUpdateCIGroups():
         return
     elif not ci_body and not se_body and not updatePrimaryEmail and lockGroup is None:
       return
+    cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS if 'externalIds' not in ci_body else API.CLOUDIDENTITY_GROUPS_BETA)
     Act.Set(Act.UPDATE)
     i = 0
     count = len(entityList)
@@ -38046,12 +38060,12 @@ def doUpdateCIGroups():
           try:
             if twoUpdates:
               ci_body['labels'].pop(CIGROUP_LOCKED_LABEL)
-              callGAPI(ci.groups(), 'patch',
+              callGAPI(cib.groups(), 'patch',
                        throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
                        retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                        name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
               ci_body['labels'][CIGROUP_LOCKED_LABEL] = ''
-            callGAPI(ci.groups(), 'patch',
+            callGAPI(cib.groups(), 'patch',
                      throwReasons=GAPI.CIGROUP_UPDATE_THROW_REASONS,
                      retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                      name=name, body=ci_body, updateMask=','.join(list(ci_body.keys())))
@@ -38565,6 +38579,7 @@ def doInfoCIGroups():
   if not typesSet:
     typesSet = ALL_CIGROUP_MEMBER_TYPES
   fields = getFieldsFromFieldsList(groupFieldsLists['ci'])
+  cib = buildGAPIObject(API.CLOUDIDENTITY_GROUPS if 'externalIds' not in fields else API.CLOUDIDENTITY_GROUPS_BETA)
   if not showJoinDate and not showUpdateDate:
     view = 'BASIC'
     pageSize = 1000
@@ -38580,7 +38595,7 @@ def doInfoCIGroups():
     if not name or not group:
       continue
     try:
-      cigInfo = callGAPI(ci.groups(), 'get',
+      cigInfo = callGAPI(cib.groups(), 'get',
                          throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                          name=name, fields=fields)
       group = cigInfo['groupKey']['id']
@@ -39129,11 +39144,17 @@ def doPrintCIGroups():
     elif myarg == 'sortheaders':
       sortHeaders = getBoolean()
     elif myarg in CIGROUP_FIELDS_CHOICE_MAP:
-      csvPF.AddField(myarg, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+      if myarg not in CIGROUP_LIST_FIELDS:
+        csvPF.AddField(myarg, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+      else:
+        addFieldToFieldsList(myarg, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
     elif myarg in {'fields', 'cifields'}:
       for field in _getFieldsList():
         if field in CIGROUP_FIELDS_CHOICE_MAP:
-          csvPF.AddField(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+          if field not in CIGROUP_LIST_FIELDS:
+            csvPF.AddField(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
+          else:
+            addFieldToFieldsList(field, CIGROUP_FIELDS_CHOICE_MAP, groupFieldsLists['ci'])
         else:
           invalidChoiceExit(field, list(CIGROUP_FIELDS_CHOICE_MAP), True)
     elif getPGGroupRolesMemberDisplayOptions(myarg, rolesSet, memberDisplayOptions):
@@ -39156,6 +39177,7 @@ def doPrintCIGroups():
     typesSet = ALL_CIGROUP_MEMBER_TYPES
   showCategory, _ = finalizeIPSGMGroupRolesMemberDisplayOptions(cd, memberDisplayOptions, False)
   fields = ','.join(set(groupFieldsLists['ci']))
+  cib = ci if 'externalIds' not in fields else buildGAPIObject(API.CLOUDIDENTITY_GROUPS_BETA)
   csvPF.MapTitles('name', 'id')
   csvPF.MapTitles('displayName', 'name')
   csvPF.RemoveTitles('labels')
@@ -39211,7 +39233,7 @@ def doPrintCIGroups():
           getFullFieldsList.append(field)
     else:
       getFullFieldsList = list(CIGROUP_FULL_FIELDS)
-    getFullFields = ','.join(getFullFieldsList)#
+    getFullFields = ','.join(getFullFieldsList)
     if query:
       method = 'search'
       if 'parent' not in query:
@@ -39222,7 +39244,7 @@ def doPrintCIGroups():
       kwargs = {'parent': parent}
     printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_GROUP, query)
     try:
-      entityList = callGAPIpages(ci.groups(), method, 'groups',
+      entityList = callGAPIpages(cib.groups(), method, 'groups',
                                  pageMessage=getPageMessage(showFirstLastItems=True), messageAttribute=['groupKey', 'id'],
                                  throwReasons=GAPI.CIGROUP_LIST_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                                  view='FULL', fields=fieldsnp, pageSize=pageSize, **kwargs)
@@ -39247,7 +39269,7 @@ def doPrintCIGroups():
       kvList = [Ent.CLOUD_IDENTITY_GROUP, groupEmail]
       if name:
         try:
-          ciGroup = callGAPI(ci.groups(), 'get',
+          ciGroup = callGAPI(cib.groups(), 'get',
                              throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                              name=name, fields=fields)
           entityList.append(ciGroup)
@@ -39261,6 +39283,8 @@ def doPrintCIGroups():
   for groupEntity in entityList:
     i += 1
     groupEmail = groupEntity['groupKey']['id'].lower()
+    if GroupIsAbuseOrPostmaster(groupEmail):
+      continue
     if not checkGroupMatchPatterns(groupEmail, groupEntity, matchPatterns):
       continue
     kvList = [Ent.CLOUD_IDENTITY_GROUP, groupEmail]

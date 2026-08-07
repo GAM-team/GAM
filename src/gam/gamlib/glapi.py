@@ -48,6 +48,7 @@ CLASSROOM = 'classroom'
 CLOUDCHANNEL = 'cloudchannel'
 CLOUDIDENTITY_DEVICES = 'cloudidentitydevices'
 CLOUDIDENTITY_GROUPS = 'cloudidentitygroups'
+CLOUDIDENTITY_GROUPS_BETA = 'cloudidentitygroupsbeta'
 CLOUDIDENTITY_INBOUND_SSO = 'cloudidentityinboundsso'
 CLOUDIDENTITY_ORGUNITS = 'cloudidentityorgunits'
 CLOUDIDENTITY_ORGUNITS_BETA = 'cloudidentityorgunitsbeta'
@@ -258,6 +259,7 @@ _INFO = {
   CLOUDCHANNEL: {'name': 'Cloud Channel API', 'version': 'v1', 'v2discovery': True},
   CLOUDIDENTITY_DEVICES: {'name': 'Cloud Identity API - Devices', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_GROUPS: {'name': 'Cloud Identity API - Groups', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
+  CLOUDIDENTITY_GROUPS_BETA: {'name': 'Cloud Identity API - Groups Beta', 'version': 'v1beta1', 'v2discovery': True, 'localjson': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_INBOUND_SSO: {'name': 'Cloud Identity API - Inbound SSO Settings', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS: {'name': 'Cloud Identity API - OrgUnits', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_ORGUNITS_BETA: {'name': 'Cloud Identity API - OrgUnits Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
@@ -391,6 +393,11 @@ _CLIENT_SCOPES = [
   {'name': 'Cloud Identity API - Groups',
    'api': CLOUDIDENTITY_GROUPS,
    'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.groups'},
+  {'name': 'Cloud Identity API - Groups Beta',
+   'api': CLOUDIDENTITY_GROUPS_BETA,
+   'subscopes': READONLY,
+   'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/cloud-identity.groups'},
   {'name': 'Cloud Identity API - Inbound SSO Settings',
    'api': CLOUDIDENTITY_INBOUND_SSO,

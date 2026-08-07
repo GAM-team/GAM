@@ -4024,6 +4024,7 @@ gam delete group|groups <GroupEntity> [noactionifalias]
         description|
         displayname|
         dynamicgroupmetadata|
+        externalids|
         groupkey|
         labels|
         name|
@@ -4143,6 +4144,7 @@ gam create cigroup <EmailAddress>
         [makeowner] [alias|aliases <CIGroupAliasList>]
         [security|makesecuritygroup] [locked]
         [dynamic <QueryDynamicGroup>]
+        [externalids <StringList>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
         [updateprimaryemail <RESearchPattern> <RESubstitution>]
         [security|makesecuritygroup|
@@ -4150,6 +4152,7 @@ gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
          lockedsecurity|makelockedsecuritygroup]
         [locked|unlocked]
         [dynamic <QueryDynamicGroup>]
+        [externalids <StringList>]
         [memberrestrictions <QueryMemberRestrictions>]
 gam update cigroups <GroupEntity> create|add [<GroupRole>]
         [usersonly|groupsonly]

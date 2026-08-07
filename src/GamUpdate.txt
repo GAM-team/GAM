@@ -1,3 +1,7 @@
+7.47.03
+
+Added support for `externalIds` in Cloud Identity Groups.
+
 7.47.02
 
 Added option `threadid <String>` to `gam <UserTypeEntity> draft|import|insert message`.
@@ -13,6 +17,9 @@ Added commands to update|display a user's chat availability.
 
 * See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-user-availability
 * See: https://github.com/GAM-team/GAM/wiki/Users-Chat#display-chat-user-availability
+
+You'll need to run `gam user user@domain.com update serviceaccount` and
+select `12)  Chat API - User Availability (supports readonly)`.
 
 7.46.11
 
