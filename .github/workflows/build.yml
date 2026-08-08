@@ -169,7 +169,7 @@ jobs:
         with:
           path: |
             cache.tar.xz
-          key: gam-${{ matrix.jid }}-20260710
+          key: gam-${{ matrix.jid }}-20260808
 
       - name: Untar Cache archive
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit == 'true'
@@ -333,7 +333,7 @@ jobs:
         run: |
           mkdir -vp "${GITHUB_WORKSPACE}/src"
           cd "${GITHUB_WORKSPACE}/src"
-          git clone https://github.com/openssl/openssl.git
+          git clone --filter=blob:none https://github.com/openssl/openssl.git
           cd "${OPENSSL_SOURCE_PATH}"
           export LATEST_STABLE_TAG=$(git tag --list openssl-* | grep -v alpha | grep -v beta | sort -Vr | head -n1)
           echo "Checking out version ${LATEST_STABLE_TAG}"
@@ -405,7 +405,7 @@ jobs:
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
         run: |
           cd "${GITHUB_WORKSPACE}/src"
-          git clone https://github.com/python/cpython.git
+          git clone --filter=blob:none https://github.com/python/cpython.git
           cd "${PYTHON_SOURCE_PATH}"
           export LATEST_STABLE_TAG=$(git tag --list | grep -v a | grep -v rc | grep -v b | sort -Vr | head -n1)
           git checkout "${LATEST_STABLE_TAG}"
