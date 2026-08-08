@@ -2,6 +2,8 @@
 
 Added support for `externalIds` in Cloud Identity Groups.
 
+Upgraded to Python 3.14.7.
+
 7.47.02
 
 Added option `threadid <String>` to `gam <UserTypeEntity> draft|import|insert message`.
