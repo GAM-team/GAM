@@ -224,6 +224,7 @@ and Cloud Identity Premium accounts.
         description|
         displayname|
         dynamicgroupmetadata|
+        externalids|
         email|
         groupkey|
         id|
@@ -243,6 +244,7 @@ gam create cigroup <EmailAddress>
         [makeowner] [alias|aliases <CIGroupAliasList>]
         [security|makesecuritygroup] [locked]
         [dynamic <QueryDynamicGroup>]
+        [externalids <StringList>]
 gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
         [updateprimaryemail <RESearchPattern> <RESubstitution> [preview]]
         [security|makesecuritygroup|
@@ -250,12 +252,19 @@ gam update cigroup <GroupEntity> [copyfrom <GroupItem>] <GroupAttribute>
          lockedsecurity|makelockedsecuritygroup]
         [locked|unlocked]
         [dynamic <QueryDynamicGroup>]
+        [externalids <StringList>]
         [memberrestrictions <QueryMemberRestrictions>]
 gam delete cigroups <GroupEntity>
 ```
 The `copyfrom <GroupItem>` allows copying of group attributes from one group to another.
 The following attributes are not copied: name, description, email, admincreated, aliases, noneditablealiases.
 Any `<GroupAttribute>` specified will override the copied attributes.
+
+When updating the `externalIds` of a group you can do the following:
+* Specify a subset of the existing `externalIds` to remove the non-specified `externalIds`
+* Specify an empty list to remove all `externalIds`
+* Specify the current `externalIds` plus additional `exernalIds` to be added
+* You can not remove an existing `externalId` and add a new `externalId` in the same command
 
 You can update a non-dynamic group to a non-dynamic security group with the `makesecuritygroup` option. To update a dynamic group to a security group, use the `makedynamicsecuritygroup` option instead.
 * Warning: A Security Group cannot be changed back to a Google Group.

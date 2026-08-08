@@ -214,6 +214,7 @@ See [Collections of Items](Collections-of-Items)
         description|
         displayname|
         dynamicgroupmetadata|
+        externalids|
         groupkey|
         labels|
         name|
