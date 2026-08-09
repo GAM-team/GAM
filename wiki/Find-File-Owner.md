@@ -50,6 +50,13 @@ If the above commands fail, you can try to loop through all accounts, however th
 If any lines are displayed, for files on a My Drive, the file owner is in the `owners.0.emailAddress` column; for files on a Shared Drive, the columns `driveId,driveName` identify the Shared Drive.
 
 ```
-gam config auto_batch_min 1 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select id <DriveFileID> fields id,name,owners.emailaddress,shareddriveid showshareddrivename  norecursion showownedby any
-gam config auto_batch_min 1 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select name <DriveFileName> fields id,name,owners.emailaddress,shareddriveid showshareddrivename  norecursion showownedby any
+gam config auto_batch_min 1 num_threads 10 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select id <DriveFileID> fields id,name,owners.emailaddress,shareddriveid showshareddrivename  norecursion showownedby any
+gam config auto_batch_min 1 num_threads 10 multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess all users print filelist select name <DriveFileName> fields id,name,owners.emailaddress,shareddriveid showshareddrivename  norecursion showownedby any
+```
+
+If you know that the file is on a Shared Drive, the following will be faster.
+```
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers includefileorganizers
+gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess csv SharedDriveOrganizers.csv gam user "~organizers" print filelist select <DriveFileID> fields id,name,shareddriveid showshareddrivename
+gam config num_threads 10 csv_input_row_filter "organizers:regex:^.+$" multiprocessexit rc=0 redirect csv - multiprocess redirect stderr null multiprocess csv SharedDriveOrganizers.csv gam user "~organizers" print filelist select name <DriveFileName> fields id,name,shareddriveid showshareddrivename
 ```
