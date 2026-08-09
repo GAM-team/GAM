@@ -1,3 +1,7 @@
+7.47.04
+
+Added `clientencryptiondetails` to `<DriveFieldName>`.
+
 7.47.03
 
 Added support for `externalIds` in Cloud Identity Groups.

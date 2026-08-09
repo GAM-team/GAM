@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.03'
+__version__ = '7.47.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -58484,6 +58484,7 @@ DRIVE_FIELDS_CHOICE_MAP = {
   'cancomment': 'capabilities.canComment',
   'canreadrevisions': 'capabilities.canReadRevisions',
   'capabilities': 'capabilities',
+  'clientencryptiondetails': 'clientEncryptionDetails',
   'contenthints': 'contentHints',
   'contentrestrictions': 'contentRestrictions',
   'copyable': 'capabilities.canCopy',
