@@ -248,6 +248,7 @@
         canreadrevisions|
         capabilities|
         <DriveCapabilitiesSubfieldName>|
+        clientencryptiondetails|
         contenthints|
         contentrestrictions|
         <DriveContentRestrictionsSubfieldName>|
