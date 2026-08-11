@@ -492,11 +492,12 @@ gam [<UserTypeEntity>] print shareddriveorganizers [todrive <ToDriveAttribute>*]
         [oneorganizer [<Boolean>]]
         [shownorganizerdrives [false|true|only]]
         [includefileorganizers [<Boolean>]]
+        [showorgunits [<Boolean>]]
         [delimiter <Character>]
 ```
 Options `shareddriveadminquery|query` and `shareddrives|teamdrives` are mutually exclusive.
 
-Options `shareddriveadminquery|query` and `orgunit|org|ou` require `adminaccess|asadmin`.
+Options `shareddriveadminquery|query` and `orgunit|org|ou` and `showorgunits`` require `adminaccess|asadmin`.
 
 By default, organizers for all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
 * `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
@@ -516,6 +517,8 @@ The command defaults do not match the script defaults, they are set for the most
 * `includefileorganizers` - False
 
 To select organizers from any domain, use: `domainlist ""`
+
+Add `showorgunits` to get columns `orgUnit,orgUnitId`.
 
 For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
@@ -573,11 +576,15 @@ gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers include
 Get SharedDrive Drive file count and storage info; use one of the following for size information:
 * `showsize` - 31549200951 - This is a byte count; include `Size` in `csv_output_header_filter`
 * `showsizeunits` - 31.55 GB - This is as shown in the Admin console; include `SizeUnits` in csv_output_header_filter
+
+Add `showorgunits` to get columns `orgUnit,orgUnitId`.
 ```
 gam config csv_output_header_filter "id,name,Total,Size,SizeUnits,Item cap" csv_input_row_filter "organizers:regex:^.+$"
   redirect csv ./SharedDriveStorageInfo.csv multiprocess redirect stderr - multiprocess
   csv ./SharedDriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsize showsizeunits
 ```
+
+Add the following to display the orgUnit for each Shared Drive: `addcsvdata orgUnit "~orgUnit" addcsvdata orgUnitId "~orgUnitId"`
 
 ## Display all Shared Drives with a specific organizer
 Substitute actual email address for `organizer@domain.com`.
