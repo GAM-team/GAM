@@ -573,11 +573,12 @@ Get a list of Shared Drives/organizers.
 ```
 gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers includefileorganizers
 ```
+
+Add `showorgunits` to get columns `orgUnit,orgUnitId` to be used in the next command.
+
 Get SharedDrive Drive file count and storage info; use one of the following for size information:
 * `showsize` - 31549200951 - This is a byte count; include `Size` in `csv_output_header_filter`
 * `showsizeunits` - 31.55 GB - This is as shown in the Admin console; include `SizeUnits` in csv_output_header_filter
-
-Add `showorgunits` to get columns `orgUnit,orgUnitId`.
 ```
 gam config csv_output_header_filter "id,name,Total,Size,SizeUnits,Item cap" csv_input_row_filter "organizers:regex:^.+$"
   redirect csv ./SharedDriveStorageInfo.csv multiprocess redirect stderr - multiprocess
