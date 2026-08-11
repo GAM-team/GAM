@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.04'
+__version__ = '7.47.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -70970,6 +70970,7 @@ PRINT_ORGANIZER_TYPES = {'group', 'user'}
 #	[oneorganizer [<Boolean>]]
 #	[shownorganizerdrives false|true|only]
 #	[includefileorganizers [<Boolean>]]
+#	[showorgunits [<Boolean>]]
 #	[delimiter <Character>]
 def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   csvPF = CSVPrintFile(['id', 'name', 'organizers', 'createdTime'], 'sortall')
@@ -70981,6 +70982,8 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
   cd = entityList = orgUnitId = query = matchPattern = None
   domainList = set([(GC.Values[GC.DOMAIN] if GC.Values[GC.DOMAIN] else _getValueFromOAuth('hd'))])
   oneOrganizer = True
+  showOrgUnitPaths = False
+  orgUnitIdToPathMap = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -71026,6 +71029,9 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
     elif myarg in {'includefileorganizers', 'includecontentmanagers'}:
       if getBoolean():
         roles.add('fileOrganizer')
+    elif myarg == 'showorgunits':
+      showOrgUnitsLocation = Cmd.Location()
+      showOrgUnitPaths = getBoolean()
     else:
       unknownArgumentExit()
   if query:
@@ -71040,6 +71046,11 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
       Cmd.SetLocation(orgLocation-1)
       usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_SPECIFY_SHARED_DRIVE_ORGUNIT)
     csvPF.AddTitles(['orgUnit', 'orgUnitId'])
+  if showOrgUnitPaths:
+    if not useDomainAdminAccess:
+      Cmd.SetLocation(showOrgUnitsLocation-1)
+      usageErrorExit(Msg.ONLY_ADMINISTRATORS_CAN_DISPLAY_SHARED_DRIVE_ORGUNITS)
+    orgUnitIdToPathMap = getOrgUnitIdToPathMap(cd)
   if not includeTypes:
     includeTypes = set(['user'])
   fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
@@ -71136,6 +71147,10 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
              'createdTime': shareddrive['createdTime']}
       if orgUnitId:
         row.update(orgUnitInfo)
+      elif showOrgUnitPaths:
+        td_ouid = shareddrive.get('orgUnitId')
+        if td_ouid:
+          row.update({'orgUnit': orgUnitIdToPathMap.get(f'id:{td_ouid}', UNKNOWN), 'orgUnitId': td_ouid})
       csvPF.WriteRowTitles(row)
   if csvPF:
     csvPF.writeCSVfile('SharedDrive Organizers')
