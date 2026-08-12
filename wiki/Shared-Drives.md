@@ -574,8 +574,6 @@ Get a list of Shared Drives/organizers.
 gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers includefileorganizers
 ```
 
-Add `showorgunits` to get columns `orgUnit,orgUnitId` to be used in the next command.
-
 Get SharedDrive Drive file count and storage info; use one of the following for size information:
 * `showsize` - 31549200951 - This is a byte count; include `Size` in `csv_output_header_filter`
 * `showsizeunits` - 31.55 GB - This is as shown in the Admin console; include `SizeUnits` in csv_output_header_filter
@@ -585,7 +583,15 @@ gam config csv_output_header_filter "id,name,Total,Size,SizeUnits,Item cap" csv_
   csv ./SharedDriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsize showsizeunits
 ```
 
-Add the following to display the orgUnit for each Shared Drive: `addcsvdata orgUnit "~orgUnit" addcsvdata orgUnitId "~orgUnitId"`
+As of version 7.47.05 you can include org unit info.
+
+```
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers includefileorganizers showorgunits
+
+gam config csv_output_header_filter "id,name,Total,Size,SizeUnits,Item cap,orgUnit" csv_input_row_filter "organizers:regex:^.+$"
+  redirect csv ./SharedDriveStorageInfo.csv multiprocess redirect stderr - multiprocess
+  csv ./SharedDriveOrganizers.csv gam user "~organizers" print filecounts select shareddriveid "~id" showsize showsizeunits addcsvdata orgUnit "~orgUnit"
+```
 
 ## Display all Shared Drives with a specific organizer
 Substitute actual email address for `organizer@domain.com`.
