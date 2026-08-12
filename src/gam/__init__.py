@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.05'
+__version__ = '7.47.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -35161,6 +35161,8 @@ def doUpdateGroups():
     for group in entityList:
       i += 1
       ci, _, group = convertGroupCloudIDToEmail(ci, group, i, count)
+      if group is None:
+        continue
       if updatePrimaryEmail:
         if updatePrimaryEmail[0].search(group) is not None:
           body['email'] = re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], group)
@@ -35577,6 +35579,8 @@ def doDeleteGroups(ciGroupsAPI=False):
     try:
       if not ciGroupsAPI:
         ci, _, groupKey = convertGroupCloudIDToEmail(ci, group, i, count)
+        if groupKey is None:
+          continue
         if noActionIfAlias and not verifyGroupPrimaryEmail(cd, groupKey, i, count):
           continue
         callGAPI(cd.groups(), 'delete',
@@ -35953,6 +35957,8 @@ def infoGroups(entityList):
   for group in entityList:
     i += 1
     ci, _, group = convertGroupCloudIDToEmail(ci, group, i, count)
+    if group is None:
+      continue
     try:
       basic_info = callGAPI(cd.groups(), 'get',
                             throwReasons=GAPI.GROUP_GET_THROW_REASONS, retryReasons=GAPI.GROUP_GET_RETRY_REASONS,
@@ -36929,6 +36935,8 @@ def infoGroupMembers(entityList, ciGroupsAPI=False):
       if not ciGroupsAPI:
         try:
           ci, _, groupEmail = convertGroupCloudIDToEmail(ci, group, i, count)
+          if groupEmail is None:
+            continue
           result = callGAPI(cd.members(), 'get',
                             throwReasons=GAPI.MEMBERS_THROW_REASONS+[GAPI.MEMBER_NOT_FOUND], retryReasons=GAPI.MEMBERS_RETRY_REASONS,
                             groupKey=groupEmail, memberKey=memberKey, fields=fields)
@@ -37333,6 +37341,8 @@ def doPrintGroupMembers():
     else:
       groupEmail = convertUIDtoEmailAddress(group, cd, 'group', ciGroupsAPI=True)
       ci, _, groupEmail = convertGroupCloudIDToEmail(ci, groupEmail, i, count)
+      if groupEmail is None:
+        continue
     kvList = [Ent.CLOUD_IDENTITY_GROUP, groupEmail]
     if showCategory:
       allowExternalMembers = getGroupAllowExternalMembers(memberDisplayOptions['gs'], groupEmail, verifyAllowExternal,
@@ -37591,6 +37601,8 @@ def doShowGroupMembers():
     else:
       groupEmail = convertUIDtoEmailAddress(group, cd, 'group', ciGroupsAPI=True)
       ci, _, groupEmail = convertGroupCloudIDToEmail(ci, groupEmail, i, count)
+      if groupEmail is None:
+        continue
     if checkGroupMatchPatterns(groupEmail, group, matchPatterns):
       _showGroup(groupEmail, 0)
 
@@ -37977,6 +37989,8 @@ def doUpdateCIGroups():
     for group in entityList:
       i += 1
       ci, _, group = convertGroupCloudIDToEmail(ci, group, i, count)
+      if group is None:
+        continue
       if updatePrimaryEmail:
         if updatePrimaryEmail[0].search(group) is not None:
           ci_body['groupKey'] = {'id': re.sub(updatePrimaryEmail[0], updatePrimaryEmail[1], group)}
@@ -39291,13 +39305,15 @@ def doPrintCIGroups():
     if getFullFields:
       try:
         fullInfo = callGAPI(ci.groups(), 'get',
+                            bailOnInternalError=True,
                             throwReasons=GAPI.CIGROUP_GET_THROW_REASONS, retryReasons=GAPI.CIGROUP_RETRY_REASONS,
                             name=groupEntity['name'], fields=getFullFields)
         groupEntity.update(fullInfo)
       except (GAPI.notFound, GAPI.domainNotFound, GAPI.domainCannotUseApis,
               GAPI.forbidden, GAPI.badRequest, GAPI.invalid, GAPI.invalidArgument,
-              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable) as e:
+              GAPI.systemError, GAPI.permissionDenied, GAPI.serviceNotAvailable, GAPI.internalError) as e:
         entityActionFailedWarning(kvList, str(e), i, count)
+        continue
     if showCategory:
       allowExternalMembers = getGroupAllowExternalMembers(memberDisplayOptions['gs'], groupEmail, False,
                                                           kvList, i, count)
