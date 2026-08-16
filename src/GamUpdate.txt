@@ -1,7 +1,13 @@
+7.47.07
+
+Added `levels` and `subject` to `<CourseFieldName>`.
+
+Added `levels <String>` and `subject String>` to `<CourseAttribute>`.
+
 7.47.06
 
 Updated `gam print cigroups` to handle the following error:
-`ERROR: 500: internalError - Internal error encountered.``
+`ERROR: 500: internalError - Internal error encountered.`
 
 7.47.05
 

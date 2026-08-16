@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.06'
+__version__ = '7.47.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -50557,8 +50557,12 @@ class CourseAttributes():
         self.body['id'] = getCourseAlias()
       elif myarg == 'name':
         self.body['name'] = getString(Cmd.OB_STRING)
+      elif myarg == 'subject':
+        self.body['subject'] = getString(Cmd.OB_STRING, minLen=0)
       elif myarg == 'section':
         self.body['section'] = getString(Cmd.OB_STRING, minLen=0)
+      elif myarg == 'levels':
+        self.body['levels'] = getString(Cmd.OB_STRING, minLen=0, maxLen=999)
       elif myarg in {'heading', 'descriptionheading'}:
         self.body['descriptionHeading'] = getString(Cmd.OB_STRING, minLen=0)
       elif myarg == 'description':
@@ -51156,12 +51160,14 @@ COURSE_FIELDS_CHOICE_MAP = {
   'guardiansenabled': 'guardiansEnabled',
   'heading': 'descriptionHeading',
   'id': 'id',
+  'levels': 'levels',
   'name': 'name',
   'owneremail': 'ownerId',
   'ownerid': 'ownerId',
   'ownername': 'ownerId',
   'room': 'room',
   'section': 'section',
+  'subject': 'subject',
   'teacherfolder': 'teacherFolder',
   'teachergroupemail': 'teacherGroupEmail',
   'updatetime': 'updateTime',
@@ -51175,7 +51181,9 @@ COURSE_PROPERTY_PRINT_ORDER = [
   'courseState',
   'descriptionHeading',
   'description',
+  'subject',
   'section',
+  'levels',
   'room',
   'enrollmentCode',
   'guardiansEnabled',

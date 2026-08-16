@@ -3163,10 +3163,12 @@ gam <UserTypeEntity> show contactdelegates [shownames] [csv]
 <CourseAttribute> ::=
         (description <String>)|
         (descriptionheading|heading <String>)|
+        (levels <String>)|
         (name <String>)|
         (room <String>)|
         (section <string>)|
         (state|status <CourseState>)|
+        (subject <String>)|
         (owner|ownerid|teacher <UserItem>)
 
 <CourseFieldName> ::=
@@ -3183,12 +3185,14 @@ gam <UserTypeEntity> show contactdelegates [shownames] [csv]
         gradebooksettings|
         guardiansenabled|
         id|
+        levels|
         name|
         owneremail|
         ownerid|
         ownername|
         room|
         section|
+        subject|
         students|
         teacherfolder|
         teachergroupemail|
