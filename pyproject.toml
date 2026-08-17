@@ -67,6 +67,6 @@ packages = [
 
 [build-system]
 requires = [
-    "hatchling",
+    "hatchling<1.30.0",
 ]
 build-backend = "hatchling.build"
