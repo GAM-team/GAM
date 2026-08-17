@@ -110,10 +110,12 @@ gam user user@domain.com check|update serviceaccount
 <CourseAttribute> ::=
         (description <String>)|
         (descriptionheading|heading <String>)|
+        (levels <String>)|
         (name <String>)|
         (room <String>)|
         (section <string>)|
         (state|status <CourseState>)|
+        (subject <String>)|
         (owner|ownerid|teacher <UserItem>)
 
 <CourseFieldName> ::=
@@ -128,12 +130,14 @@ gam user user@domain.com check|update serviceaccount
         gradebooksettings|
         guardiansenabled|
         id|
+        levels|
         name|
         owneremail|
         ownerid|
         ownername|
         room|
         section|
+        subject|
         teacherfolder|
         teachergroupemail|
         updatetime
