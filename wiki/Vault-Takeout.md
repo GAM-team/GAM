@@ -684,7 +684,7 @@ Use the `returnidonly` option to have only the hold ID displayed.
 ### Create a hold from parameters.
 ```
 gam create vaulthold|hold matter <MatterItem> [name <String>]
-        corpus calendar|drive|mail|groups|hangouts_chat|voice
+        corpus calendar|drive|gemini|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
