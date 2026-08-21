@@ -135,6 +135,8 @@ Data fields identified in a `csvkmd` argument.
 ```
 ## Named Collections
 ```
+<AllowlistedDomainsEntity> ::=
+        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
         <DeviceIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
@@ -319,8 +321,6 @@ Data fields identified in a `csvkmd` argument.
         (select <ProjectIDList> | <FileSelector> | <CSVFileSelector>)
 <PrinterIDEntity> ::=
         <PrinterIDList> | <FileSelector> | <CSVFileSelector>
-<QueryDriveFile> :: = <String> See: https://developers.google.com/workspace/drive/api/guides/search-files
-<QuerySharedDrive> ::= <String> See: https://developers.google.com/workspace/drive/api/guides/search-shareddrives
 <RecipientEntity> ::=
         <EmailAddressEntity> | (select <UserTypeEntity>)
 <ResourceEntity> ::=

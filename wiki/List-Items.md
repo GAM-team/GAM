@@ -5,6 +5,7 @@
 
 ## Lists of basic items
 ```
+<AllowlistedDomainsIDList> ::= "<AllowlistedDomainsID>(,<AllowlistedDomainsID>)*"
 <AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"

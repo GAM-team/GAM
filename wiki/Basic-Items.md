@@ -267,6 +267,7 @@
 <AccessToken> ::= <String>
 <AdminAssigneeType> ::= group|user|serviceaccount|unknown
 <AlertID> ::= <String>
+<AllowlistedDomainsID> ::= allowlistedDomains/<String>|<String>
 <APIScopeURL> ::= <String>
 <APPID> ::= <String>
 <ASPID> ::= <String>

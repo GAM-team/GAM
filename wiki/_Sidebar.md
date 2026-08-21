@@ -91,6 +91,7 @@ Client Access
 * [Classroom - Membership](Classroom-Membership)
 * [Classroom - Student Groups](Classroom-StudentGroups)
 * [Cloud Channel](Cloud-Channel)
+* [Cloud Identity Allowlisted Domains](Cloud-Identity-Allowlisted-Domains)
 * [Cloud Identity Devices](Cloud-Identity-Devices)
 * [Cloud Identity Groups](Cloud-Identity-Groups)
 * [Cloud Identity Groups - Membership](Cloud-Identity-Groups-Membership)
