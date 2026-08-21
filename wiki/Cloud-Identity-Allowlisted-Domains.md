@@ -26,8 +26,8 @@ The commands to process Allowedlisted Domains were added in version `7.48.00`.
 ```
 <AllowlistedDomainsID> ::= allowlistedDomains/<String>|<String>
 <AllowlistedDomainsIDList> ::= "<AllowlistedDomainsID>(,<AllowlistedDomainsID>)*"
-<AllowlistedDomainsEntity> ::=
-        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<AllowlistedDomainsIDEntity> ::=
+        <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 
 <DomainName> ::= <String>(.<String>)+
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"
@@ -39,13 +39,13 @@ gam create allowlisteddomains <DomainNameList>
 ```
 ## Delete Cloud Identity Allowlisted Domains
 ```
-gam delete allowlisteddomains <AllowlistedDomainsNameEntity>
+gam delete allowlisteddomains <AllowlistedDomainsIDEntity>
 ```
 
 ## Display Cloud Identity Allowlisted Domains
 Display selected Allowlisted Domains
 ```
-gam info allowlisteddomain <AllowlistedDomainsNameEntity>
+gam info allowlisteddomain <AllowlistedDomainsIDEntity>
         [formatjson]
 ```
 

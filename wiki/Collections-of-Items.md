@@ -135,8 +135,8 @@ Data fields identified in a `csvkmd` argument.
 ```
 ## Named Collections
 ```
-<AllowlistedDomainsEntity> ::=
-        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
+<AllowlistedDomainsIDEntity> ::=
+        <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
         <DeviceIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
