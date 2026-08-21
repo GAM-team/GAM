@@ -1055,8 +1055,8 @@ Specify a collection of items by directly specifying them; the item type is dete
 
 ## Named collections
 
-<AllowlistedDomainsEntity> ::=
-        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
+<AllowlistedDomainsTDEntity> ::=
+        <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
         <DeviceIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
@@ -4258,12 +4258,12 @@ gam show cigroup-members
 
 <AllowlistedDomainsID> ::= allowlistedDomains/<String>|<String>
 <AllowlistedDomainsIDList> ::= "<AllowlistedDomainsID>(,<AllowlistedDomainsID>)*"
-<AllowlistedDomainsEntity> ::=
-        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<AllowlistedDomainsIDEntity> ::=
+        <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 
 gam create allowlisteddomains <DomainNameList>
-gam delete allowlisteddomains <AllowlistedDomainsNameEntity>
-gam info allowlisteddomain <AllowlistedDomainsNameEntity>
+gam delete allowlisteddomains <AllowlistedDomainsIDEntity>
+gam info allowlisteddomain <AllowlistedDomainsIDEntity>
         [formatjson]
 gam print allowlisteddomains [todrive <ToDriveAttribute>*]
         [filter <String>]

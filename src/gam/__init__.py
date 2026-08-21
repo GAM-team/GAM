@@ -31457,7 +31457,7 @@ def doCreateCIAllowlistedDomains():
             GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
       entityActionFailedWarning([Ent.CLOUD_IDENTITY_ALD, domainName], str(e), i, count)
 
-# gam delete allowlisteddomains <CIAllowlistedDomainsNameEntity>
+# gam delete allowlisteddomains <CIAllowlistedDomainsIDEntity>
 def doDeleteCIAllowlistedDomains():
   ci = buildGAPIObject(API.CLOUDIDENTITY_ALD)
   entityList = getEntityList(Cmd.OB_CIALD_NAME_ENTITY)
@@ -31494,7 +31494,7 @@ def _showAllowlistedDomain(ald, FJQC, i=0, count=0):
   showJSON(None, ald)
   Ind.Decrement()
 
-# gam info allowlisteddomain <CIAllowlistedDomainsNameEntity>
+# gam info allowlisteddomain <CIAllowlistedDomainsIDEntity>
 #	[formatjson]
 def doInfoCIAllowlistedDomains():
   ci = buildGAPIObject(API.CLOUDIDENTITY_ALD)
