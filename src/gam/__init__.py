@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.47.07'
+__version__ = '7.48.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -31429,6 +31429,143 @@ def doDeleteChromeNetwork():
   except (GAPI.notFound, GAPI.permissionDenied, GAPI.invalidArgument, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning(kvList, str(e))
 
+# gam create allowlisteddomains <DomainNameList>
+def doCreateCIAllowlistedDomains():
+  ci = buildGAPIObject(API.CLOUDIDENTITY_ALD)
+  entityList = getEntityList(Cmd.OB_DOMAIN_NAME_LIST)
+  checkForExtraneousArguments()
+  i = 0
+  count = len(entityList)
+  performActionNumItems(count, Ent.CLOUD_IDENTITY_ALD)
+  for domainName in entityList:
+    i += 1
+    try:
+      result = callGAPI(ci.allowlistedDomains(), 'create',
+                        bailOnInternalError=True,
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.UNIMPLEMENTED_ERROR,
+                                      GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                        body={'domain': domainName})
+      if result['done']:
+        if 'error' not in result:
+          pname = result['response'].get('name', domainName)
+          entityActionPerformed([Ent.CLOUD_IDENTITY_ALD, pname, Ent.DOMAIN, domainName], i, count)
+        else:
+          entityActionFailedWarning([Ent.CLOUD_IDENTITY_ALD, domainName], result['error']['message'], i, count)
+      else:
+        entityActionPerformedMessage([Ent.CLOUD_IDENTITY_ALD, domainName], Msg.ACTION_IN_PROGRESS.format('create'), i, count)
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.unimplementedError,
+            GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
+      entityActionFailedWarning([Ent.CLOUD_IDENTITY_ALD, domainName], str(e), i, count)
+
+# gam delete allowlisteddomains <CIAllowlistedDomainsNameEntity>
+def doDeleteCIAllowlistedDomains():
+  ci = buildGAPIObject(API.CLOUDIDENTITY_ALD)
+  entityList = getEntityList(Cmd.OB_CIALD_NAME_ENTITY)
+  checkForExtraneousArguments()
+  i = 0
+  count = len(entityList)
+  performActionNumItems(count, Ent.CLOUD_IDENTITY_ALD)
+  for ald in entityList:
+    i += 1
+    pname = ald if ald.startswith('allowlistedDomains/') else 'allowlistedDomains/'+ald
+    try:
+      result = callGAPI(ci.allowlistedDomains(), 'delete',
+                        bailOnInternalError=True,
+                        throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                      GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                        name=pname)
+      if result['done']:
+        if 'error' not in result:
+          entityActionPerformed([Ent.CLOUD_IDENTITY_ALD, pname], i, count)
+        else:
+          entityActionFailedWarning([Ent.CLOUD_IDENTITY_ALD, pname], result['error']['message'], i, count)
+      else:
+        entityActionPerformedMessage([Ent.CLOUD_IDENTITY_ALD, pname], Msg.ACTION_IN_PROGRESS.format('delete'), i, count)
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
+      entityActionFailedWarning([Ent.CLOUD_IDENTITY_ALD, pname], str(e), i, count)
+
+def _showAllowlistedDomain(ald, FJQC, i=0, count=0):
+  if FJQC is not None and FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(ald),
+                         ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.CLOUD_IDENTITY_ALD, ald['name']], i, count)
+  Ind.Increment()
+  showJSON(None, ald)
+  Ind.Decrement()
+
+# gam info allowlisteddomain <CIAllowlistedDomainsNameEntity>
+#	[formatjson]
+def doInfoCIAllowlistedDomains():
+  ci = buildGAPIObject(API.CLOUDIDENTITY_ALD)
+  entityList = getEntityList(Cmd.OB_CIALD_NAME_ENTITY)
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    FJQC.GetFormatJSON(myarg)
+  i = 0
+  count = len(entityList)
+  for ald in entityList:
+    i += 1
+    pname = ald if ald.startswith('allowlistedDomains/') else 'allowlistedDomains/'+ald
+    try:
+      ald = callGAPI(ci.allowlistedDomains(), 'get',
+                     bailOnInternalError=True,
+                     throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT,
+                                   GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED, GAPI.INTERNAL_ERROR],
+                     name=pname)
+      _showAllowlistedDomain(ald, FJQC, i, count)
+    except (GAPI.invalid, GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
+      entityActionFailedWarning([Ent.CLOUD_IDENTITY_ALD, pname], str(e), i, count)
+
+# gam print allowlisteddomains [todrive <ToDriveAttribute>*]
+#	[filter <String>]
+#	[formatjson [quotechar <Character>]]
+# gam show allowlisteddomains
+#	[filter <String>]
+#	[formatjson]
+def doPrintShowCIAllowlistedDomains():
+  ci = buildGAPIObject(API.CLOUDIDENTITY_ALD)
+  csvPF = CSVPrintFile(['name', 'domain']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  ifilter = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'filter':
+      ifilter = getString(Cmd.OB_STRING)
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  printGettingAllAccountEntities(Ent.CLOUD_IDENTITY_ALD, ifilter)
+  pageMessage = getPageMessage(showFirstLastItems=True)
+  try:
+    alds = callGAPIpages(ci.allowlistedDomains(), 'list', 'allowlistedDomains',
+                         pageMessage=pageMessage, messageAttribute='domain',
+                         throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                         filter=ifilter, pageSize=100)
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CLOUD_IDENTITY_ALD, ifilter], str(e))
+  if not csvPF:
+    count = len(alds)
+    if FJQC is None or not FJQC.formatJSON:
+      performActionNumItems(count, Ent.CLOUD_IDENTITY_ALD)
+    i = 0
+    for ald in alds:
+      i += 1
+      _showAllowlistedDomain(ald, FJQC, i, count)
+  else:
+    for ald in alds:
+      row = flattenJSON(ald)
+      if not FJQC.formatJSON:
+        csvPF.WriteRowTitles(row)
+      elif csvPF.CheckRowTitles(row):
+        csvPF.WriteRowNoFilter({'name': ald['name'], 'domain': ald['domain'],
+                                'JSON': json.dumps(cleanJSON(ald),
+                                                   ensure_ascii=False, sort_keys=True)})
+  if csvPF:
+    csvPF.writeCSVfile('Allowlisted Domains')
+
 # Device command utilities
 def buildGAPICIDeviceServiceObject():
   if not GC.Values[GC.ENABLE_DASA]:
@@ -38884,7 +39021,7 @@ def doCreateUpdateCIPolicy():
     if result['done']:
       if 'error' not in result:
         if not updateCmd:
-          pname = result['response'].get('id', pname)
+          pname = result['response'].get('name', pname)
         entityActionPerformed([Ent.POLICY, pname])
       else:
         entityActionFailedWarning([Ent.POLICY, pname], result['error']['message'])
@@ -44949,7 +45086,7 @@ def _setHoldQuery(body, queryParameters):
 #	vaultquery <QueryItem>
 #	[showdetails|returnidonly]
 # gam create vaulthold|hold matter <MatterItem> [name <String>]
-#	corpus calendar|drive|mail|groups|hangouts_chat|voice
+#	corpus calendar|drive|gemini|mail|groups|hangouts_chat|voice
 #	[(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
 #	[query <QueryVaultCorpus>]
 #	[terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]
@@ -81141,6 +81278,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CHROMENETWORK:	doCreateChromeNetwork,
   Cmd.ARG_CHROMEPOLICYIMAGE:	doCreateChromePolicyImage,
   Cmd.ARG_CHROMEPROFILECOMMAND:	doCreateChromeProfileCommand,
+  Cmd.ARG_CIALD:		doCreateCIAllowlistedDomains,
   Cmd.ARG_CIGROUP:		doCreateCIGroup,
   Cmd.ARG_CIPOLICY:		doCreateUpdateCIPolicy,
   Cmd.ARG_CONTACT:		doCreateDomainContact,
@@ -81263,6 +81401,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMENETWORK:	doDeleteChromeNetwork,
       Cmd.ARG_CHROMEPOLICY:	doDeleteChromePolicy,
       Cmd.ARG_CHROMEPROFILE:	doDeleteChromeProfile,
+      Cmd.ARG_CIALD:		doDeleteCIAllowlistedDomains,
       Cmd.ARG_CIGROUP:		doDeleteCIGroups,
       Cmd.ARG_CIPOLICY:		doDeleteCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doDeleteClassroomInvitations,
@@ -81350,6 +81489,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEPROFILE:	doInfoChromeProfile,
       Cmd.ARG_CHROMEPROFILECOMMAND:	doInfoChromeProfileCommand,
       Cmd.ARG_CHROMESCHEMA:	doInfoChromePolicySchemas,
+      Cmd.ARG_CIALD:		doInfoCIAllowlistedDomains,
       Cmd.ARG_CIGROUP:		doInfoCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doInfoCIGroupMembers,
       Cmd.ARG_CIPOLICY:		doInfoCIPolicies,
@@ -81442,6 +81582,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromePolicySchemas,
       Cmd.ARG_CHROMESNVALIDITY:	doPrintChromeSnValidity,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
+      Cmd.ARG_CIALD:		doPrintShowCIAllowlistedDomains,
       Cmd.ARG_CIGROUP:		doPrintCIGroups,
       Cmd.ARG_CIGROUPMEMBERS:	doPrintCIGroupMembers,
       Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,
@@ -81579,6 +81720,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEPROFILECOMMAND:	doPrintShowChromeProfileCommands,
       Cmd.ARG_CHROMESCHEMA:	doPrintShowChromePolicySchemas,
       Cmd.ARG_CHROMEVERSIONS:	doPrintShowChromeVersions,
+      Cmd.ARG_CIALD:		doPrintShowCIAllowlistedDomains,
       Cmd.ARG_CIGROUPMEMBERS:	doShowCIGroupMembers,
       Cmd.ARG_CIPOLICY:		doPrintShowCIPolicies,
       Cmd.ARG_CLASSROOMINVITATION:	doPrintShowClassroomInvitations,
@@ -81766,6 +81908,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHROMEPROFILES:	Cmd.ARG_CHROMEPROFILE,
   Cmd.ARG_CHROMEPROFILECOMMANDS:	Cmd.ARG_CHROMEPROFILECOMMAND,
   Cmd.ARG_CHROMESCHEMAS:	Cmd.ARG_CHROMESCHEMA,
+  Cmd.ARG_CIALDS:		Cmd.ARG_CIALD,
   Cmd.ARG_CIGROUPS:		Cmd.ARG_CIGROUP,
   Cmd.ARG_CIGROUPSMEMBERS:	Cmd.ARG_CIGROUPMEMBERS,
   Cmd.ARG_CIMEMBER:		Cmd.ARG_CIGROUPMEMBERS,

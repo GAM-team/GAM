@@ -46,6 +46,7 @@ CHROMEPOLICY = 'chromepolicy'
 CHROMEVERSIONHISTORY = 'versionhistory'
 CLASSROOM = 'classroom'
 CLOUDCHANNEL = 'cloudchannel'
+CLOUDIDENTITY_ALD = 'cloudidentityallowlisteddomains'
 CLOUDIDENTITY_DEVICES = 'cloudidentitydevices'
 CLOUDIDENTITY_GROUPS = 'cloudidentitygroups'
 CLOUDIDENTITY_GROUPS_BETA = 'cloudidentitygroupsbeta'
@@ -257,6 +258,7 @@ _INFO = {
   CHROMEPOLICY: {'name': 'Chrome Policy API', 'version': 'v1', 'v2discovery': True},
   CHROMEVERSIONHISTORY: {'name': 'Chrome Version History API', 'version': 'v1', 'v2discovery': True},
   CLOUDCHANNEL: {'name': 'Cloud Channel API', 'version': 'v1', 'v2discovery': True},
+  CLOUDIDENTITY_ALD: {'name': 'Cloud Identity API - Allowlisted Domains', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_DEVICES: {'name': 'Cloud Identity API - Devices', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_GROUPS: {'name': 'Cloud Identity API - Groups', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
   CLOUDIDENTITY_GROUPS_BETA: {'name': 'Cloud Identity API - Groups Beta', 'version': 'v1beta1', 'v2discovery': True, 'mappedAPI': 'cloudidentity'},
@@ -390,6 +392,11 @@ _CLIENT_SCOPES = [
    'subscopes': READONLY,
    'offByDefault': True,
    'scope': 'https://www.googleapis.com/auth/apps.order'},
+  {'name': 'Cloud Identity API - Allowlisted Domains',
+   'api': CLOUDIDENTITY_ALD,
+   'subscopes': READONLY,
+   'offByDefault': True,
+   'scope': 'https://www.googleapis.com/auth/cloud-identity.allowlisteddomains'},
   {'name': 'Cloud Identity API - Groups',
    'api': CLOUDIDENTITY_GROUPS,
    'subscopes': READONLY,

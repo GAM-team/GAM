@@ -1,3 +1,8 @@
+7.48.00
+
+Added support for Allowlisted Domains.
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Allowlisted-Domains
+
 7.47.07
 
 Added `levels` and `subject` to `<CourseFieldName>`.

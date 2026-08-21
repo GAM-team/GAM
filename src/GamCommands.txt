@@ -371,6 +371,7 @@ If an item contains spaces, it should be surrounded by ".
 <AccessToken> ::= <String>
 <AdminAssigneeType> ::= group|user|serviceaccount|unknown
 <AlertID> ::= <String>
+<AllowlistedDomainsID> ::= allowlistedDomains/<String>|<String>
 <APIScopeURL> ::= <String>
 <APPID> ::= <String>
 <ASPID> ::= <String>
@@ -698,6 +699,7 @@ If an item contains spaces, it should be surrounded by ".
 
 ## Lists of basic items
 
+<AllowlistedDomainsIDList> ::= "<AllowlistedDomainsID>(,<AllowlistedDomainsID>)*"
 <AdminAssigneeTypeList> ::= "<AdminAssigneeType>(,<AdminAssigneeType>)*"
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
@@ -1053,6 +1055,8 @@ Specify a collection of items by directly specifying them; the item type is dete
 
 ## Named collections
 
+<AllowlistedDomainsEntity> ::=
+        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
         <DeviceIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
@@ -1247,22 +1251,22 @@ Specify a collection of items by directly specifying them; the item type is dete
         <SerialNumberList> | <FileSelector> | <CSVFileSelector>
 <SharedDriveIDEntity> ::=
         <DriveFileItem> |
-        (teamdriveid <DriveFileItem>) | (teamdriveid:<DriveFileItem>)
+        (shareddriveid <DriveFileItem>) | (shareddriveid:<DriveFileItem>)
 <SharedDriveNameEntity> ::=
-        (teamdrive <SharedDriveName>) | (teamdrive:<SharedDriveName>)
+        (shareddrive <SharedDriveName>) | (shareddrive:<SharedDriveName>)
 <SharedDriveEntity> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>
 <SharedDriveAdminQueryEntity> ::=
-        (teamdriveadminquery <QueryTeamDrive>) | (teamdriveadminquery:<QueryTeamDrive>)
+        (shareddriveadminquery <QuerySharedDrive>) | (shareddriveadminquery:<QuerySharedDrive>)
 <SharedDriveEntityAdmin> ::=
         <SharedDriveIDEntity> |
         <SharedDriveNameEntity>|
         <SharedDriveAdminQueryEntity>
 <SharedDriveFileNameEntity> ::=
-        (teamdrivefilename <DriveFileName>) | (teamdrivefilename:<DriveFileName>)
+        (shareddrivefilename <DriveFileName>) | (shareddrivefilename:<DriveFileName>)
 <SharedDriveFileQueryEntity> ::=
-        (teamdrivequery <QueryDriveFile>) | (teamdrivequery:<QueryDriveFile>)
+        (shareddrivequery <QueryDriveFile>) | (shareddrivequery:<QueryDriveFile>)
 <SharedDriveFileQueryShortcut> ::=
         all_files | all_folders | all_google_files | all_non_google_files | all_items
 <SiteACLScopeEntity> ::=
@@ -4250,6 +4254,24 @@ gam show cigroup-members
         [minimal|basic|full]
         [(depth <Number>) | includederivedmembership]
 
+# Cloud Identity Allowlisted Domains
+
+<AllowlistedDomainsID> ::= allowlistedDomains/<String>|<String>
+<AllowlistedDomainsIDList> ::= "<AllowlistedDomainsID>(,<AllowlistedDomainsID>)*"
+<AllowlistedDomainsEntity> ::=
+        <AllowlistedDomainsList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+
+gam create allowlisteddomains <DomainNameList>
+gam delete allowlisteddomains <AllowlistedDomainsNameEntity>
+gam info allowlisteddomain <AllowlistedDomainsNameEntity>
+        [formatjson]
+gam print allowlisteddomains [todrive <ToDriveAttribute>*]
+        [filter <String>]
+        [formatjson [quotechar <Character>]]
+gam show allowlisteddomains
+        [filter <String>]
+        [formatjson]
+
 # Cloud Identity Devices
 
 <DeviceID> ::= devices/<String>
@@ -5630,7 +5652,8 @@ gam show vaultexports|exports
 gam create vaulthold|hold matter <MatterItem> [name <String>]
         vaultquery <QueryItem>
         [showdetails|returnidonly]
-gam create vaulthold|hold matter <MatterItem> [name <String>] corpus calendar|drive|mail|groups|hangouts_chat|voice
+gam create vaulthold|hold matter <MatterItem> [name <String>]
+        corpus calendar|drive|gemini|mail|groups|hangouts_chat|voice
         [(accounts|groups|users <EmailItemList>) | (orgunit|org|ou <OrgUnit>)]
         [query <QueryVaultCorpus>]
         [terms <String>] [start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>]

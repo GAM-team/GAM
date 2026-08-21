@@ -135,6 +135,7 @@ class GamEntity():
   CLASSROOM_USER_PROFILE = 'clup'
   CLIENT_ID = 'clid'
   CLIENT_SECRETS_JSON_FILE = 'csjf'
+  CLOUD_IDENTITY_ALD = 'cial'
   CLOUD_IDENTITY_GROUP = 'cidg'
   CLOUD_STORAGE_BUCKET = 'clsb'
   CLOUD_STORAGE_FILE = 'clsf'
@@ -508,6 +509,7 @@ class GamEntity():
     CLASSROOM_USER_PROFILE: ['Classroom User Profile', 'Classroom User Profile'],
     CLIENT_ID: ['Client IDs', 'Client ID'],
     CLIENT_SECRETS_JSON_FILE: ['Client Secrets File', 'Client Secrets File'],
+    CLOUD_IDENTITY_ALD: ['Cloud Identity Allowlisted Domains', 'Cloud Identity Allowlisted Domain'],
     CLOUD_IDENTITY_GROUP: ['Cloud Identity Groups', 'Cloud Identity Group'],
     CLOUD_STORAGE_BUCKET: ['Cloud Storage Buckets', 'Cloud Storage Bucket'],
     CLOUD_STORAGE_FILE: ['Cloud Storage Files', 'Cloud Storage File'],

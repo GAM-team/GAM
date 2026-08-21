@@ -876,6 +876,8 @@ class GamCLArgs():
   ARG_CHROMESCHEMAS = 'chromeschemas'
   ARG_CHROMESNVALIDITY = 'chromesnvalidity'
   ARG_CHROMEVERSIONS = 'chromeversions'
+  ARG_CIALD = 'allowlisteddomain'
+  ARG_CIALDS = 'allowlisteddomains'
   ARG_CIGROUP = 'cigroup'
   ARG_CIGROUPS = 'cigroups'
   ARG_CIGROUPMEMBERS = 'cigroupmembers'
@@ -1276,6 +1278,7 @@ class GamCLArgs():
   OB_CHROME_VERSION = 'ChromeVersion'
   OB_CIDR_NETMASK = 'CIDRnetmask'
   OB_CIGROUP_ALIAS_LIST = "CIGroupAliasList"
+  OB_CIALD_NAME_ENTITY = 'CIAllowlistedDomainNameEntity'
   OB_CIPOLICY_NAME_ENTITY = 'CIPolicyNameEntity'
   OB_CLASSIFICATION_LABEL_ID = 'ClassificationLabelID'
   OB_CLASSIFICATION_LABEL_NAME = 'ClassificationLabelName'
