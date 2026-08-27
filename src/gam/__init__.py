@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.00'
+__version__ = '7.48.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -17812,14 +17812,14 @@ def _convertTransferAppIDtoName(apps, appID):
   return f'applicationId: {appID}'
 
 DRIVE_AND_DOCS_APP_NAME = 'drive and docs'
-GOOGLE_LOOKER_STUDIO_APP_NAME = 'looker studio'
+GOOGLE_DATA_STUDIO_APP_NAME = 'data studio'
 
 SERVICE_NAME_CHOICE_MAP = {
-  'datastudio': GOOGLE_LOOKER_STUDIO_APP_NAME,
+  'datastudio': GOOGLE_DATA_STUDIO_APP_NAME,
   'drive': DRIVE_AND_DOCS_APP_NAME,
   'googledrive': DRIVE_AND_DOCS_APP_NAME,
   'gdrive': DRIVE_AND_DOCS_APP_NAME,
-  'lookerstudio': GOOGLE_LOOKER_STUDIO_APP_NAME,
+  'lookerstudio': GOOGLE_DATA_STUDIO_APP_NAME,
   }
 
 def _validateTransferAppName(apps, appName):

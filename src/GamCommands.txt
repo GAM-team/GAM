@@ -1055,7 +1055,7 @@ Specify a collection of items by directly specifying them; the item type is dete
 
 ## Named collections
 
-<AllowlistedDomainsTDEntity> ::=
+<AllowlistedDomainsIDEntity> ::=
         <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
         <DeviceIDList> |

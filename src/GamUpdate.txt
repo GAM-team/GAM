@@ -1,3 +1,10 @@
+7.48.01
+
+Updated `gam create datatransfer` to handle the following error:
+`ERROR: Invalid choice (looker studio): Expected <drive and docs|calendar|data studio>`
+
+Upgraded to OpenSSL 4.0.2.
+
 7.48.00
 
 Added support for Allowlisted Domains.
