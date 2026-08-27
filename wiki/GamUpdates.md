@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.01
+
+Updated `gam create datatransfer` to handle the following error:
+`ERROR: Invalid choice (looker studio): Expected <drive and docs|calendar|data studio>`
+
+Upgraded to OpenSSL 4.0.2.
+
 7.48.00
 
 Added support for Allowlisted Domains.

@@ -13,7 +13,7 @@
 ```
 <DataTransferService> ::=
         calendar|
-        datastudio|lookerstudio|"looker studio"|
+        datastudio|lookerstudio|"data studio"|
         drive|gdrive|googledrive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 

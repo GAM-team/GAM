@@ -56,7 +56,7 @@ gam show allowlisteddomains
         [formatjson]
 ```
 By default, all Allowlisted Domains are displayed.
-* `filter <String>` - Display Allowlisted Domains, See https://docs.cloud.google.com/identity/docs/reference/rest/v1/allowlistedDomains/list
+* `filter <String>` - Display a specific Allowlisted Domain: `filter "domain=xyz.com"`
 
 By default, Gam displays the information as an indented list of keys and values.
 * `formatjson` - Display the fields in JSON format.
@@ -67,7 +67,7 @@ gam print allowlisteddomains [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 ```
 By default, all Allowlisted Domains are displayed.
-* `filter <String>` - Display Allowlisted Domains, See https://docs.cloud.google.com/identity/docs/reference/rest/v1/allowlistedDomains/list
+* `filter <String>` - Display a specific Allowlisted Domain: `filter "domain=xyz.com"`
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.

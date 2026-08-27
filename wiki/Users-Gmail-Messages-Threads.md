@@ -312,7 +312,7 @@ gam <UserTypeEntity> import message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
-* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message. The default `chatser` is `ascii`.
+* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message. The default `charset` is `ascii`.
 
 When `emlfile` is not specified:
 * If `to` is not specified, it is set to the user email addresses in `<UserTypeEntity>`.
@@ -363,7 +363,7 @@ gam <UserTypeEntity> insert message
 * `file|htmlfile <FileName> [charset <Charset>]` - Read the message from `<FileName>`
 * `gdoc|ghtml <UserGoogleDoc>` - Read the message from `<UserGoogleDoc>`
 * `gcsdoc|gcshtml <StorageBucketObjectName>` - Read the message from the Google Cloud Storage file `<StorageBucketObjectName>`
-* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file. The default `chatser` is `ascii`.
+* `emlfile <FileName> [charset <Charset>]` - Read the message from the EML message file `<FileName>`. SMTP headers specified in the command will replace those in the message file. The default `charset` is `ascii`.
 
 When `emlfile` is not specified:
 * If `to` is not specified, it is set to the user email addresses in `<UserTypeEntity>`.
