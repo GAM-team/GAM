@@ -9,7 +9,7 @@ authors = [
 ]
 dependencies = [
     "arrow==1.4.0",
-    "chardet==7.5.1",
+    "chardet==7.6.0",
     "cryptography==50.0.0",
     "distro==1.9.0 ; sys_platform=='linux'",
     "filelock==3.32.3",
