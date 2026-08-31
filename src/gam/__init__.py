@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.01'
+__version__ = '7.48.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -38980,7 +38980,7 @@ def doCreateUpdateCIPolicy():
         Cmd.Backup()
         usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'query'))
       orgUnit, targetResource = _getOrgunitsOrgUnitIdPath(cd, getString(Cmd.OB_ORGUNIT_PATH))
-      policy['policyQuery'] = {'orgUnit': f"orgUnits/{targetResource}"}
+      policy['policyQuery'] = {'orgUnit': f"{targetResource.replace('orgunits/', 'orgUnits/')}"}
     elif myarg == 'group':
       if orgUnit:
         Cmd.Backup()
@@ -38990,7 +38990,7 @@ def doCreateUpdateCIPolicy():
         usageErrorExit(Msg.ARE_MUTUALLY_EXCLUSIVE.format(myarg, 'query'))
       groupEmail = getEmailAddress(returnUIDprefix='uid:')
       targetResource = f"groups/{convertEmailAddressToUID(groupEmail, cd, emailType='group')}"
-      policy['policyQuery'] = {'group': f"groups/{targetResource}"}
+      policy['policyQuery'] = {'group': f"{targetResource}"}
     elif myarg == 'query':
       if groupEmail:
         Cmd.Backup()
