@@ -522,7 +522,7 @@ Add `showorgunits` to get columns `orgUnit,orgUnitId`.
 
 For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
-gam redirect csv ./TeamDriveOrganizers.csv print shareddriveorganizers
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers
 ```
 
 ## Display all Shared Drives with no members

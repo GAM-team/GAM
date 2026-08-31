@@ -364,7 +364,7 @@ gam <UserTypeEntity> show shareddrives
         [showwebviewlink text|hyperlink]
         [guiroles [<Boolean>] [formatjson]
 ```
-By default, Gam displays all Teams Drives accessible by the user.
+By default, Gam displays all Shared Drives accessible by the user.
 * `matchname <REMatchPattern>` - Display Shared Drives with names that match a pattern.
 * `(role|roles <SharedDriveACLRoleList>)*` - Display Shared Drives where the user has one of the specified roles.
 
@@ -381,7 +381,7 @@ gam <UserTypeEntity> print shareddrives [todrive <ToDriveAttribute>*]
         [showwebviewlink text|hyperlink]
         [guiroles [<Boolean>]] [formatjson [quotechar <Character>]]
 ```
-By default, Gam displays all Teams Drives accessible by the user.
+By default, Gam displays all Shared Drives accessible by the user.
 * `matchname <REMatchPattern>` - Display Shared Drives with names that match a pattern.
 * `(role|roles <SharedDriveACLRoleList>)*` - Display Shared Drives where the user has one of the specified roles.
 
@@ -468,7 +468,7 @@ Options `shareddriveadminquery|query` and `shareddrives|teamdrives` are mutually
 Options `shareddriveadminquery|query` and `orgunit|org|ou` require `adminaccess|asadmin`.
 
 By default, organizers for all Shared Drives are displayed; use the following options to select a subset of Shared Drives:
-* `shareddriveadminquery|query <QueryTeamDrive>` - Use a query to select Shared Drives
+* `shareddriveadminquery|query <QuerySharedDrive>` - Use a query to select Shared Drives
 * `shareddrives|teamdrives <SharedDriveIDList>` - Select the Shared Drive IDs specified in `<SharedDriveIDList>`
 * `shareddrives|teamdrives select <FileSelector>|<CSVFileSelector>` - Select the Shared Drive IDs specified in `<FileSelector>|<CSVFileSelector>`
 * `orgunit|org|ou <OrgUnitPath>` - Only Shared Drives in the specified Org Unit are selected
@@ -488,7 +488,7 @@ To select organizers from any domain, use: `domainlist ""`
 
 For example, to get a single user organizer from your domain for all Shared Drives including no organizer drives:
 ```
-gam redirect csv ./ShareddriveOrganizers.csv print shareddriveorganizers
+gam redirect csv ./SharedDriveOrganizers.csv print shareddriveorganizers
 ```
 
 ## Manage Shared Drive access
