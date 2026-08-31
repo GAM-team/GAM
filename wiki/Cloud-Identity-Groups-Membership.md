@@ -398,7 +398,7 @@ When the `internal` or `external` options are specified, GAM adds the  column `a
 that shows that setting for the group and adds the column `category` that shows whether the member
 is `external` or `internal`.
 
-The option `verifyallowexternal` causes GAM to only display `external` users in groups with `allowExternalMembers=False'.
+The option `verifyallowexternal` causes GAM to only display `external` users in groups with `allowExternalMembers=False`.
 
 By default, members that are groups are displayed as a single entry of type GROUP; this option recursively expands group members to display their user members.
 * `recursive` - Recursively expand group members
