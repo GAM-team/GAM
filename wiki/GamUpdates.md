@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.02
+
+Fixed bug in `gam create|update policy` that caused the following error:
+`Policy: New Policy, Create Failed: Error(7016): Request contains invalid argument(s)..`
+
 7.48.01
 
 Updated `gam create datatransfer` to handle the following error:
