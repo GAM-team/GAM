@@ -8,7 +8,6 @@
 - [Display Shared Drive themes](#display-shared-drive-themes)
 - [Manage Shared Drives](#manage-shared-drives)
   - [Create a Shared Drive](#create-a-shared-drive)
-    - [Bulk Create Shared Drives](#bulk-create-shared-drives)
   - [Update Shared Drive settings](#update-shared-drive-settings)
   - [Delete a Shared Drive](#delete-a-shared-drive)
   - [Change Shared Drive visibility](#change-shared-drive-visibility)
@@ -287,7 +286,7 @@ gam [<UserTypeEntity>] create shareddrive <Name>
          ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+        [errorretries <Integer>] [movetoorgunitdelay <Integer>] 
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
         [adminaccess|asadmin]
 ```
@@ -304,20 +303,9 @@ gam [<UserTypeEntity>] create shareddrive <Name>
 `downloadrestrictedforreaders|downloadrestrictions.restrictedforreaders` or
 `downloadrestrictedforreadersdownloadrestrictions.restrictedforwriters`.
 
-If any attributes other than `themeid` are specified, GAM must create the Drive and then update the Drive attributes.
-Even though the Create API returns success, the Update API fails and reports that the Drive does not exist. 
+To move the Drive to an OU, GAM must create the Drive and verify it's existence before performing the move.
 * `errorretries <Integer>` - Number of create/update error retries; default value 5, range 0-10
-* `updateinitialdelay <Integer>` - Initial delay after create before update: default value 10, range 0-60
-* `updateretrydelay <Integer>` - Retry delay when update fails; default value 10, range 0-60
-
-For this reason, GAM waits `updateinitialdelay <Integer>` seconds after the create before attempting the update.
-GAM repeats the update `errorretries <Integer>` times waiting `updateretrydelay <Integer>` between tries
-if the Update API continues to fail.
-
-This is acceptable when creating a single Shared Drive, for bulk Shared Drive creation see [Bulk Create Shared Drives](#bulk-create-shared-drives).
-
-This option is only available when the command is run as an administrator.
-* `ou|org|orgunit <OrgUnitItem>` - See: https://workspaceupdates.googleblog.com/2022/05/shared-drives-in-organizational-units-open-beta.html
+* `movetoorguitdelay <Integer>` - Initial delay after create before move: default value 10, range 0-60
 
 By default, the Google Administrator and Shared Drive name and ID values are displayed on stdout.
 * `csv [todrive <ToDriveAttribute>*]` - Write Google Administrator, Shared Drive name and ID values to a CSV file.
@@ -333,40 +321,6 @@ Windows PowerShell
 $shareddriveId = & gam create shareddrive ... returnidonly
 Windows Command Prompt
 for /f "delims=" %a in ('gam create shareddrive ... returnidonly') do set shareddriveId=%a
-```
-
-## Bulk Create Shared Drives
-Most Shared Drive attributes can't be applied as part of the create, the Drive must be created and then updated with the desired attributes.
-
-As a newly created Drive can't be updated for 30+ seconds; split the operation into two commands: create and update.
-
-Make a CSV file SharedDriveNames.csv with at least one column, name.
-```
-gam redirect csv ./SharedDrivesCreated.csv multiprocess csv SharedDriveNames.csv gam create shareddrive "~name" csv
-```
-This will create a three column CSV file SharedDrivesCreated.csv with columns: User,name,id
-* There will be a row for each Shared Drive.
-* User will be the Google Administrator.
-
-Use the SharedDrivesCreated.csv file to apply the desired options/attributes.
-```
-gam redirect stdout ./SharedDrivesUpdated.txt multiprocess redirect stderr stdout csv ./SharedDrivesCreated.csv gam update shareddrive "~id" [options/attributes as desired]
-```
-
-Make Shared Drives for students
-```
-StudentSharedDrives.csv
-primaryEmail,Name
-bob@domain.com,Bob Jones
-mary@domain.com,Mary Smith
-...
-
-# Create the student Shared Drives
-gam redirect stdout ./StudentSharedDrivesCreated.txt multiprocess redirect stderr stdout redirect csv ./StudentSharedDrivesCreated.csv multiprocess csv StudentSharedDrives.csv gam create shareddrive "~Name" csv addcsvdata primaryEmail "~primaryEmail"
-# Update attributes/options
-gam redirect stdout ./StudentSharedDrivesUpdated.txt multiprocess redirect stderr stdout csv ./StudentSharedDrivesCreated.csv gam update shareddrive "~id" [options/attributes as desired]
-# Add ACLs granting the students organizer access to their Shared Drives.
-gam redirect stdout ./StudentSharedDrivesAccess.txt multiprocess redirect stderr stdout csv StudentSharedDrivesCreated.csv gam add drivefileacl "~id" user "~primaryEmail" role organizer
 ```
 
 ## Update Shared Drive settings
@@ -389,10 +343,6 @@ gam [<UserTypeEntity>] update shareddrive <SharedDriveEntity> [name <Name>]
 `<SharedDriveRestrictionsSubfieldName>` `copyrequireswriterpermission` can not be used with
 `downloadrestrictedforreaders|downloadrestrictions.restrictedforreaders` or
 `downloadrestrictedforreadersdownloadrestrictions.restrictedforwriters`.
-
-* `ou|org|orgunit <OrgUnitItem>` - See: https://workspaceupdates.googleblog.com/2022/05/shared-drives-in-organizational-units-open-beta.html
-
-This option is only available when the command is run as an administrator.
 
 ## Delete a Shared Drive
 ```
