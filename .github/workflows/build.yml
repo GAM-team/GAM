@@ -726,6 +726,10 @@ jobs:
           write-Host "Certs:"
           Get-ChildItem -Path Cert:\CurrentUser\My | Format-List *
           write-Host "Signing ${env:gam}...."
+
+          # Convert gampath so Powershell is happy
+          $env:gampath = cygpath -w $env:gampath
+
           # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
           # see Certum certs since SimplySignDesktop is x64-only today.
 
