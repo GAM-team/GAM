@@ -734,8 +734,16 @@ jobs:
           # see Certum certs since SimplySignDesktop is x64-only today.
 
           # sign all executable files not just exe
-          Get-ChildItem -Path "${env:gampath}" -Recurse -Include *.exe, *.dll, *.pyd  | ForEach-Object {
-            Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$_"
+          $files = Get-ChildItem -Path "${env:gampath}" -Recurse -Include *.exe, *.dll, *.pyd
+          foreach ($file in $files) {
+            $sig = Get-AuthenticodeSignature $file.FullName
+            # Only sign the file if it does not already have a valid signature
+            if ($sig.Status -eq 'NotSigned') {
+              Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", $file.FullName
+            }
+            else {
+              Write-Host "Skipping $($file.Name) - Already signed by $($sig.SignerCertificate.Subject)"
+            }
           }
           write-Host "Verifying signature of ${env:gam}...."
           # verify signature. If we failed to sign we should fail to verify and die.
