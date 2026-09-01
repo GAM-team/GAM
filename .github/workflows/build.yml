@@ -735,7 +735,7 @@ jobs:
 
           # sign all executable files not just exe
           Get-ChildItem -Path "${env:gampath}" -Recurse -Include *.exe, *.dll, *.pyd  | ForEach-Object {
-            Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$_.FullNamem"
+            Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", "$_.FullName"
           }
           write-Host "Verifying signature of ${env:gam}...."
           # verify signature. If we failed to sign we should fail to verify and die.
