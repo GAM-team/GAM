@@ -17,6 +17,7 @@ DefaultDirName={sd}\GAM7
 LicenseFile=dist\gam\gam7\LICENSE
 PrivilegesRequired=admin
 ChangesEnvironment=yes
+SignedUninstaller=yes
 
 ; Tell Inno Setup to use a custom signtool defined via the command line
 SignTool=gamsigntool
