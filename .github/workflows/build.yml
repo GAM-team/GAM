@@ -724,10 +724,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          write-Host "Personal Store Certs:"
-          Get-ChildItem -Path Cert:\CurrentUser\My | Format-Table Thumbprint, Subject, NotAfter -AutoSize
-          write-Host "System Store Certs:"
-          Get-ChildItem -Path Cert:\LocalMachine\My | Format-Table Thumbprint, Subject, NotAfter -AutoSize
+          write-Host "Certs:"
+          Get-ChildItem -Path Cert:\CurrentUser\My | Format-List *
           write-Host "Signing ${env:gam}...."
           # Always explicitely use x64 version os signtool.exe, arm64 version apparently can't
           # see Certum certs since SimplySignDesktop is x64-only today.
