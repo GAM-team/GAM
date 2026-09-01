@@ -30,7 +30,7 @@ env:
   PYTHON_SOURCE_PATH: ${{ github.workspace }}/src/cpython
   CRYPTOGRAPHY_BUILD_OPENSSL_NO_LEGACY: 1
   CRYPTOGRAPHY_OPENSSL_NO_LEGACY: 1
-  WINDOWS_CODESIGN_CERT_HASH: 3B11D9340A45CF078FF7FD984F1C3E30DA82FD05
+  WINDOWS_CODESIGN_CERT_HASH: F0525AB6343A5E9A5F75CF81FC56CF67E316CB28
 
 jobs:
   build:
@@ -678,7 +678,6 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          #$url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.3.90/SimplySignDesktop-9.4.3.90-64-bit-en.msi"
           $url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.4.92/SimplySignDesktop-9.4.4.92-64-bit-en.msi"
           $file = "SimplySignDesktop.msi"
           Invoke-WebRequest $url -OutFile $file
