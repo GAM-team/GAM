@@ -5084,7 +5084,8 @@ gam create shareddrive <Name>
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-        [errorretries <Integer>] [movetoorgunitdelay <Integer>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+        [movetoorgunitdelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 gam update shareddrive <SharedDriveEntity> [name <Name>]
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
@@ -5138,7 +5139,8 @@ gam <UserTypeEntity> create shareddrive <Name> adminaccess
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-        [errorretries <Integer>] [movetoorgunitdelay <Integer>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+        [movetoorgunitdelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 gam <UserTypeEntity> update shareddrive <SharedDriveEntity> adminaccess [name <Name>]
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
@@ -5171,7 +5173,8 @@ gam <UserTypeEntity> create shareddrive <Name>
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
         [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-        [errorretries <Integer>] [movetoorgunitdelay <Integer>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
+        [movetoorgunitdelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 gam <UserTypeEntity> update shareddrive <SharedDriveEntity> [name <Name>]
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
@@ -8889,8 +8892,8 @@ gam <UserTypeEntity> show shareddrivethemes
 gam <UserTypeEntity> create shareddrive <Name>
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
         ([restrictions.]<SharedDriveRestrictionsSubfieldName> <Boolean>)*
-        [hide|hidden <Boolean>] [ou|org|orgunit <OrgUnitItem>]
-        [errorretries <Integer>] [movetoorgunitdelay <Integer>]
+        [hide|hidden <Boolean>]
+        [errorretries <Integer>] [updateinitialdelay <Integer>] [updateretrydelay <Integer>]
         [(csv [todrive <ToDriveAttribute>*] (addcsvdata <FieldName> <String>)*) | returnidonly]
 gam <UserTypeEntity> update shareddrive <SharedDriveEntity> [name <Name>]
         [(theme|themeid <String>) | ([customtheme <DriveFileID> <Float> <Float> <Float>] [color <ColorValue>])]
