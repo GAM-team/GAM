@@ -725,7 +725,7 @@ jobs:
         run: |
           write-Host "Certs:"
           Get-ChildItem -Path Cert:\CurrentUser\My | Format-List *
-          write-Host "Signing ${env:gam}...."
+          write-Host "Preparing to sign files in ${env:gampath}...."
 
           # Convert gampath so Powershell is happy
           $env:gampath = cygpath -w $env:gampath
@@ -735,16 +735,41 @@ jobs:
 
           # sign all executable files not just exe
           $files = Get-ChildItem -Path "${env:gampath}" -Recurse -Include *.exe, *.dll, *.pyd
+          
+          # Collect files that actually need signing
+          $filesToSign = @()
           foreach ($file in $files) {
             $sig = Get-AuthenticodeSignature $file.FullName
             # Only sign the file if it does not already have a valid signature
-            if ($sig.Status -eq 'NotSigned') {
-              Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe'  -ArgumentList "sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v", $file.FullName
+            if ($sig.Status -eq 'NotSigned' -or $sig.Status -eq 'HashMismatch') {
+              $filesToSign += $file.FullName
             }
             else {
               Write-Host "Skipping $($file.Name) - Already signed by $($sig.SignerCertificate.Subject)"
             }
           }
+
+          # Batch sign the collected files
+          if ($filesToSign.Count -gt 0) {
+            Write-Host "Batch signing $($filesToSign.Count) files..."
+            
+            # Chunk the files to avoid the 32,767 character command-line limit in Windows
+            $chunkSize = 50
+            for ($i = 0; $i -lt $filesToSign.Count; $i += $chunkSize) {
+              $upperBound = [Math]::Min($i + $chunkSize - 1, $filesToSign.Count - 1)
+              $chunk = $filesToSign[$i..$upperBound]
+              Write-Host "Signing chunk ($($chunk.Count) files)..."
+              
+              $baseArgs = @("sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v")
+              $allArgs = $baseArgs + $chunk
+              
+              Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' -ArgumentList $allArgs
+            }
+          }
+          else {
+            Write-Host "No files require signing."
+          }
+
           write-Host "Verifying signature of ${env:gam}...."
           # verify signature. If we failed to sign we should fail to verify and die.
           & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:gam"
