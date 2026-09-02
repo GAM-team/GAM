@@ -8476,15 +8476,15 @@ gam <UserTypeEntity> show lookerstudiopermissions
 <MeetSpaceName> ::= spaces/<String> | <String>
 <MeetSpaceOptions> ::=
         accesstype open|trusted|restricted |
+        autorecording <Boolean> |
+        autosmartnotes <Boolean> |
+        autotranscription <Boolean> |
+        defaultjoinasviewer <Boolean> |
         entrypointaccess all|creatorapponly |
         moderation <Boolean> |
         chatrestriction hostsonly|norestriction |
-        reactionrestriction hostsonly|norestriction |
         presentrestriction hostsonly|norestriction |
-        defaultjoinasviewer <Boolean> |
-        recording <Boolean> |
-        transcription <Boolean> |
-        smartnotes <Boolean>
+        reactionrestriction hostsonly|norestriction
 
 gam <UserTypeEntity> create meetspace
         <MeetSpaceOptions>*
