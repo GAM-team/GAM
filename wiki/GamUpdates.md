@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.04
+
+Updated `gam [<UserTypeEntity>] create|update shareddrive` to handle API changes and the following error:
+`ERROR: 403: insufficientFilePermissions - The user does not have sufficient permissions for this file.`
+
 7.48.02
 
 Fixed bug in `gam create|update policy` that caused the following error:

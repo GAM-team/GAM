@@ -38,16 +38,16 @@ gam user user@domain.com update serviceaccount
 <MeetSpaceName> ::= spaces/<String> | <String>
 <MeetSpaceOptions> ::=
         accesstype open|trusted|restricted |
+        autorecording <Boolean> |
+        autosmartnotes <Boolean> |
+        autotranscription <Boolean> |
+        defaultjoinasviewer <Boolean> |
         entrypointaccess all|creatorapponly |
+        firstjoiner hostsonly|anyone |
         moderation <Boolean> |
         chatrestriction hostsonly|norestriction |
-        reactionrestriction hostsonly|norestriction |
         presentrestriction hostsonly|norestriction |
-        defaultjoinasviewer <Boolean> |
-        firstjoiner hostsonly|anyone |
-        autorecording <Boolean> |
-        autotranscription <Boolean> |
-        autosmartnotes <Boolean>
+        reactionrestriction hostsonly|norestriction
 ```
 
 ## Manage Meet Spaces
