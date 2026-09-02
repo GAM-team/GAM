@@ -45,9 +45,9 @@ gam user user@domain.com update serviceaccount
         presentrestriction hostsonly|norestriction |
         defaultjoinasviewer <Boolean> |
         firstjoiner hostsonly|anyone |
-        recording <Boolean> |
-        transcription <Boolean> |
-        smartnotes <Boolean>
+        autorecording <Boolean> |
+        autotranscription <Boolean> |
+        autosmartnotes <Boolean>
 ```
 
 ## Manage Meet Spaces
