@@ -18,7 +18,7 @@ dependencies = [
     "google-auth-oauthlib==1.4.0",
     "google-auth==2.56.3",
     "httplib2==0.32.0",
-    "lxml==6.1.1",
+    "lxml==6.1.2",
     "passlib==1.7.4",
     "pathvalidate==3.3.1",
     "pysocks==1.7.1",
