@@ -564,6 +564,7 @@ class LazyLoader(types.ModuleType):
     return dir(module)
 
 yubikey = LazyLoader('yubikey', globals(), 'gam.gamlib.yubikey')
+glmcp = LazyLoader('glmcp', globals(), 'gam.gamlib.glmcp')
 
 # gam yubikey resetpvi [yubikey_serialnumber <String>]
 def doResetYubiKeyPIV():
@@ -9810,6 +9811,25 @@ def doUsage():
   doVersion(checkForArgs=False)
   writeStdout(Msg.HELP_SYNTAX.format(os.path.join(GM.Globals[GM.GAM_PATH], FN_GAMCOMMANDS_TXT)))
   writeStdout(Msg.HELP_WIKI.format(GAM_WIKI))
+
+# gam mcp [allowwrites] [maxrows <Number>] [timeout <Number>] [nowiki]
+def doMCPServer():
+  allowWrites = noWiki = False
+  maxRows = glmcp.DEFAULT_MAX_ROWS
+  timeout = glmcp.DEFAULT_TIMEOUT
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'allowwrites':
+      allowWrites = True
+    elif myarg == 'maxrows':
+      maxRows = getInteger(minVal=0)
+    elif myarg == 'timeout':
+      timeout = getInteger(minVal=1)
+    elif myarg == 'nowiki':
+      noWiki = True
+    else:
+      unknownArgumentExit()
+  glmcp.MCPServer(allowWrites, maxRows, timeout, noWiki).run()
 
 class NullHandler(logging.Handler):
   def emit(self, record):
@@ -81280,6 +81300,7 @@ MAIN_COMMANDS = {
   'comment':			(Act.COMMENT, doComment),
   'help': 			(Act.PERFORM, doUsage),
   'list': 			(Act.LIST, doListType),
+  'mcp': 			(Act.PERFORM, doMCPServer),
   'report': 			(Act.REPORT, doReport),
   'sendemail': 			(Act.SENDEMAIL, doSendEmail),
   'version': 			(Act.PERFORM, doVersion),

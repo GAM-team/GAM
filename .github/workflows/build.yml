@@ -666,6 +666,25 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
+      - name: MCP server smoke test
+        run: |
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"gam_syntax","arguments":{"query":"print users","limit":1}}}' \
+            '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"gam_run","arguments":{"args":["version","simple"]}}}' \
+            | $gam mcp nowiki > mcp-replies.jsonl
+          cat mcp-replies.jsonl
+          test "$(wc -l < mcp-replies.jsonl)" -eq 4
+          if grep -v -q '^{"jsonrpc":"2.0",' mcp-replies.jsonl; then echo "Non-protocol output on stdout"; exit 1; fi
+          grep -q '"name":"gam_syntax"' mcp-replies.jsonl
+          grep -q '"name":"gam_docs"' mcp-replies.jsonl
+          grep -q '"name":"gam_run"' mcp-replies.jsonl
+          grep -q 'gam print users \[todrive' mcp-replies.jsonl
+          grep -F -q "\"stdout\":\"${GAMVERSION}\"" mcp-replies.jsonl
+          rm -f mcp-replies.jsonl
+
       - name: Install NPM deps
         if: runner.os == 'Windows'
         run: |
