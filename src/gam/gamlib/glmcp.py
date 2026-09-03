@@ -106,11 +106,11 @@ DEFINITION_PATTERN = re.compile(r'^<([A-Za-z0-9]+)> ::=')
 SECTION_HEADING_PATTERN = re.compile(r'^#{1,2} (\S.*)$')
 MARKDOWN_HEADING_PATTERN = re.compile(r'^(#{1,4}) (.*)$')
 MARKDOWN_LINK_PATTERN = re.compile(r'\[([^\]]+)\]\(([^)\s]+)\)')
-# Access and refresh tokens must never reach the assistant
+# Access and refresh tokens must never reach the assistant: (pattern, replacement)
 TOKEN_SCRUB_PATTERNS = [
-  re.compile(r'ya29\.[0-9A-Za-z_\-\.]+'),
-  re.compile(r'1//[0-9A-Za-z_\-]+'),
-  re.compile(r'("?(?:access_token|refresh_token|id_token|client_secret|private_key)"?\s*[:=]\s*)"[^"]*"'),
+  (re.compile(r'ya29\.[0-9A-Za-z_\-\.]+'), '[REDACTED]'),
+  (re.compile(r'1//[0-9A-Za-z_\-]+'), '[REDACTED]'),
+  (re.compile(r'("?(?:access_token|refresh_token|id_token|client_secret|private_key)"?\s*[:=]\s*)"[^"]*"'), r'\1"[REDACTED]"'),
   ]
 
 INSTRUCTIONS = '''GAM (https://github.com/GAM-team/GAM) is a command line tool that manages a Google Workspace domain.
@@ -718,12 +718,14 @@ class CommandRunner():
     self.transport = transport
     self.lock = threading.Lock()
     self.stateLock = threading.Lock()
+    self.replied = threading.Condition(self.stateLock)
+    self.pending = 0
     self.overdue = 0
 
   @staticmethod
   def scrub(text):
-    for pattern in TOKEN_SCRUB_PATTERNS:
-      text = pattern.sub(lambda mg: (mg.group(1) if mg.lastindex else '')+'[REDACTED]', text)
+    for pattern, replacement in TOKEN_SCRUB_PATTERNS:
+      text = pattern.sub(replacement, text)
     return text
 
   def execute(self, args):
@@ -779,6 +781,7 @@ class CommandRunner():
     with self.stateLock:
       if self.overdue:
         return False
+      self.pending += 1
     state = {'done': False, 'overdue': False}
 
     def finish(result):
@@ -787,6 +790,9 @@ class CommandRunner():
           return
         state['done'] = True
       callback(result)
+      with self.replied:
+        self.pending -= 1
+        self.replied.notify_all()
 
     def timedOut():
       with self.stateLock:
@@ -819,9 +825,9 @@ class CommandRunner():
     return True
 
   def waitIdle(self):
-    ''' Wait, at most one timeout period, for queued and running commands to finish '''
-    if self.lock.acquire(timeout=self.timeout):
-      self.lock.release()
+    ''' Wait, at most one timeout period, until every accepted command has sent its reply '''
+    with self.replied:
+      self.replied.wait_for(lambda: self.pending == 0, timeout=self.timeout)
 
 class DeferredResponse(Exception):
   ''' Raised by a handler that will send its response later from another thread '''
