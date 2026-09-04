@@ -20,6 +20,7 @@ mail delegation is enabled. In the admin console, go to Apps/Google Workspace/Gm
 * [Gmail API - Delegates](https://developers.google.com/gmail/api/v1/reference/users.settings.delegates)
 * [Delegation Notes](https://support.google.com/a/answer/7223765)
 * [Delegation Notes](https://support.google.com/a/answer/11946994)
+* [Delegation to Groups](https://knowledge.workspace.google.com/admin/gmail/let-users-delegate-access-to-a-gmail-account)
 
 ## Definitions
 * [`<UserTypeEntity>`](Collections-of-Users)
