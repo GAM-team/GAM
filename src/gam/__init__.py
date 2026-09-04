@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.04'
+__version__ = '7.48.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -38829,11 +38829,11 @@ def _filterPolicies(ci, pageMessage, ifilter):
   try:
     policies = callGAPIpages(ci.policies(), 'list', 'policies',
                              pageMessage=pageMessage,
-                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND],
                              filter=ifilter, pageSize=100)
     # Google returns unordered results, sort them by setting type
     return sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
-  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.notFound) as e:
     entityActionFailedWarning([Ent.POLICY, ifilter], str(e))
     return []
 
@@ -38883,21 +38883,19 @@ def _cleanPolicy(policy, add_warnings, no_appnames, no_idmapping,
   # add any warnings to applicable policies
   if add_warnings and policy['setting']['type'] in CIPOLICY_ADDITIONAL_WARNINGS:
     policy['warning'] = CIPOLICY_ADDITIONAL_WARNINGS[policy['setting']['type']]
+  groupEmail = orgUnitPath = ''
   if groupId := policy['policyQuery'].get('group'):
     if (not no_idmapping) or (groupEmailPattern is not None):
       _, _, groupEmail = convertGroupCloudIDToEmail(groups_ci, groupId)
       if not no_idmapping:
         policy['policyQuery']['groupEmail'] = groupEmail
-      if groupEmailPattern is not None:
-        return groupEmailPattern.match(groupEmail)
-  elif orgId := policy['policyQuery'].get('orgUnit'):
+  if orgId := policy['policyQuery'].get('orgUnit'):
     if (not no_idmapping) or (orgUnitPathPattern is not None):
       orgUnitPath = convertOrgUnitIDtoPath(cd, orgId)
       if not no_idmapping:
         policy['policyQuery']['orgUnitPath'] = orgUnitPath
-      if orgUnitPathPattern is not None:
-        return orgUnitPathPattern.match(orgUnitPath)
-  return True
+  return ((groupEmailPattern is None or groupEmailPattern.match(groupEmail)) and
+          (orgUnitPathPattern is None or orgUnitPathPattern.match(orgUnitPath)))
 
 def _showPolicy(policy, FJQC, i=0, count=0):
   if FJQC is not None and FJQC.formatJSON:
@@ -39173,6 +39171,11 @@ def doPrintShowCIPolicies():
       orgUnitPathPattern = getREPattern(re.IGNORECASE)
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if csvPF and not FJQC.formatJSON:
+    csvPF.SetSortTitles(['name', 'customer',
+                         'policyQuery.group', 'policyQuery.groupEmail',
+                         'policyQuery.orgUnit', 'policyQuery.orgUnitPath',
+                         'type'])
   printGettingAllAccountEntities(Ent.POLICY, ifilter)
   policies = _filterPolicies(ci, getPageMessage(), ifilter)
   if not csvPF:
