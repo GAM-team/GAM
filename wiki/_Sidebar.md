@@ -54,6 +54,7 @@ Command Processing
 * [CSV Special Characters](CSV-Special-Characters)
 * [CSV Input Filtering](CSV-Input-Filtering)
 * [CSV Output Filtering](CSV-Output-Filtering)
+* [MCP Server](MCP-Server)
 * [Meta Commands and File Redirection](Meta-Commands-and-File-Redirection)
 * [Permission matches](Permission-Matches)
 * [Tag Replace](Tag-Replace)

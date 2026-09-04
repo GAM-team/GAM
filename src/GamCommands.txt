@@ -1389,6 +1389,14 @@ gam comment <String>*
 gam version [check|checkrc|simple|extended] [timeoffset] [location <HostName>]
 gam help
 
+# MCP Server
+
+Serve the Model Context Protocol over stdin/stdout so that an AI assistant can look up GAM command syntax
+and documentation and, read-only unless allowwrites is specified, run GAM commands.
+See: https://github.com/GAM-team/GAM/wiki/MCP-Server
+
+gam mcp [allowwrites] [maxrows <Number>] [timeout <Number>] [nowiki]
+
 # Bulk Processing
 
 <BatchContent> ::=

@@ -35,6 +35,7 @@ datas += [('gam/meet-v2beta.json', '.')]
 datas += [('gam/serviceaccountlookup-v1.json', '.')]
 hiddenimports = [
      'gam.gamlib.yubikey',
+     'gam.gamlib.glmcp',
      ]
 
 excludes = [

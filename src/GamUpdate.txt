@@ -1,3 +1,10 @@
+7.49.00
+
+Added `gam mcp`, a Model Context Protocol (MCP) server over stdin/stdout that lets an AI assistant
+look up GAM command syntax and wiki documentation and, read-only unless `allowwrites` is specified,
+run GAM commands.
+* See: https://github.com/GAM-team/GAM/wiki/MCP-Server
+
 7.48.04
 
 Updated `gam [<UserTypeEntity>] create|update shareddrive` to handle API changes and the following error:
