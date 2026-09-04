@@ -7,6 +7,10 @@ Fixed bug in `gam print|show policies group <REMatchPattern>` that mistakenly di
 
 Updated `gam print policies` to improve column name sorting.
 
+Updated `gam version extended` and `gam <UserTypeEntity> check|update serviceaccount` to handle
+the following error when a proxy is being used:
+`ERROR: Socket error: 403: Forbidden`
+
 7.48.04
 
 Updated `gam [<UserTypeEntity>] create|update shareddrive` to handle API changes and the following error:

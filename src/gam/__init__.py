@@ -9528,7 +9528,7 @@ def getLocalGoogleTimeOffset(testLocation=GOOGLE_TIMECHECK_LOCATION):
       googleUTC = arrow.Arrow.strptime(headerData[0]['date'], '%a, %d %b %Y %H:%M:%S %Z', tzinfo='UTC')
     except (httplib2.HttpLib2Error, RuntimeError) as e:
       handleServerError(e)
-    except httplib2.socks.HTTPError as e:
+    except (httplib2.socks.HTTPError, OSError) as e:
       # If user has specified an HTTPS proxy, the http request will probably fail as httplib2
       # turns a GET into a CONNECT which is not valid for an http address
       if prot == 'http':
