@@ -10,6 +10,19 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.05
+
+Updated `gam print|show policies` to handle the following (inappropriate I believe) error:
+`ERROR: 404: notFound - Requested entity was not found.`
+
+Fixed bug in `gam print|show policies group <REMatchPattern>` that mistakenly displayed orgUnit policies.
+
+Updated `gam print policies` to improve column name sorting.
+
+Updated `gam version extended` and `gam <UserTypeEntity> check|update serviceaccount` to handle
+the following error when a proxy is being used:
+`ERROR: Socket error: 403: Forbidden`
+
 7.48.04
 
 Updated `gam [<UserTypeEntity>] create|update shareddrive` to handle API changes and the following error:

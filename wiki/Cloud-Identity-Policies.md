@@ -78,7 +78,7 @@ By default, additional API calls are made for `settings/workspace_marketplace.ap
 to get the application name for the application ID. Use option `noappnames` to suppress these calls.
 
 By default, additional API calls are made to add the `policyQuery/groupEmail` and `policyQuery/orgUnitPath` fields
-that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping'
+that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping`
 to suppress these calls and not add the additional fields.
 
 By default, Gam displays the information as an indented list of keys and values.
@@ -102,7 +102,7 @@ By default,  additional API calls are made for `settings/workspace_marketplace.a
 to get the application name for the application ID. Use option `noappnames` to suppress these calls.
 
 By default, additional API calls are made to add the `policyQuery/groupEmail` and `policyQuery/orgUnitPath` fields
-that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping'
+that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping`
 to suppress these calls and not add the additional fields.
 
 By default, Gam displays the information as an indented list of keys and values.
@@ -122,7 +122,7 @@ By default, all policies are displayed:
 By default, policy warnings are displayed, use the `nowarnings` option to suppress their display.
 
 By default, additional API calls are made to add the `policyQuery/groupEmail` and `policyQuery/orgUnitPath` fields
-that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping'
+that are mapped from the `policyQuery/group` and `policyQuery/orgUnit` fields. Use option `noidmapping`
 to suppress these calls and not add the additional fields.
 
 By default,  additional API calls are made for `settings/workspace_marketplace.apps_allowlist`

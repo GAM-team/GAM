@@ -156,11 +156,11 @@ Alias,Target,TargetType
 ```
 
 ## Bulk delete aliases
-You can bulk delete aliases as follows; use `(query <QueryUser>)|(queries <QueryUserList>)` and
-`aliasmatchpattern <REMatchPattern>` as desired.
+You can bulk delete aliases by using `gam print aliases` to list the aliases to be deleted and then deleting them.
 ```
-gam redirect csv ./OldDomainAliases.csv print aliases aliasmatchpattern ".*@olddomain.com" onerowpertarget suppressnoaliasrows
-gam redirect stdout ./DeleteAliases.txt multiprocess redirect stderr stdout csv ./OldDomainAliases.csv gam remove aliases "~Target" "~TargetType" "~Aliases"
+gam redirect csv ./Aliases.csv print aliases domain olddomain.com  onerowpertarget suppressnoaliasrows
+gam redirect csv ./Aliases.csv print aliases aliasmatchpattern ".*@olddomain.com" onerowpertarget suppressnoaliasrows
+gam redirect stdout ./DeleteAliases.txt multiprocess redirect stderr stdout csv ./Aliases.csv gam remove aliases "~Target" "~TargetType" "~Aliases"
 ```
 
 ## Bulk reassign aliases
