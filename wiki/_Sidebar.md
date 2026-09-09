@@ -32,7 +32,7 @@ Notes and Information
 * [Upgrade Benefits](Upgrade-Benefits)
 * [Questions? Visit the GAM Discussion Forum](https://groups.google.com/forum/#!forum/google-apps-manager)
 * [GAM Public Chat Room](GAM-Public-Chat-Room)
-* [Scripts](Scripts)
+* [Scripts](https://github.com/GAM-team/GAM-Scripts)
 * [Code Wiki](https://codewiki.google/github.com/gam-team/gam)
 * [Other Resources](Other-Resources)
 * [Drive REST API v3](Drive-REST-API-v3)

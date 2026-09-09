@@ -3079,7 +3079,7 @@ to make an additional API call to get and display the sheet file name that is no
 
 7.00.00
 
-Merged GAM-Team version
+Merged GAM-team version
 
 6.81.02
 
@@ -24485,7 +24485,7 @@ to make an additional API call to get and display the sheet file name that is no
 
 ### 7.00.00
 
-Merged GAM-Team version
+Merged GAM-team version
 
 ### 6.81.02
 
