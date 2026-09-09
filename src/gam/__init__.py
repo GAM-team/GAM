@@ -17521,6 +17521,8 @@ def doCreateAdmin():
     myarg = getArgument()
     if myarg == 'condition':
       body['condition'] = getChoice(ADMIN_CONDITION_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'expires':
+      body['expirationDetails'] = {'expireTime': getTimeOrDeltaFromNow()}
     else:
       unknownArgumentExit()
   try:
@@ -17583,10 +17585,10 @@ ADMIN_ASSIGNEE_TYPE_TO_ASSIGNEDTO_FIELD_MAP = {
   }
 ALL_ASSIGNEE_TYPES = ['user', 'group', 'serviceaccount']
 
-PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId']
+PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId', 'expirationDetails']
 PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role',
                       'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount', 'assignedToUnknown',
-                      'scopeType', 'orgUnitId', 'orgUnit']
+                      'scopeType', 'orgUnitId', 'orgUnit', 'expirationDetails']
 
 # gam print admins [todrive <ToDriveAttribute>*]
 #	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
@@ -17652,9 +17654,6 @@ def doPrintShowAdmins():
         admin['condition'] = 'securitygroup'
       elif admin['condition'] == NONSECURITY_GROUP_CONDITION:
         admin['condition'] = 'nonsecuritygroup'
-#    if debug:
-#      print('******', admin['assignedTo'], admin.get('assigneeType', 'no type'),
-#            admin['assignedToField'], not typesSet or admin['assignedToField'] in typesSet)
     return not typesSet or admin['assignedToField'] in typesSet
 
   cd = buildGAPIObject(API.DIRECTORY)
@@ -17662,7 +17661,6 @@ def doPrintShowAdmins():
   csvPF = CSVPrintFile(PRINT_ADMIN_TITLES) if Act.csvFormat() else None
   roleId = None
   userKey = None
-#  debug = False
   oneItemPerRow = recursive = showPrivileges = False
   typesSet = set()
   kwargs = {}
@@ -17696,8 +17694,6 @@ def doPrintShowAdmins():
       showPrivileges = True
     elif myarg == 'oneitemperrow':
       oneItemPerRow = True
-#    elif myarg == 'debug':
-#      debug = True
     else:
       unknownArgumentExit()
   if roleId and not kwargs:
@@ -17770,6 +17766,9 @@ def doPrintShowAdmins():
       for field in PRINT_ADMIN_TITLES:
         if field in admin:
           if (field == 'roleAssignmentId') or (field == 'assignedToUnknown' and not admin[field]):
+            continue
+          elif field == 'expirationDetails':
+            printKeyValueList(['expirationDetails.expireTime', admin[field].get('expireTime')])
             continue
           printKeyValueList([field, admin[field]])
       if showPrivileges:
