@@ -3096,7 +3096,7 @@ Added support for groups when defining Chrome policies.
 
 Added support for the Meet API.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Meet
+* See: https://github.com/GAM-team/GAM/wiki/Users-Meet
 
 Added option `countsonly` to the following course commands that displays
 the number of items in a course but not the details of the items.
@@ -3174,7 +3174,7 @@ Added `my_publishable_items` to `<DriveFileQueryShortcut>` that can be used in
 published to the web: documents, forms, presentations(slides), spreadsheets. With row filtering,
 this allows identification of files that have been published outside your domain.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#display-files-published-to-the-web
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display#display-files-published-to-the-web
 
 6.80.12
 
@@ -3289,7 +3289,7 @@ Added option `addcsvdata <FieldName> <String>` to `gam <UserTypeEntity> print te
 additional columns of data to the CSV file output. This can be used when ACLs for selected users are to be
 replaced with a different user email address.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Shared-Drives#bulk-change-user1-shared-drive-access-to-user2
+* See: https://github.com/GAM-team/GAM/wiki/Users-Shared-Drives#bulk-change-user1-shared-drive-access-to-user2
 
 6.79.08
 
@@ -3350,7 +3350,7 @@ Updated code to work around a Cryptography library change that caused service ac
 Added command to check if an OU contains items; this is useful when tryng to delete an OU
 as it must not contain any items in order to be deleted.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Organizational-Units#check-organizational-unit-for-contained-items
+* See: https://github.com/GAM-team/GAM/wiki/Organizational-Units#check-organizational-unit-for-contained-items
 
 6.77.18
 
@@ -3490,7 +3490,7 @@ gam <UserItem> info chatmember asadmin
 gam <UserItem> print|show chatmembers|asadmin
 ```
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#developer-preview-admin-access
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#developer-preview-admin-access
 
 Added `use_chat_admin_access` Boolean variable to `gam.cfg`. 
 ```
@@ -3588,7 +3588,7 @@ Added options `deletefromoldowner`, `addtonewowner <CalendarAttribute>*` and `no
 to `gam <UserTypeEntity> transfer calendars <UserItem>` that allow manipulation of the
 old and new owners's calendar lists.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Access#transfer-calendar-ownership
+* See: https://github.com/GAM-team/GAM/wiki/Users-Calendars-Access#transfer-calendar-ownership
 
 6.76.04
 
@@ -3675,7 +3675,7 @@ Updated `gam create project` to simplify handling the situation where your works
 
 Added command `gam upload sakey` to aid in this process.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#upload-a-service-account-key-to-a-service-account-with-no-keys
+* See: https://github.com/GAM-team/GAM/wiki/Authorization#upload-a-service-account-key-to-a-service-account-with-no-keys
 
 6.74.02
 
@@ -3701,7 +3701,7 @@ Do `gam oauth delete` and `gam oauth create` to set the untruncated value of `cl
 
 The Google Chat API has been updated so that chat members can now have their role set to manager.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#manage-chat-members
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#manage-chat-members
 
 6.72.16
 
@@ -3783,7 +3783,7 @@ Cleaned up code for all commands that display Chat objects.
 
 Added commands to display Chat events.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat#display-chat-events
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat#display-chat-events
 
 6.72.03
 
@@ -3805,7 +3805,7 @@ Improved commands to display drive file comments.
 
 Added commands to display drive file comments.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Comments
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Comments
 
 6.71.18
 
@@ -3892,7 +3892,7 @@ This produces a CSV file that can be used in subsequent commands without further
 
 Added command to upload changes to Google Docs.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Manage#upload-changes-to-google-documents
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Manage#upload-changes-to-google-documents
 
 6.71.06
 
@@ -3973,7 +3973,7 @@ Updated `gam info users <UserTypeEntity>` to not include group tree infornation 
 
 Added commands to create|delete|display Drive Label permissions.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Labels
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Labels
 
 6.70.04
 
@@ -3981,7 +3981,7 @@ Added option `showvalidcolumn` to `gam print users` that can be used to identify
 users are defined in the domain. Typically, you would read CSV file of email addresses
 to verify as domain members.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users#verify-domain-membership
+* See: https://github.com/GAM-team/GAM/wiki/Users#verify-domain-membership
 
 Added option `addcsvdata <FieldName> <String>` to `gam print users` that adds
 additional columns of data to the CSV file output. Typically, you would read CSV file of email addresses
@@ -4015,7 +4015,7 @@ default values for the `incertdir <FilePath>` and `inkeydir <FilePath>` options 
 
 Added support for Gmail Client Side Encryption.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-CSE
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-CSE
 
 This is an initial, minimally tested release; proceed with care and report all issues.
 
@@ -4070,7 +4070,7 @@ API shortcoming that failed to get all of the Cloud Identity fields.
 
 Added option `skiprows <Integer>` to `gam csv|loop` that causes GAM to skip processing the first `<Integer>` filtered rows.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Bulk-Processing#csv-files
+* See: https://github.com/GAM-team/GAM/wiki/Bulk-Processing#csv-files
 
 6.68.03
 
@@ -4133,7 +4133,7 @@ nottypelist <DriveFileACLTypeList>
 rolelist <DriveFileACLRoleList>
 notrolelist <DriveFileACLRoleList>
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Permission-Matches#define-a-match
+* See: https://github.com/GAM-team/GAM/wiki/Permission-Matches#define-a-match
 
 6.67.34
 
@@ -4262,17 +4262,17 @@ Cleaned up `Getting/Got` messages for `gam print courses|course-participants`.
 Added option `showitemcountonly` to various commands that causes GAM to display the
 item count on stdout; no CSV file is written.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups#display-group-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Classroom-Courses#display-course-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Classroom-Membership#display-course-membership-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/ChromeOS-Devices#display-cros-device-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Devices#display-device-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Devices#display-device-user-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups#display-group-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Mobile-Devices#display-mobile-device-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Organizational-Units#display-organizational-unit-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Resources#display-resource-counts
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users#display-user-counts
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups#display-group-counts
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Courses#display-course-counts
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Membership#display-course-membership-counts
+* See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices#display-cros-device-counts
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Devices#display-device-counts
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Devices#display-device-user-counts
+* See: https://github.com/GAM-team/GAM/wiki/Groups#display-group-counts
+* See: https://github.com/GAM-team/GAM/wiki/Mobile-Devices#display-mobile-device-counts
+* See: https://github.com/GAM-team/GAM/wiki/Organizational-Units#display-organizational-unit-counts
+* See: https://github.com/GAM-team/GAM/wiki/Resources#display-resource-counts
+* See: https://github.com/GAM-team/GAM/wiki/Users#display-user-counts
 
 6.67.16
 
@@ -4416,7 +4416,7 @@ that replaces the old API function `action`; ChromeOS devices are now processed 
 The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
 
 Updated `gam create vaultexport matter <MatterItem>` to support `corpus calendar`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault-Takeout#create-vault-exports
+* See: https://github.com/GAM-team/GAM/wiki/Vault-Takeout#create-vault-exports
 
 6.66.16
 
@@ -4506,7 +4506,7 @@ Added a command the print the parent tree of file/folder.
 gam <UserTypeEntity> print fileparenttree <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [stripcrsfromname]
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#display-file-parent-tree
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display#display-file-parent-tree
 
 6.66.05
 
@@ -4542,12 +4542,12 @@ todrive_no_escape_char - default value True
 When the value is True, `\` is ignored as an escape character; when the value is False,
 `\\` on input is converted to `\`, `\` on output is converted to `\\`.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Special-Characters
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Special-Characters
 
 6.66.00
 
 Added support for `Focus Time` and `Out of Office` status events in user's primary calendars.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events#status-events
+* See: https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events#status-events
 This is a work-in-progress.
 
 Updated `gam <UserTypeEntity> print|show messages` to allow option `show_size` to be used with option `countsonly`
@@ -4601,7 +4601,7 @@ gam <UserTypeEntity> print filelist
 gam <UserTypeEntity> print|show filetree
 gam <UserTypeEntity> print diskusage
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#file-size-fields
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display#file-size-fields
 
 6.65.12
 
@@ -4642,7 +4642,7 @@ additional columns of data to the CSV file output.
 Added option `shownoactivities` to `gam report <ActivityApplicationName>` that causes GAM to display
 a row with a key value of `NoActivities` when there are no activities to report.
 
-For example, to find Shared Drives with no activity, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#find-shared-drives-with-no-activity
+For example, to find Shared Drives with no activity, see: https://github.com/GAM-team/GAM/wiki/Reports#find-shared-drives-with-no-activity
 
 6.65.07
 
@@ -4716,7 +4716,7 @@ Added option `showmimetypesize` to `gam <UserTypeEntity> print|show filecounts` 
 Fixed bug in `gam <UserTypeEntity> create contact <JSONData>` that caused a trap when
 contacts were being copied from one user to another.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#copy-user-contacts-to-another-user
+* See: https://github.com/GAM-team/GAM/wiki/Users-People-Contacts-Profiles#copy-user-contacts-to-another-user
 
 Updated the following commands to allow specification of a task list by its title.
 ```
@@ -4734,7 +4734,7 @@ gam <UserTypeEntity> clear tasklist <TasklistEntity>
 gam <UserTypeEntity> info tasklist <TasklistEntity>
 ```
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Tasks#specifying-task-lists
+* See: https://github.com/GAM-team/GAM/wiki/Users-Tasks#specifying-task-lists
 
 6.64.16
 
@@ -4758,7 +4758,7 @@ Added command to get chrome app details.
 ```
 gam info appdetails android|chrome|web <AppID> [formatjson]
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Installed-Apps
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Installed-Apps
 
 6.64.12
 
@@ -4841,7 +4841,7 @@ ERROR: 403: unsupportedSupervisedAccount - Access Forbidden. The authenticated u
 
 Added support for displaying users YouTube channels.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-YouTube
+* See: https://github.com/GAM-team/GAM/wiki/Users-YouTube
 
 6.63.19
 
@@ -5036,7 +5036,7 @@ With `gam update user`, `alwaysevict` only applies if `createifnotfound` is spec
 
 Added support for calendar working location events.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events#working-location-events
+* See: https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events#working-location-events
 
 6.62.08
 
@@ -5075,7 +5075,7 @@ Added progress messages (suppressible)  to `gam <UserTypeEntity> print diskusage
 
 Added command `gam <UserTypeEntity> print diskusage` to display disk usage by folder.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#display-disk-usage
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display#display-disk-usage
 
 6.62.03
 
@@ -5122,7 +5122,7 @@ errorretries <Integer> - Number of create/update error retries; default value 5,
 updateinitialdelay <Integer> - Initial delay after create before update: default value 10, range 0-60
 updateretrydelay <Integer> - Retry delay when update fails; default value 10, range 0-60
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Shared-Drives#create-a-shared-drive
+* See: https://github.com/GAM-team/GAM/wiki/Shared-Drives#create-a-shared-drive
 
 6.61.17
 
@@ -5154,7 +5154,7 @@ Added option `contentrestrictions ownerrestricted [<Boolean>]` to `<DriveFileAtt
 Added `aggregatebyuser [Boolean]` option to `gam report user` to allow data aggregation for users across multiple dates.
 Options `aggregatebyuser` and `aggregatebydate` are mutually exclusive.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#user-reports
+* See: https://github.com/GAM-team/GAM/wiki/Reports#user-reports
 
 6.61.13
 
@@ -5266,7 +5266,7 @@ specified by the environment variable `OLDGAMPATH`.
 Added option `addcsvdata <FieldName> <String>` to `gam print forms|formresponses`. This adds additional columns of data to the CSV file output.
 This can be used to combine form information from several GAM commands.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Forms#combine-form-information
+* See: https://github.com/GAM-team/GAM/wiki/Users-Forms#combine-form-information
 
 Following Jay's lead, projects can now be created with consumer accounts.
 
@@ -5377,7 +5377,7 @@ gam print chromesnvalidity [todrive <ToDriveAttribute>*]
         cros_sn <SerialNumberEntity> [listlimit <Number>]
         [delimiter <Character>]
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/ChromeOS-Devices#check-chromeos-device-serial-number-validity
+See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices#check-chromeos-device-serial-number-validity
 
 6.60.13
 
@@ -5420,7 +5420,7 @@ gam update group teachers@domain.com sync member additionalmembers counselor@dom
 
 Added commands to display Analytic account/property/datastream information.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Analytics-Admin
+* See: https://github.com/GAM-team/GAM/wiki/Analytics-Admin
 
 6.60.08
 
@@ -5475,7 +5475,7 @@ and to allow specification of members.
 
 Added initial support for user chat spaces. This is a work in progress, test and report any problems.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Chat
+* See: https://github.com/GAM-team/GAM/wiki/Users-Chat
 
 Improved performance of `gam <UserTypeEntity> delete|move|update othercontacts`.
 
@@ -5677,7 +5677,7 @@ Sites API - sites.google.com
 
 Added commands to display Analytic account/property information.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Analytics-Admin
+* See: https://github.com/GAM-team/GAM/wiki/Analytics-Admin
 
 6.58.03
 
@@ -5875,7 +5875,7 @@ optional argument `name` before `<String>` to make clear that `<String>` is the 
 
 Added commands to export messages/threads in EML/raw format.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Messages-Threads#export-messagesthreads
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Messages-Threads#export-messagesthreads
 
 6.54.00
 
@@ -5897,7 +5897,7 @@ gam delete chromenetwork
          <OrgUnitItem> <NetworkID>
 ```
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Policies#create-chrome-network
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Policies#create-chrome-network
 
 6.53.03
 
@@ -5907,7 +5907,7 @@ gam delete chromenetwork
 
 Added commands to display the share type counts of a user's files.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#display-file-share-counts
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display#display-file-share-counts
 
 6.53.01
 
@@ -5985,7 +5985,7 @@ Following Jay's lead, the following scopes will be off by default as changes to 
 may require frequent use of `gam aouth create`.
 
 * See: https://workspaceupdates.googleblog.com/2023/03/google-cloud-session-length-default-update.html
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#introduction
+* See: https://github.com/GAM-team/GAM/wiki/Authorization#introduction
 
 ```
 [ ] 21)  Cloud Storage API (Read, Vault/Takeout Download)
@@ -6043,7 +6043,7 @@ Upgraded `gam <UserTypeEntity> check serviceaccount` to avoid a trap when a prox
 Added support for `externalid`, `im`, `posix`, `relation`, `sshkeys` and `website` subfields in `gam <UserTypeEntity> signature` and
 `gam <UserTypeEntity> create|update sendas` option `replace <Tag> <UserReplacement>`.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Tag-Replace
+* See: https://github.com/GAM-team/GAM/wiki/Tag-Replace
 
 6.51.01
 
@@ -6188,12 +6188,12 @@ Fixed YubiKey issue that caused a trap.
 
 Following Jay's lead (with many thanks), added commands to enable running GAM securely on a Google Compute Engine.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Running-GAMADV-XTD3-securely-on-a-Google-Compute-Engine
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Using-GAMADV-XTD3-with-a-delegated-admin-service-account
+* See: https://github.com/GAM-team/GAM/wiki/Running-GAMADV-XTD3-securely-on-a-Google-Compute-Engine
+* See: https://github.com/GAM-team/GAM/wiki/Using-GAMADV-XTD3-with-a-delegated-admin-service-account
 
 Following Jay's lead (with many thanks), added commands to enable using a Yubikey.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Using-GAMADV-XTD3-with-a-YubiKey
+* See: https://github.com/GAM-team/GAM/wiki/Using-GAMADV-XTD3-with-a-YubiKey
 
 These Wiki pages are a work in progress, contact me if you need help.
 
@@ -6216,7 +6216,7 @@ contained Latin-1 characters.
 
 Added option `accesstype public|team|announcementonly|restricted` to `gam create|update group`.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups#gui-api-group-access-type-settings-mapping
+* See: https://github.com/GAM-team/GAM/wiki/Groups#gui-api-group-access-type-settings-mapping
 
 6.42.09
 
@@ -6254,7 +6254,7 @@ trying to build a folder hierarchy on a Shared Drive.
 
 Added a command that creates a folder hierarchy.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Manage#create-folder-hierarchy
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Manage#create-folder-hierarchy
 
 6.42.03
 
@@ -6298,8 +6298,8 @@ so that the query generated will work correctly. Previously, only ` ` (space) an
 
 Following Jay's lead, added commands commands to copy Google Vault and Organization Takeout data to your own GCS bucket.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault-Takeout#copy-vault-exports
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault-Takeout#copy-a-takeout-bucket
+* See: https://github.com/GAM-team/GAM/wiki/Vault-Takeout#copy-vault-exports
+* See: https://github.com/GAM-team/GAM/wiki/Vault-Takeout#copy-a-takeout-bucket
 
 Updated `gam <UserTypeEntity> create contact` to treat the following options as errors;
 previously, they were silently ignored.
@@ -6355,8 +6355,8 @@ Added support for `gender` subfields in `gam <UserTypeEntity> signature` and
 Extended `csv_input_row_filter`, `csv_input_row_drop_filter`, `csv_output_row_filter` and `csv_output_row_drop_filter`
 to allow specification of filters based on text comparisons.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Input-Filtering
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Output-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Input-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Output-Filtering
 
 6.32.00
 
@@ -6496,7 +6496,7 @@ error message and set the return code to 50 if the user has a default profile ph
 Added option `gphoto <EmailAddress> <DriveFileIDEntity>|<DriveFileNameEntity>` to `gam <UserTypeEntity> update photo`
 that specifies an owner and file to be used as the source of the photo.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Photo
+* See: https://github.com/GAM-team/GAM/wiki/Users-Photo
 
 6.30.14
 
@@ -6527,8 +6527,8 @@ that allows deleting a user from all groups of which they are a member based on 
 
 Added the ability to specify fields when displaying calendars.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Calendars
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars
+* See: https://github.com/GAM-team/GAM/wiki/Calendars
+* See: https://github.com/GAM-team/GAM/wiki/Users-Calendars
 
 6.30.09
 
@@ -6797,7 +6797,7 @@ Added option `emlfile <FileName>` to `gam <UserTypeEntity> draft|insert|import m
 allows processing an EML message file. SMTP headers specified in the command will replace those in the message file.
 
 Following Jay's lead, added commands to manage/display Inbound SSO.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Inbound-SSO
+* https://github.com/GAM-team/GAM/wiki/Inbound-SSO
 * https://admin.google.com/ac/security/sso
 
 6.28.12
@@ -7044,7 +7044,7 @@ between attempts; the default retry interval is 30 seconds.
 
 Added command `gam <UserTypeEntity> print|show grouptree` to display a user's groups and their parent groups.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership#display-groups-and-their-parents
+* See: https://github.com/GAM-team/GAM/wiki/Users-Group-Membership#display-groups-and-their-parents
 
 6.27.09
 
@@ -7054,7 +7054,7 @@ Corrected JSON output in `gam <UserTypeEntity> print userlist`.
 
 Added command `gam <UserTypeEntity> print userlist` to display the list of users in `<UserTypeEntity>` in a single row.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users#print-user-list
+* See: https://github.com/GAM-team/GAM/wiki/Users#print-user-list
 
 6.27.07
 
@@ -7137,8 +7137,8 @@ Previously, the following incorrect error message was displayed:
 Extended `csv_input_row_filter`, `csv_input_row_drop_filter`, `csv_output_row_filter` and `csv_output_row_drop_filter`
 to allow specification of filters based on field string length.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Input-Filtering
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Output-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Input-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Output-Filtering
 
 6.26.13
 
@@ -7235,7 +7235,7 @@ the user's groups without making the addtional API call per group to get role, s
 
 Added command that allows checking if a user is a member of specific groups and optionally has a specific role.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership#check-users-group-membership
+* See: https://github.com/GAM-team/GAM/wiki/Users-Group-Membership#check-users-group-membership
 
 6.26.00
 
@@ -7308,7 +7308,7 @@ copysubfolders [<Boolean>] foldernamematchpattern <RegularExpression>
 copysubshortcuts [<Boolean>] shortcutnamematchpattern <RegularExpression>
 ```
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move#copy-files-and-folders
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move#copy-files-and-folders
 
 Added the following mutually exclusive options to `gam <UserTypeEntity> delete|update|sync|print|show groups`
 to allow more control over which groups are processed for a user. The `customerid <CustomerID>` option
@@ -7318,7 +7318,7 @@ domain <DomainName>
 customerid <CustomerID>
 ```
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership
+* See: https://github.com/GAM-team/GAM/wiki/Users-Group-Membership
 
 6.25.13
 
@@ -7332,7 +7332,7 @@ Updated `gam info user` to display the same data (in different formats) when `qu
 Added option `selectmaincontacts` to `<PeoplePrintShowUserContactSelection>` to allow more flexibility in selecting contacts to display
 with `gam <UserTypeEntity> print|show contacts`.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#select-user-contacts
+* See: https://github.com/GAM-team/GAM/wiki/Users-People-Contacts-Profiles#select-user-contacts
 
 6.25.11
 
@@ -7416,8 +7416,8 @@ gam user user@domain.com update serviceaccount
 ```
 Supported editions for this feature: Business Standard and Business Plus; Enterprise; Education Standard and Education Plus; G Suite Business; Essentials.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Labels
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Labels
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display
 
 6.24.27
 
@@ -7475,7 +7475,7 @@ cros_ous_and_children_queries <OrgUnitList> <QueryCrOSList>
 These allow specifying an OU, or a list of OUs, and a query or a list of queries
 that apply to those OUs.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-ChromeOS-Devices
+* See: https://github.com/GAM-team/GAM/wiki/Collections-of-ChromeOS-Devices
 
 Example:
 ```
@@ -7600,7 +7600,7 @@ display tasks in date order within the hierarchy.
 6.24.00
 
 Added commands to manage and display Google Tasks.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Tasks
+* https://github.com/GAM-team/GAM/wiki/Users-Tasks
 
 6.23.01
 
@@ -7678,11 +7678,11 @@ are still handled incorrectly by the API when accessed directly.
 
 Added option `oneitemperrow` to `gam print vaultexports|exports` to have each of an
 exports cloudStorageSink files displayed on a separate row.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault#display-vault-exports
+* See: https://github.com/GAM-team/GAM/wiki/Vault#display-vault-exports
 
 Added options `bucketmatchpattern <RegularExpression>` and `objectmatchpattern <RegularExpression>`
 to `gam download vaultexport|export` to allow selective downloading of export files.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault#download-vault-exports
+* See: https://github.com/GAM-team/GAM/wiki/Vault#download-vault-exports
 
 6.22.17
 
@@ -7735,7 +7735,7 @@ that adds additional path information indicating that a file is an Orphan or Sha
 Added keywords `mydriveid` and `rootid` to `<DriveFileEntity>` as synonyms for `mydrive` and `root` in all
 commands except `gam <UserTypeEntity> print filelist|filetree`. In those commands, `select mydrive|root`
 is used to select a class of files; `select mydriveid|rootid` is used to select a folder starting point.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display#display-file-list
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display#display-file-list
 
 6.22.13
 
@@ -7830,8 +7830,8 @@ Fixed bug in code introduced in 6.22.00 that caused a trap.
 Extended `csv_input_row_filter`, `csv_input_row_drop_filter`, `csv_output_row_filter` and `csv_output_row_drop_filter`
 to allow specification of filter values from a list, flat file or CSV file.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Input-Filtering
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Output-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Input-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Output-Filtering
 
 6.21.07
 
@@ -7954,17 +7954,17 @@ move the Team Drive to the specified OU. This option is only available when the 
 As Jay says: THIS FEATURE IS CURRENTLY ALPHA.
 
 Follwing Jay's lead, added commands to manage/display Context-Aware Access Levels.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Context-Aware-Access-Levels
+* See: https://github.com/GAM-team/GAM/wiki/Context-Aware-Access-Levels
 
 6.18.04
 
 Added the ability to upload Note attachments to Google Drive.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Keep#download-note-attachments
+* See: https://github.com/GAM-team/GAM/wiki/Users-Keep#download-note-attachments
 
 6.18.03
 
 Added command to download Note attachments.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Keep#download-note-attachments
+* See: https://github.com/GAM-team/GAM/wiki/Users-Keep#download-note-attachments
 
 Updated `gam delete|update schema` to handle the following error:
 ```
@@ -7983,7 +7983,7 @@ currently, any failure terminates the project creation.
 6.18.00
 
 Added initial support for the Cloud Channel API; this is used by resellers.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Channel
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Channel
 
 6.17.02
 
@@ -8000,7 +8000,7 @@ Fixed bug in `gam <UserTypeEntity> print forms` that caused a trap when a form h
 6.17.00
 
 Added initial support for the Forms API.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Forms
+* See: https://github.com/GAM-team/GAM/wiki/Users-Forms
 
 Fixed bug in `gam <UserTypeEntity> print|show filecounts ... showmimetype [not] <MimeTypeList>` that
 removed `'me' in owners` from the query.
@@ -8156,8 +8156,8 @@ that allows using regular expressions to modify the copied/updated file name.
 gam user user@domain.com update drivefile query "name contains '2020-2021'" replacefilename "2020-2021" "2021-2022"
 gam user user@domain.com copy drivefile name Template parentid root recursive replacefilename Template NewCustomer
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Manage#update-files
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move#copy-files-and-folders
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Manage#update-files
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move#copy-files-and-folders
 
 6.15.22
 
@@ -8185,7 +8185,7 @@ Fixed bug in `gam <UserTypeEntity> print datastudiopermissions` where `todrive` 
 6.15.19
 
 Further cleanup of `gam create|update alias`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Aliases
+* See: https://github.com/GAM-team/GAM/wiki/Aliases
 
 6.15.18
 
@@ -8246,7 +8246,7 @@ required by the API.
 
 Following Jay's lead, added option `condition securitygroup|nonsecuritygroup` to `gam create admin`
 and option `condition` to `gam print|show admins`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Administrators
+* See: https://github.com/GAM-team/GAM/wiki/Administrators
 
 6.15.07
 
@@ -8287,7 +8287,7 @@ that provide more flexibility in managing permissions when copying/moving folder
 copysheetprotectedrangesinheritedpermissions [<Boolean>]
 copysheetprotectedrangesnoninheritedpermissions [<Boolean>]
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move#copy-permissions
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move#copy-permissions
 
 6.15.01
 
@@ -8371,7 +8371,7 @@ the name of the source drive/folder (Name column) in addition to its ID (Source 
 6.14.04
 
 Added a command to move Other Contacts to My Contacts.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#move-user-other-contacts
+* See: https://github.com/GAM-team/GAM/wiki/Users-People-Contacts-Profiles#move-user-other-contacts
 ```
 gam <UserTypeEntity> move othercontacts <OtherContactResourceNameEntity>|<OtherContactSelection>
 ```
@@ -8382,14 +8382,14 @@ Improved action performed messages in `gam <UserTypeEntity> update othercontacts
 
 Added a command to delete Other Contacts.
 * Thanks to Kim Nilsson for finding a Stack Overflow page that showed the way to do this.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#delete-user-other-contacts
+* See: https://github.com/GAM-team/GAM/wiki/Users-People-Contacts-Profiles#delete-user-other-contacts
 ```
 gam <UserTypeEntity> delete othercontacts <OtherContactResourceNameEntity>|<OtherContactSelection>
 ```
 
 Added a command to update Other Contacts and move them to My Contacts.
 * Thanks to Kim Nilsson for finding a Stack Overflow page that showed the way to do this.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles#update-user-other-contacts
+* See: https://github.com/GAM-team/GAM/wiki/Users-People-Contacts-Profiles#update-user-other-contacts
 ```
 gam <UserTypeEntity> update othercontacts <OtherContactResourceNameEntity>|<OtherContactSelection>
         <PeopleContactAttribute>+
@@ -8425,8 +8425,8 @@ copymergedsubfolderpermissions [<Boolean>]
 copysubfolderinheritedpermissions [<Boolean>]
 copysubfoldernoniheritedpermissions never|always|syncallfolders|syncupdatedfolders
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move#copy-permissions
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move#move-permissions
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move#copy-permissions
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move#move-permissions
 
 Following Jay's lead, added command `gam <UserTypeEntity> show vaultholds` to display all vault holds
 affecting a user. This allows you to investigate the error `Delete Failed: Precondition is not met.`
@@ -8489,7 +8489,7 @@ Added option `showsize` to `gam <UserTypeEntity> print|show filecounts` that dis
 size (in bytes) of the files counted.
 
 Following Jay's lead, added commands to display ChromeOS device telemetry data.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/ChromeOS-Devices#display-chromeos-telemetry-data
+* See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices#display-chromeos-telemetry-data
 
 To use these commands  you must authorize an additional scope:
 * `Chrome Management API - Telemetry read only`
@@ -8558,7 +8558,7 @@ the Drive API returns the permission IDs but not the permissions themselves so G
 per file to get the permissions.
 
 Added commands that can process lists of Gmail labels.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Labels
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Labels
 
 6.12.05
 
@@ -8634,7 +8634,7 @@ When specifying `<UserAttribute> languages`, it is an error to specify a custom 
 
 Added option `includederivedmembership` to `gam print|show cigroup-members`.
 This option causes the API to list indirect members of groups.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups-Membership
+See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups-Membership
 
 Updated `gam oauth export|refresh` to privent the following error.
 ```
@@ -9020,7 +9020,7 @@ You might want to keep an older version of GAM available so you can compare the 
 versions and make adjustments as necessary.
 
 This is work in progress, report issues/problems.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Contacts-Profiles
+* https://github.com/GAM-team/GAM/wiki/Users-People-Contacts-Profiles
 
 6.07.31
 
@@ -9062,7 +9062,7 @@ Updated from `Cloud Identity Groups API` version v1beta1 to version v1.
 
 Added metacommand `multiprocessexit (rc<Operator><Number>)|(rcrange=<Number>/<Number>)|(rcrange!=<Number>/<Number>)`
 that will terminate processing of a CSV or batch file when one of the subprocesses returns a matching return code.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Meta-Commands-and-File-Redirection#specify-multiprocessing-termination-return-code
+See: https://github.com/GAM-team/GAM/wiki/Meta-Commands-and-File-Redirection#specify-multiprocessing-termination-return-code
 
 This change was inspired by the brute force approach to finding the owner of a file by stepping through
 all users. Once the owner is found, there is no need to process the remaining users; this change allows
@@ -9249,7 +9249,7 @@ cmdlog_max_kilo_bytes
         Default: 1000
         Range: 100 - 10000
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Command-Logging-Progress#command-logging
+See: https://github.com/GAM-team/GAM/wiki/Command-Logging-Progress#command-logging
 
 Added the following keyword to `gam.cfg` to display commands to stderr when executing `gam batch|tbatch|csv|loop`.
 ```
@@ -9257,7 +9257,7 @@ show_commands
         Display commands to stderr when executing `gam batch|tbatch|csv|loop`.
         Default: False
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Command-Logging-Progress#command-progress
+See: https://github.com/GAM-team/GAM/wiki/Command-Logging-Progress#command-progress
 
 6.06.15
 
@@ -9403,7 +9403,7 @@ Code cleanup for Google Keep notes commands.
 6.06.00
 
 Added commands to manage and display Google Keep notes.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Keep
+* https://github.com/GAM-team/GAM/wiki/Users-Keep
 
 6.04.25
 
@@ -9448,7 +9448,7 @@ that causes GAM to display messages and threads only if the sender matches the `
 This is used to display messages sent by a paticular delegate for a delegator; the message is
 from the delegator but sent by the delegate.
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Messages-Threads#display-messages-sent-by-delegates-for-delegator
+See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Messages-Threads#display-messages-sent-by-delegates-for-delegator
 
 6.04.19
 
@@ -9635,7 +9635,7 @@ ERROR: 400: invalidLinkVisibility - Bad Request. User message: ""
 6.04.00
 
 Following Jay's lead, added chat bot commands.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Chat-Bot
+* https://github.com/GAM-team/GAM/wiki/Chat-Bot
 
 6.03.34
 
@@ -9722,14 +9722,14 @@ Updated the following commands to allow selection of archived users from a sourc
 gam update group add|delete|update|sync
 gam update cigroups add|delete|update|sync
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups-Membership
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups-Membership
+See: https://github.com/GAM-team/GAM/wiki/Groups-Membership
+See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups-Membership
 
 Updated the following command to allow selection of archived users to be cleared.
 ```
 gam update group clear
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups-Membership
+See: https://github.com/GAM-team/GAM/wiki/Groups-Membership
 
 Updated the following commands to allow selection of archived users for display.
 ```
@@ -9737,7 +9737,7 @@ gam info group
 gam print groups
 gam print group-members
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups
+See: https://github.com/GAM-team/GAM/wiki/Groups
 
 Added new option to `<UserTypeEntity>` that allows selection of group members based on their archived status.
 ```
@@ -9746,7 +9746,7 @@ group_users_select <GroupList>
        [notsuspended|suspended] [notarchived|archived]
        [primarydomain] [domains <DomainNameList>] [recursive|includederivedmembership] end
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users#selected-users-from-groups
+See: https://github.com/GAM-team/GAM/wiki/Collections-of-Users#selected-users-from-groups
 
 6.03.25
 
@@ -9813,8 +9813,8 @@ Added commands to delete specific domain contacts and user's contacts using the 
 gam delete domaincontacts <PeopleResourceNameEntity>
 gam <UserTypeEntity> delete peoplecontacts <PeopleResourceNameEntity>
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/People
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People
+* https://github.com/GAM-team/GAM/wiki/People
+* https://github.com/GAM-team/GAM/wiki/Users-People
 
 Updated various google libraries.
 
@@ -9881,8 +9881,8 @@ gam csv ChromePolicies.csv gam update chromepolicy "~name" "~fields.0.name" "~fi
 ```
 
 Following Jay's lead, added option 'grouptree` to `gam info user` and `membertree` to `gam info cigroup`.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users#display-information-about-a-single-user
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups#display-information-about-individual-groups
+* https://github.com/GAM-team/GAM/wiki/Users#display-information-about-a-single-user
+* https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups#display-information-about-individual-groups
 
 6.03.11
 
@@ -9921,8 +9921,8 @@ gam <UserTypeEntity> info peoplecontacts <PeopleResourceNameEntity>
         [allfields|(fields <PeopleFieldNameList>)]
         [formatjson]
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/People
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People
+* https://github.com/GAM-team/GAM/wiki/People
+* https://github.com/GAM-team/GAM/wiki/Users-People
 
 6.03.07
 
@@ -9962,7 +9962,7 @@ gam <UserTypeEntity> print language [todrive <ToDriveAttribute>*]
 6.03.04
 
 Added commands to display user's other contacts using the People API.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People
+* https://github.com/GAM-team/GAM/wiki/Users-People
 
 To use this feature you must add the `People API` to your project and authorize the appropriate scopes:
 * `People API - Other Contacts - read only`: https://www.googleapis.com/auth/contacts.other.readonly
@@ -9972,15 +9972,15 @@ gam user user@domain.com update serviceaccount
 ```
 
 Added commands to display user's contact groups using the People API.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People
+* https://github.com/GAM-team/GAM/wiki/Users-People
 
 6.03.03
 
 Added commands to display user's contacts using the People API.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People
+* https://github.com/GAM-team/GAM/wiki/Users-People
 
 Simplified commands for displaying domain contacts/profiles with the People API.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/People
+* https://github.com/GAM-team/GAM/wiki/People
 
 6.03.02
 
@@ -9996,7 +9996,7 @@ column `Source` that indicates the top level folder ID from which the counts are
 
 As the Contacts API is being deprecated in June, additional support for the People API has been added.
 This is the first step of many required to make the transition.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/People
+* https://github.com/GAM-team/GAM/wiki/People
 
 The existing commands `get profilephoto`, `print|show peopleprofile` have been changed to use
 Service Account Access to avoid having to make additional Directory API calls to convert the user email address to the people ID.
@@ -10032,7 +10032,7 @@ If you know that all of the delegate email addresses are primary, you can omit `
 
 Thanks to Jay's assistance in getting a Data Studio API discovery document,
 updated the Data Studio permissions commands.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-DataStudio
+* https://github.com/GAM-team/GAM/wiki/Users-DataStudio
 
 6.02.01
 
@@ -10043,7 +10043,7 @@ Fixed bug in `gam <UserTypeEntity> add datastudiopermissions` that caused a trap
 Following Jay's lead, aliases are converted to primary email addresses when adding delegates.
 
 Added commands to display Data Studio assets and display/manage Data Studio permissions.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-DataStudio
+* https://github.com/GAM-team/GAM/wiki/Users-DataStudio
 
 To use these commands you must add the `Data Studio API` to your project and update your service account authorization.
 ```
@@ -10083,7 +10083,7 @@ been dropped from `gam oauth create` for now.
 6.01.05
 
 Added the capability to display Chrome version history.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Version-History
+* https://github.com/GAM-team/GAM/wiki/Chrome-Version-History
 
 Added the option `verifynotinvitable` to `gam create|update alias|group|user` that causes GAM to verify
 that the email address being created/updated is not that of an unmanaged account; if it is, the
@@ -10092,7 +10092,7 @@ command is not performed.
 To use this option you must add the `Cloud Identity API` to your project and authorize
 the appropriate scope: `Cloud Identity User Invitations API`.
 
-* Unmanaged Accounts - https://github.com/taers232c/GAMADV-XTD3/wiki/Unmanaged-Accounts
+* Unmanaged Accounts - https://github.com/GAM-team/GAM/wiki/Unmanaged-Accounts
 
 You'll have to do `gam update project` and `gam oauth create` to enable this option.
 
@@ -10122,8 +10122,8 @@ Updated `gam print|show chromeversions` to avoid a trap where a version was retu
 
 Added the capability to access two new areas.
 
-* Chrome Installed Apps Counts - https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Installed-Apps-Counts
-* Chrome Versions Counts - https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Versions-Counts
+* Chrome Installed Apps Counts - https://github.com/GAM-team/GAM/wiki/Chrome-Installed-Apps-Counts
+* Chrome Versions Counts - https://github.com/GAM-team/GAM/wiki/Chrome-Versions-Counts
 
 You'll have to do `gam update project` and `gam oauth create` to enable these commands.
 
@@ -10189,8 +10189,8 @@ but no change was actually made.
 6.00.02
 
 Added support for stand-alone course materials; these were not previously supported by the Google Classroom API.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Classroom-Courses#display-course-materials
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Classroom-Courses#create-and-update-courses
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Courses#display-course-materials
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Courses#create-and-update-courses
 
 To use the course materials features you must authorize the appropriate scope: `'Classroom API - Course Work/Materials'`.
 ```
@@ -10208,9 +10208,9 @@ When showing Chrome Policies, display OU and optional printerid/appid at top of 
 
 Following Jay's lead, added the capability to manage three new areas.
 
-* Chrome Policies - https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Policies
-* Chrome Printers - https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Printers
-* Unmanaged Accounts - https://github.com/taers232c/GAMADV-XTD3/wiki/Unmanaged-Accounts
+* Chrome Policies - https://github.com/GAM-team/GAM/wiki/Chrome-Policies
+* Chrome Printers - https://github.com/GAM-team/GAM/wiki/Chrome-Printers
+* Unmanaged Accounts - https://github.com/GAM-team/GAM/wiki/Unmanaged-Accounts
 
 You'll have to do `gam update project` and `gam oauth create` to enable these commands.
 
@@ -10278,9 +10278,9 @@ were both specified.
 Added option `pmselect` to `gam [<UserTypeEntity>] print|show drivefileacls` and
 `gam [<UserTypeEntity>] print|show teamdriveacls` to allow selection of files/Shared Drives
 matching the specified permissions without filtering the permissions themselves.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Shared-Drives#display-shared-drive-access
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Shared-Drives#display-shared-drive-access
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Permissions#display-file-permissionssharing
+* https://github.com/GAM-team/GAM/wiki/Shared-Drives#display-shared-drive-access
+* https://github.com/GAM-team/GAM/wiki/Users-Shared-Drives#display-shared-drive-access
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Permissions#display-file-permissionssharing
 
 5.35.00
 
@@ -10399,7 +10399,7 @@ Config File: /Users/admin/GamConfig/gam.cfg
 Added option `labelmatchpattern <RegularExpression>` to `gam <UserTypeEntity> print|show messages|threads`
 that causes only messages with some label that matches `<RegularExpression>` to be displayed.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Messages-Threads#display-a-selected-set-of-messages
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Messages-Threads#display-a-selected-set-of-messages
 
 5.31.19
 
@@ -10428,7 +10428,7 @@ as it served no purpose.
 
 Added command to manage publishing file revisions to the web.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Revisions#manage-file-revisions-publishing
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Revisions#manage-file-revisions-publishing
 
 5.31.14
 
@@ -10479,7 +10479,7 @@ Updated `create project` and `check|update serviceaccount` URLs to include admin
 5.31.08
 
 Enhanced `gam update course <CourseID> teacher <UserItem>` to handle special situations better.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Classroom-Courses#updating-course-owner
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Courses#updating-course-owner
 
 5.31.07
 
@@ -10494,7 +10494,7 @@ of service 'admin.googleapis.com' for consumer 'project_number:Project#Here'.
 Updated `gam <UserTypeEntity> print|create filter` to make it easier to copy filters from
 one user to another.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Filters
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Filters
 
 5.31.05
 
@@ -10502,7 +10502,7 @@ Improved error message generated when trying to move a calendar event to a calen
 
 Updated all commands/options that reference License Products and SKUs to validate the values entered.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Licenses#definitions
+* See: https://github.com/GAM-team/GAM/wiki/Licenses#definitions
 
 Updated `gam create course copyfrom <CourseID>` and `gam update course <CourseID> copyfrom <CourseID>`
 to remove Course Work due dates that fall before the current time; if not removed, the Course Work
@@ -10516,7 +10516,7 @@ Fixed bug in `gam print courses` that caused a trap when there were no courses t
 
 Added a command to download a Google Document in JSON format.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Manage#download-google-documents-as-json
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Manage#download-google-documents-as-json
 
 You'll have to do `gam update project` and `gam <UserTypeEntity> check|update serviceaccount` to enable this command.
 
@@ -10565,8 +10565,8 @@ Removed all Cloud Print related commands,
 Extended support for Cloud Identity Groups.
 This is Beta software from Google and a first release from me, experiment and use with caution.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups-Memberships
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups-Memberships
 
 5.25.20
 
@@ -10576,8 +10576,8 @@ If `<FieldNameFilter>` doesn't contain any of the following regular expression c
 it will be surrounded with `^$` so that it doesn't match any subfields that begin with `<FieldNameFilter>` as a prefix.
 In previous versions, you had to surround `<FieldNameFilter>` with `^$` to get this behavior.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Input-Filtering#column-row-filtering
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Output-Filtering#column-row-filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Input-Filtering#column-row-filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Output-Filtering#column-row-filtering
 
 5.25.19
 
@@ -10591,7 +10591,7 @@ This allows you to easily get details about the message sent, e.g, the SMTP Mess
 Added options `(<SMTPDateHeader> <Time>)* (<SMTPHeader> <String>)* (header <String> <String>)*`
 to `gam sendemail` that allows adding user specified headers to the message being sent.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Send-Email
+* See: https://github.com/GAM-team/GAM/wiki/Send-Email
 
 5.25.17
 
@@ -10602,8 +10602,8 @@ the filter matches if none (not any) of the columns has a match.
 This has been extended to allow specifying that the filter will match only if all of the columns have a match.
 In the case of `notregex|notregexcs`, the filter matches if some (not all) of the columns have a match.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Input-Filtering
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Ouput-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Input-Filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Ouput-Filtering
 
 5.25.16
 
@@ -10637,7 +10637,7 @@ Upgraded to Python 3.9.1.
 
 Following Jay's lead, added commands to support Contact Delegation,
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Contacts-Delegates.
+* See: https://github.com/GAM-team/GAM/wiki/Users-Contacts-Delegates.
 
 You must perform `gam oauth create` and select this API to use these commands.
 * Contact Delegation API (supports readonly)
@@ -10646,7 +10646,7 @@ This is Beta software from Google, experiment and use with caution.
 
 Following Jay's lead, added commands to support Chrome Browser Cloud Management
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Chrome-Browser-Cloud-Management
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Browser-Cloud-Management
 
 You must perform `gam oauth create` and select this API to use these commands.
 * Chrome Browser Cloud Management API (supports readonly)
@@ -10657,13 +10657,13 @@ This is Beta software from Google, experiment and use with caution.
 
 Following Jay's lead, added commands to display and update Cloud Identity Device User Client States.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Devices#display-device-user-client-state
+* See: https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Devices#display-device-user-client-state
 
 This is Beta software from Google, experiment and use with caution.
 
 Following Jay's lead, added a command to display item counts retained in Google Vault.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault#display-vault-counts
+* See: https://github.com/GAM-team/GAM/wiki/Vault#display-vault-counts
 
 Updated `gam <UserTypeEntity> create drivefileshortcut <DriveFileEntity>` to not create duplicate shortcuts.
 A duplicate shortcut is one that is in the same folder as another shortcut of the same name pointing to the
@@ -10723,7 +10723,7 @@ but could be used in a script.
 Added options `thismonth` and `previousmonths <Integer>` to `gam report`
 to provide calendar oriented date/time ranges.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports
+* See: https://github.com/GAM-team/GAM/wiki/Reports
 
 5.25.04
 
@@ -10752,7 +10752,7 @@ trap fixed in 5.25.00. This update formats those parameters in the same manner a
 Added `csv_input_row_filter` and `csv_input_row_drop_filter` to `gam.cfg` to allow CSV row filtering of input
 CSV Files.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Input-Filtering#column-row-filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Input-Filtering#column-row-filtering
 
 Updated code in `gam report admin` to avoid a trap caused by a change the Report API.
 
@@ -10848,7 +10848,7 @@ This allows multiple users with distinct logins on the same computer to share `g
 reference a unique `[Section]`. This might be used if you want each user to have their own GAM
 project for auditing purposes. When `GAMCFGSECTION` is set, the user will not be allowed to select
 a different `[Section]`.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/gam.cfg#multiple-users-projects-on-one-computer
+* https://github.com/GAM-team/GAM/wiki/gam.cfg#multiple-users-projects-on-one-computer
 
 Updated `gam <UserTypeEntity> delete photo` to handle `Error 500 Internal error.`
 
@@ -10907,7 +10907,7 @@ the new sheet (tab) can be named independently of the existing Google spreadshee
 
 Added option `tdaddsheet [<Boolean>]` to `<ToDriveAttribute>`.  When used with `tdfileid`,
 a new sheet (tab) within an existing Google spreadsheet can be created with a `gam print todrive` command.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive#command-line-options
+* https://github.com/GAM-team/GAM/wiki/Todrive#command-line-options
 
 5.23.03
 
@@ -10932,7 +10932,7 @@ You use options to disable whatever additional information you don't want.
 With `quick_info_user = true`, then none of the additional information is displayed by default.
 You use options to enable whatever additional information you do want.
 
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users#display-information-about-users
+* https://github.com/GAM-team/GAM/wiki/Users#display-information-about-users
 
 Added `lastknownnetwork` to `<CrOSFieldName>`.
 
@@ -10954,7 +10954,7 @@ gam <UserTypeEntity> update license <SKUID> [product|productid <ProductID>] [fro
 gam <UserTypeEntity> delete license <SKUID> [product|productid <ProductID>] [preview] [actioncsv]
 gam <UserTypeEntity> sync license <SKUID> [product|productid <ProductID>] [addonly|removeonly] [preview] [actioncsv]
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Licenses
+* https://github.com/GAM-team/GAM/wiki/Users-Licenses
 
 Updated `commit-batch` command in batch files to take an optional argument that causes GAM to wait for user input before continuing.
 * `commit-batch`
@@ -10983,7 +10983,7 @@ gam <CrOSTypeEntity> issuecommand command <CrOSCommand> [times_to_check_status <
 gam getcommand cros <CrOSEntity> commandid <CommandID> [times_to_check_status <Integer>]
 gam <CrOSTypeEntity> getcommand commandid <CommandID> [times_to_check_status <Integer>]
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/ChromeOS-Devices
+* https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices
 
 5.22.12
 
@@ -11059,7 +11059,7 @@ Added new Workspace licenses SKUs.
 The following additions are derived from initial work by Jay.
 
 Added commands to manage Cloud Identity groups. This is a work in progress.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Groups
+* https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Groups
 
 5.22.03
 
@@ -11087,7 +11087,7 @@ ERROR: 404: resourceNotFound - Does not exist
 The following additions are derived from initial work by Jay.
 
 Added commands to support the new Device Management API.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Cloud-Identity-Devices
+* https://github.com/GAM-team/GAM/wiki/Cloud-Identity-Devices
 
 To use these commands you must update your service account authorization.
 ```
@@ -11294,7 +11294,7 @@ Improve `Bad Gateway` API error handling.
 
 Added `csv_output_row_drop_filter` to `gam.cfg` to allow CSV row filtering by specifying filters
 that cause the row to be dropped if any of the filters match.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Print-Filtering#column-row-filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Print-Filtering#column-row-filtering
 
 5.10.00
 
@@ -11407,7 +11407,7 @@ This allows specifying multiple ranges with a single argument.
 Added option `valuerangesonly` to `gam <UserTypeEntity> print|show sheetrange` which, in
 conjunction with `formatjson` limits the display to just the `valueRanges` data. This will
 make it simpler to capture the sheetrange data, modify it, and update the sheet with the modified data.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Spreadsheets#display-values-in-a-spreadsheet
+* See: https://github.com/GAM-team/GAM/wiki/Users-Spreadsheets#display-values-in-a-spreadsheet
 
 Added `oauthuser` to `<UserTypeEntity>`; it represents the admin email address from `oauth2.txt`.
 
@@ -11699,7 +11699,7 @@ gam user user@domain.com print filelist select name "Meet Recordings" querytime3
 5.05.00
 
 Google Docs and Drive Files can be used to specify notes, messages and signatures.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Command-Data-From-Google-Docs-Sheets
+* See: https://github.com/GAM-team/GAM/wiki/Command-Data-From-Google-Docs-Sheets
 
 Added option `aliasesincolumns` to `gam print courses` that alters the display of course aliases.
 When the `aliases` option is used, all aliases are displayed in the single column `Aliases`
@@ -11723,7 +11723,7 @@ Added command to get a user's profile photo.
 ```
 `gam <UserTypeEntity> get profilephoto [drivedir|(targetfolder <FilePath>)] [filename <FileNamePattern>] [noshow]
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Photo
+* See: https://github.com/GAM-team/GAM/wiki/Users-Photo
 
 5.04.09
 
@@ -11791,7 +11791,7 @@ group_users <GroupItemList> members managers owners includederivedmembership end
 5.04.00
 
 Expanded options for selecting collections of files with `gam <UserTypeEntity> print filelist`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files-Display
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files-Display
 
 Updated `gam <UserTypeEntity> print filelist filepath|fullpath` to include additional path information.
 Each path will start with:
@@ -11883,7 +11883,7 @@ projects to display.
 Added option `showiampolicies 0|1|3` to `gam print|show projects` that adds project policy
 information to the display. This requires an additional API call per service account.
 
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#display-projects
+* See: https://github.com/GAM-team/GAM/wiki/Authorization#display-projects
 
 5.03.31
 
@@ -12137,7 +12137,7 @@ gam <UserTypeEntity> create|add drivefileshortcut <DriveFileEntity> [shortcutnam
         [<DriveFileParentAttribute>]
         [csv [todrive <ToDriveAttributes>*]] [returnidonly]
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#create-shortcuts
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#create-shortcuts
 
 In `<MimeTypeShortcut>` `gshortcut` now refers to the new shortcuts and `g3pshortcut` to the previous third-party shortcuts.
 
@@ -12182,7 +12182,7 @@ $fileId = & gam user user@domain.com create drivefile ... returnidonly`
 5.02.01
 
 Added `csv_output_header_drop_filter` to `gam.cfg` to allow CSV header filtering by exclusion.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Print-Filtering#column-header-filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Print-Filtering#column-header-filtering
 
 Thanks to @bousquf for the following enhancement. You want to send a message from an authorized group
 but a group email address can't be used in the Gmail API as the sender.
@@ -12229,7 +12229,7 @@ gam <UserTypeEntity> update serviceaccount
 ```
 
 Starting from initial code from Jay, added commands to get customer and user usage reports over a date range.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports
+* See: https://github.com/GAM-team/GAM/wiki/Reports
 
 5.01.09
 
@@ -12247,7 +12247,7 @@ you want the updated data copied to `Latest` so you don't have to remember what 
 ```
 gam redirect csv - todrive tdfileid <DriveFileID> tdupdatesheet tdsheet Tuesday tdbackupsheet "Backup Tuesday" tdcopysheet "Latest" ...
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive#command-line-options
+* See: https://github.com/GAM-team/GAM/wiki/Todrive#command-line-options
 
 5.01.07
 
@@ -12300,7 +12300,7 @@ This option is only effective when option `v2` is specified.
 
 Added option `idmapfile <FileName>|(gsheet <UserGoogleSheet>) [charset <String>] [columndelimiter <Character>] [quotechar <Character>]`
 to `gam <UserTypeEntity> print|show driveactivity`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Activity-Settings#display-drive-activity
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Activity-Settings#display-drive-activity
 
 Added option `matchfield hangoutlink <RegularExpression>` to `<EventMatchProperty>` so you can search for events with a specific Hangout Link.
 
@@ -12382,7 +12382,7 @@ Fixed bug in `gam transfer drive` that caused a trap.
 5.00.03
 
 Added commands to display Google people/person profile information.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-People-Profile
+See: https://github.com/GAM-team/GAM/wiki/Users-People-Profile
 
 Upgraded `googleapiclient` library to `1.7.12`.
 
@@ -12475,7 +12475,7 @@ Improved performance of `gam print filelist` when `query` and `showmimetype`` op
 
 Added `explicitlytrashed` and `trashed` to `<FileTreeFieldName>` so that files/folders in the trash
 can be identified in `gam print/show filetree`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#display-file-tree
+* See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#display-file-tree
 
 4.99.20
 
@@ -12497,7 +12497,7 @@ Fixed coding errors in `gam tbatch`.
 4.99.16
 
 Added `showcmds` option to `gam csv` to allow monitoring of execution processing.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Bulk-Processing
+* See: https://github.com/GAM-team/GAM/wiki/Bulk-Processing
 
 4.99.15
 
@@ -12512,7 +12512,7 @@ Improve error handling in `gam check serviceaccount` when checking the age of th
 Following Jay's lead, updated `gam check serviceaccount` to check the age of the private key in `oauth2service.json`.
 GAM will warn you if the key is more than 30 days old. Google recommends rotating the key on a regular basis which
 can be done with `gam update|rotate sakey`.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#update-an-existing-service-account-key
+* See: https://github.com/GAM-team/GAM/wiki/Authorization#update-an-existing-service-account-key
 
 Fixed bug in `gam print/show messages` where `showlabels useronly` option was not suppressing system labels.
 
@@ -12523,27 +12523,27 @@ Handle `permissionDenied` error when processing delegates.
 4.99.11
 
 Updated `gam print/show messages` to display message labels and counts.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Messages-Threads#display-messagesthreads
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Messages-Threads#display-messagesthreads
 
 4.99.10
 
 Updated `gam create/update sheet` and `gam append/update sheetrange` to be able to read JSON data from
 a file as well as the command line.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Spreadsheets
+* See: https://github.com/GAM-team/GAM/wiki/Users-Spreadsheets
 
 4.99.09
 
 Following Jay's lead, simplified `gam create project` and `gam <UserTypeEntity> check serviceaccount`.
 When creating a project, the initial screen where you entered the `Application name` and clicked `Save`
 has been eliminated. The `Application name` defaults to `GAM` but you can change it with the `appname <Sring>` option.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#create-a-new-project-for-gam-authorization
+* See: https://github.com/GAM-team/GAM/wiki/Authorization#create-a-new-project-for-gam-authorization
 
 When `check serviceaccount` requires you to authorize scopes, the URL that you enter now fills in
 the `Client Name` and `One or More API Scopes` fields, you just click `Authorize`; you don't have to cut and paste
 these values.
 
 Updated `gam.cfg` `csv_output_row_filter` to allow range checking on counts, dates, and times.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Print-Filtering#column-row-filtering
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Print-Filtering#column-row-filtering
 
 For example, to list files a user created in the last six months of 2019:
 ```
@@ -12554,7 +12554,7 @@ gam config csv_output_row_filter "'createdTime:daterange=2019-07-01 2019-12-31'"
 
 Added `actioncsv` option to `gam update groups`. This will produce a CSV file with columns `group,email,role,action,message`
 that shows the actions performed when updating the group.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups-Membership
+* See: https://github.com/GAM-team/GAM/wiki/Groups-Membership
 
 4.99.07
 
@@ -12585,7 +12585,7 @@ This affected `gam create admin <UserItem> <RoleItem> org_unit /`.
 4.99.01
 
 Updated `gam.cfg` `csv_output_row_filter` processing so that field names can contain colons.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/CSV-Print-Filtering#quoting-rules
+* See: https://github.com/GAM-team/GAM/wiki/CSV-Print-Filtering#quoting-rules
 
 4.99.00
 
@@ -12597,7 +12597,7 @@ Added options to `gam show messages|threads` to allow downloading attachments.
 ```
 [saveattachments [attachmentnamepattern <RegularExpression>]] [targetfolder <FilePath>] [overwrite [<Boolean>]]
 ```
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Messages-Threads#download-attachments
+* See: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Messages-Threads#download-attachments
 
 4.98.17
 
@@ -12660,7 +12660,7 @@ Fixed bug that caused a trap in `gam update group csvkmd ...`.
 4.98.04
 
 Added ability to have GAM send email via SMTP.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Send-Email#use-smtp-to-send-messages
+* See: https://github.com/GAM-team/GAM/wiki/Send-Email#use-smtp-to-send-messages
 
 4.98.03
 
@@ -12699,7 +12699,7 @@ gam use project [admin <EmailAddress>] [project <ProjectID>]
         [saname <ServiceAccountName>] [sadisplayname <ServiceAccountDisplayName>]
         [sadescription <ServiceAccountDescription>]
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#manage-projects
+See: https://github.com/GAM-team/GAM/wiki/Authorization#manage-projects
 
 Added commands to manage Service Accounts.
 ```
@@ -12716,7 +12716,7 @@ Note: this form of the command to add a Service Account has been replaced by the
 ```
 gam addsvcacct project [<EmailAddress>] [current|gam|<ProjectID>|(filter <String>)]
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#manage-service-accounts
+See: https://github.com/GAM-team/GAM/wiki/Authorization#manage-service-accounts
 
 Starting from Jay's initial concept, added commands to manage Service Account keys.
 ```
@@ -12726,7 +12726,7 @@ gam replace sakeys [(algorithm KEY_ALG_RSA_1024|KEY_ALG_RSA_2048)|(localkeysize 
 gam delete sakeys <ServiceAccountKeyList>+ [doit]
 gam show sakeys [all|system|user]
 ```
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#manage-service-accounts-keys
+See: https://github.com/GAM-team/GAM/wiki/Authorization#manage-service-accounts-keys
 
 To use these commands you must update your gam project and service account authorization.
 ```
@@ -12819,15 +12819,15 @@ Corrected code where permissions fields were unnecessarily downloaded in `gam pr
 Added option `todrive <ToDriveAttribute>*` to `redirect csv` to allow setting of `todrive` options as part of the redirect.
  If you are doing `redirect csv <FileName> multiprocess`, it is more efficient to specify `todrive <ToDriveAttribute>*` as part of
 the redirect as verification of the `todrive` settings, which can invole several API calls, is done once rather than in each of the subprocesses.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive#redirect-csv
+* https://github.com/GAM-team/GAM/wiki/Todrive#redirect-csv
 
 Added option `tdupdatesheet [<Boolean>]` to `todrive` options. When used with `tdfileid` and `tdsheet`,
 a specific sheet within a Google spreadsheet can be updated with a `gam print todrive` command.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive#command-line-options
+* https://github.com/GAM-team/GAM/wiki/Todrive#command-line-options
 
 Added options `gsheet|csvsheet <SheetEntity>`, `charset <CharSet>` and `delimiter <Character>` options
 to `gam update drivefile`. This allows updating a specifc sheet within Google spreadsheet.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#update-files
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#update-files
 
 Added options `json [charset <Charset>] <JSONData>` and `json file <FileName> [charset <Charset>]` to
 `<DriveFilePermissionEntity>` and `<DriveFilePermissionIDEntity>` that are used by `gam create permissions`
@@ -12837,12 +12837,12 @@ be used as input to these commands.
 Added options `<PermissionMatch>* [<PermissionMatchAction>]` to
 `gam create permissions` and `gam delete permissions`. This allows you to specify which permissions
 in the JSON data to process or skip.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Permission-Matches#permission-selection
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Permissions#manage-file-permissionssharing
+* https://github.com/GAM-team/GAM/wiki/Permission-Matches#permission-selection
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Permissions#manage-file-permissionssharing
 
 Added options `<PermissionMatch>* [<PermissionMatchAction>]` to
 `gam print/show drivefileacls`. This allows you to specify which permissions to display or skip.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Permission-Matches#permission-selection
+* https://github.com/GAM-team/GAM/wiki/Permission-Matches#permission-selection
 
 4.97.09
 
@@ -12883,7 +12883,7 @@ to the Drive and Sheets APIs for use with `todrive` without gaining access to ot
 ```
 'Gmail API - Send Messages - including todrive'
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization
+* https://github.com/GAM-team/GAM/wiki/Authorization
 
 4.97.02
 
@@ -12918,7 +12918,7 @@ Added command that allows selection of Service Account scopes.
 gam <UserTypeEntity> update serviceaccount
 ```
 These new commands allow you to more easily provide limited access to additional GAM users.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization
+* https://github.com/GAM-team/GAM/wiki/Authorization
 
 4.96.20
 
@@ -12931,12 +12931,12 @@ Removed debugging code that caused `gam create resoldcustomer` to throw an excep
 4.96.18
 
 Added the ability to select fields with `gam info/show/print vaultexport/vaulthold`.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Vault
+* https://github.com/GAM-team/GAM/wiki/Vault
 
 Added optional `<UserTypeEntity>` to all `gam printer/printjob` commands to allow selection of a printer owner.
 Previously, all such commands could only access printers owned by the user in `oauth2.txt`.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Printers
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Print-Jobs
+* https://github.com/GAM-team/GAM/wiki/Printers
+* https://github.com/GAM-team/GAM/wiki/Print-Jobs
 
 To use this option you must update your Service Account authentication:
 * `gam user user@domain.com check serviceaccount`
@@ -12944,7 +12944,7 @@ To use this option you must update your Service Account authentication:
 4.96.17
 
 Improved/corrected `gam <UserTypeEntity> add/sync groups`.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership
+* https://github.com/GAM-team/GAM/wiki/Users-Group-Membership
 
 Updated `gam <UserTypeEntity> print/show groups` to include status and delivery settings.
 
@@ -12952,12 +12952,12 @@ Added command to update a user's group roles and delivery settings..
 ```
 gam <UserTypeEntity> update groups ([<GroupRole>] [[delivery] <DeliverySetting>] <GroupEntity>)+
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership
+* https://github.com/GAM-team/GAM/wiki/Users-Group-Membership
 
 4.96.16
 
 Improved/corrected `gam <UserTypeEntity> add/sync groups`.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership
+* https://github.com/GAM-team/GAM/wiki/Users-Group-Membership
 
 4.96.15
 
@@ -12971,13 +12971,13 @@ Added command to synchronize a user's group membership.
 ```
 gam <UserTypeEntity> sync groups ([<GroupRole>] <GroupEntity>)+
 ```
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Group-Membership
+* https://github.com/GAM-team/GAM/wiki/Users-Group-Membership
 
 4.96.14
 
 Added `notfoundpassword random|<Password>` option to `gam update user` which is used in conjunction with
 the `createifnotfound` option to create a user during an update.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Manage#special-case-processing-for-update-user
+* https://github.com/GAM-team/GAM/wiki/Users-Manage#special-case-processing-for-update-user
 
 4.96.13
 
@@ -13098,7 +13098,7 @@ Command: /Users/admin/bin/gam csv Files.csv gam user ~Owner show fileinfo >>>~id
 
 ERROR: Header "id" not found in CSV headers of "Owner".
 Help: Syntax in file /Users/admin/bin/gam/GamCommands.txt
-Help: Documentation is at https://github.com/taers232c/GAMADV-XTD3/wiki
+Help: Documentation is at https://github.com/GAM-team/GAM/wiki
 
 Now, the fields you select will be output on the header row and the subsequent command will not fail.
 
@@ -13215,8 +13215,8 @@ to allow displaying members based on their email address.
 * `memberemaildisplaypattern <RegularExpression>` - Members with email addresses that match `<RegularExpression>` will be displayed; others will not be displayed
 * `memberemailskippattern <RegularExpression>` - Members with email addresses that match `<RegularExpression>` will not be displayed; others will be displayed
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups-Manage#display-information-about-individual-groups
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups-Manage#display-information-about-multiple-groups
+See: https://github.com/GAM-team/GAM/wiki/Groups-Manage#display-information-about-individual-groups
+See: https://github.com/GAM-team/GAM/wiki/Groups-Manage#display-information-about-multiple-groups
 
 4.95.03
 
@@ -13224,15 +13224,15 @@ Added option `memberemaildisplaypattern|memberemailskippattern <RegularExpressio
 to allow displaying members based on their email address.
 * `memberemaildisplaypattern <RegularExpression>` - Members with email addresses that match `<RegularExpression>` will be displayed; others will not be displayed
 * `memberemailskippattern <RegularExpression>` - Members with email addresses that match `<RegularExpression>` will not be displayed; others will be displayed
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership#display-group-membership-in-csv-format
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership#display-group-membership-in-hierarchical-format
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership#display-group-membership-in-csv-format
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership#display-group-membership-in-hierarchical-format
 
 4.95.02
 
 Following Jay's lead, added `scope|scopes <APIScopeURLList>` option to `gam check serviceaccount`.
 This allows you to enable service account access for a set of specific scopes rather than the full
 set of scopes that GAM is capable of using.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization#manage-gam-service-account-access
+See: https://github.com/GAM-team/GAM/wiki/Authorization#manage-gam-service-account-access
 
 When `no_update_check = false` in `gam.cfg` and a GAM update is available, execution will not be interrupted;
 you will get a warning message on stderr: `WARNING: Version update available, Current: 4.95.01, Latest: 4.95.02`.
@@ -13247,7 +13247,7 @@ Added options `emailclearpattern|emailretainpattern <RegularExpression>` to `gam
 to allow clearing members based on their email address.
 * `emailclearpattern <RegularExpression>` - Members with email addresses that match `<RegularExpression>` will be cleared; others will be retained
 * `emailretainpattern <RegularExpression>` - Members with email addresses that match `<RegularExpression>` will be retained; others will be cleared
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership#delete-members-from-a-group-by-role
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership#delete-members-from-a-group-by-role
 
 4.94.24
 
@@ -13265,7 +13265,7 @@ Fixed bug that caused trap when `gam config timezone` specified an invalid value
 Added `tdlocale <Locale>` and `tdtimezone <TimeZone>` to `<ToDriveAttribute>`.
 Added `todrive_locale` and `todrive_timezone` to `gam.cfg`.
 These settings are used to set Spreadsheet settings for files uploaded with `todrive`.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive
+See: https://github.com/GAM-team/GAM/wiki/Todrive
 
 4.94.21
 
@@ -13300,7 +13300,7 @@ option puts all of the list field values on one row.
 
 Added option `includederivedmembership` to `gam print/show group-members`.
 This option causes the API to list indirect members of groups.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership
 
 4.94.15
 
@@ -13310,7 +13310,7 @@ Make `unknownError - Unknown` a retryable error when making API calls to list fi
 
 Added `execute <Command> <ArgumentList>` to `gam tbatch` commands. This allows you to execute
 non-GAM commands in the batch.
-See https://github.com/taers232c/GAMADV-XTD3/wiki/Bulk-Processing#batch-files
+See https://github.com/GAM-team/GAM/wiki/Bulk-Processing#batch-files
 
 4.94.13
 
@@ -13346,7 +13346,7 @@ of aliases.
 
 Added `types <GroupTypeList>` to `gam print/show group-members`; only members with type in `<GroupTypeList>`
 will be displayed. By default, members of all types are displayed.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership
 
 4.94.06
 
@@ -13363,7 +13363,7 @@ Following Jay's lead, added additional platform information to `gam version`.
 4.94.03
 
 Added additional client access scopes for `todrive_clientaccess`.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive#client-access
+See: https://github.com/GAM-team/GAM/wiki/Todrive#client-access
 
 4.94.02
 
@@ -13377,7 +13377,7 @@ Fixed bug in `gam info mobile` that caused a trap.
 
 Added `todrive_clientaccess` to `gam.cfg`. This is a special use Boolean option that allows
 the `todrive` option to be used with client access rather than service account access.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive#client-access
+See: https://github.com/GAM-team/GAM/wiki/Todrive#client-access
 
 4.94.00
 
@@ -13401,17 +13401,17 @@ It's not typical that you would want to override the `charset` value from `gam.c
 
 Added option `matterstate <MatterStateList>` to `gam print/show vaultnatters` to allow
 display of Vault matters filtered by state.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault#display-vault-matters
+See: https://github.com/GAM-team/GAM/wiki/Vault#display-vault-matters
 
 Added option `exportstatus <ExportStatusList>` to `gam print/show vaultexports` to allow
 display of Vault exports filtered by status.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Vault#display-vault-exports
+See: https://github.com/GAM-team/GAM/wiki/Vault#display-vault-exports
 
 Added `removedomainnostatusmembers` to `gam update group sync/clear`. This option
 is used to remove members from the group that are in your domain but have no status.
 These members were added to the group before the user or group that they represent was created.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership#synchronize-members-in-a-group
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership#delete-members-from-a-group-by-role
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership#synchronize-members-in-a-group
+See: https://github.com/GAM-team/GAM/wiki/Group-Membership#delete-members-from-a-group-by-role
 
 4.90.09
 
@@ -13538,7 +13538,7 @@ Added options to `<UserTypeEntity>` to allow a greater selection of users based 
 4.89.02
 
 Added options to `gam update calattendees` to allow easier specification of multiple attendees.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events#update-calendar-event-attendees
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events#update-calendar-event-attendees
 
 Fixed bug that caused `gam purge evant` and `gam empty calendartrash` to fail
 with error `ERROR: Parameter "sendUpdates" value "False" is not an allowed value in "[u'all', u'externalOnly', u'none']"`.
@@ -13967,7 +13967,7 @@ Fixed bug in `gam info teamdrive` where trap was thrown if the `hidden` field wa
 4.82.01
 
 Enhanced `gam <UserTypeEntity> update calattendees` to provide more options.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events#update-calendar-event-attendees
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events#update-calendar-event-attendees
 
 Added commands to hide and unhide Team Drives.
 gam <UserTypeEntity> hide teamdrive <TeamDriveEntity>
@@ -14063,7 +14063,7 @@ at the top level.
 4.70.00
 
 Starting from initial code by Jay Lee, added support for the Alert Center API.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Alert-Center
+* https://github.com/GAM-team/GAM/wiki/Alert-Center
 
 To use these commands you must update your gam project and service account authorization.
 gam update project
@@ -14219,7 +14219,7 @@ that disables POP and IMAP access for a deprovisioned user.
 4.65.71
 
 Added `aggregatebydate [Boolean]` option to `gam report user` to allow data aggregation for multiple users.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Reports#user-reports
+* https://github.com/GAM-team/GAM/wiki/Reports#user-reports
 
 4.65.70
 
@@ -14231,7 +14231,7 @@ This will only be successful if there is one main Zip file in the export.
 
 Added `exportsheetaspdf <String>` to `gam get drivefile` to allow downloading Google Sheets into PDF files.
 
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#download-files
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#download-files
 
 4.65.68
 
@@ -14244,7 +14244,7 @@ Added `minimumfilesize <Integer>` to `gam print filelist` to allow selection of 
 4.65.66
 
 Improvements to gam report commands that allow greater ability to select reports and specify dates.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Reports
+See: https://github.com/GAM-team/GAM/wiki/Reports
 
 4.65.65
 
@@ -14263,7 +14263,7 @@ Added `sendnotifications <Boolean>` option to `gam transfer calendars|seccals` f
 4.65.62
 
 Enhanced <Tag> <Replace> processing to allow selection of user field keyword.
-See: https://github.com/taers232c/GAMADV-X/wiki/Tag-Replace
+See: https://github.com/GAM-team/GAM/wiki/Tag-Replace
 
 4.65.61
 
@@ -14289,12 +14289,12 @@ IMPORTANT! When you upgrade to this version, issue the following command to set 
 gam select default config todrive_nobrowser <Boolean> todrive_noemail <Boolean> save verify
 
 Added `targetuserfolderid <DriveFolderID>` to `gam collect orphans` to allow specifying the folder for orphans by ID.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Orphans
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Orphans
 
 Fixed bug in `gam print filelist` where `showownedby others` and no `fullquery/query` caused a trap.
 
 Added commands to print calendar settings by calendar; this will be most useful for resource calendars.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Calendars
+* https://github.com/GAM-team/GAM/wiki/Calendars
 
 Expanded options in `gam move drivefile` when moving the sub files/folders within the top folder, but not the top folder itself.
 Previously, the following option specified this mode of operation.
@@ -14312,8 +14312,8 @@ Added additional `matchfield` options to `<EventMatchProperty>`.
         (matchfield status <RegularExpression>)|
         (matchfield transparency <RegularExpression>)|
         (matchfield visibility <RegularExpression>)
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Calendars-Events#event-selection
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events#event-selection
+* https://github.com/GAM-team/GAM/wiki/Calendars-Events#event-selection
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events#event-selection
 
 Update code to recognize additional forms of `<DriveFileURL>`; the last two forms were not recognized.
 <DriveFileURL> ::=
@@ -14342,7 +14342,7 @@ is executed and `<FileName>` contains a header row but no data rows.
 
 Added a new option `updateoufromgroup` to `gam update user` that allows updaing a user's OU based on their group membership.
 This would typically be used when an external service creates a Google user and assigns it to a group but does not place it in an OU.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users#update-a-users-OU-based-on-group-membership
+* https://github.com/GAM-team/GAM/wiki/Users#update-a-users-OU-based-on-group-membership
 
 4.65.55
 
@@ -14401,7 +14401,7 @@ gam print orgs minusercount 1
 * Show all OUs with no users.
 gam print orgs maxusercount 0
 
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Organizational-Units#print-organizational-units
+* https://github.com/GAM-team/GAM/wiki/Organizational-Units#print-organizational-units
 
 4.65.47
 
@@ -14416,10 +14416,10 @@ You can now use a user's Google Sheet to supply data to Gam commands by specifyi
 * gsheet(:<FieldName>)+ <UserGoogleSheet> - Google Sheet and field names
 * gsheet <UserGoogleSheet> - Google Sheet
 
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-ChromeOS-Devices
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Users
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Collections-of-Items
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Bulk-Processing
+* https://github.com/GAM-team/GAM/wiki/Collections-of-ChromeOS-Devices
+* https://github.com/GAM-team/GAM/wiki/Collections-of-Users
+* https://github.com/GAM-team/GAM/wiki/Collections-of-Items
+* https://github.com/GAM-team/GAM/wiki/Bulk-Processing
 
 Examples
 Execute a Gam command on user@domain.com's Google Sheet UserSheet sheet NewUsers.
@@ -14452,7 +14452,7 @@ gam redirect stdout - multiprocess csv Users.csv gam info user ~primaryEmail nam
 4.65.45
 
 Enhanced gam delete/update projects commands to allow more project selection options.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization
+See: https://github.com/GAM-team/GAM/wiki/Authorization
 
 4.65.44
 
@@ -14465,10 +14465,10 @@ gam <UserTypeEntity> print messages|threads (((query <QueryGmail>) (matchlabel <
 4.65.43
 
 Added csvsheet <SheetName> argument to gam get drivefile to allow downloading a specific sheet from a Google Sheets file in CSV format.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#download-files
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#download-files
 
 Added gam print projects command.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization
+See: https://github.com/GAM-team/GAM/wiki/Authorization
 
 4.65.42
 
@@ -14490,7 +14490,7 @@ gam update orgs|ous <OrgUnitEntity> sync <UserTypeEntity> [removetoou <OrgUnitIt
 
 Starting from code supplied by Gavin Lam, added a command to allow Gam to use previously defined projects.
 Added additional commands to delete and display projects.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Authorization
+See: https://github.com/GAM-team/GAM/wiki/Authorization
 
 4.65.40
 
@@ -14573,7 +14573,7 @@ Handle "Gateway Timeout" errors.
 
 Added mergewithparent [<Boolean>] option to gam copy/move drivefile to allow copying/moving
 the contents of a folder but not the folder itself.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move
 
 4.65.31
 
@@ -14584,7 +14584,7 @@ Fixed bug in gam show group-members where a group member without a status caused
 Added fullpath option to gam print filelist. Currently, if you use the select and filepath options,
 GAMADV-XTD only displays file path information back to the selected file or folder. With the fullpath option,
 GAMADV-XTD will display information as far back to the root (My Drive or Team Drive) as possible.
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Files
 
 4.65.29
 
@@ -14592,7 +14592,7 @@ Google has introduced Drive Activity API v2; it adds time and action filtering a
 Drive Activity API v1 will be deprecated in December 2019. GAMADV-XTD supports both versions of the API.
 * https://developers.google.com/drive/activity/v2/migrating
 * https://developers.google.com/drive/activity/v2/reference/rest/v2/activity/query
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Activity-Settings
+* https://github.com/GAM-team/GAM/wiki/Users-Drive-Activity-Settings
 
 Code cleanup.
 
@@ -14652,18 +14652,18 @@ Handle additional ownership change error in gam transfer drive.
 4.65.19
 
 Added abbreviations for the permission match keywords.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#permission-matches
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#permission-matches
 
 4.65.18
 
 Added tddescription <String> and tdsheet <String> to <ToDriveAttribute> to allow setting an uploaded
 CSV file description and sheet name.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Todrive
+See: https://github.com/GAM-team/GAM/wiki/Todrive
 
 Added options to print filelist/filecounts that allow selection of files based on their permissions.
 For example, to see all of a user's files that are shared with anyone:
 gam user user@domain.com print filelist id title permissionmatch type anyone endmatch
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files#permission-matches
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files#permission-matches
 
 4.65.17
 
@@ -14701,7 +14701,7 @@ Added additional error checking to gam create teamdrive to handle errors when bu
 4.65.12
 
 Added options to gam transfer calendar that allow updating of calendar settings as part of the transfer.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Access
+See: https://github.com/GAM-team/GAM/wiki/Users-Calendars-Access
 
 o4.65.11
 
@@ -14732,21 +14732,21 @@ Added options to <UserCalendarAddEntity> and <UserCalendarEntity> to allow selec
 All gam <UserTypeEntity> commands that reference calendars, calendar lists, calendar ACLs and calendar events can
 use these options.
 See:
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-List
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Access
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-List
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-Access
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events
 
 4.65.07
 
 Added fields <EventFieldNameList> option to gam info/show/print events to allow selection of specific event fields to display.
 See:
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Calendars-Events
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events
+* https://github.com/GAM-team/GAM/wiki/Calendars-Events
+* https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events
 
 Enhanced <Tag> <Replace> processing to allow greater selection of user fields.
 See:
-* https://github.com/taers232c/GAMADV-XTD3/wiki/Tag-Replace
+* https://github.com/GAM-team/GAM/wiki/Tag-Replace
 
 4.65.06
 
@@ -15079,7 +15079,7 @@ Fixed bug in gam print filelist where the anyowner option was ignored.
 Updated gam sendemail to allow empty subjects and messages.
 
 Enhanced all guardian commands to support a syntax similar to other commands.
-* See: https://github.com/taers232c/GAMADV-XTD3/wiki/Classroom-Guardians
+* See: https://github.com/GAM-team/GAM/wiki/Classroom-Guardians
 * Added a command to clear all guardian invitations and accepted guardians for a student.
 * Added a command to sync guardians where the new set of guardians is specified in the command line
 and Gam deletes any pending guardian invitations and accepted guardians that are not in the new set and sends
@@ -15683,7 +15683,7 @@ Corrected the error message "Add Failed: Invalid Role" to "Add Failed: Invalid M
 Added support for Collaborative Inbox Groups.
 * Feature documentation: https://support.google.com/a/answer/167430?hl=en
 * API documentation: https://developers.google.com/admin-sdk/groups-settings/v1/reference/groups
-* GAM documentation: https://github.com/taers232c/GAMADV-XTD3/wiki/Groups
+* GAM documentation: https://github.com/GAM-team/GAM/wiki/Groups
 
 4.57.02
 
@@ -15718,7 +15718,7 @@ a new copy with the same name was created. Now, a source file is copied only it 
 in the target folder. Now, a source folder and its contents are merged with the target folder of the same name. There are options that
 allow you to get the prior behavior.
 
-Read the dcomentation here (https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Copy-Move) and test before using in production.
+Read the dcomentation here (https://github.com/GAM-team/GAM/wiki/Users-Drive-Copy-Move) and test before using in production.
 
 4.56.18
 
@@ -15919,10 +15919,10 @@ Fixed bug in gam update calattendees.
 Added delete <EmailAddress> option to gam update calattendees to allow for attendee deletion.
 gam <UserTypeEntity> update calattendees <CalendarManageEntity> <EventEntity> [anyorganizer]
         [csv <FileName>] (replace <EmailAddress> <EmailAddress>)* (delete <EmailAddress>)* [doit]
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Calendars-Events
+For details, see: https://github.com/GAM-team/GAM/wiki/Users-Calendars-Events
 
 Updated gam update user to be able to send a notification email when a user's password is changed.
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Users
+For details, see: https://github.com/GAM-team/GAM/wiki/Users
 
 4.56.06
 
@@ -16202,7 +16202,7 @@ gam cros_queries "id:HY3,id:5CD" print cros allfields nolists
 If a query does contain a single quote, you surround it with escaped double quotes.
 gam queries "\"orgName='Sales Org' orgTitle=Manager\",\"orgName='Marketing Org'\"" print users allfields
 
-For quoting rules, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Lists
+For quoting rules, see: https://github.com/GAM-team/GAM/wiki/Lists
 
 4.55.47
 
@@ -16544,7 +16544,7 @@ Moving a Drive folder to a Team Drive is not directly supported by the API; Gam 
 recursively adjust the files/folders within it to point to the new parent folder.
 
 Added the ability to replace tags with user attributes in the following commands: import message, insert message, create sendas, update sendas, signature, vacation.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Tag-Replace
+See: https://github.com/GAM-team/GAM/wiki/Tag-Replace
 
 4.55.16
 
@@ -16597,7 +16597,7 @@ Improved output formatting in gam add/delete permissions.
 
 Added options to gam show filetree to allow additional fields beyond the file/folder name to be shown.
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Files
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Files
 
 4.55.07
 
@@ -16624,7 +16624,7 @@ Cleaned up code for print courses, print course-work, print course-submissions, 
 Added command to print course announcements.
 You need to execute the following command to enable the scope that authorizes this command: gam oauth create
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Courses
+See: https://github.com/GAM-team/GAM/wiki/Courses
 
 gam print course-announcements [todrive [<ToDriveAttribute>]] (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (courseannouncementids <CourseAnnouncementIDEntity>)|((announcementstates <CourseAnnouncementStateList>)* (orderby <CourseAnnouncementOrderByFieldName> [ascending|descending])*)
@@ -16655,7 +16655,7 @@ To clear a property, set <PropertyValue> to the empty string "".
 
 Based on initial work by Jay, added support for ChromeOS device files; these are associated with ChromeOS devices running in kiosk mode.
 See: https://support.google.com/chrome/a/answer/1375678?hl=en#kiosk
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/ChromeOS-Devices
+See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices
 
 <CrOSFieldName> ::=
         devicefiles|
@@ -16678,10 +16678,10 @@ gam get devicefile <CrOSEntity> [select <DeviceFileEntity>] [targetfolder <FileP
 gam <CrOSTypeEntity> get devicefile [select <DeviceFileEntity>] [targetfolder <FilePath>]
 
 Based on initial work by Jay, added support for buildings and features in resource calendars.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Resource-Calendars
+See: https://github.com/GAM-team/GAM/wiki/Resource-Calendars
 
 Added command to allow Gam to send emails.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Send-Email
+See: https://github.com/GAM-team/GAM/wiki/Send-Email
 
 4.54.59
 
@@ -16691,7 +16691,7 @@ Fix reporting of target free space in gam transfer drive.
 
 Updated options in gam transfer drive to give more control over processing files.
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Transfer
+See: https://github.com/GAM-team/GAM/wiki/Users-Drive-Transfer
 
 gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
         [(targetfolderid <DriveFolderID>)|(targetfoldername <DriveFolderName>)] [targetuserfoldername <DriveFolderName>] [targetuserorphansfoldername <DriveFolderName>]
@@ -16703,7 +16703,7 @@ gam <UserTypeEntity> transfer drive <UserItem> [select <DriveFileEntity>]
 Added commands to print course work and course submissions.
 You need to execute the following command to enable the scope that authorizes these commands: gam oauth create
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Courses
+See: https://github.com/GAM-team/GAM/wiki/Courses
 
 gam print course-work [todrive [<ToDriveAttribute>]] (course|class <CourseEntity>)*|([teacher <UserItem>] [student <UserItem>] states <CourseStateList>])
         (courseworkids <CourseWorkIDEntity>)|((workstates <CourseWorkStateList>)* (orderby <CourseWorkOrderByFieldName> [ascending|descending])*)
@@ -16933,7 +16933,7 @@ gam <UserTypeEntity> show teamdrivethemes
 Google enhanced the ability of domain administrators to manage Team Drives.
 See: https://developers.google.com/drive/v3/web/manage-teamdrives#managing_team_drives_for_domain_administrators
 
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/Domain-Administrator-Team-Drives
+See: https://github.com/GAM-team/GAM/wiki/Domain-Administrator-Team-Drives
 
 4.54.45
 
@@ -16973,7 +16973,7 @@ gam show group-members
         ([domain <DomainName>] [member <UserItem>])|[group <GroupItem>]|[select <GroupEntity>]
         [members] [managers] [owners] [depth <Number>]
 
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Group-Membership
+For details, see: https://github.com/GAM-team/GAM/wiki/Group-Membership
 
 4.54.41
 
@@ -17155,7 +17155,7 @@ gam <UserTypeEntity> claim ownership <DriveFileEntity> [includetrashed]
         [restricted [<Boolean>]] [writerscanshare|writerscantshare [<Boolean>]] [keepuser | (retainrole reader|commenter|writer|editor|none)]
         [preview] [filepath] [buildtree] [todrive [<ToDriveAttribute>]]
 
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Drive-Ownership
+For details, see: https://github.com/GAM-team/GAM/wiki/Users-Drive-Ownership
 
 4.54.27
 
@@ -17275,7 +17275,7 @@ gam <UserTypeEntity> create sheet json <SpreadsheetJSONCreateRequest> [formatjso
 gam <UserTypeEntity> update sheet <DriveFileEntity> json <SpreadsheetJSONUpdateRequest> [formatjson]
 gam <UserTypeEntity> info sheet <DriveFileEntity> (range <SpreadsheetRange>)* [includegriddata [<Boolean>]] [formatjson]
 
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Spreadsheets
+For details, see: https://github.com/GAM-team/GAM/wiki/Users-Spreadsheets
 
 4.54.11
 
@@ -17399,7 +17399,7 @@ Added commands to manipulate spreadsheets.
         [rows|columns] [formula|formattedvalue|unformattedvalue] [serialnumber|formattedstring]
         [formatjson]
 
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Spreadsheets
+For details, see: https://github.com/GAM-team/GAM/wiki/Users-Spreadsheets
 
 To use these commands, you must update your project to use the Google Sheets API and you must update your service account authorization.
 You can update your project manually or with the command: gam update project
@@ -17435,7 +17435,7 @@ API Documentation: https://developers.google.com/gmail/api/v1/reference/users/me
         (replace <Tag> <String>)* (attach <FileName>)*
         [deleted [<Boolean>]]
 
-For details, see: https://github.com/taers232c/GAMADV-XTD3/wiki/Users-Gmail-Messages-Threads
+For details, see: https://github.com/GAM-team/GAM/wiki/Users-Gmail-Messages-Threads
 
 4.54.02
 
@@ -17444,7 +17444,7 @@ Add a User column to the CSV file produced by gam print teamdrives.
 4.54.01
 
 In gam update cros, the handling of the quickcrosmove option has changed.
-See: https://github.com/taers232c/GAMADV-XTD3/wiki/ChromeOS-Devices
+See: https://github.com/GAM-team/GAM/wiki/ChromeOS-Devices
 
 4.54.00
 
