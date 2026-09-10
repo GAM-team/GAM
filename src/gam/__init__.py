@@ -17527,7 +17527,7 @@ def doCreateAdmin():
       unknownArgumentExit()
   try:
     result = callGAPI(cd.roleAssignments(), 'insert',
-                      throwReasons=[GAPI.INTERNAL_ERROR, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
+                      throwReasons=[GAPI.INTERNAL_ERROR, GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                     GAPI.CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT, GAPI.SERVICE_NOT_AVAILABLE,
                                     GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET,
                                     GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
@@ -17550,6 +17550,8 @@ def doCreateAdmin():
     entityActionFailedWarning([Ent.ADMINISTRATOR, user], Msg.INVALID_ORGUNIT)
   except GAPI.duplicate:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user, Ent.ADMIN_ROLE, role], Msg.DUPLICATE)
+  except GAPI.invalid as e:
+    entityActionFailedWarning([Ent.ADMINISTRATOR, user], str(e))
   except (GAPI.badRequest, GAPI.customerNotFound):
     accessErrorExit(cd)
   except (GAPI.forbidden, GAPI.permissionDenied) as e:
