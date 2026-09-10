@@ -1570,7 +1570,7 @@ gam show adminroles|roles
         [formatjson]
 
 gam create|add admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
-        [condition securitygroup|nonsecuritygroup]
+        [condition securitygroup|nonsecuritygroup] [expires <DateTime>]
 gam delete admin <RoleAssignmentId>
 
 <AdminAssigneeType> ::= group|user|serviceaccount|unknown
@@ -2999,7 +2999,7 @@ gam [<UserTypeEntity>] show classificationlabelpermissions <ClassificationLabelN
 <CAARegion> ::=
         <Character><Character>
 <CAARegionList> ::= "<CAARegion>(,<CAARegion>)"
-        See: https://github.com/taers232c/GAMADV-XTD3/wiki/Context-Aware-Access-Levels#caa-region-codes
+        See: https://github.com/GAM-team/GAM/wiki/Context-Aware-Access-Levels#caa-region-codes
 
 <CAADevicePolicyAttribute> ::=
         (requirescreenlock <Boolean>) |

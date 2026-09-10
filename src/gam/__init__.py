@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.05'
+__version__ = '7.48.06'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -17503,7 +17503,7 @@ ADMIN_CONDITION_CHOICE_MAP = {
   }
 
 # gam create admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
-#	[condition securitygroup|nonsecuritygroup]
+#	[condition securitygroup|nonsecuritygroup] [expires <DateTime>]
 def doCreateAdmin():
   cd = buildGAPIObject(API.DIRECTORY)
   user = getEmailAddress(returnUIDprefix='uid:')
@@ -17588,7 +17588,7 @@ ALL_ASSIGNEE_TYPES = ['user', 'group', 'serviceaccount']
 PRINT_ADMIN_FIELDS = ['roleAssignmentId', 'roleId', 'assignedTo', 'scopeType', 'orgUnitId', 'expirationDetails']
 PRINT_ADMIN_TITLES = ['roleAssignmentId', 'roleId', 'role',
                       'assignedTo', 'assignedToUser', 'assignedToGroup', 'assignedToServiceAccount', 'assignedToUnknown',
-                      'scopeType', 'orgUnitId', 'orgUnit', 'expirationDetails']
+                      'scopeType', 'orgUnitId', 'orgUnit', 'expirationDetails.expireTime']
 
 # gam print admins [todrive <ToDriveAttribute>*]
 #	[user|group <EmailAddress>|<UniqueID>] [role <RoleItem>]
@@ -17659,6 +17659,8 @@ def doPrintShowAdmins():
   cd = buildGAPIObject(API.DIRECTORY)
   sal = buildGAPIObject(API.SERVICEACCOUNTLOOKUP)
   csvPF = CSVPrintFile(PRINT_ADMIN_TITLES) if Act.csvFormat() else None
+  if not Act.csvFormat():
+    showAdminTitles = PRINT_ADMIN_TITLES[0:-1]+['expirationDetails']
   roleId = None
   userKey = None
   oneItemPerRow = recursive = showPrivileges = False
@@ -17763,12 +17765,12 @@ def doPrintShowAdmins():
       i += 1
       printEntity([Ent.ADMIN_ROLE_ASSIGNMENT, admin['roleAssignmentId']], i, count)
       Ind.Increment()
-      for field in PRINT_ADMIN_TITLES:
+      for field in showAdminTitles:
         if field in admin:
           if (field == 'roleAssignmentId') or (field == 'assignedToUnknown' and not admin[field]):
             continue
-          elif field == 'expirationDetails':
-            printKeyValueList(['expirationDetails.expireTime', admin[field].get('expireTime')])
+          if field == 'expirationDetails':
+            printKeyValueList(['expirationDetails.expireTime', formatLocalTime(admin[field].get('expireTime', NEVER_TIME))])
             continue
           printKeyValueList([field, admin[field]])
       if showPrivileges:
@@ -17786,10 +17788,10 @@ def doPrintShowAdmins():
       admin.pop('assigneeType', None)
       admin.pop('assignedToField', None)
       if not oneItemPerRow or 'rolePrivileges' not in admin:
-        csvPF.WriteRowTitles(flattenJSON(admin))
+        csvPF.WriteRowTitles(flattenJSON(admin, timeObjects=['expireTime']))
       else:
         privileges = admin.pop('rolePrivileges')
-        baserow = flattenJSON(admin)
+        baserow = flattenJSON(admin, timeObjects=['expireTime'])
         for privilege in privileges:
           row = flattenJSON(privilege, flattened=baserow.copy())
           csvPF.WriteRowTitles(row)
