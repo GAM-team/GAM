@@ -1460,7 +1460,8 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 Add an administrator role to an administrator.
 ```
 gam create admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUnitItem>)
-        [condition securitygroup|nonsecuritygroup]
+        [condition securitygroup|nonsecuritygroup] [expires <DateTime>]
+
 ```
 * `customer` - The administrator can manage all organization units
 * `org_unit <OrgUnitItem>` - The administrator can manage the specified organization unit
@@ -1468,6 +1469,8 @@ gam create admin <EmailAddress>|<UniqueID> <RoleItem> customer|(org_unit <OrgUni
 The option `condition` limits the conditions for delegate admin access. This currently only works with the _GROUPS_EDITOR_ROLE and _GROUPS_READER_ROLE roles.
 * `condition securitygroup` - limit the delegated admin to managing security groups
 * `condition nonsecuritygroup` - limit the delegated admin to managing non-security groups
+
+The  option `expires <DateTime>` to specifies when the role assignment expires; it must be within one year.
 
 ## Delete an administrator
 Remove an administrator role from an administrator.
