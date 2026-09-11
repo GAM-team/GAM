@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.06'
+__version__ = '7.48.07'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -219,7 +219,7 @@ SECONDS_PER_HOUR = 3600
 SECONDS_PER_DAY = 86400
 SECONDS_PER_WEEK = 604800
 SECONDS_PER_YEAR = 31536000
-MAX_GOOGLE_SHEET_CELLS = 10000000 # See https://support.google.com/drive/answer/37603
+MAX_GOOGLE_SHEET_CELLS = 20000000 # See https://workspaceupdates.googleblog.com/2026/09/doubled-cell-limits-in-google-sheets-now-generally-available.html
 MAX_LOCAL_GOOGLE_TIME_OFFSET = 30
 SHARED_DRIVE_MAX_FILES_FOLDERS = 500000
 UTF8 = 'utf-8'
