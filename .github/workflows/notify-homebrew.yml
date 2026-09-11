@@ -1,0 +1,27 @@
+name: Notify Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify-homebrew:
+    # Only run for non-prerelease, non-draft releases
+    if: ${{ !github.event.release.prerelease && !github.event.release.draft }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Homebrew Tap Update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          repository: Zircoz/homebrew-gam
+          event-type: gam-release
+          client-payload: |-
+            {
+              "version": "${{ github.event.release.tag_name }}",
+              "release_name": "${{ github.event.release.name }}",
+              "release_url": "${{ github.event.release.html_url }}",
+              "tarball_url": "${{ github.event.release.tarball_url }}",
+              "triggered_by": "${{ github.actor }}"
+            }
