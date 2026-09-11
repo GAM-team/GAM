@@ -1470,7 +1470,7 @@ The option `condition` limits the conditions for delegate admin access. This cur
 * `condition securitygroup` - limit the delegated admin to managing security groups
 * `condition nonsecuritygroup` - limit the delegated admin to managing non-security groups
 
-The  option `expires <DateTime>` to specifies when the role assignment expires; it must be within one year.
+The option `expires <DateTime>` specifies when the role assignment expires; it must be within one year.
 
 ## Delete an administrator
 Remove an administrator role from an administrator.

@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.07
+
+Updated GAM to allow 20 million cells when creating/updating sheets with `todrive`.
+
+* See: https://us.list-manage.com/4cGS8LG3mAB?e=baa211e38e&c2id=934399a2c72577ccc05c42d924dd344b
+
 7.48.06
 
 Added option `expires <DateTime>` to `gam create admin` that specifies when the role assignment expires.
