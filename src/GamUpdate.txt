@@ -1,8 +1,12 @@
+7.48.08
+
+Updated `gam version extended` for `macOS Golden Gate 27.0`.
+
 7.48.07
 
 Updated GAM to allow 20 million cells when creating/updating sheets with `todrive`.
 
-* See:2 https://us.list-manage.com/4cGS8LG3mAB?e=baa211e38e&c2id=934399a2c72577ccc05c42d924dd344b
+* See: https://us.list-manage.com/4cGS8LG3mAB?e=baa211e38e&c2id=934399a2c72577ccc05c42d924dd344b
 
 7.48.06
 

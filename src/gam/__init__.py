@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.07'
+__version__ = '7.48.08'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -9589,6 +9589,7 @@ MACOS_CODENAMES = {
   14: 'Sonoma',
   15: 'Sequoia',
   26: 'Tahoe',
+  27: 'Golden Gate'
   }
 
 def getOSPlatform():
