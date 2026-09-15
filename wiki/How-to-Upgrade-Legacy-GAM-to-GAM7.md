@@ -251,10 +251,10 @@ writes the credentials into the file oauth2.txt.
 ```
 gamteam@server:/Users/gamteam$ rm -f /Users/gamteam/GAMConfig/oauth2.txt
 gamteam@server:/Users/gamteam$ gam version
-GAM 7.48.07 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.48.08 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.7 64-bit final
-macOS Tahoe 26.6.2 arm64
+macOS Golden Gate 27.0 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 
@@ -1040,7 +1040,7 @@ writes the credentials into the file oauth2.txt.
 ```
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
-GAM 7.48.07S - https://github.com/GAM-team/GAM - pythonsource
+GAM 7.48.08 - https://github.com/GAM-team/GAM - pythonsource
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.7 64-bit final
 Windows 11 10.0.26200 AMD64
