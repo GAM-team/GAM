@@ -1,3 +1,8 @@
+7.48.09
+
+Updated `gam calendars <CalendarEntity> modify <CalendarSettings>` to handle the following error:
+`ERROR: 403: requiredAccessLevel - You need to have owner access to this calendar.`
+
 7.48.08
 
 Updated `gam version extended` for `macOS Golden Gate 27.0`.

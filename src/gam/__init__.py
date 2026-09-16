@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.08'
+__version__ = '7.48.09'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -43407,10 +43407,11 @@ def doCalendarsModifySettings(calIds):
       continue
     try:
       callGAPI(cal.calendars(), 'patch',
-               throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN, GAPI.INVALID],
+               throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FORBIDDEN,
+                                                         GAPI.INVALID, GAPI.REQUIRED_ACCESS_LEVEL],
                calendarId=calId, body=body)
       entityActionPerformed([Ent.CALENDAR, calId], i, count)
-    except (GAPI.notFound, GAPI.forbidden, GAPI.invalid) as e:
+    except (GAPI.notFound, GAPI.forbidden, GAPI.invalid, GAPI.requiredAccessLevel) as e:
       entityActionFailedWarning([Ent.CALENDAR, calId], str(e), i, count)
     except GAPI.notACalendarUser:
       userCalServiceNotEnabledWarning(calId, i, count)
