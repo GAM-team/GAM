@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.09
+
+Updated `gam calendars <CalendarEntity> modify <CalendarSettings>` to handle the following error:
+`ERROR: 403: requiredAccessLevel - You need to have owner access to this calendar.`
+
 7.48.08
 
 Updated `gam version extended` for `macOS Golden Gate 27.0`.
