@@ -433,6 +433,12 @@ If an item contains spaces, it should be surrounded by ".
 <CourseWorkState> ::= draft|published|deleted
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
+<DataStudioAssetID> ::= <String>
+<DataStudioPermission> ::=
+        user:<EmailAddress>|
+        group:<EmailAddress>|
+        domain:<DomainName>|
+        serviceAccount:<EmailAddress>
 <DateTimeFormat> ::= <String>
         See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 <DeliverySetting> ::=
@@ -506,12 +512,6 @@ If an item contains spaces, it should be surrounded by ".
 <LabelID> ::= Label_<String>
 <LabelName> ::= <String>
 <LabelReplacement> ::= <String>
-<LookerStudioAssetID> ::= <String>
-<LookerStudioPermission> ::=
-        user:<EmailAddress>|
-        group:<EmailAddress>|
-        domain:<DomainName>|
-        serviceAccount:<EmailAddress>
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted
@@ -734,6 +734,8 @@ If an item contains spaces, it should be surrounded by ".
 <CourseWorkIDList> ::= "<CourseWorkID>(,<CourseWorkID>)*"
 <CourseWorkStateList> ::= all|"<CourseWorkState>(,<CourseWorkState>)*"
 <CrOSIDList> ::= "<CrOSID>(,<CrOSID>)*"
+<DataStudioAssetIDList> ::= "<DataStudioAssetID>(,<DataStudioAssetID>)*"
+<DataStudioPermissionList> ::= "<DataStudioPermission>(,<DataStudioPermission>)*"
 <DeviceIDList> ::= "<DeviceID>(,<DeviceID>)*"
 <DeviceUserList> ::= "<DeviceUserID>(,<DeviceUserID>)*"
 <DomainNameList> ::= "<DomainName>(,<DomainName>)*"
@@ -763,8 +765,6 @@ If an item contains spaces, it should be surrounded by ".
 <LabelIDList> ::= "<LabelID>(,<LabelID>)*"
 <LabelNameList> ::= "'<LabelName>'(,'<LabelName>')*"
 <LanguageList> ::= "<Language>(,<Language>)*"
-<LookerStudioAssetIDList> ::= "<LookerStudioAssetID>(,<LookerStudioAssetID>)*"
-<LookerStudioPermissionList> ::= "<LookerStudioPermission>(,<LookerStudioPermission>)*"
 <MatterItemList> ::= "<MatterItem>(,<MatterItem>)*"
 <MatterStateList> ::= "<MatterState>(,<MatterState>)*"
 <MessageIDList> ::= "<MessageID>(,<MessageID>)*"
@@ -1100,6 +1100,10 @@ Specify a collection of items by directly specifying them; the item type is dete
 <CrOSEntity> ::=
         <CrOSIDList> | (cros_sn <SerialNumberList>) |
         (query:<QueryCrOS>) | (query:orgunitpath:<OrgUnitPath>) | (query <QueryCrOS>)
+<DataStudioAssetIDEntity> ::=
+        <DataStudioAssetIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<DataStudioPermissionEntity> ::=
+        <DataStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <DeviceIDEntity> ::=
         <DeviceIDList> | (device_sn <SerialNumber>)
         (query:<QueryDevice>) | (query <QueryDevice>)
@@ -1219,10 +1223,6 @@ Specify a collection of items by directly specifying them; the item type is dete
         <LabelIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <LabelNameEntity> ::=
         <LabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<LookerStudioAssetIDEntity> ::=
-        <LookerStudioAssetIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<LookerStudioPermissionEntity> ::=
-        <LookerStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <MessageIDEntity> ::=
         <MessageIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <MobileEntity> ::=
@@ -3588,7 +3588,7 @@ gam print|show transferapps
 
 <DataTransferService> ::=
         calendar|
-        datastudio|lookerstudio|"looker studio"|
+        datastudio|lookerstudio|"data studio"|
         googledrive|gdrive|drive|"drive and docs"
 <DataTransferServiceList> ::= "<DataTransferService>(,<DataTransferService>)*"
 
@@ -6910,6 +6910,68 @@ gam <UserTypeEntity> print chatemojis [todrive <ToDriveAttribute>*]
         [showcreatedby any|me|others]
         [formatjson [quotechar <Character>]]
 
+# Users - Data Studio (Formerly Looker Studuo)
+
+<DataStudioPermission> ::=
+        user:<EmailAddress>|
+        group:<EmailAddress>|
+        domain:<DomainName>|
+        serviceAccount:<EmailAddress>
+<DataStudioPermissionList> ::= "<DataStudioPermission>(,<DataStudioPermission>)*"
+<DataStudioPermissionEntity> ::=
+        <DataStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+
+stam <UserTypeEntity> print datastudioassets [todrive <ToDriveAttribute>*]
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]
+          [orderby title [ascending|descending]]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        [stripcrsfromtitle]
+        [formatjson [quotechar <Character>]]
+gam <UserTypeEntity> show datastudioassets
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]
+          [orderby title [ascending|descending]]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        [stripcrsfromtitle]
+        [formatjson]
+
+gam <UserTypeEntity> add datastudiopermissions
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]
+          [orderby title [ascending|descending]]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        (role editor|viewer <DataStudioPermissionEntity>)+
+        [nodetails]
+gam <UserTypeEntity> delete datastudiopermissions
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        (role any <DataStudioPermissionEntity>)+
+        [nodetails]
+gam <UserTypeEntity> update datastudiopermissions
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]
+          [orderby title [ascending|descending]]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        (role editor|viewer <DataStudioPermissionEntity>)+
+        [nodetails]
+
+gam <UserTypeEntity> print datastudiopermissions [todrive <ToDriveAttribute>*]
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]
+          [orderby title [ascending|descending]]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        [role editor|owner|viewer]
+        [formatjson [quotechar <Character>]]
+gam <UserTypeEntity> show datastudiopermissions
+        [([assettype report|datasource|all] [title <String>]
+          [owner <Emailddress>] [includetrashed]
+          [orderby title [ascending|descending]]) |
+         (assetids <DataStudioAssetIDEntity>)]
+        [role editor|owner|viewer]
+        [formatjson]
+
 # Users - Drive
 
 <DriveFileOrderByFieldName> ::=
@@ -8407,68 +8469,6 @@ gam <UserTypeEntity> update license <NewSKUID> [product|productid <ProductID>] [
         [preview|archive] [actioncsv]
 gam <UserTypeEntity> delete license <SKUIDList> [product|productid <ProductID>] [preview] [actioncsv]
 gam <UserTypeEntity> sync license <SKUIDList> [product|productid <ProductID>] [addonly|removeonly] [allskus|onesku] [preview] [actioncsv]
-
-# Users - Looker Studuo
-
-<LookerStudioPermission> ::=
-        user:<EmailAddress>|
-        group:<EmailAddress>|
-        domain:<DomainName>|
-        serviceAccount:<EmailAddress>
-<LookerStudioPermissionList> ::= "<LookerStudioPermission>(,<LookerStudioPermission>)*"
-<LookerStudioPermissionEntity> ::=
-        <LookerStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-
-stam <UserTypeEntity> print lookerstudioassets [todrive <ToDriveAttribute>*]
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]
-          [orderby title [ascending|descending]]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        [stripcrsfromtitle]
-        [formatjson [quotechar <Character>]]
-gam <UserTypeEntity> show lookerstudioassets
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]
-          [orderby title [ascending|descending]]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        [stripcrsfromtitle]
-        [formatjson]
-
-gam <UserTypeEntity> add lookerstudiopermissions
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]
-          [orderby title [ascending|descending]]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        (role editor|viewer <LookerStudioPermissionEntity>)+
-        [nodetails]
-gam <UserTypeEntity> delete lookerstudiopermissions
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        (role any <LookerStudioPermissionEntity>)+
-        [nodetails]
-gam <UserTypeEntity> update lookerstudiopermissions
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]
-          [orderby title [ascending|descending]]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        (role editor|viewer <LookerStudioPermissionEntity>)+
-        [nodetails]
-
-gam <UserTypeEntity> print lookerstudiopermissions [todrive <ToDriveAttribute>*]
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]
-          [orderby title [ascending|descending]]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        [role editor|owner|viewer]
-        [formatjson [quotechar <Character>]]
-gam <UserTypeEntity> show lookerstudiopermissions
-        [([assettype report|datasource|all] [title <String>]
-          [owner <Emailddress>] [includetrashed]
-          [orderby title [ascending|descending]]) |
-         (assetids <LookerStudioAssetIDEntity>)]
-        [role editor|owner|viewer]
-        [formatjson]
 
 # Users - Meet
 

@@ -59,6 +59,7 @@ CLOUDRESOURCEMANAGER = 'cloudresourcemanager'
 CLOUDRESOURCEMANAGERV1 = 'cloudresourcemanagerv1'
 CONTACTS = 'contacts'
 CONTACTDELEGATION = 'contactdelegation'
+DATASTUDIO = 'datastudio'
 DATATRANSFER = 'datatransfer'
 DIRECTORY = 'directory'
 DOCS = 'docs'
@@ -78,7 +79,6 @@ IAM = 'iam'
 IAM_CREDENTIALS = 'iamcredentials'
 KEEP = 'keep'
 LICENSING = 'licensing'
-LOOKERSTUDIO = 'datastudio'
 MEET_SPACES = 'meet'
 MEET_READONLY = 'meetreadonly'
 OAUTH2 = 'oauth2'
@@ -271,6 +271,7 @@ _INFO = {
   CLOUDRESOURCEMANAGERV1: {'name': 'Resource Manager API v1', 'version': 'v1', 'v2discovery': True, 'mappedAPI': 'cloudresourcemanager'},
   CONTACTS: {'name': 'Contacts API', 'version': 'v3', 'v2discovery': False},
   CONTACTDELEGATION: {'name': 'Contact Delegation API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
+  DATASTUDIO: {'name': 'Data Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   DATATRANSFER: {'name': 'Data Transfer API', 'version': 'datatransfer_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DIRECTORY: {'name': 'Directory API', 'version': 'directory_v1', 'v2discovery': True, 'mappedAPI': 'admin'},
   DOCS: {'name': 'Docs API', 'version': 'v1', 'v2discovery': True},
@@ -289,7 +290,6 @@ _INFO = {
   IAM_CREDENTIALS: {'name': 'Identity and Access Management Credentials API', 'version': 'v1', 'v2discovery': True},
   KEEP: {'name': 'Keep API', 'version': 'v1', 'v2discovery': True},
   LICENSING: {'name': 'License Manager API', 'version': 'v1', 'v2discovery': True},
-  LOOKERSTUDIO: {'name': 'Looker Studio API', 'version': 'v1', 'v2discovery': True, 'localjson': True},
   MEET_SPACES: {'name': 'Meet API - Manage/Display Meeting Spaces', 'version': 'v2', 'v2discovery': True},
   MEET_READONLY: {'name': 'Meet API - Read Meeting Spaces metadata', 'version': 'v2', 'v2discovery': True, 'mappedAPI': MEET_SPACES},
   OAUTH2: {'name': 'OAuth2 API', 'version': 'v2', 'v2discovery': False},
@@ -663,6 +663,10 @@ _SVCACCT_SCOPES = [
 #  {'name': 'Contacts API - Users',
 #   'api': CONTACTS,
 #   'scope': 'https://www.google.com/m8/feeds'},
+  {'name': 'Data Studio API',
+   'api': DATASTUDIO,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/datastudio'},
   {'name': 'Drive API',
    'api': DRIVE3,
    'subscopes': READONLY,
@@ -708,10 +712,6 @@ _SVCACCT_SCOPES = [
    'api': KEEP,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/keep'},
-  {'name': 'Looker Studio API',
-   'api': LOOKERSTUDIO,
-   'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/datastudio'},
   {'name': 'Meet API - Manage/Display Meeting Spaces',
    'api': MEET_SPACES,
    'scope': ['https://www.googleapis.com/auth/meetings.space.created',

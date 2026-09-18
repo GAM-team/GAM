@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.09'
+__version__ = '7.48.10'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -2516,6 +2516,9 @@ def userChatServiceNotEnabledWarning(entityName, i=0, count=0):
 def userContactDelegateServiceNotEnabledWarning(entityName, i=0, count=0):
   userServiceNotEnabledWarning(entityName, 'Contact Delegate', i, count)
 
+def userDataStudioServiceNotEnabledWarning(entityName, i=0, count=0):
+  userServiceNotEnabledWarning(entityName, 'Data Studio', i, count)
+
 def userDriveServiceNotEnabledWarning(user, errMessage, i=0, count=0):
 #  if errMessage.find('Drive apps') == -1 and errMessage.find('Active session is invalid') == -1:
 #    entityServiceNotApplicableWarning(Ent.USER, user, i, count)
@@ -2529,9 +2532,6 @@ def userKeepServiceNotEnabledWarning(entityName, i=0, count=0):
 
 def userGmailServiceNotEnabledWarning(entityName, i=0, count=0):
   userServiceNotEnabledWarning(entityName, 'Gmail', i, count)
-
-def userLookerStudioServiceNotEnabledWarning(entityName, i=0, count=0):
-  userServiceNotEnabledWarning(entityName, 'Looker Studio', i, count)
 
 def userPeopleServiceNotEnabledWarning(entityName, i=0, count=0):
   userServiceNotEnabledWarning(entityName, 'People', i, count)
@@ -71348,18 +71348,18 @@ def printSharedDriveOrganizers(users, useDomainAdminAccess=False):
 def doPrintSharedDriveOrganizers():
   printSharedDriveOrganizers([_getAdminEmail()], True)
 
-LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP = {
+DATASTUDIO_ASSETTYPE_CHOICE_MAP = {
   'report': ['REPORT'],
   'datasource': ['DATA_SOURCE'],
   'all': ['REPORT', 'DATA_SOURCE'],
   }
 
-def initLookerStudioAssetSelectionParameters():
+def initDataStudioAssetSelectionParameters():
   return ({'owner': None, 'title': None, 'includeTrashed': False}, {'assetTypes': ['REPORT']})
 
-def getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+def getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
   if myarg in {'assettype', 'assettypes'}:
-    assetTypes['assetTypes'] = getChoice(LOOKERSTUDIO_ASSETTYPE_CHOICE_MAP, mapChoice=True)
+    assetTypes['assetTypes'] = getChoice(DATASTUDIO_ASSETTYPE_CHOICE_MAP, mapChoice=True)
   elif myarg == 'title':
     parameters['title'] = getString(Cmd.OB_STRING)
   elif myarg == 'owner':
@@ -71370,7 +71370,7 @@ def getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
     return False
   return True
 
-def _validateUserGetLookerStudioAssetIds(user, i, count, entity):
+def _validateUserGetDataStudioAssetIds(user, i, count, entity):
   if entity:
     if entity['dict']:
       entityList = [{'name': item, 'title': item} for item in entity['dict'][user]]
@@ -71378,62 +71378,62 @@ def _validateUserGetLookerStudioAssetIds(user, i, count, entity):
       entityList = [{'name': item, 'title': item} for item in entity['list']]
   else:
     entityList = []
-  user, ds = buildGAPIServiceObject(API.LOOKERSTUDIO, user, i, count)
+  user, ds = buildGAPIServiceObject(API.DATASTUDIO, user, i, count)
   if not ds:
     return (user, None, None, 0)
   return (user, ds, entityList, len(entityList))
 
-def _getLookerStudioAssetByID(ds, user, i, count, assetId):
-  printGettingAllEntityItemsForWhom(Ent.LOOKERSTUDIO_ASSET, user, i, count)
+def _getDataStudioAssetByID(ds, user, i, count, assetId):
+  printGettingAllEntityItemsForWhom(Ent.DATASTUDIO_ASSET, user, i, count)
   try:
     return callGAPI(ds.assets(), 'get',
-                    throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
+                    throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
                     name=f'assets/{assetId}')
   except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
     entityActionFailedWarning([Ent.USER, user], str(e), i, count)
   except GAPI.serviceNotAvailable:
-    userLookerStudioServiceNotEnabledWarning(user, i, count)
+    userDataStudioServiceNotEnabledWarning(user, i, count)
   return None
 
-def _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, fields, orderBy=None):
+def _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, fields, orderBy=None):
   assets = []
   for assetType in assetTypes['assetTypes']:
-    entityType = Ent.LOOKERSTUDIO_ASSET_REPORT if assetType == 'REPORT' else Ent.LOOKERSTUDIO_ASSET_DATASOURCE
+    entityType = Ent.DATASTUDIO_ASSET_REPORT if assetType == 'REPORT' else Ent.DATASTUDIO_ASSET_DATASOURCE
     printGettingAllEntityItemsForWhom(entityType, user, i, count)
     parameters['assetTypes'] = assetType
     try:
       assets.extend(callGAPIpages(ds.assets(), 'search', 'assets',
                                   pageMessage=getPageMessage(),
-                                  throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
+                                  throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
                                   **parameters, orderBy=orderBy, fields=fields))
     except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
       entityActionFailedWarning([Ent.USER, user], str(e), i, count)
       return (None, 0)
     except GAPI.serviceNotAvailable:
-      userLookerStudioServiceNotEnabledWarning(user, i, count)
+      userDataStudioServiceNotEnabledWarning(user, i, count)
       return (None, 0)
   return (assets, len(assets))
 
-LOOKERSTUDIO_ASSETS_ORDERBY_CHOICE_MAP = {
+DATASTUDIO_ASSETS_ORDERBY_CHOICE_MAP = {
   'title': 'title'
   }
-LOOKERSTUDIO_ASSETS_TIME_OBJECTS = {'updateTime', 'updateByMeTime', 'createTime', 'lastViewByMeTime'}
+DATASTUDIO_ASSETS_TIME_OBJECTS = {'updateTime', 'updateByMeTime', 'createTime', 'lastViewByMeTime'}
 
 # gam <UserTypeEntity> print lookerstudioassets [todrive <ToDriveAttribute>*]
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)]
+#	 (assetids <DataStudioAssetIDEntity>)]
 #	[stripcrsfromtitle]
 #	[formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show lookerstudioassets
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)]
+#	 (assetids <DataStudioAssetIDEntity>)]
 #	[stripcrsfromtitle]
 #	[formatjson]
-def printShowLookerStudioAssets(users):
+def printShowDataStudioAssets(users):
   def _printAsset(asset, user):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
@@ -71442,33 +71442,33 @@ def printShowLookerStudioAssets(users):
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       csvPF.WriteRowNoFilter({'User': user, 'title': asset['title'],
-                              'JSON': json.dumps(cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
+                              'JSON': json.dumps(cleanJSON(asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
 
   def _showAsset(asset):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
     if FJQC.formatJSON:
-      printLine(json.dumps(cleanJSON(asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
+      printLine(json.dumps(cleanJSON(asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=False))
       return
-    printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title']], j, jcount)
+    printEntity([Ent.DATASTUDIO_ASSET, asset['title']], j, jcount)
     Ind.Increment()
-    showJSON(None, asset, timeObjects=LOOKERSTUDIO_ASSETS_TIME_OBJECTS)
+    showJSON(None, asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS)
     Ind.Decrement()
 
   csvPF = CSVPrintFile(['User', 'title']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
-  OBY = OrderBy(LOOKERSTUDIO_ASSETS_ORDERBY_CHOICE_MAP, ascendingKeyword='ascending', descendingKeyword='')
-  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
+  OBY = OrderBy(DATASTUDIO_ASSETS_ORDERBY_CHOICE_MAP, ascendingKeyword='ascending', descendingKeyword='')
+  parameters, assetTypes = initDataStudioAssetSelectionParameters()
   assetIdEntity = None
   stripCRsFromTitle = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    elif getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DATASTUDIO_ASSETID)
     elif myarg == 'stripcrsfromtitle':
       stripCRsFromTitle = True
     elif myarg == 'orderby':
@@ -71478,37 +71478,37 @@ def printShowLookerStudioAssets(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetDataStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets', OBY.orderBy)
+      assets, jcount = _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets', OBY.orderBy)
       if assets is None:
         continue
     if not csvPF:
       if not FJQC.formatJSON:
-        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DATASTUDIO_ASSET, i, count)
       Ind.Increment()
       j = 0
       for asset in assets:
         j += 1
         if assetIdEntity:
-          asset = _getLookerStudioAssetByID(ds, user, i, count, asset['name'])
+          asset = _getDataStudioAssetByID(ds, user, i, count, asset['name'])
         if asset:
           _showAsset(asset)
       Ind.Decrement()
     elif assets:
       for asset in assets:
         if assetIdEntity:
-          asset = _getLookerStudioAssetByID(ds, user, i, count, asset['name'])
+          asset = _getDataStudioAssetByID(ds, user, i, count, asset['name'])
         if asset:
           _printAsset(asset, user)
     elif GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
       csvPF.WriteRowNoFilter({'User': user})
   if csvPF:
-    csvPF.writeCSVfile('Looker Studio Assets')
+    csvPF.writeCSVfile('Data Studio Assets')
 
-def _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC):
+def _showDataStudioPermissions(user, asset, permissions, j, jcount, FJQC):
   if FJQC is not None and FJQC.formatJSON:
     permissions['User'] = user
     permissions['assetId'] = asset['name']
@@ -71516,7 +71516,7 @@ def _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC):
     return
   permissions = permissions['permissions']
   if permissions:
-    printEntity([Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
+    printEntity([Ent.DATASTUDIO_ASSET, asset['title'], Ent.DATASTUDIO_PERMISSION, ''], j, jcount)
   for role in ['OWNER', 'EDITOR', 'VIEWER']:
     members = permissions.get(role, {}).get('members', [])
     if members:
@@ -71526,25 +71526,25 @@ def _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC):
         printKeyValueList([lrole, member])
       Ind.Decrement()
 
-LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP = {
+DATASTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP = {
   'editor': 'EDITOR',
   'owner': 'OWNER',
   'viewer': 'VIEWER',
   }
 
-LOOKERSTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP = {
+DATASTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP = {
   'editor': 'EDITOR',
   'viewer': 'VIEWER',
   }
 
-LOOKERSTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP = {
+DATASTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP = {
   'any': None,
   'editor': None,
   'owner': None,
   'viewer': None,
   }
 
-LOOKERSTUDIO_PERMISSION_MODIFIER_MAP = {
+DATASTUDIO_PERMISSION_MODIFIER_MAP = {
   Act.ADD: Act.MODIFIER_TO,
   Act.DELETE: Act.MODIFIER_FROM,
   Act.UPDATE: Act.MODIFIER_FOR
@@ -71554,46 +71554,46 @@ LOOKERSTUDIO_PERMISSION_MODIFIER_MAP = {
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)]
-#	(role editor|viewer <LookerStudioPermissionEntity>)+
+#	 (assetids <DataStudioAssetIDEntity>)]
+#	(role editor|viewer <DataStudioPermissionEntity>)+
 #	[nodetails]
 # gam <UserTypeEntity> delete lookerstudiopermissions
 #	([[assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)]
-#	(role any <LookerStudioPermissionEntity>)+
+#	 (assetids <DataStudioAssetIDEntity>)]
+#	(role any <DataStudioPermissionEntity>)+
 #	[nodetails]
 # gam <UserTypeEntity> update lookerstudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)]
-#	(role editor|viewer <LookerStudioPermissionEntity>)+
+#	 (assetids <DataStudioAssetIDEntity>)]
+#	(role editor|viewer <DataStudioPermissionEntity>)+
 #	[nodetails]
-def processLookerStudioPermissions(users):
+def processDataStudioPermissions(users):
   action = Act.Get()
   if action == Act.CREATE:
     action = Act.ADD
-  modifier = LOOKERSTUDIO_PERMISSION_MODIFIER_MAP[action]
-  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
+  modifier = DATASTUDIO_PERMISSION_MODIFIER_MAP[action]
+  parameters, assetTypes = initDataStudioAssetSelectionParameters()
   permissions = {}
   assetIdEntity = None
   showDetails = True
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    if getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DATASTUDIO_ASSETID)
     elif myarg == 'role':
       permissions.setdefault('permissions', {})
       if action in {Act.ADD, Act.UPDATE}:
-        role = getChoice(LOOKERSTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+        role = getChoice(DATASTUDIO_ADD_UPDATE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
       else:
-        role = getChoice(LOOKERSTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+        role = getChoice(DATASTUDIO_DELETE_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
       permissions['permissions'].setdefault(role, {'members': []})
-      permissions['permissions'][role]['members'].extend(getEntityList(Cmd.OB_LOOKERSTUDIO_PERMISSION_ENTITY))
+      permissions['permissions'][role]['members'].extend(getEntityList(Cmd.OB_DATASTUDIO_PERMISSION_ENTITY))
     elif myarg == 'nodetails':
       showDetails = False
     else:
@@ -71606,14 +71606,14 @@ def processLookerStudioPermissions(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetDataStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
+      assets, jcount = _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
-    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.LOOKERSTUDIO_PERMISSION, modifier, jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+    entityPerformActionSubItemModifierNumItems([Ent.USER, user], Ent.DATASTUDIO_PERMISSION, modifier, jcount, Ent.DATASTUDIO_ASSET, i, count)
     j = 0
     for asset in assets:
       j += 1
@@ -71622,39 +71622,39 @@ def processLookerStudioPermissions(users):
           body = {'name': asset['name'], 'members': permissions['permissions'][role]['members']}
           if action in {Act.DELETE, Act.UPDATE}:
             results = callGAPI(ds.assets().permissions(), 'revokeAllPermissions',
-                               throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
+                               throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
                                name=asset['name'], body=body)
           if action in {Act.ADD, Act.UPDATE}:
             body['role'] = role
             results = callGAPI(ds.assets().permissions(), 'addMembers',
-                               throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
+                               throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
                                name=asset['name'], body=body)
-          entityActionPerformed([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title'], Ent.LOOKERSTUDIO_PERMISSION, ''], j, jcount)
+          entityActionPerformed([Ent.USER, user, Ent.DATASTUDIO_ASSET, asset['title'], Ent.DATASTUDIO_PERMISSION, ''], j, jcount)
           if showDetails:
-            _showLookerStudioPermissions(user, asset, results, j, jcount, None)
+            _showDataStudioPermissions(user, asset, results, j, jcount, None)
         except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
-          entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
+          entityActionFailedWarning([Ent.USER, user, Ent.DATASTUDIO_ASSET, asset['title']], str(e), j, jcount)
           continue
         except GAPI.serviceNotAvailable:
-          userLookerStudioServiceNotEnabledWarning(user, i, count)
+          userDataStudioServiceNotEnabledWarning(user, i, count)
           break
 
 # gam <UserTypeEntity> print lookerstudiopermissions [todrive <ToDriveAttribute>*]
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)]
+#	 (assetids <DataStudioAssetIDEntity>)]
 #	[role editor|owner|viewer]
 #	[formatjson [quotechar <Character>]]
 # gam <UserTypeEntity> show lookerstudiopermissions
 #	[([assettype report|datasource|all] [title <String>]
 #	  [owner <Emailddress>] [includetrashed]
 #	  [orderby title [ascending|descending]]) |
-#	 (assetids <LookerStudioAssetIDEntity>)[
+#	 (assetids <DataStudioAssetIDEntity>)[
 #	[role editor|owner|viewer]
 #	[formatjson]
-def printShowLookerStudioPermissions(users):
-  def _printLookerStudioPermissions(user, asset, permissions):
+def printShowDataStudioPermissions(users):
+  def _printDataStudioPermissions(user, asset, permissions):
     row = flattenJSON(permissions, flattened={'User': user, 'assetId': asset['name']},
                       simpleLists=['members'], delimiter=delimiter)
     if not FJQC.formatJSON:
@@ -71666,19 +71666,19 @@ def printShowLookerStudioPermissions(users):
   csvPF = CSVPrintFile(['User', 'assetId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  parameters, assetTypes = initLookerStudioAssetSelectionParameters()
+  parameters, assetTypes = initDataStudioAssetSelectionParameters()
   assetIdEntity = None
   role = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
-    elif getLookerStudioAssetSelectionParameters(myarg, parameters, assetTypes):
+    elif getDataStudioAssetSelectionParameters(myarg, parameters, assetTypes):
       pass
     elif myarg in {'assetid', 'assetids'}:
-      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.LOOKERSTUDIO_ASSETID)
+      assetIdEntity = getUserObjectEntity(Cmd.OB_USER_ENTITY, Ent.DATASTUDIO_ASSETID)
     elif myarg == 'role':
-      role = getChoice(LOOKERSTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
+      role = getChoice(DATASTUDIO_VIEW_PERMISSION_ROLE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'delimiter':
       delimiter = getCharacter()
     else:
@@ -71686,16 +71686,16 @@ def printShowLookerStudioPermissions(users):
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
-    user, ds, assets, jcount = _validateUserGetLookerStudioAssetIds(user, i, count, assetIdEntity)
+    user, ds, assets, jcount = _validateUserGetDataStudioAssetIds(user, i, count, assetIdEntity)
     if not ds:
       continue
     if assetIdEntity is None:
-      assets, jcount = _getLookerStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
+      assets, jcount = _getDataStudioAssets(ds, user, i, count, parameters, assetTypes, 'nextPageToken,assets(name,title)', None)
       if assets is None:
         continue
     if not csvPF:
       if not FJQC.formatJSON:
-        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.LOOKERSTUDIO_ASSET, i, count)
+        entityPerformActionNumItems([Ent.USER, user], jcount, Ent.DATASTUDIO_ASSET, i, count)
     elif jcount == 0 and GC.Values[GC.CSV_OUTPUT_USERS_AUDIT]:
       csvPF.WriteRowNoFilter({'User': user})
       continue
@@ -71704,22 +71704,22 @@ def printShowLookerStudioPermissions(users):
       j += 1
       try:
         permissions = callGAPI(ds.assets(), 'getPermissions',
-                               throwReasons=GAPI.LOOKERSTUDIO_THROW_REASONS,
+                               throwReasons=GAPI.DATASTUDIO_THROW_REASONS,
                                name=asset['name'], role=role)
       except (GAPI.invalidArgument, GAPI.badRequest, GAPI.notFound, GAPI.permissionDenied, GAPI.internalError) as e:
-        entityActionFailedWarning([Ent.USER, user, Ent.LOOKERSTUDIO_ASSET, asset['title']], str(e), j, jcount)
+        entityActionFailedWarning([Ent.USER, user, Ent.DATASTUDIO_ASSET, asset['title']], str(e), j, jcount)
         continue
       except GAPI.serviceNotAvailable:
-        userLookerStudioServiceNotEnabledWarning(user, i, count)
+        userDataStudioServiceNotEnabledWarning(user, i, count)
         break
       if not csvPF:
         Ind.Increment()
-        _showLookerStudioPermissions(user, asset, permissions, j, jcount, FJQC)
+        _showDataStudioPermissions(user, asset, permissions, j, jcount, FJQC)
         Ind.Decrement()
       else:
-        _printLookerStudioPermissions(user, asset, permissions)
+        _printDataStudioPermissions(user, asset, permissions)
   if csvPF:
-    csvPF.writeCSVfile('Looker Studio Permissions')
+    csvPF.writeCSVfile('Data Studio Permissions')
 
 def _validateSubkeyRoleGetGroups(user, role, origUser, userGroupLists, i, count):
   roleLower = role.lower()
@@ -82386,7 +82386,7 @@ USER_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
   Cmd.ARG_CSEIDENTITY:		createUpdateCSEIdentity,
   Cmd.ARG_CSEKEYPAIR:		createCSEKeyPair,
-  Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
+  Cmd.ARG_DATASTUDIOPERMISSION:	processDataStudioPermissions,
   Cmd.ARG_DELEGATE:		processDelegates,
   Cmd.ARG_DRIVEFILE:		createDriveFile,
   Cmd.ARG_DRIVEFILEACL:		createDriveFileACL,
@@ -82503,7 +82503,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CLASSROOMINVITATION:	deleteClassroomInvitations,
       Cmd.ARG_CONTACTDELEGATE:	processContactDelegates,
       Cmd.ARG_CSEIDENTITY:	processCSEIdentity,
-      Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
+      Cmd.ARG_DATASTUDIOPERMISSION:	processDataStudioPermissions,
       Cmd.ARG_DELEGATE:		processDelegates,
       Cmd.ARG_DRIVEFILE:	deleteDriveFile,
       Cmd.ARG_DRIVEFILEACL:	deleteDriveFileACLs,
@@ -82690,8 +82690,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CONTACTDELEGATE:	printShowContactDelegates,
       Cmd.ARG_CSEIDENTITY:	printShowCSEIdentities,
       Cmd.ARG_CSEKEYPAIR:	printShowCSEKeyPairs,
-      Cmd.ARG_LOOKERSTUDIOASSET:	printShowLookerStudioAssets,
-      Cmd.ARG_LOOKERSTUDIOPERMISSION:	printShowLookerStudioPermissions,
+      Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
+      Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
       Cmd.ARG_DISKUSAGE:	printDiskUsage,
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
@@ -82811,8 +82811,8 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_COUNT: 		showCountUser,
       Cmd.ARG_CSEIDENTITY:	printShowCSEIdentities,
       Cmd.ARG_CSEKEYPAIR:	printShowCSEKeyPairs,
-      Cmd.ARG_LOOKERSTUDIOASSET:	printShowLookerStudioAssets,
-      Cmd.ARG_LOOKERSTUDIOPERMISSION:	printShowLookerStudioPermissions,
+      Cmd.ARG_DATASTUDIOASSET:	printShowDataStudioAssets,
+      Cmd.ARG_DATASTUDIOPERMISSION:	printShowDataStudioPermissions,
       Cmd.ARG_DELEGATE:		printShowDelegates,
       Cmd.ARG_DISKUSAGE:	printDiskUsage,
       Cmd.ARG_DRIVEACTIVITY:	printDriveActivity,
@@ -82951,7 +82951,7 @@ USER_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATSECTION:	createUpdateChatSection,
       Cmd.ARG_CHATSPACE:	updateChatSpace,
       Cmd.ARG_CSEIDENTITY:	createUpdateCSEIdentity,
-      Cmd.ARG_LOOKERSTUDIOPERMISSION:	processLookerStudioPermissions,
+      Cmd.ARG_DATASTUDIOPERMISSION:	processDataStudioPermissions,
       Cmd.ARG_DELEGATE:		updateDelegates,
       Cmd.ARG_DOCUMENT:		updateGoogleDocument,
       Cmd.ARG_DRIVEFILE:	updateDriveFile,
@@ -83047,12 +83047,12 @@ USER_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CSEIDENTITIES:	Cmd.ARG_CSEIDENTITY,
   Cmd.ARG_CSEKEYPAIRS:		Cmd.ARG_CSEKEYPAIR,
   Cmd.ARG_COUNTS:		Cmd.ARG_COUNT,
-  Cmd.ARG_DATASTUDIOASSET:	Cmd.ARG_LOOKERSTUDIOASSET,
-  Cmd.ARG_DATASTUDIOPERMISSION:	Cmd.ARG_LOOKERSTUDIOPERMISSION,
-  Cmd.ARG_DATASTUDIOASSETS:	Cmd.ARG_LOOKERSTUDIOASSET,
-  Cmd.ARG_DATASTUDIOPERMISSIONS:	Cmd.ARG_LOOKERSTUDIOPERMISSION,
-  Cmd.ARG_LOOKERSTUDIOASSETS:	Cmd.ARG_LOOKERSTUDIOASSET,
-  Cmd.ARG_LOOKERSTUDIOPERMISSIONS:	Cmd.ARG_LOOKERSTUDIOPERMISSION,
+  Cmd.ARG_DATASTUDIOASSETS:	Cmd.ARG_DATASTUDIOASSET,
+  Cmd.ARG_DATASTUDIOPERMISSIONS:	Cmd.ARG_DATASTUDIOPERMISSION,
+  Cmd.ARG_LOOKERSTUDIOASSET:	Cmd.ARG_DATASTUDIOASSET,
+  Cmd.ARG_LOOKERSTUDIOASSETS:	Cmd.ARG_DATASTUDIOASSET,
+  Cmd.ARG_LOOKERSTUDIOPERMISSION:	Cmd.ARG_DATASTUDIOPERMISSION,
+  Cmd.ARG_LOOKERSTUDIOPERMISSIONS:	Cmd.ARG_DATASTUDIOPERMISSION,
   Cmd.ARG_DELEGATES:		Cmd.ARG_DELEGATE,
   Cmd.ARG_DOMAINCONTACT:	Cmd.ARG_PEOPLECONTACT,
   Cmd.ARG_DOMAINCONTACTS:	Cmd.ARG_PEOPLECONTACT,

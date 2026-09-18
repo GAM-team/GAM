@@ -179,6 +179,11 @@ class GamEntity():
   CSE_KEYPAIR = 'csek'
   CUSTOMER_DOMAIN = 'cudo'
   CUSTOMER_ID = 'cuid'
+  DATASTUDIO_ASSET = 'dsas'
+  DATASTUDIO_ASSET_DATASOURCE = 'dsad'
+  DATASTUDIO_ASSETID = 'dsai'
+  DATASTUDIO_ASSET_REPORT = 'dsar'
+  DATASTUDIO_PERMISSION = 'dspe'
   DATE = 'date'
   DEFAULT_LANGUAGE = 'dfla'
   DELEGATE = 'dele'
@@ -271,11 +276,6 @@ class GamEntity():
   LANGUAGE = 'lang'
   LICENSE = 'lice'
   LOCATION = 'loca'
-  LOOKERSTUDIO_ASSET = 'lsas'
-  LOOKERSTUDIO_ASSET_DATASOURCE = 'lsad'
-  LOOKERSTUDIO_ASSETID = 'lsai'
-  LOOKERSTUDIO_ASSET_REPORT = 'lsar'
-  LOOKERSTUDIO_PERMISSION = 'lspe'
   MD5HASH = 'md5h'
   MEET_SPACE = 'mesp'
   MEET_CONFERENCE = 'msco'
@@ -553,6 +553,11 @@ class GamEntity():
     CSE_KEYPAIR: ['CSE KeyPairs', 'CSE KeyPair'],
     CUSTOMER_DOMAIN: ['Customer Domains', 'Customer Domain'],
     CUSTOMER_ID: ['Customer IDs', 'Customer ID'],
+    DATASTUDIO_ASSET: ['Data Studio Assets', 'Data Studio Asset'],
+    DATASTUDIO_ASSET_DATASOURCE: ['Data Studio DATA_SOURCE Assets', 'Data Studio DATA_SOURCE Asset'],
+    DATASTUDIO_ASSETID: ['Data Studio Asset IDs', 'Data Studio Asset ID'],
+    DATASTUDIO_ASSET_REPORT: ['Data Studio REPORT Assets', 'Data Studio REPORT Asset'],
+    DATASTUDIO_PERMISSION: ['Data Studio Permissions', 'Data Studio Permission'],
     DATE: ['Dates', 'Date'],
     DEFAULT_LANGUAGE: ['Default Language', 'Default Language'],
     DELEGATE: ['Delegates', 'Delegate'],
@@ -645,11 +650,6 @@ class GamEntity():
     LANGUAGE: ['Languages', 'Language'],
     LICENSE: ['Licenses', 'License'],
     LOCATION: ['Locations', 'Location'],
-    LOOKERSTUDIO_ASSET: ['Looker Studio Assets', 'Looker Studio Asset'],
-    LOOKERSTUDIO_ASSET_DATASOURCE: ['Looker Studio DATA_SOURCE Assets', 'Looker Studio DATA_SOURCE Asset'],
-    LOOKERSTUDIO_ASSETID: ['Looker Studio Asset IDs', 'Looker Studio Asset ID'],
-    LOOKERSTUDIO_ASSET_REPORT: ['Looker Studio REPORT Assets', 'Looker Studio REPORT Asset'],
-    LOOKERSTUDIO_PERMISSION: ['Looker Studio Permissions', 'Looker Studio Permission'],
     MD5HASH: ['MD5 hash', 'MD5 Hash'],
     MEET_SPACE: ['Meet Spaces', 'Meet Space'],
     MEET_CONFERENCE: ['Meet Conferences', 'Meet Conference'],
