@@ -2,12 +2,12 @@
 - [API documentation](#api-documentation)
 - [Notes](#notes)
 - [Definitions](#definitions)
-- [Display Data Studio assets](#display-looker-studio-assets)
-- [Manage Data Studio permissions](#manage-looker-studio-permissions)
+- [Display Data Studio assets](#display-data-studio-assets)
+- [Manage Data Studio permissions](#manage-data-studio-permissions)
   - [Add Permissions](#add-permissions)
   - [Delete Permissions](#delete-permissions)
   - [Update Permissions](#update-permissions)
-- [Display Data Studio permissions](#display-looker-studio-permissions)
+- [Display Data Studio permissions](#display-data-studio-permissions)
 
 ## API documentation
 * [Data Studio API](https://developers.google.com/data-studio/integrate/api/reference)
