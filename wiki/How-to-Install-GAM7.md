@@ -357,50 +357,56 @@ If clicking on the link in the instructions does not work (i.e. you get a 404 or
 ```
 gamteam@server:/Users/gamteam$ gam user gamteam@domain.com update serviceaccount
 [*]  0)  AlertCenter API
-[*]  1)  Analytics API - read only
-[*]  2)  Analytics Admin API - read only
+[*]  1)  Analytics Admin API - readonly
+[ ]  2)  Business Account Management API
 [*]  3)  Calendar API (supports readonly)
-[*]  4)  Chat API - Memberships (supports readonly)
-[*]  5)  Chat API - Memberships Admin (supports readonly)
-[*]  6)  Chat API - Messages (supports readonly)
-[*]  7)  Chat API - Spaces (supports readonly)
-[*]  8)  Chat API - Spaces Admin (supports readonly)
-[*]  9)  Chat API - Spaces Delete
-[*] 10)  Chat API - Spaces Delete Admin
-[*] 11)  Classroom API - Course Announcements (supports readonly)
-[*] 12)  Classroom API - Course Topics (supports readonly)
-[*] 13)  Classroom API - Course Work/Materials (supports readonly)
-[*] 14)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 15)  Classroom API - Profile Emails
-[*] 16)  Classroom API - Profile Photos
-[*] 17)  Classroom API - Rosters (supports readonly)
-[*] 18)  Cloud Identity Devices API (supports readonly)
-[*] 19)  Docs API (supports readonly)
-[*] 20)  Drive API (supports readonly)
-[*] 21)  Drive API - todrive
-[*] 22)  Drive Activity API v2 - must pair with Drive API
-[*] 23)  Drive Labels API - Admin (supports readonly)
-[*] 24)  Drive Labels API - User (supports readonly)
-[*] 25)  Forms API
-[*] 26)  Gmail API - Basic Settings (Filters,IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
-[*] 27)  Gmail API - Full Access (Labels, Messages)
-[*] 28)  Gmail API - Full Access (Labels, Messages) except delete message
-[ ] 29)  Gmail API - Full Access - read only
-[ ] 30)  Gmail API - Send Messages - including todrive
-[*] 31)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
-[*] 32)  Identity and Access Management API
-[*] 33)  Keep API (supports readonly)
-[*] 34)  Looker Studio API (supports readonly)
-[*] 35)  Meet API (supports readonly)
-[*] 36)  OAuth2 API
-[*] 37)  People API (supports readonly)
-[*] 38)  People API - Other Contacts - read only
-[*] 39)  People Directory API - read only
-[*] 40)  Sheets API (supports readonly)
-[*] 41)  Sheets API - todrive
-[*] 42)  Sites API
-[*] 43)  Tasks API (supports readonly)
-[ ] 44)  Youtube API - read only
+[*]  4)  Chat API - Custom Emojis (supports readonly)
+[*]  5)  Chat API - Memberships (supports readonly)
+[*]  6)  Chat API - Memberships Admin (supports readonly)
+[*]  7)  Chat API - Messages (supports readonly)
+[*]  8)  Chat API - Spaces (supports readonly)
+[*]  9)  Chat API - Spaces Admin (supports readonly)
+[*] 10)  Chat API - Spaces Delete
+[*] 11)  Chat API - Spaces Delete Admin
+[*] 12)  Chat API - User Availability (supports readonly)
+[*] 13)  Chat API - User Sections (supports readonly)
+[*] 14)  Classroom API - Course Announcements (supports readonly)
+[*] 15)  Classroom API - Course Topics (supports readonly)
+[*] 16)  Classroom API - Course Work/Materials (supports readonly)
+[*] 17)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 18)  Classroom API - Profile Emails
+[*] 19)  Classroom API - Profile Photos
+[*] 20)  Classroom API - Rosters (supports readonly)
+[*] 21)  Cloud Identity Devices API (supports readonly)
+[*] 22)  Data Studio API (supports readonly)
+[*] 23)  Docs API (supports readonly)
+[*] 24)  Drive API (supports readonly)
+[ ] 25)  Drive API - write todrive data - has access to all Drive
+[*] 26)  Drive Activity API v2 - must pair with Drive API
+[*] 27)  Drive Labels API - Admin (supports readonly)
+[*] 28)  Drive Labels API - User (supports readonly)
+[*] 29)  Forms API - must pair with Drive API
+[*] 30)  Gmail API - Basic Settings (Filters, IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
+[*] 31)  Gmail API - Full Access (Labels, Messages)
+[*] 32)  Gmail API - Full Access (Labels, Messages) except delete message
+[ ] 33)  Gmail API - Full Access - readonly
+[ ] 34)  Gmail API - Send Messages - including todrive
+[*] 35)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
+[*] 36)  Keep API (supports readonly)
+[*] 37)  Meet API - Manage/Display Meeting Spaces
+[*] 38)  Meet API - Read Meeting Spaces metadata readonly
+[*] 39)  OAuth2 API
+[*] 40)  People API (supports readonly)
+[*] 41)  People API - Other Contacts - readonly
+[*] 42)  People Directory API - readonly
+[ ] 43)  Search Console  API - readonly
+[*] 44)  Sheets API (supports readonly)
+[ ] 45)  Sheets API - write todrive data - has access to all Sheets
+[ ] 46)  Site Verification API
+[ ] 47)  Tag Manager API - Accounts, Containers, Workspaces, Tags - readonly
+[ ] 48)  Tag Manager API - Users
+[*] 49)  Tasks API (supports readonly)
+[ ] 50)  Youtube API - readonly
 
 Select an unselected scope [ ] by entering a number; yields [*]
 For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
@@ -880,50 +886,56 @@ C:\>
 ```
 C:\>gam user gamteam@domain.com update serviceaccount
 [*]  0)  AlertCenter API
-[*]  1)  Analytics API - read only
-[*]  2)  Analytics Admin API - read only
+[*]  1)  Analytics Admin API - readonly
+[ ]  2)  Business Account Management API
 [*]  3)  Calendar API (supports readonly)
-[*]  4)  Chat API - Memberships (supports readonly)
-[*]  5)  Chat API - Memberships Admin (supports readonly)
-[*]  6)  Chat API - Messages (supports readonly)
-[*]  7)  Chat API - Spaces (supports readonly)
-[*]  8)  Chat API - Spaces Admin (supports readonly)
-[*]  9)  Chat API - Spaces Delete
-[*] 10)  Chat API - Spaces Delete Admin
-[*] 11)  Classroom API - Course Announcements (supports readonly)
-[*] 12)  Classroom API - Course Topics (supports readonly)
-[*] 13)  Classroom API - Course Work/Materials (supports readonly)
-[*] 14)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 15)  Classroom API - Profile Emails
-[*] 16)  Classroom API - Profile Photos
-[*] 17)  Classroom API - Rosters (supports readonly)
-[*] 18)  Cloud Identity Devices API (supports readonly)
-[*] 19)  Docs API (supports readonly)
-[*] 20)  Drive API (supports readonly)
-[*] 21)  Drive API - todrive
-[*] 22)  Drive Activity API v2 - must pair with Drive API
-[*] 23)  Drive Labels API - Admin (supports readonly)
-[*] 24)  Drive Labels API - User (supports readonly)
-[*] 25)  Forms API
-[*] 26)  Gmail API - Basic Settings (Filters,IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
-[*] 27)  Gmail API - Full Access (Labels, Messages)
-[*] 28)  Gmail API - Full Access (Labels, Messages) except delete message
-[ ] 29)  Gmail API - Full Access - read only
-[ ] 30)  Gmail API - Send Messages - including todrive
-[*] 31)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
-[*] 32)  Identity and Access Management API
-[*] 33)  Keep API (supports readonly)
-[*] 34)  Looker Studio API (supports readonly)
-[*] 35)  Meet API (supports readonly)
-[*] 36)  OAuth2 API
-[*] 37)  People API (supports readonly)
-[*] 38)  People API - Other Contacts - read only
-[*] 39)  People Directory API - read only
-[*] 40)  Sheets API (supports readonly)
-[*] 41)  Sheets API - todrive
-[*] 42)  Sites API
-[*] 43)  Tasks API (supports readonly)
-[ ] 44)  Youtube API - read only
+[*]  4)  Chat API - Custom Emojis (supports readonly)
+[*]  5)  Chat API - Memberships (supports readonly)
+[*]  6)  Chat API - Memberships Admin (supports readonly)
+[*]  7)  Chat API - Messages (supports readonly)
+[*]  8)  Chat API - Spaces (supports readonly)
+[*]  9)  Chat API - Spaces Admin (supports readonly)
+[*] 10)  Chat API - Spaces Delete
+[*] 11)  Chat API - Spaces Delete Admin
+[*] 12)  Chat API - User Availability (supports readonly)
+[*] 13)  Chat API - User Sections (supports readonly)
+[*] 14)  Classroom API - Course Announcements (supports readonly)
+[*] 15)  Classroom API - Course Topics (supports readonly)
+[*] 16)  Classroom API - Course Work/Materials (supports readonly)
+[*] 17)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 18)  Classroom API - Profile Emails
+[*] 19)  Classroom API - Profile Photos
+[*] 20)  Classroom API - Rosters (supports readonly)
+[*] 21)  Cloud Identity Devices API (supports readonly)
+[*] 22)  Data Studio API (supports readonly)
+[*] 23)  Docs API (supports readonly)
+[*] 24)  Drive API (supports readonly)
+[ ] 25)  Drive API - write todrive data - has access to all Drive
+[*] 26)  Drive Activity API v2 - must pair with Drive API
+[*] 27)  Drive Labels API - Admin (supports readonly)
+[*] 28)  Drive Labels API - User (supports readonly)
+[*] 29)  Forms API - must pair with Drive API
+[*] 30)  Gmail API - Basic Settings (Filters, IMAP, Language, POP, Vacation) - read/write, Sharing Settings (Delegates, Forwarding, SendAs) - read
+[*] 31)  Gmail API - Full Access (Labels, Messages)
+[*] 32)  Gmail API - Full Access (Labels, Messages) except delete message
+[ ] 33)  Gmail API - Full Access - readonly
+[ ] 34)  Gmail API - Send Messages - including todrive
+[*] 35)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
+[*] 36)  Keep API (supports readonly)
+[*] 37)  Meet API - Manage/Display Meeting Spaces
+[*] 38)  Meet API - Read Meeting Spaces metadata readonly
+[*] 39)  OAuth2 API
+[*] 40)  People API (supports readonly)
+[*] 41)  People API - Other Contacts - readonly
+[*] 42)  People Directory API - readonly
+[ ] 43)  Search Console  API - readonly
+[*] 44)  Sheets API (supports readonly)
+[ ] 45)  Sheets API - write todrive data - has access to all Sheets
+[ ] 46)  Site Verification API
+[ ] 47)  Tag Manager API - Accounts, Containers, Workspaces, Tags - readonly
+[ ] 48)  Tag Manager API - Users
+[*] 49)  Tasks API (supports readonly)
+[ ] 50)  Youtube API - readonly
 
 Select an unselected scope [ ] by entering a number; yields [*]
 For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]

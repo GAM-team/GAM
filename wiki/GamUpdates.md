@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.10
+
+Updated Looker Studio references to Data Studio references; all functionality remains the same.
+
+For backwards compatability, in all commands the following synonyms apply:
+* `lookerstudioassets` is a synonym for `datastudioassets`
+* `lookerstudiopermissions` is a synonym for `datastudiopermissions`
+
 7.48.09
 
 Updated `gam calendars <CalendarEntity> modify <CalendarSettings>` to handle the following error:
