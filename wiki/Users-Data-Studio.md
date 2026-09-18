@@ -13,7 +13,7 @@
 * [Data Studio API](https://developers.google.com/data-studio/integrate/api/reference)
 
 ## Notes
-To use these commands you must add the 'Data Studio API' to your project and update your service account authorization.
+To use these commands you must add the `Data Studio API` to your project and update your service account authorization.
 ```
 gam update project
 gam user user@domain.com update serviceaccount
