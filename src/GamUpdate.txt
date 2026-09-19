@@ -1,9 +1,13 @@
+7.48.11
+
+Added option `extensionupdatecheck` to `gam create chromeprofilecommand`.
+
 7.48.10
 
 Updated Looker Studio references to Data Studio references; all functionality remains the same.
 
 For backwards compatability, in all commands the following synonyms apply:
-* `lookerstudioassets` is synonym for `datastudioassets`
+* `lookerstudioassets` is a synonym for `datastudioassets`
 * `lookerstudiopermissions` is a synonym for `datastudiopermissions`
 
 7.48.09

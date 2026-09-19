@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.10'
+__version__ = '7.48.11'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -26624,29 +26624,27 @@ def _printChromeProfileCommand(profcmd, csvPF, FJQC):
                                                ensure_ascii=False, sort_keys=True)})
 
 # gam create chromeprofilecommand <ChromeProfileNameEntity>
-#	[clearcache [<Boolean>]] [clearcookies [<Boolean>]]
+#	[clearcache [<Boolean>]] [clearcookies [<Boolean>]] [extensionupdatecheck]
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def doCreateChromeProfileCommand():
   cm, parameters = _initChromeProfileNameParameters()
-  body = {'payload': {}}
+  clearBody = {'commandType': 'clearBrowsingData'}
+  eucBody = {'commandType': 'extensionUpdateCheck'}
   csvPF = None
   FJQC = FormatJSONQuoteChar(None)
-  if 'extensionupdatecheck' in Cmd.AllArguments() and \
-     ('clearcache' in Cmd.AllArguments() or 'clearcookies' in Cmd.AllArguments()):
-    usageErrorExit('Clear browsing data and extension update check commands can not be run at the same time. Use two commands.')
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getChromeProfileNameParameters(myarg, parameters):
       continue
     match myarg:
       case 'clearcache':
-        body['commandType'] = 'clearBrowsingData'
-        body['payload']['clearCache'] = getBoolean()
+        clearBody.setdefault('payload', {})
+        clearBody['payload']['clearCache'] = getBoolean()
       case 'clearcookies':
-        body['commandType'] = 'clearBrowsingData'
-        body['payload']['clearCookies'] = getBoolean()
+        clearBody.setdefault('payload', {})
+        clearBody['payload']['clearCookies'] = getBoolean()
       case 'extensionupdatecheck':
-        body['commandType'] = 'extensionUpdateCheck'
+        eucBody['payload'] = {}
       case 'csv':
         csvPF = CSVPrintFile(['name'], 'sortall')
         FJQC.SetCsvPF(csvPF)
@@ -26660,15 +26658,25 @@ def doCreateChromeProfileCommand():
   for profileName in parameters['profileNameList']:
     i +=1
     try:
-      profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
-                         throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
-                         parent=profileName, body=body)
-      if csvPF is None:
-        _showChromeProfileCommand(profcmd, FJQC, i, count)
-      else:
-        _printChromeProfileCommand(profcmd, csvPF, FJQC)
+      if 'payload' in clearBody:
+        profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
+                           throwReasons=[GAPI.NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                           parent=profileName, body=clearBody)
+        if csvPF is None:
+          _showChromeProfileCommand(profcmd, FJQC, i, count)
+        else:
+          _printChromeProfileCommand(profcmd, csvPF, FJQC)
+      if 'payload' in eucBody:
+        profcmd = callGAPI(cm.customers().profiles().commands(), 'create',
+                           throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                           parent=profileName, body=eucBody)
+        if csvPF is None:
+          _showChromeProfileCommand(profcmd, FJQC, i, count)
+        else:
+          _printChromeProfileCommand(profcmd, csvPF, FJQC)
     except (GAPI.notFound) as e:
       entityActionFailedWarning([Ent.CHROME_PROFILE_COMMAND, profileName], str(e), i, count)
+      continue
     except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedExit([Ent.CHROME_PROFILE_COMMAND, profileName], str(e))
   if csvPF:

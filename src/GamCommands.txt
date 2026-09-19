@@ -2367,7 +2367,7 @@ gam print chromeprofiles [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
 gam create chromeprofilecommand <ChromeProfileNameEntity>
-        [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
+        [clearcache [<Boolean>]] [clearcookies [<Boolean>]] [extensionupdatecheck]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 
 gam info chromeprofilecommand <ChromeProfileCommandName>
