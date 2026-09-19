@@ -329,6 +329,12 @@
 <CourseWorkState> ::= draft|published|deleted
 <CrOSID> ::= <String>
 <CustomerID> ::= <String>
+<DataStudioAssetID> ::= <String>
+<DataStudioPermission> ::=
+        user:<EmailAddress>|
+        group:<EmailAddress>|
+        domain:<DomainName>|
+        serviceAccount:<EmailAddress>
 <DateTimeFormat> ::= <String>
         See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
 <DeliverySetting> ::=
@@ -402,12 +408,6 @@
 <LabelID> ::= Label_<String>
 <LabelName> ::= <String>
 <LabelReplacement> ::= <String>
-<LookerStudioAssetID> ::= <String>
-<LookerStudioPermission> ::=
-        user:<EmailAddress>|
-        group:<EmailAddress>|
-        domain:<DomainName>|
-        serviceAccount:<EmailAddress>
 <Marker> ::= <String>
 <MatterItem> ::= <UniqueID>|<String>
 <MatterState> ::= open|closed|deleted

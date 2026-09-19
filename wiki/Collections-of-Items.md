@@ -180,6 +180,10 @@ Data fields identified in a `csvkmd` argument.
 <CrOSEntity> ::=
         <CrOSIDList> | (cros_sn <SerialNumberList>) |
         (query:<QueryCrOS>) | (query:orgunitpath:<OrgUnitPath>) | (query <QueryCrOS>)
+<DataStudioAssetIDEntity> ::=
+        <DataStudioAssetIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
+<DataStudioPermissionEntity> ::=
+        <DataStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <DeviceIDEntity> ::=
         <DeviceIDList> | (device_sn <SerialNumber>)
         (query:<QueryDevice>) | (query <QueryDevice>)
@@ -299,10 +303,6 @@ Data fields identified in a `csvkmd` argument.
         <LabelIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <LabelNameEntity> ::=
         <LabelNameList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<LookerStudioAssetIDEntity> ::=
-        <LookerStudioAssetIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
-<LookerStudioPermissionEntity> ::=
-        <LookerStudioPermissionList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <MessageIDEntity> ::=
         <MessageIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
 <MobileEntity> ::=
