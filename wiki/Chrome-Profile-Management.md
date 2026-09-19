@@ -228,7 +228,7 @@ The characters following `filtertime` can be any combination of lowercase letter
 Clear a Chrome Browser profile cache and/or cookies.
 ```
 gam create chromeprofilecommand <ChromeProfileNameEntity>
-        [clearcache [<Boolean>]] [clearcookies [<Boolean>]]
+        [clearcache [<Boolean>]] [clearcookies [<Boolean>]] [extensionupdatecheck]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 ```
 By default, when a Chrome profile command is created, GAM outputs details of the command as indented keywords and values.
