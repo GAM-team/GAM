@@ -26628,24 +26628,32 @@ def _printChromeProfileCommand(profcmd, csvPF, FJQC):
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def doCreateChromeProfileCommand():
   cm, parameters = _initChromeProfileNameParameters()
-  body = {'commandType': 'clearBrowsingData', 'payload': {}}
+  body = {'payload': {}}
   csvPF = None
   FJQC = FormatJSONQuoteChar(None)
+  if 'extensionupdatecheck' in Cmd.AllArguments() and \
+     ('clearcache' in Cmd.AllArguments() or 'clearcookies' in Cmd.AllArguments()):
+    usageErrorExit('Clear browsing data and extension update check commands can not be run at the same time. Use two commands.')
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if _getChromeProfileNameParameters(myarg, parameters):
-      pass
-    elif myarg == 'clearcache':
-      body['payload']['clearCache'] = getBoolean()
-    elif myarg == 'clearcookies':
-      body['payload']['clearCookies'] = getBoolean()
-    elif myarg == 'csv':
-      csvPF = CSVPrintFile(['name'], 'sortall')
-      FJQC.SetCsvPF(csvPF)
-    elif csvPF and myarg == 'todrive':
-      csvPF.GetTodriveParameters()
-    else:
-      FJQC.GetFormatJSONQuoteChar(myarg, True)
+      continue
+    match myarg:
+      case 'clearcache':
+        body['commandType'] = 'clearBrowsingData'
+        body['payload']['clearCache'] = getBoolean()
+      case 'clearcookies':
+        body['commandType'] = 'clearBrowsingData'
+        body['payload']['clearCookies'] = getBoolean()
+      case 'extensionupdatecheck':
+        body['commandType'] = 'extensionUpdateCheck'
+      case 'csv':
+        csvPF = CSVPrintFile(['name'], 'sortall')
+        FJQC.SetCsvPF(csvPF)
+      case 'todrive' if csvPF:
+        csvPF.GetTodriveParameters()
+      case _:
+        FJQC.GetFormatJSONQuoteChar(myarg, True) 
   _getChromeProfileNameEntityForCommand(cm, parameters)
   count = len(parameters['profileNameList'])
   i = 0
