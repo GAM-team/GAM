@@ -11,6 +11,7 @@
 - [Verify group creation](#verify-group-creation)
 - [Update a group's primary email address](#update-a-groups-primary-email-address)
 - [Update a group's settings with JSON data](#update-a-groups-settings-with-json-data)
+- [Manage Members](#manage-members)
 - [Display information about specific groups](#display-information-about-specific-groups)
 - [Display information about selected groups](#display-information-about-selected-groups)
 - [Display a group and its parents](#Display-a-group-and-its-parents)
@@ -434,6 +435,22 @@ Group: testgroup2@domain.com, Updated
 Group: testgroup3@domain.com, Updated
 Group: testgroup4@domain.com, Updated
 ```
+
+## Manage Members
+
+There are several options that are used to manage group members.
+* `allowExternalMembers False` - Users not belonging to the organization are not allowed to become members of this group.
+* `allowExternalMembers True` - Users external to your organization can become members of this group.
+
+With `allowExternalMembers True`, who can add external members to the group.
+* `allowExternalMembers True whoCanAddExternalMembers only_admins_can_add_external_members` - Only admins via the Admin Console or GAM
+* `allowExternalMembers True whoCanAddExternalMembers end_users_can_add_external_members` - Admins or designated member roles
+
+Member roles that allow member management.
+* `whoCanModerateMembers all_members` - All members of the group
+* `whoCanModerateMembers owners_and_managers` - All owners or managers of the group
+* `whoCanModerateMembers owners_only` - All owners of the group
+* `whoCanModerateMembers none` - Documented as No one in the group but appears to be All owners of the group
 
 ## Display information about specific groups
 The info command displays information as an indented list of keys and values.
