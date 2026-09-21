@@ -438,9 +438,9 @@ Group: testgroup4@domain.com, Updated
 
 ## Manage Members
 
-There are several options that are used to manage group members.
-* `allowExternalMembers False` - Users not belonging to the organization are not allowed to become members of this group.
-* `allowExternalMembers True` - Users external to your organization can become members of this group.
+There are several options that are used to manage group members of a specific group.
+* `allowExternalMembers False` - Users not belonging to the organization are not allowed to become members of the group.
+* `allowExternalMembers True` - Users external to your organization can become members of the group.
 
 With `allowExternalMembers True`, who can add external members to the group.
 * `allowExternalMembers True whoCanAddExternalMembers only_admins_can_add_external_members` - Only admins via the Admin Console or GAM
