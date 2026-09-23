@@ -16,7 +16,7 @@ Fixed bug in `gam print orgs allfields` that caused a trap.
 `KeyError: 'blockinheritance'`
 
 Added field `expirationTime` to `gam info|print|show chromeprofilecommand` output
-which is `issueTime` + 'validDuration`.
+which is `issueTime` + `validDuration`.
 
 7.48.11
 
