@@ -178,7 +178,7 @@ queries "`"orgUnitPath=\'/Students/Lower\ School/2027\'`",`"orgUnitPath=\'/Stude
         isdelegatedadmin|admin|isadmin|
         isenforcedin2sv|is2svenforced|
         isenrolledin2sv|is2svenrolled|
-	isguestuser|
+        isguestuser|
         ismailboxsetup|
         keyword|keywords|
         language|languages|

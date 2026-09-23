@@ -221,14 +221,14 @@ gam <UserTypeEntity> create chatspace
         [formatjson|returnidonly]
 ```
 For `type space`, the following apply:
-* `members <UserTypeEntity>` - Optional, can not specify more than 20 users
+* `members <UserTypeEntity>` - Optional, can not specify more than 49 users
 * `displayname <String>` - Required
 * `description <String>` - Optional
 * `guidelines <String>` - Optional
 * `announcement|collaboration` - Initial permission settings; default is `collaboration`
 
 For `type groupchat`, the following apply:
-* `members <UserTypeEntity>` - Required, must specify between 2 and 20 users
+* `members <UserTypeEntity>` - Required, must specify between 2 and 49 users
 * `displayname <String>` - Ignored
 * `description <String>` - Optional
 * `guidelines <String>` - Optional

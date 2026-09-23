@@ -372,6 +372,14 @@ When using the `formatjson` option, double quotes are used extensively in the da
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
 
+### Display policies for all OUs.
+
+```
+gam redirect csv ./OrgUnits.csv print ous
+gam redirect csv ./OrgUnitPolicies.csv multiprocess redirect stderr - multiprocess csv OrgUnits.csv gam print policies ou "~orgUnitPath" ...
+or
+gam redirect csv - multiprocess todrive redirect stderr - multiprocess csv OrgUnits.csv gam print policies ou "~orgUnitPath" ...
+```
 ## Copy simple policies set directly in one OU to another OU
 Display direct policies, update all
 ```

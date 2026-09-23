@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.12
+
+Fixed bug in `gam print orgs allfields` that caused a trap.
+`KeyError: 'blockinheritance'`
+
+Added field `expirationTime` to `gam info|print|show chromeprofilecommand` output
+which is `issueTime` + 'validDuration`.
+
 7.48.11
 
 Added option `extensionupdatecheck` to `gam create chromeprofilecommand`.
