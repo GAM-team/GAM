@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.11'
+__version__ = '7.48.12'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -18467,7 +18467,7 @@ def doDeleteOrgs():
 def doDeleteOrg():
   _doDeleteOrgs([getOrgUnitItem()])
 
-ORG_FIELD_INFO_ORDER = ['orgUnitId', 'name', 'description', 'parentOrgUnitPath', 'parentOrgUnitId', 'blockInheritance']
+ORG_FIELD_INFO_ORDER = ['orgUnitId', 'name', 'description', 'parentOrgUnitPath', 'parentOrgUnitId']
 ORG_FIELDS_WITH_CRS_NLS = {'description'}
 
 def _doInfoOrgs(entityList):
@@ -18568,7 +18568,7 @@ ORG_ARGUMENT_TO_FIELD_MAP = {
   'parentorgunitpath': 'parentOrgUnitPath',
   'parent': 'parentOrgUnitPath',
   }
-ORG_FIELD_PRINT_ORDER = ['orgUnitPath', 'orgUnitId', 'name', 'description', 'parentOrgUnitPath', 'parentOrgUnitId', 'blockInheritance']
+ORG_FIELD_PRINT_ORDER = ['orgUnitPath', 'orgUnitId', 'name', 'description', 'parentOrgUnitPath', 'parentOrgUnitId']
 PRINT_ORGS_DEFAULT_FIELDS = ['orgUnitPath', 'orgUnitId', 'name', 'parentOrgUnitId']
 
 ORG_UNIT_SELECTOR_FIELD = 'orgUnitSelector'
@@ -26599,12 +26599,18 @@ def _getChromeProfileNameEntityForCommand(cm, parameters):
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.CHROME_PROFILE, parameters['cbfilter']], str(e))
 
+def _getProfCmdExpirationTime(profcmd):
+  if 'validDuration' in profcmd and profcmd['validDuration'].endswith('s'):
+    profcmd['expirationTime'] = formatLocalTime(arrow.get(profcmd['issueTime']).shift(seconds=int(profcmd['validDuration'][0:-1])))
+
 CHROMEPROFILECOMMAND_TIME_OBJECTS = {
   'clientExecutionTime',
+  'expirationTime',
   'issueTime',
   }
 
 def _showChromeProfileCommand(profcmd, FJQC, i=0, count=0):
+  _getProfCmdExpirationTime(profcmd)
   if FJQC.formatJSON:
     printLine(json.dumps(cleanJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS),
               ensure_ascii=False, sort_keys=True))
@@ -26615,6 +26621,7 @@ def _showChromeProfileCommand(profcmd, FJQC, i=0, count=0):
   Ind.Decrement()
 
 def _printChromeProfileCommand(profcmd, csvPF, FJQC):
+  _getProfCmdExpirationTime(profcmd)
   row = flattenJSON(profcmd, timeObjects=CHROMEPROFILECOMMAND_TIME_OBJECTS)
   if not FJQC.formatJSON:
     csvPF.WriteRowTitles(row)
@@ -27920,8 +27927,8 @@ CHAT_SPACE_PREDEFINED_PERMS_MAP = {
   }
 
 CHAT_SPACE_MIN_MAX_MEMBERS = {
-  'SPACE': {'min': 0, 'max': 20},
-  'GROUP_CHAT': {'min': 2, 'max': 20},
+  'SPACE': {'min': 0, 'max': 49},
+  'GROUP_CHAT': {'min': 2, 'max': 49},
   'DIRECT_MESSAGE': {'min': 1, 'max': 1},
   }
 # gam <UserTypeEntity> create chatspace
