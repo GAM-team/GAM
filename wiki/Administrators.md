@@ -1420,8 +1420,8 @@ By default, Gam displays the information as an indented list of keys and values.
 ```
 gam show adminroles|roles
         [role <RoleItem>] [privileges]
-	[nosystemroles]
-	[formatjson]
+        [nosystemroles]
+        [formatjson]
 ```
 * `privileges` - Display privileges associated with each role
 

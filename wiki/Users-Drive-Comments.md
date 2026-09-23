@@ -58,7 +58,7 @@
 gam <UserTypeEntity> show filecomments <DriveFileEntity>
         [showdeleted] [start <Date>|<Time>]
         [fields <CommentsFieldNameList>] [showphotolinks]
-	[countsonly|positivecountsonly]
+        [countsonly|positivecountsonly]
         [formatjson]
 ```
 Use `my_commentable_items` for `<DriveFileEntity>` to query only for files that can have comments.

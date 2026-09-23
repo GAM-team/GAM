@@ -129,7 +129,7 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
          (json [charset <Charset>] <JSONData>)|(json file <FileName> [charset <Charset>]) |
          <FileSelector> | <CSVFileSelector> | <CSVkmdSelector> | <CSVDataSelector>
         See: https://github.com/GAM-team/GAM/wiki/Collections-of-Items
-	<DriveFilePermission> ::=
+        <DriveFilePermission> ::=
         anyone;<DriveFileACLRole> | 
         anyonewithlink;<DriveFileACLRole> |
         domain:<DomainName>;<DriveFileACLRole> |

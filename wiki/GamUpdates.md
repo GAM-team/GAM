@@ -22607,7 +22607,7 @@ Fixed bug in `gam report users ... aggregatebydate|aggregatebyuser` where `accou
 
 ### 7.28.06
 
-Updated	`gam <UserTypeEntity> info|print|show calendars` and
+Updated `gam <UserTypeEntity> info|print|show calendars` and
 `gam calendars <CalendarEntity> print|show settings` to display the
 new `dataOwner` field as described under `Additional details` below.
 

@@ -189,28 +189,28 @@ key and value are added to each update item. You would typically add, delete or 
 {
   "requests": [
       {"updateItem": {
-	  "item": {
+          "item": {
               "title": "Absent?",
               "description": "To report attendance adjustments for late arrivals, please email attendance@domain.com.",
               "questionItem": {
-		  "question": {
-		      "choiceQuestion": {
-			  "type": "CHECKBOX","options": [
-			      {"value": "All present."},
-			      {"value": "Student Name1"},
-			      {"value": "Student Name2"},
-			      {"value": "Student Name3"},
-			      {"value": "Student Name4"},
-			      {"value": "Student Name5"}
-			  ]
-		      },
-		      "required": true}
-	      }
-	  },
+                  "question": {
+                      "choiceQuestion": {
+                          "type": "CHECKBOX","options": [
+                              {"value": "All present."},
+                              {"value": "Student Name1"},
+                              {"value": "Student Name2"},
+                              {"value": "Student Name3"},
+                              {"value": "Student Name4"},
+                              {"value": "Student Name5"}
+                          ]
+                      },
+                      "required": true}
+              }
+          },
           "location": {"index": 0},
           "updateMask": "title,description,questionItem"}},
       {"updateItem": {
-	  "item": {
+          "item": {
               "title": "Notes?",
               "questionItem": {"question": {"textQuestion": {"paragraph": true}}}},
           "location": {"index": 1},

@@ -374,7 +374,7 @@ User: user@domain.com, Show 1 Drive File/Folder
       Middle Folder: (id: 1m6A3a9w0DCkwtjqF0heIwLyQTHI1TIk1)
         Bottom Folder: (id: 1sfC-QPtMg_W1ZpOKL5URylugd0x_nxRt
 ```
-	
+
 Build in root of a Shared Drive
 ```
 gam user user@domain.com create drivefolderpath fullpath "SharedDrives/TS Shared Drive/Top Folder/Middle Folder/Bottom Folder/Sub Folder"

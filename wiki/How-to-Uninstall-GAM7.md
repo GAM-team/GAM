@@ -26,7 +26,7 @@ gam oauth delete
 
 ## Remove Service Account API access
 In a browser, go to `https://admin.google.com`, login and go to the Security/API Controls/Domain-wide Delegation page.
-Find the `Client ID` that matches the `client_id` value from `oauth2service.json`, hover over it and click `Delete`.	
+Find the `Client ID` that matches the `client_id` value from `oauth2service.json`, hover over it and click `Delete`.
 
 ## Delete GAM Project
 In a browser, go to `https://console.cloud.google.com/cloud-resource-manager`, login. Find the `ID` that matches

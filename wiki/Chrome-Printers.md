@@ -104,7 +104,7 @@ gam update printer <PrinterID> <PrinterAttribute>+ [nodetails|returnidonly]
 gam delete printer
         <PrinterIDList>|
         <FileSelector>|
-	<CSVFileSelector>
+        <CSVFileSelector>
 ```
 By default, when a printer is created/updated, GAM outputs details of the printer.
 * `nodetails` - Suppress the datails output.

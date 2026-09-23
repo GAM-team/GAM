@@ -606,7 +606,7 @@ gam <UserTypeEntity> show shareddriveacls
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> print shareddriveacls [todrive <ToDriveAttribute>*]
         adminaccess [shareddriveadminquery|query <QuerySharedDrive>]
-	[matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
+        [matchname <REMatchPattern>] [orgunit|org|ou <OrgUnitPath>]
         [user|group <EmailAddress> [checkgroups]] (role|roles <SharedDriveACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]

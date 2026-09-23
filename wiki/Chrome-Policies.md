@@ -469,13 +469,13 @@ $ more network.json
   {"policy_schema": "chrome.networks.wifi.Details",
    "value": {"details": {"allowIpConfiguration": false,
                          "allowNameServersConfiguration": false,
-			 "automaticallyConnect": false,
-			 "hiddenSsid": false,
-			 "nameServerSelection": "NAME_SERVERS_ENUM_AUTOMATIC",
-			 "passphrase": "pw1234",
-			 "proxySettings": {"type": "Direct"},
-			 "security": "WPA-PSK",
-			 "ssid": "Test Wifi"}}}
+                         "automaticallyConnect": false,
+                         "hiddenSsid": false,
+                         "nameServerSelection": "NAME_SERVERS_ENUM_AUTOMATIC",
+                         "passphrase": "pw1234",
+                         "proxySettings": {"type": "Direct"},
+                         "security": "WPA-PSK",
+                         "ssid": "Test Wifi"}}}
   ]
 }
 
