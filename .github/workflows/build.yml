@@ -666,58 +666,15 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
-      - name: Install NPM deps
+      - name: Setup Certum Code Signing
+        id: certum
         if: runner.os == 'Windows'
-        run: |
-          #echo "Installing appium..."
-          #npm install -g appium
-          echo "Installing totp-generator..."
-          npm install totp-generator
-
-      - name: Install Certum MSI
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $url = "https://files.certum.eu/software/SimplySignDesktop/Windows/9.4.4.92/SimplySignDesktop-9.4.4.92-64-bit-en.msi"
-          $file = "SimplySignDesktop.msi"
-          Invoke-WebRequest $url -OutFile $file
-          $log = "install.log" 
-          $procMain = Start-Process "msiexec" "/i `"$file`" /qn /l*! `"$log`"" -NoNewWindow -PassThru
-          $procLog = Start-Process "powershell" "Get-Content -Path `"$log`" -Wait" -NoNewWindow -PassThru 
-          $procMain.WaitForExit() 
-          $procLog.Kill()
-
-      - name: Run SSD directly
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          Write-Host "Running SSD..."
-          & "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"
-          Start-Sleep -Seconds 10
-          & "C:\\Program Files\\Certum\\SimplySign Desktop\\SimplySignDesktop.exe"
-
-      - name: Login to Certum
-        if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          TOTP_SECRET: ${{ secrets.TOTP_SECRET }}
-        run: |
-          write-host "running SimplySignDesktop login..."
-          node tools/ssd.mjs --log-level warn
-          Get-ChildItem -Path $env:GITHUB_WORKSPACE
-          write-host "sleeping during login..."
-          Start-Sleep 10
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
-        if: runner.os == 'Windows'
+        uses: jay0lee/certum-cloud-code-sign@a3324503499c49090869856eeeecfe95fb613d87 # v1
         with:
-          archive: true
-          name: images-${{ matrix.os }}
-          if-no-files-found: ignore
-          path: |
-            ${{ github.workspace }}/*.png
-            ${{ github.workspace }}/*.log
+          username: ${{ secrets.CERTUM_USERNAME }}
+          totp_secret: ${{ secrets.TOTP_SECRET }}
+          cert_sha1: ${{ env.WINDOWS_CODESIGN_CERT_HASH }}
+          debug: 'false'
 
       - name: Sign gam.exe
         if: runner.os == 'Windows'
@@ -753,6 +710,9 @@ jobs:
           if ($filesToSign.Count -gt 0) {
             Write-Host "Batch signing $($filesToSign.Count) files..."
             
+            $signtool = "${{ steps.certum.outputs.signtool-path }}"
+            $thumbprint = "${{ steps.certum.outputs.cert-thumbprint }}"
+            
             # Chunk the files to avoid the 32,767 character command-line limit in Windows
             $chunkSize = 50
             for ($i = 0; $i -lt $filesToSign.Count; $i += $chunkSize) {
@@ -760,10 +720,10 @@ jobs:
               $chunk = $filesToSign[$i..$upperBound]
               Write-Host "Signing chunk ($($chunk.Count) files)..."
               
-              $baseArgs = @("sign", "/sha1", "$env:WINDOWS_CODESIGN_CERT_HASH", "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v")
+              $baseArgs = @("sign", "/sha1", $thumbprint, "/tr", "http://time.certum.pl", "/td", "SHA256", "/fd", "SHA256", "/v")
               $allArgs = $baseArgs + $chunk
               
-              Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' -ArgumentList $allArgs
+              Start-Process -Wait -NoNewWindow -ErrorAction Continue -FilePath $signtool -ArgumentList $allArgs
             }
           }
           else {
@@ -771,8 +731,8 @@ jobs:
           }
 
           write-Host "Verifying signature of ${env:gam}...."
-          # verify signature. If we failed to sign we should fail to verify and die.
-          & 'C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe' verify /pa /v "$env:gam"
+          # verify signature using dynamic signtool path
+          & "${{ steps.certum.outputs.signtool-path }}" verify /pa /v "$env:gam"
 
       - name: Configure user and service account auth
         id: configserviceaccount
@@ -817,9 +777,8 @@ jobs:
         if: runner.os == 'Windows' && matrix.goal != 'test'
         run: |
           choco install innosetup
-          export signtool="C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe"
           iscc \
-            /S"gamsigntool=$signtool sign /sha1 $WINDOWS_CODESIGN_CERT_HASH /tr http://time.certum.pl /td SHA256 /fd SHA256 /v \$f" \
+            /S"gamsigntool=\"$CERTUM_SIGNTOOL_PATH\" sign /sha1 $WINDOWS_CODESIGN_CERT_HASH /tr http://time.certum.pl /td SHA256 /fd SHA256 /v \$f" \
             /O"$GITHUB_WORKSPACE" \
             gam.iss
 
@@ -831,7 +790,6 @@ jobs:
             gam*.tar.xz
             gam*.zip
             gam*.exe
-        #    gam*.msi
 
       - name: Archive tar.xz artifacts
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # 7.0.0
@@ -859,6 +817,10 @@ jobs:
           if-no-files-found: ignore
           path: |
             gam*.exe
+
+      - name: Teardown SimplySign Desktop Session
+        if: always() && runner.os == 'Windows'
+        uses: jay0lee/certum-cloud-code-sign/teardown@a3324503499c49090869856eeeecfe95fb613d87 # v1
 
       - name: Basic Tests build jobs only
         if: matrix.goal != 'test' && steps.cache-python-ssl.outputs.cache-hit != 'true'
