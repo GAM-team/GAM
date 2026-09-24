@@ -773,7 +773,7 @@ jobs:
         run: |
           choco install innosetup
           iscc \
-            /S"gamsigntool=\"$CERTUM_SIGNTOOL_PATH\" sign /sha1 $WINDOWS_CODESIGN_CERT_HASH /tr http://time.certum.pl /td SHA256 /fd SHA256 /v \$f" \
+            /S"gamsigntool=$CERTUM_SIGNTOOL_PATH sign /sha1 $WINDOWS_CODESIGN_CERT_HASH /tr http://time.certum.pl /td SHA256 /fd SHA256 /v \$f" \
             /O"$GITHUB_WORKSPACE" \
             gam.iss
 
