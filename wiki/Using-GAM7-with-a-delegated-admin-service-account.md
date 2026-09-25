@@ -16,7 +16,7 @@ Delegated admin service accounts (DASA) are regular [GCP service accounts](https
 
 ## Disadvantages
 * DASA accounts can only be delegated admins. [If a task requires super admin rights to perform](https://support.google.com/a/answer/2405986#:~:text=Only%20super%20administrators%20can...), DASA accounts won’t be able to do it.
-Not all Google Admin APIs work with DASA right no:
+Not all Google Admin APIs work with DASA right now:
   * Google Vault API calls will fail with a DASA account
   * Classroom API calls do not return data
   * Cloud Identity Policies are not available
