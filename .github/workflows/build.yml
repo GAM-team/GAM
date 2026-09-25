@@ -81,6 +81,11 @@ jobs:
             goal: build
             staticx: yes
             name: Build Arm StaticX Legacy
+          - os: macos-14
+            jid: 9
+            freethreaded: false
+            goal: build
+            name: Build Arm MacOS 14
           - os: macos-15
             jid: 10
             freethreaded: false

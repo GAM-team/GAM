@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.12'
+__version__ = '7.48.13'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -17530,10 +17530,10 @@ def doCreateAdmin():
     result = callGAPI(cd.roleAssignments(), 'insert',
                       throwReasons=[GAPI.INTERNAL_ERROR, GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.CUSTOMER_NOT_FOUND,
                                     GAPI.CUSTOMER_EXCEEDED_ROLE_ASSIGNMENTS_LIMIT, GAPI.SERVICE_NOT_AVAILABLE,
-                                    GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET,
+                                    GAPI.INVALID_ORGUNIT, GAPI.DUPLICATE, GAPI.CONDITION_NOT_MET, GAPI.UNKNOWN_ERROR,
                                     GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                       retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                      customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleAssignmentId,assigneeType')
+                      customer=GC.Values[GC.CUSTOMER_ID], body=body, fields='roleAssignmentId,assigneeType,expirationDetails')
     assigneeType = result.get('assigneeType')
     if assigneeType == 'user':
       entityType = Ent.USER
@@ -17541,11 +17541,13 @@ def doCreateAdmin():
       entityType = Ent.GROUP
     else:
       entityType = Ent.ADMINISTRATOR
-    entityActionPerformedMessage([Ent.ADMIN_ROLE_ASSIGNMENT, result['roleAssignmentId']],
-                                 f'{Ent.Singular(entityType)} {user}, {Ent.Singular(Ent.ADMIN_ROLE)} {role}, {Ent.Singular(Ent.SCOPE)} {scope}')
+    msg = f'{Ent.Singular(entityType)} {user}, {Ent.Singular(Ent.ADMIN_ROLE)} {role}, {Ent.Singular(Ent.SCOPE)} {scope}'
+    if 'expirationDetails' in result:
+      msg += f", expirationDetails.expireTime {formatLocalTime(result['expirationDetails'].get('expireTime', NEVER_TIME))}"
+    entityActionPerformedMessage([Ent.ADMIN_ROLE_ASSIGNMENT, result['roleAssignmentId']], msg)
   except GAPI.internalError:
     pass
-  except (GAPI.customerExceededRoleAssignmentsLimit, GAPI.serviceNotAvailable, GAPI.conditionNotMet) as e:
+  except (GAPI.customerExceededRoleAssignmentsLimit, GAPI.serviceNotAvailable, GAPI.conditionNotMet, GAPI.unknownError) as e:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user, Ent.ADMIN_ROLE, role], str(e))
   except GAPI.invalidOrgunit:
     entityActionFailedWarning([Ent.ADMINISTRATOR, user], Msg.INVALID_ORGUNIT)
