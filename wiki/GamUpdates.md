@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.14
+
+Updated `gam whatis user@domain.com` to replace this error message:
+`ERROR: There are no scopes authorized for the API(s): Cloud Identity API - User Invitations`
+with this error message:
+`Email Address: user@domain.com, Does not exist`
+when no Cloud Identity scopes are enabled other than `Cloud Identity API - User Invitations`.
+
+All other `userinvitation` commands are also fixed.
+
 7.48.13
 
 Updated `gam create admin ... expires <DateTime>` to display the expiration time in the result message.
