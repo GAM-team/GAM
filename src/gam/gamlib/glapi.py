@@ -142,6 +142,8 @@ SCOPELESS_APIS = {
 
 # Scopes not in the discovery doc that are still valid for the API.
 EXTRA_SCOPES = {
+  CLOUDIDENTITY_USERINVITATIONS: ['https://www.googleapis.com/auth/cloud-identity.userinvitations',
+                                  'https://www.googleapis.com/auth/cloud-identity.userinvitations.readonly'],
   CLOUDRESOURCEMANAGER: ['https://www.googleapis.com/auth/cloudplatformfolders',
                          'https://www.googleapis.com/auth/cloudplatformfolders.readonly',
                          'https://www.googleapis.com/auth/cloudplatformprojects',

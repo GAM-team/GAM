@@ -1,3 +1,11 @@
+7.48.14
+
+Updated `gam whatis user@domain.com` to replace this error message:
+`ERROR: There are no scopes authorized for the API(s): Cloud Identity API - User Invitations`
+with this error message:
+`Email Address: user@domain.com, Does not exist`
+when no Cloud Identity scopes are enabled other than `Cloud Identity API - User Invitations`.
+
 7.48.13
 
 Updated `gam create admin ... expires <DateTime>` to display the expiration time in the result message.
