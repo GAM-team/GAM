@@ -354,6 +354,10 @@ jobs:
           # disable for now
           if ([ "$RUNNER_OS" == "Linux" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
             "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" no-asm $OPENSSL_CONFIG_OPTS
+          # Similar issues on Windows Arm64
+          elif ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
+            CONFIG_OPTS="${OPENSSL_CONFIG_OPTS/-O3/-O1}"
+            "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" no-asm $CONFIG_OPTS
           else
             "${PERL}" ./Configure --libdir=lib --prefix="${OPENSSL_INSTALL_PATH}" $OPENSSL_CONFIG_OPTS
           fi
@@ -400,6 +404,8 @@ jobs:
         run: |
           "${OPENSSL_INSTALL_PATH}/bin/openssl" version -a
           file "${OPENSSL_INSTALL_PATH}/bin/openssl"
+          "${OPENSSL_INSTALL_PATH}/bin/openssl" ciphers -v
+          echo "Q" | "${OPENSSL_INSTALL_PATH}/bin/openssl" s_client -connect admin.googleapis.com:443 -servername admin.googleapis.com -state
 
       - name: Get latest stable Python source
         if: matrix.goal == 'build' && steps.cache-python-ssl.outputs.cache-hit != 'true'
