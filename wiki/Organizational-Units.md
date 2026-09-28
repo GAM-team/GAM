@@ -84,6 +84,19 @@ Create, update and delete organization units.
 gam create org|ou <OrgUnitPath> [description <String>]
         [parent <OrgUnitItem>]
         [buildpath]
+```
+
+You can create an org unit in two ways: specify the full path to the org unit or specify the org unit name and parent path.
+These are equivalent:
+    gam create org /aaa/bbb/ccc/ddd
+    gam create ddd parent /aaa/bbb/ccc
+The API requires a separate org unit name and parent path, gam makes this separation for you regardless of how you entered the data.
+It is an error if the parent path does not exist. In this case, specifying the buildpath argument causes gam to build the parent path.
+Suppose /aaa exists and you enter the command: gam create org /aaa/bbb/ccc/ddd buildpath. The initlal API will fail because /aaa/bbb/ccc
+does not exist. Gam builds /aaa/bbb, then /aaa/bbb/ccc and finally /aaa/bbb/ccc/ddd.
+If a description is specified, it is only applied to the last name in the full path, ddd in this example.
+
+```
 gam update org|ou <OrgUnitPath> [name <String>] [description <String>]
         [parent <OrgUnitItem>]
 gam delete org|ou <OrgUnitPath>
