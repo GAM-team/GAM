@@ -254,7 +254,7 @@ gamteam@server:/Users/gamteam$ gam version
 GAM 7.48.14 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.14.7 64-bit final
-macOS Golden Gate 27.0 arm64
+macOS Golden Gate 27.0.1 arm64
 Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 

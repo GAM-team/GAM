@@ -20,6 +20,8 @@ when no Cloud Identity scopes are enabled other than `Cloud Identity API - User 
 
 All other `userinvitation` commands are also fixed.
 
+Thanks to @askalf
+
 7.48.13
 
 Updated `gam create admin ... expires <DateTime>` to display the expiration time in the result message.
