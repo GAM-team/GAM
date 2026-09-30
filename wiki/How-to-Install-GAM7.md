@@ -95,7 +95,7 @@ gamteam@server:/Users/gamteam$ ln -s "/Users/gamteam/bin/gam7/gam" /usr/local/bi
 
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
-gamteam@server:/Users/gamteam$ gam config drive_dir /Users/gamteam/GAMWork verify
+gamteam@server:/Users/gamteam$ gam config drive_dir /Users/gamteam/GAMWork save verify
 Created: /Users/gamteam/GAMConfig
 Created: /Users/gamteam/GAMConfig/gamcache
 Config File: /Users/gamteam/GAMConfig/gam.cfg, Initialized
@@ -618,7 +618,7 @@ At this point, you should restart Command Prompt so that it has the updated path
 
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
-C:\>gam config drive_dir C:\GAMWork verify
+C:\>gam config drive_dir C:\GAMWork save verify
 Created: C:\GAMConfig
 Created: C:\GAMConfig\gamcache
 Config File: C:\GAMConfig\gam.cfg, Initialized

@@ -120,7 +120,7 @@ gamteam@server:/Users/gamteam$
 ```
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
-gamteam@server:/Users/gamteam$ gam config drive_dir /Users/gamteam/GAMWork verify
+gamteam@server:/Users/gamteam$ gam config drive_dir /Users/gamteam/GAMWork save verify
 Created: /Users/gamteam/GAMConfig
 Created: /Users/gamteam/GAMConfig/gamcache
 Copied: /Users/gamteam/bin/gam/oauth2service.json, To: /Users/gamteam/GAMConfig/oauth2service.json
@@ -764,7 +764,7 @@ C:\>dir %OLDGAMPATH%\*.json
 ```
 ### Initialize GAM7; this should be the first GAM7 command executed.
 ```
-C:\>gam config drive_dir C:\GAMWork verify
+C:\>gam config drive_dir C:\GAMWork save verify
 Created: C:\GAMConfig
 Created: C:\GAMConfig\gamcache
 Copied: C:\GAM\oauth2service.json, To: C:\GAMConfig\oauth2service.json
