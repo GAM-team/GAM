@@ -127,7 +127,8 @@
 <CalendarSelectProperty> ::=
         minaccessrole <CalendarACLRole>|
         showdeleted|
-        showhidden
+        showhidden|
+        showownorganizationonly
 
 <UserCalendarEntity> ::=
         allcalendars|

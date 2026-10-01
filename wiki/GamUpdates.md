@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.15
+
+Addded `showownorganizationonly` to `<CalendarSelectProperty>` that is by used by commands that list
+a user's calendars to show only entries for calendars from the organization.
+
+Updated `gam delete|print|show policies` to handle the following error:
+`ERROR: 503: serviceNotAvailable - The service is currently unavailable.`
+
 7.48.14
 
 Updated `gam whatis user@domain.com` to replace this error message:

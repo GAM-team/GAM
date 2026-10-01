@@ -70,7 +70,8 @@ Added `writerwithoutprivateaccess` to `<CalendarACLRole>` in 7.44.03; this will 
 <CalendarSelectProperty> ::=
         minaccessrole <CalendarACLRole>|
         showdeleted|
-        showhidden
+        showhidden|
+        showownorganizationonly
 
 <UserCalendarEntity> ::=
         allcalendars|
