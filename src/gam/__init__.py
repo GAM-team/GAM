@@ -38858,11 +38858,13 @@ def _filterPolicies(ci, pageMessage, ifilter):
   try:
     policies = callGAPIpages(ci.policies(), 'list', 'policies',
                              pageMessage=pageMessage,
-                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND],
+                             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED, GAPI.NOT_FOUND,
+                                           GAPI.SERVICE_NOT_AVAILABLE],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                              filter=ifilter, pageSize=100)
     # Google returns unordered results, sort them by setting type
     return sorted(policies, key=lambda p: p.get('setting', {}).get('type', ''))
-  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.notFound) as e:
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied, GAPI.notFound, GAPI.serviceNotAvailable) as e:
     entityActionFailedWarning([Ent.POLICY, ifilter], str(e))
     return []
 
