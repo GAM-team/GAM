@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.14'
+__version__ = '7.48.15'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -55101,6 +55101,8 @@ def _getCalendarSelectProperty(myarg, kwargs):
     kwargs['showDeleted'] = True
   elif myarg == 'showhidden':
     kwargs['showHidden'] = True
+  elif myarg == 'showownorganizationonly':
+    kwargs['showOwnOrganizationOnly'] = True
   else:
     return False
   return True
@@ -66247,6 +66249,12 @@ def getDriveFile(users):
         break
     Ind.Decrement()
 
+COMMENTS_VIEW_MODE_CHOICE_MAP = {
+  'default': 'COMMENTS_VIEW_MODE_DEFAULT_FOR_CURRENT_ACCESS',
+  'omitted': 'COMMENTS_VIEW_MODE_OMITTED',
+  'included': 'COMMENTS_VIEW_MODE_INCLUDED'
+  }
+
 SUGGESTIONS_VIEW_MODE_CHOICE_MAP = {
   'default': 'DEFAULT_FOR_CURRENT_ACCESS',
   'suggestionsinline': 'SUGGESTIONS_INLINE',
@@ -66256,10 +66264,12 @@ SUGGESTIONS_VIEW_MODE_CHOICE_MAP = {
 
 # gam <UserTypeEntity> get document <DriveFileEntity>
 #	[viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
+#	[commentsviewmode default|included|omitted]
 #	[targetfolder <FilePath>] [targetname <FileName>]
 #	[donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]]
 def getGoogleDocument(users):
   fileIdEntity = getDriveFileEntity()
+  commentsViewMode = None
   suggestionsViewMode = SUGGESTIONS_VIEW_MODE_CHOICE_MAP['default']
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
   targetNamePattern = None
@@ -66268,6 +66278,8 @@ def getGoogleDocument(users):
     myarg = getArgument()
     if myarg == 'viewmode':
       suggestionsViewMode = getChoice(SUGGESTIONS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'commentsviewmode':
+      commentsViewMode = getChoice(COMMENTS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
     elif myarg == 'targetfolder':
       targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
@@ -66314,12 +66326,14 @@ def getGoogleDocument(users):
           continue
         filename, _ = uniqueFilename(targetFolder, targetName or cleanFilename(docName), overwrite)
         result = callGAPI(docs.documents(), 'get',
-                          throwReasons=GAPI.DRIVE_GET_THROW_REASONS,
-                          documentId=fileId, suggestionsViewMode=suggestionsViewMode)
+                          throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID_ARGUMENT],
+                          documentId=fileId, suggestionsViewMode=suggestionsViewMode, commentsViewMode=commentsViewMode)
         if writeFile(filename, json.dumps(result, indent=2, sort_keys=True)+'\n', continueOnError=True):
           entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DOCUMENT, f'{docName}({fileId})'], Act.MODIFIER_TO, filename, j, jcount)
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST, j, jcount)
+      except GAPI.invalidArgument as e:
+        entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break

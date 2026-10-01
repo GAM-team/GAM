@@ -6192,7 +6192,8 @@ gam <UserTypeEntity> print businessprofileaccounts [todrive <ToDriveAttribute>*]
 <CalendarSelectProperty> ::=
         (minaccessrole <CalendarACLRole>)|
         showdeleted|
-        showhidden
+        showhidden|
+        showownorganizationonly
 
 <UserCalendarAddEntity> ::=
         <EmailAddress>|

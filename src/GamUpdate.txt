@@ -1,3 +1,8 @@
+7.48.15
+
+Addded `showownorganizationonly` to `<CalendarSelectProperty>` that is by used by commands that list
+a user's calendars to show only entries for calendars from the organization.
+
 7.48.14
 
 Updated `gam whatis user@domain.com` to replace this error message:
@@ -5,6 +10,10 @@ Updated `gam whatis user@domain.com` to replace this error message:
 with this error message:
 `Email Address: user@domain.com, Does not exist`
 when no Cloud Identity scopes are enabled other than `Cloud Identity API - User Invitations`.
+
+All other `userinvitation` commands are also fixed.
+
+Thanks to @askalf
 
 7.48.13
 
