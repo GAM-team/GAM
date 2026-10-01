@@ -7182,7 +7182,8 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [verifyorganizer [<Boolean>]]
 
 gam <UserTypeEntity> get document <DriveFileEntity>
-        [viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
+        [suggestions default|inline|accepted|without]
+        [comments default|included|omitted]
         [targetfolder <FilePath>] [targetname <FileName>]
         [donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]]
 

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.15'
+__version__ = '7.48.16'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -66260,28 +66260,33 @@ COMMENTS_VIEW_MODE_CHOICE_MAP = {
 SUGGESTIONS_VIEW_MODE_CHOICE_MAP = {
   'default': 'DEFAULT_FOR_CURRENT_ACCESS',
   'suggestionsinline': 'SUGGESTIONS_INLINE',
+  'inline': 'SUGGESTIONS_INLINE',
   'previewsuggestionsaccepted': 'PREVIEW_SUGGESTIONS_ACCEPTED',
-  'previewwithoutsuggestions': 'PREVIEW_WITHOUT_SUGGESTIONS'
+  'accepted': 'PREVIEW_SUGGESTIONS_ACCEPTED',
+  'previewwithoutsuggestions': 'PREVIEW_WITHOUT_SUGGESTIONS',
+  'without': 'PREVIEW_WITHOUT_SUGGESTIONS',
   }
 
 # gam <UserTypeEntity> get document <DriveFileEntity>
-#	[viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
-#	[commentsviewmode default|included|omitted]
+#	[suggestions default|inline|accepted|without]
+#	[comments default|included|omitted]
 #	[targetfolder <FilePath>] [targetname <FileName>]
 #	[donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]]
 def getGoogleDocument(users):
   fileIdEntity = getDriveFileEntity()
-  commentsViewMode = None
-  suggestionsViewMode = SUGGESTIONS_VIEW_MODE_CHOICE_MAP['default']
+  kwargs = {}
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
   targetNamePattern = None
   donotFollowShortcuts = overwrite = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
-    if myarg == 'viewmode':
-      suggestionsViewMode = getChoice(SUGGESTIONS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
-    elif myarg == 'commentsviewmode':
-      commentsViewMode = getChoice(COMMENTS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
+    if myarg in {'viewmode', 'suggestions'}:
+      kwargs['suggestionsViewMode'] = getChoice(SUGGESTIONS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
+    elif myarg == 'comments':
+      kwargs['commentsViewMode'] = getChoice(COMMENTS_VIEW_MODE_CHOICE_MAP, mapChoice=True)
+      kwargs['includeTabsContent'] = True
+      if kwargs['commentsViewMode'] == 'COMMENTS_VIEW_MODE_INCLUDED':
+        kwargs['suggestionsViewMode'] = 'SUGGESTIONS_INLINE'
     elif myarg == 'targetfolder':
       targetFolderPattern = setFilePath(getString(Cmd.OB_FILE_PATH), GC.DRIVE_DIR)
     elif myarg == 'targetname':
@@ -66328,13 +66333,13 @@ def getGoogleDocument(users):
           continue
         filename, _ = uniqueFilename(targetFolder, targetName or cleanFilename(docName), overwrite)
         result = callGAPI(docs.documents(), 'get',
-                          throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID_ARGUMENT],
-                          documentId=fileId, suggestionsViewMode=suggestionsViewMode, commentsViewMode=commentsViewMode)
+                          throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                          documentId=fileId, **kwargs)
         if writeFile(filename, json.dumps(result, indent=2, sort_keys=True)+'\n', continueOnError=True):
           entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DOCUMENT, f'{docName}({fileId})'], Act.MODIFIER_TO, filename, j, jcount)
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST, j, jcount)
-      except GAPI.invalidArgument as e:
+      except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], str(e), j, jcount)
       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
         userDriveServiceNotEnabledWarning(user, str(e), i, count)

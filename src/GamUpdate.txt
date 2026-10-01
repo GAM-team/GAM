@@ -1,3 +1,8 @@
+7.48.16
+
+Added option `comments default|included|omitted` to `gam <UserTypeEntity> get document`
+to enable display of document comments.
+
 7.48.15
 
 Addded `showownorganizationonly` to `<CalendarSelectProperty>` that is by used by commands that list
