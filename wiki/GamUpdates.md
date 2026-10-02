@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.16
+
+Added option `comments default|included|omitted` to `gam <UserTypeEntity> get document`
+to enable display of document comments.
+
 7.48.15
 
 Addded `showownorganizationonly` to `<CalendarSelectProperty>` that is by used by commands that list

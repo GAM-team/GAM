@@ -689,10 +689,15 @@ causes GAM to process the shortcut and the target of the shortcut.
 ## Download Google Documents as JSON
 ```
 gam <UserTypeEntity> get document <DriveFileEntity>
-        [viewmode default|suggestions_inline|preview_suggestions_accepted|preview_without_suggestions]
+        [suggestions default|inline|accepted|without]
+        [comments default|included|omitted]
         [targetfolder <FilePath>] [targetname <FileName>]
         [donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]]
 ```
+For `suggestions` see: https://developers.google.com/workspace/docs/api/reference/rest/v1/documents#suggestionsviewmode
+
+For `comments` see: https://developers.google.com/workspace/docs/api/reference/rest/v1/documents#commentsviewmode
+
 By default, when getting a document, it is downloaded to the directory specified in `gam.cfg/drive_dir`.
 * `targetfolder <FilePath>` - Specify an alternate location for the downloaded document.
 
