@@ -1013,11 +1013,7 @@ To filter messages by the time they were created:
 Use `thread <String>` to filter messages by their thread name, e.g., `spaces/AAAAAAAAAAA/threads/123`.
 
 ## Display Chat Messages by Searching
-These commands are in Developer Preview; to use them you must have these values set in `gam.cfg`.
-```
-developer_preview_apis = chat
-developer_preview_api_key = <DeveloperPreviewKey>
-```
+
 See the following for search option details:
 https://developers.google.com/workspace/chat/api/reference/rest/v1/spaces.messages/search
 
