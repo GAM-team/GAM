@@ -40,6 +40,7 @@ CHAT_SPACES_DELETE = 'chatspacesdelete'
 CHAT_SPACES_DELETE_ADMIN = 'chatspacesdeleteadmin'
 CHROMEMANAGEMENT = 'chromemanagement'
 CHROMEMANAGEMENT_APPDETAILS = 'chromemanagementappdetails'
+CHROMEMANAGEMENT_CHROMEBROWSERS = 'chromemanagementchromebrowsers'
 CHROMEMANAGEMENT_CHROMEPROFILES = 'chromemanagementchromeprofiles'
 CHROMEMANAGEMENT_TELEMETRY = 'chromemanagementtelemetry'
 CHROMEPOLICY = 'chromepolicy'
@@ -337,6 +338,10 @@ _CLIENT_SCOPES = [
   {'name': 'Chrome Management API - AppDetails readonly',
    'api': CHROMEMANAGEMENT_APPDETAILS,
    'scope': 'https://www.googleapis.com/auth/chrome.management.appdetails.readonly'},
+  {'name': 'Chrome Management API - Browsers',
+   'api': CHROMEMANAGEMENT_CHROMEBROWSERS,
+   'subscopes': READONLY,
+   'scope': 'https://www.googleapis.com/auth/chrome.management.browsers'},
   {'name': 'Chrome Management API - Profiles',
    'api': CHROMEMANAGEMENT_CHROMEPROFILES,
    'subscopes': READONLY,

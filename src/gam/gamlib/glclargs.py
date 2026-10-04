@@ -861,6 +861,8 @@ class GamCLArgs():
   ARG_CHROMEAPPS = 'chromeapps'
   ARG_CHROMEAPPDEVICES = 'chromeappdevices'
   ARG_CHROMEAUES = 'chromeaues'
+  ARG_CHROMEBROWSER = 'chromebrowser'
+  ARG_CHROMEBROWSERS = 'chromebrowsers'
   ARG_CHROMEHISTORY = 'chromehistory'
   ARG_CHROMENEEDSATTN = 'chromeneedsattn'
   ARG_CHROMENETWORK = 'chromenetwork'

@@ -1,3 +1,7 @@
+7.48.17
+
+`gam <UserTypeEntity> print|show chatsearchmessages` are no longer in Developer Preview.
+
 7.48.16
 
 Added option `comments default|included|omitted` to `gam <UserTypeEntity> get document`

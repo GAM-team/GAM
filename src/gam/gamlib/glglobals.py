@@ -115,6 +115,8 @@ DEBUG_REDACTION = 'dbrd'
 DECODED_ID_TOKEN = 'didt'
 # Developer Preview APIs
 DEVELOPER_PREVIEW_APIS = 'dapi'
+# Developer Preview label
+DEVELOPER_PREVIEW_LABEL = 'dapl'
 # Index of start of <UserTypeEntity> in command line
 ENTITY_CL_DELAY_START = 'ecld'
 ENTITY_CL_START = 'ecls'

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.16'
+__version__ = '7.48.17'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4881,6 +4881,7 @@ def clearServiceCache(service):
 
 DISCOVERY_URIS = [googleapiclient.discovery.V1_DISCOVERY_URI, googleapiclient.discovery.V2_DISCOVERY_URI]
 DEVELOPER_PREVIEW_DISCOVERY_URI = "https://{api}.googleapis.com/$discovery/rest?labels=DEVELOPER_PREVIEW&version={apiVersion}"
+DEVELOPER_TRUSTED_DISCOVERY_URI = "https://{api}.googleapis.com/$discovery/rest?labels=BROWSER_V1_TRUSTED_TESTER&version={apiVersion}"
 
 # Used for API.CLOUDRESOURCEMANAGER, API.SERVICEUSAGE, API.IAM
 def getAPIService(api, httpObj):
@@ -4904,7 +4905,7 @@ def getService(api, httpObj):
           discoveryServiceUrl = DISCOVERY_URIS[v2discovery]
           developerKey = ''
         else:
-          discoveryServiceUrl = DEVELOPER_PREVIEW_DISCOVERY_URI
+          discoveryServiceUrl = GM.Globals.get(GM.DEVELOPER_PREVIEW_LABEL, DEVELOPER_PREVIEW_DISCOVERY_URI)
           developerKey = GC.Values[GC.DEVELOPER_PREVIEW_API_KEY]
         service = googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
                                                   discoveryServiceUrl=discoveryServiceUrl, developerKey=developerKey, static_discovery=False)
@@ -26148,7 +26149,8 @@ def doDeleteBrowsers():
   except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
     checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, deviceId)
 
-BROWSER_TIME_OBJECTS = {'firstRecordTime', 'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime', 'safeBrowsingWarningsResetTime'}
+BROWSER_TIME_OBJECTS = {'firstRecordTime', 'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime',
+                        'omahaRecentFetchTime', 'safeBrowsingWarningsResetTime'}
 
 def _showBrowser(browser, FJQC, i=0, count=0):
   if FJQC.formatJSON:
@@ -26935,6 +26937,114 @@ def doPrintShowBrowsers():
     if sortHeaders:
       csvPF.SetSortTitles(['deviceId'])
     csvPF.writeCSVfile('Browsers')
+
+CHROMEBROWSER_ORDERBY_CHOICE_MAP = {
+  'browserpermanentid': 'browser_permanent_id',
+  'lastsync': 'last_sync',
+  'annotated_user': 'annotated_user',
+  'annotatedlocation': 'annotated_location',
+  'annotatedassetid': 'annotated_asset_id',
+  'annotatednotes': 'annotated_notes',
+  'orgunitpath': 'org_unit_path',
+  'osversion': 'os_version',
+  'enrollmentdate': 'enrollment_date',
+  'extensioncount': 'extension_count',
+  'policycount': 'policy_count',
+  'lastsignedinuser': 'last_signed_in_user',
+  'machinename': 'machine_name',
+  'browserversionchannel': 'browser_version_channel',
+  'osplatformversion': 'os_platform_version',
+  'lastactivitytime': 'last_activity_time',
+  'browserversion': 'browser_version',
+  }
+
+# gam show chromebrowsers
+#	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
+#	[querytime<String> <Time>]
+#	[orderby <BrowserOrderByFieldName> [ascending|descending]]
+#	[formatjson]
+# gam print chromebrowsers [todrive <ToDriveAttribute>*]
+#	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
+#	[querytime<String> <Time>]
+#	[orderby <BrowserOrderByFieldName> [ascending|descending]]
+#	[sortheaders] [formatjson [quotechar <Character>]]
+def doPrintShowChromeBrowsers():
+  def _showBrowser(browser, FJQC, i=0, count=0):
+    if FJQC.formatJSON:
+      printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
+      return
+    printEntity([Ent.CHROME_BROWSER, browser['browserPermanentId']], i, count)
+    Ind.Increment()
+    showJSON(None, browser, timeObjects=BROWSER_TIME_OBJECTS, dictObjectsKey={'machinePolicies': 'name'})
+    Ind.Decrement()
+
+  def _printBrowser(browser):
+    row = flattenJSON(browser, timeObjects=BROWSER_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'browserPermanentId': browser['browserPermanentId'],
+                              'JSON': json.dumps(cleanJSON(browser, timeObjects=BROWSER_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+
+  GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
+  GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  csvPF = CSVPrintFile(['browserPermanentId']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  OBY = OrderBy(CHROMEBROWSER_ORDERBY_CHOICE_MAP)
+  cbfilter = None
+  filterTimes = {}
+  sortHeaders = sortRows = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif myarg == 'orderby':
+      OBY.GetChoice()
+    elif myarg.startswith('filtertime'):
+      filterTimes[myarg] = getTimeOrDeltaFromNow()
+    elif myarg in {'filter', 'filters'}:
+      cbfilter = getString(Cmd.OB_STRING)
+    elif myarg == 'sortheaders':
+      sortHeaders = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if filterTimes and cbfilter is not None:
+    for filterTimeName, filterTimeValue in filterTimes.items():
+      cbfilter = cbfilter.replace(f'#{filterTimeName}#', filterTimeValue)
+  if FJQC.formatJSON:
+    sortHeaders = False
+  customerId = _getCustomerId()
+  parent = f'customers/{customerId}'
+  printGettingAllAccountEntities(Ent.CHROME_BROWSER, cbfilter)
+  pageMessage = getPageMessage()
+  try:
+    feed = yieldGAPIpages(cm.customers().chromeBrowsers(), 'list', 'chromeBrowsers',
+                          pageMessage=pageMessage,
+                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                          parent=parent, filter=cbfilter, orderBy=OBY.orderBy)
+    for browsers in feed:
+      if not csvPF:
+        jcount = len(browsers)
+        if not FJQC.formatJSON:
+          performActionNumItems(jcount, Ent.CHROME_BROWSER)
+        Ind.Increment()
+        j = 0
+        for browser in browsers:
+          j += 1
+          _showBrowser(browser, FJQC, j, jcount)
+        Ind.Decrement()
+      else:
+        for browser in browsers:
+          _printBrowser(browser)
+  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_BROWSER, cbfilter], str(e))
+  if csvPF:
+    if sortHeaders:
+      csvPF.SetSortTitles(['browserPermanentId'])
+    csvPF.writeCSVfile('Chrome Browsers')
 
 BROWSER_TOKEN_TIME_OBJECTS = {'createTime', 'expireTime', 'revokeTime'}
 
@@ -29578,9 +29688,6 @@ CHAT_SEARCHMESSAGES_VIEW_CHOICE_MAP = {'basic': 'SEARCH_MESSAGES_VIEW_BASIC', 'f
 #	[basic|full]
 #	[formatjson [quotechar <Character>]]
 def printShowChatSearchMessages(users):
-  if API.CHAT not in GM.Globals[GM.DEVELOPER_PREVIEW_APIS]:
-    Cmd.Backup()
-    usageErrorExit(Msg.DEVELOPER_PREVIEW_REQUIRED)
   cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['User', 'space.name', 'space.displayName', 'name']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
@@ -66272,12 +66379,15 @@ SUGGESTIONS_VIEW_MODE_CHOICE_MAP = {
 #	[comments default|included|omitted]
 #	[targetfolder <FilePath>] [targetname <FileName>]
 #	[donotfollowshortcuts [<Boolean>]] [overwrite [<Boolean>]]
+#	[csv comments|suggestions|both]
 def getGoogleDocument(users):
   fileIdEntity = getDriveFileEntity()
   kwargs = {}
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
   targetNamePattern = None
   donotFollowShortcuts = overwrite = False
+  csvMode = ''
+  csvPF = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in {'viewmode', 'suggestions'}:
@@ -66295,8 +66405,16 @@ def getGoogleDocument(users):
       donotFollowShortcuts = getBoolean()
     elif myarg == 'overwrite':
       overwrite = getBoolean()
+    elif myarg == 'csv':
+      csvPF = CSVPrintFile(['User', 'id'], 'sortall')
+      csvMode = getChoice(['comments', 'suggestions', 'both'])
     else:
       unknownArgumentExit()
+  if csvPF:
+    if csvMode != 'suggestions' and 'commentsViewMode' in kwargs:
+      csvPF.AddTitles(['commentId', 'commentStatus'])
+    if csvMode != 'comments' and 'suggestionsViewMode' in kwargs:
+      csvPF.AddTitles(['suggestionId', 'suggestionStatus'])
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -66335,8 +66453,30 @@ def getGoogleDocument(users):
         result = callGAPI(docs.documents(), 'get',
                           throwReasons=GAPI.DRIVE_GET_THROW_REASONS+[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                           documentId=fileId, **kwargs)
-        if writeFile(filename, json.dumps(result, indent=2, sort_keys=True)+'\n', continueOnError=True):
-          entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DOCUMENT, f'{docName}({fileId})'], Act.MODIFIER_TO, filename, j, jcount)
+        if not csvPF:
+          if writeFile(filename, json.dumps(result, indent=2, sort_keys=True)+'\n', continueOnError=True):
+            entityModifierNewValueActionPerformed([Ent.USER, user, Ent.DOCUMENT, f'{docName}({fileId})'], Act.MODIFIER_TO, filename, j, jcount)
+        else:
+          commentRows = []
+          suggestionRows = []
+          if csvMode != 'suggestions':
+            for comment in result.get('comments', []):
+              if comment['headPost']['author'].get('me', False):
+                commentRows.append({'commentId': comment['commentId'], 'commentStatus': comment['status']})
+          if csvMode != 'comments':
+            for suggestion in result.get('suggestions', []):
+              if suggestion['headPost']['author'].get('me', False):
+                suggestionRows.append({'suggestionId': suggestion['suggestionId'], 'suggestionStatus': suggestion['status']})
+          lenComments = len(commentRows)
+          lenSuggestions = len(suggestionRows)
+          baserow = {'User': user, 'id': fileId}
+          for i in range(max(lenComments, lenSuggestions)):
+            row = baserow.copy()
+            if i < lenComments:
+              row.update(commentRows[i])
+            if i < lenSuggestions:
+              row.update(suggestionRows[i])
+            csvPF.WriteRow(row)
       except GAPI.fileNotFound:
         entityActionFailedWarning([Ent.USER, user, Ent.DOCUMENT, fileId], Msg.DOES_NOT_EXIST, j, jcount)
       except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
@@ -66345,6 +66485,8 @@ def getGoogleDocument(users):
         userDriveServiceNotEnabledWarning(user, str(e), i, count)
         break
     Ind.Decrement()
+  if csvPF:
+    csvPF.writeCSVfile('Document Comments Suggestions')
 
 # gam <UserTypeEntity> update docuument <DriveFileEntity>
 #	((json [charset <Charset>] <SpreadsheetJSONUpdateRequest>) |
@@ -81648,6 +81790,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEAPP:	doPrintShowChromeApps,
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
+      Cmd.ARG_CHROMEBROWSER:	doPrintShowChromeBrowsers,
       Cmd.ARG_CHROMEDEVICECOUNTS:	doPrintShowChromeDeviceCounts,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
@@ -81773,7 +81916,6 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ALERT:		doPrintShowAlerts,
       Cmd.ARG_ALERTFEEDBACK:	doPrintShowAlertFeedback,
       Cmd.ARG_ALERTSETTINGS:	doShowAlertSettings,
-      Cmd.ARG_BROWSER:		doPrintShowBrowsers,
       Cmd.ARG_BROWSERTOKEN:	doPrintShowBrowserTokens,
       Cmd.ARG_BUILDING:		doPrintShowBuildings,
       Cmd.ARG_CAALEVEL:		doPrintShowCAALevels,
@@ -81787,6 +81929,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEAPP:	doPrintShowChromeApps,
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
+      Cmd.ARG_CHROMEBROWSER:	doPrintShowChromeBrowsers,
       Cmd.ARG_CHROMEDEVICECOUNTS:	doPrintShowChromeDeviceCounts,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
@@ -81978,6 +82121,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHANNELSKUS:		Cmd.ARG_CHANNELSKU,
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,
   Cmd.ARG_CHROMEAPPS:		Cmd.ARG_CHROMEAPP,
+  Cmd.ARG_CHROMEBROWSERS:	Cmd.ARG_CHROMEBROWSER,
   Cmd.ARG_CHROMENETWORKS:	Cmd.ARG_CHROMENETWORK,
   Cmd.ARG_CHROMEPOLICIES:	Cmd.ARG_CHROMEPOLICY,
   Cmd.ARG_CHROMEPROFILES:	Cmd.ARG_CHROMEPROFILE,
