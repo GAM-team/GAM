@@ -15,6 +15,7 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 Updated commands with option `stripcrsfromname` to strip NULL characters from the item name.
 
 Fixed bug in `gam show browsers select <BrowserEntity>` that caused a trap.
+
 7.48.17
 
 `gam <UserTypeEntity> print|show chatsearchmessages` are no longer in Developer Preview.
