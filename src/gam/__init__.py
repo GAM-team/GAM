@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.17'
+__version__ = '7.48.18'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -525,7 +525,7 @@ def executeBatch(dbatch):
     time.sleep(GC.Values[GC.INTER_BATCH_WAIT])
 
 def _stripControlCharsFromName(name):
-  for cc in ['\x00', '\r', '\n']:
+  for cc in ['\0', '\r', '\n']:
     name = name.replace(cc, '')
   return name
 
@@ -26926,7 +26926,10 @@ def doPrintShowBrowsers():
         browser = callGAPI(cbcm.chromebrowsers(), 'get',
                            throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
                            customer=customerId, deviceId=deviceId, projection=projection, fields=fields)
-        _printBrowser(browser)
+        if not csvPF:
+          _showBrowser(browser, FJQC, j, jcount)
+        else:
+          _printBrowser(browser)
       except GAPI.invalidArgument as e:
         entityActionFailedWarning([Ent.CHROME_BROWSER, deviceId], str(e))
       except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
