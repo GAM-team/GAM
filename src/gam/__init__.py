@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.19'
+__version__ = '7.48.20'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -26519,25 +26519,24 @@ def doPrintShowChromeProfiles():
   printGettingAllAccountEntities(Ent.CHROME_PROFILE, cbfilter)
   pageMessage = getPageMessage()
   try:
-    feed = yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
-                          pageMessage=pageMessage,
-                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                          parent=parent, pageSize=200,
-                          filter=cbfilter, orderBy=OBY.orderBy, fields=fields)
-    for profiles in feed:
-      if not csvPF:
-        jcount = len(profiles)
-        if not FJQC.formatJSON:
-          performActionNumItems(jcount, Ent.CHROME_PROFILE)
-        Ind.Increment()
-        j = 0
-        for profile in profiles:
-          j += 1
-          _showChromeProfile(profile, FJQC, j, jcount)
-        Ind.Decrement()
-      else:
-        for profile in profiles:
-          _printProfile(profile)
+    profiles = callGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
+                             pageMessage=pageMessage,
+                             throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             parent=parent, pageSize=200,
+                             filter=cbfilter, orderBy=OBY.orderBy, fields=fields)
+    if not csvPF:
+      jcount = len(profiles)
+      if not FJQC.formatJSON:
+        performActionNumItems(jcount, Ent.CHROME_PROFILE)
+      Ind.Increment()
+      j = 0
+      for profile in profiles:
+        j += 1
+        _showChromeProfile(profile, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for profile in profiles:
+        _printProfile(profile)
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.CHROME_PROFILE, cbfilter], str(e))
   if csvPF:
@@ -26884,26 +26883,25 @@ def doPrintShowBrowsers():
       printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
       pageMessage = getPageMessage()
       try:
-        feed = yieldGAPIpages(cbcm.chromebrowsers(), 'list', 'browsers',
-                              pageMessage=pageMessage, messageAttribute='deviceId',
-                              throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
-                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                              customer=customerId, orgUnitPath=orgUnitPath, query=query, projection=projection,
-                              orderBy=orderBy, sortOrder=sortOrder, fields=fields)
-        for browsers in feed:
-          if not csvPF:
-            jcount = len(browsers)
-            if not FJQC.formatJSON:
-              performActionNumItems(jcount, Ent.CHROME_BROWSER)
-            Ind.Increment()
-            j = 0
-            for browser in browsers:
-              j += 1
-              _showBrowser(browser, FJQC, j, jcount)
-            Ind.Decrement()
-          else:
-            for browser in browsers:
-              _printBrowser(browser)
+        browsers = callGAPIpages(cbcm.chromebrowsers(), 'list', 'browsers',
+                                 pageMessage=pageMessage, messageAttribute='deviceId',
+                                 throwReasons=[GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.INVALID_ARGUMENT, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
+                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                                 customer=customerId, orgUnitPath=orgUnitPath, query=query, projection=projection,
+                                 orderBy=orderBy, sortOrder=sortOrder, fields=fields)
+        if not csvPF:
+          jcount = len(browsers)
+          if not FJQC.formatJSON:
+            performActionNumItems(jcount, Ent.CHROME_BROWSER)
+          Ind.Increment()
+          j = 0
+          for browser in browsers:
+            j += 1
+            _showBrowser(browser, FJQC, j, jcount)
+          Ind.Decrement()
+        else:
+          for browser in browsers:
+            _printBrowser(browser)
       except GAPI.invalidInput as e:
         if query:
           entityActionFailedWarning([Ent.CHROME_BROWSER, None], invalidQuery(query))
@@ -27023,25 +27021,24 @@ def doPrintShowChromeBrowsers():
   printGettingAllAccountEntities(Ent.CHROME_BROWSER, cbfilter)
   pageMessage = getPageMessage()
   try:
-    feed = yieldGAPIpages(cm.customers().chromeBrowsers(), 'list', 'chromeBrowsers',
-                          pageMessage=pageMessage,
-                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                          parent=parent, filter=cbfilter, orderBy=OBY.orderBy)
-    for browsers in feed:
-      if not csvPF:
-        jcount = len(browsers)
-        if not FJQC.formatJSON:
-          performActionNumItems(jcount, Ent.CHROME_BROWSER)
-        Ind.Increment()
-        j = 0
-        for browser in browsers:
-          j += 1
-          _showBrowser(browser, FJQC, j, jcount)
-        Ind.Decrement()
-      else:
-        for browser in browsers:
-          _printBrowser(browser)
+    browsers = callGAPIpages(cm.customers().chromeBrowsers(), 'list', 'chromeBrowsers',
+                             pageMessage=pageMessage,
+                             throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                             retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                             parent=parent, filter=cbfilter, orderBy=OBY.orderBy)
+    if not csvPF:
+      jcount = len(browsers)
+      if not FJQC.formatJSON:
+        performActionNumItems(jcount, Ent.CHROME_BROWSER)
+      Ind.Increment()
+      j = 0
+      for browser in browsers:
+        j += 1
+        _showBrowser(browser, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for browser in browsers:
+        _printBrowser(browser)
   except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
     entityActionFailedExit([Ent.CHROME_BROWSER, cbfilter], str(e))
   if csvPF:
