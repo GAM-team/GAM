@@ -1,7 +1,3 @@
-7.48.20
-
-Fixed bug in `gam show browsers|chromeprofiles` that displayed invalid item counts.
-
 7.48.19
 
 Updated commands with option `stripcrsfromname` to strip NULL characters from the item name.
