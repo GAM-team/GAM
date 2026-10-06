@@ -1,3 +1,7 @@
+7.48.22
+
+Fixed bug in `gam info inboundssoprofile id:inboundSamlSsoProfiles/<String>` that caused an error.
+
 7.48.21
 
 Fixed bug in `gam <UserTypeEntity> purge events` and `gam calendars <CalendarEntity> purge events`

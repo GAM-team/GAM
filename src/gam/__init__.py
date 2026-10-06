@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.21'
+__version__ = '7.48.22'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -49617,7 +49617,7 @@ def _convertInboundSSOProfileDisplaynameToName(ci, mode, displayName='',
   if displayName.lower().startswith('id:') or displayName.lower().startswith('uid:'):
     displayName = displayName.split(':', 1)[1]
     if mode == 'all':
-      if not (displayName.startswith('inboundSamlSsoProfiles/') and
+      if not (displayName.startswith('inboundSamlSsoProfiles/') or
               displayName.startswith('inboundOidcSsoProfiles/')):
         displayName = f'inboundSamlSsoProfiles/{displayName}'
     elif mode == 'saml':
