@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.19'
+__version__ = '7.48.21'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -26518,6 +26518,7 @@ def doPrintShowChromeProfiles():
   parent = f'customers/{customerId}'
   printGettingAllAccountEntities(Ent.CHROME_PROFILE, cbfilter)
   pageMessage = getPageMessage()
+  j = jcount = 0
   try:
     feed = yieldGAPIpages(cm.customers().profiles(), 'list', 'chromeBrowserProfiles',
                           pageMessage=pageMessage,
@@ -26526,11 +26527,10 @@ def doPrintShowChromeProfiles():
                           filter=cbfilter, orderBy=OBY.orderBy, fields=fields)
     for profiles in feed:
       if not csvPF:
-        jcount = len(profiles)
+        jcount += len(profiles)
         if not FJQC.formatJSON:
           performActionNumItems(jcount, Ent.CHROME_PROFILE)
         Ind.Increment()
-        j = 0
         for profile in profiles:
           j += 1
           _showChromeProfile(profile, FJQC, j, jcount)
@@ -26880,6 +26880,7 @@ def doPrintShowBrowsers():
   substituteQueryTimes(queries, queryTimes)
   if entityList is None:
     fields = getItemFieldsFromFieldsList('browsers', fieldsList) if not rawFields else f'nextPageToken,browsers({rawFields})'
+    j = jcount = 0
     for query in queries:
       printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
       pageMessage = getPageMessage()
@@ -26892,11 +26893,10 @@ def doPrintShowBrowsers():
                               orderBy=orderBy, sortOrder=sortOrder, fields=fields)
         for browsers in feed:
           if not csvPF:
-            jcount = len(browsers)
+            jcount += len(browsers)
             if not FJQC.formatJSON:
               performActionNumItems(jcount, Ent.CHROME_BROWSER)
             Ind.Increment()
-            j = 0
             for browser in browsers:
               j += 1
               _showBrowser(browser, FJQC, j, jcount)
@@ -43017,15 +43017,17 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
     if not cal:
       continue
     try:
+      if not emptyTrash:
+        Act.Set(Act.PURGE)
+        _deleteCalendarEvents(origUser, user, cal, [calId], count, calendarEventEntity, parameters)
+        if not parameters['doIt']:
+          continue
       purgeCalId = callGAPI(cal.calendars(), 'insert',
                             throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.FORBIDDEN],
                             body=body, fields='id')['id']
       Act.Set(Act.CREATE)
       entityActionPerformed(entityValueList)
       Ind.Increment()
-      if not emptyTrash:
-        Act.Set(Act.DELETE)
-        _deleteCalendarEvents(origUser, user, cal, [calId], count, calendarEventEntity, parameters)
       Act.Set(Act.MOVE)
       calendarEventEntity['kwargs']['showDeleted'] = True
       _moveCalendarEvents(origUser, user, cal, [calId], count, calendarEventEntity, purgeCalId, parameters)
@@ -43041,7 +43043,7 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
     except GAPI.notACalendarUser:
       userCalServiceNotEnabledWarning(calId, i, count)
 
-# gam calendars <CalendarEntity> purge event <EventEntity>
+# gam calendars <CalendarEntity> purge events <EventEntity>
 #	[batchsize <Integer>] [doit] [<EventNotificationAttribute>]
 def doCalendarsPurgeEvents(calIds):
   calendarEventEntity = getCalendarEventEntity()

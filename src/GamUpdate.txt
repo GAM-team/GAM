@@ -1,3 +1,12 @@
+7.48.21
+
+Fixed bug in `gam <UserTypeEntity> purge events` and `gam calendars <CalendarEntity> purge events`
+where the absence of `doit` was not honored.
+
+7.48.20
+
+Fixed bug in `gam show browsers|chromeprofiles` that displayed invalid item counts.
+
 7.48.19
 
 Updated commands with option `stripcrsfromname` to strip NULL characters from the item name.
