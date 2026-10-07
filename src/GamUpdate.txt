@@ -1,3 +1,10 @@
+7.48.23
+
+Fixed bug in `gam <UserTypeEntity> draft|import|insert message` and `gam <UserTypeEntity> sendemail`
+where `attach <FileName>` and `embedimage <FileName>` were not properly handled.
+
+Thanks to @ramonchu
+
 7.48.22
 
 Fixed bug in `gam info inboundssoprofile id:inboundSamlSsoProfiles/<String>` that caused an error.

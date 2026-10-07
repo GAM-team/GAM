@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.22'
+__version__ = '7.48.23'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -26971,48 +26971,139 @@ def doPrintShowBrowsers():
       csvPF.SetSortTitles(['deviceId'])
     csvPF.writeCSVfile('Browsers')
 
+def _getChromeBrowserName():
+  browserName = getString(Cmd.OB_CHROMEBROWSER_NAME)
+  if not browserName.startswith('customers'):
+    customerId = _getCustomerId()
+    browserName = f'customers/{customerId}/chromeBrowsers/{browserName}'
+  return browserName
+
+CHROMEBROWSER_TIME_OBJECTS = {'lastActivityTime', 'lastPolicyFetchTime', 'lastRegistrationTime', 'lastStatusReportTime',
+                              'omahaRecentFetchTime'}
+
+def _showChromeBrowser(browser, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.CHROME_BROWSER, browser['browserPermanentId']], i, count)
+  Ind.Increment()
+  showJSON(None, browser, timeObjects=CHROMEBROWSER_TIME_OBJECTS, dictObjectsKey={'machinePolicies': 'name'})
+  Ind.Decrement()
+
+CHROMEBROWSER_FIELDS_CHOICE_MAP = {
+  'annotatedlocation': 'annotatedLocation',
+  'annotateduser': 'annotatedUser',
+  'annotatedassetid': 'annotatedAssetId',
+  'annotatednotes': 'annotatedNotes',
+  'attestationcredential': 'attestationCredential',
+  'browserpermanentid': 'browserPermanentId',
+  'browserversions': 'browserVersions',
+  'browsers': 'browsers',
+  'deviceid': 'browserPermanentId',
+  'deviceidentifiershistory': 'deviceIdentifiersHistory',
+  'extensioncount': 'extensionCount',
+  'lastactivitytime': 'lastActivityTime',
+  'lastdeviceuser': 'lastDeviceUser',
+  'lastdeviceusers': 'lastDeviceUsers',
+  'lastpolicyfetchtime': 'lastPolicyFetchTime',
+  'lastsregistrationtime': 'lastRegistrationTime',
+  'laststatusreporttime': 'lastStatusReportTime',
+  'machinename': 'machineName',
+  'machineextensionpolicies': 'machineExtensionPolicies',
+  'machinepolicies': 'machinePolicies',
+  'name': 'name',
+  'omaharecentfetchtime': 'omahaRecentFetchTime',
+  'orgunitid': 'orgUnitId',
+  'osarchitecture': 'osArchitecture',
+  'osplatform': 'osPlatform',
+  'osplatformversion':'osPlatformVersion',
+  'osversion': 'osVersion',
+  'policycount': 'policyCount',
+  'serialnumber': 'serialNumber',
+  'virtualdeviceid': 'virtualDeviceId',
+   }
+CHROMEBROWSER_BASIC_FIELDS = [
+  'browserVersions',
+  'browserPermanentId',
+  'deviceIdentifiersHistory',
+  'extensionCount',
+  'lastActivityTime',
+  'lastDeviceUser',
+  'lastPolicyFetchTime',
+  'lastRegistrationTime',
+  'machineName',
+  'orgUnitId',
+  'osArchitecture',
+  'osPlatform',
+  'osPlatformVersion',
+  'osVersion',
+  'policyCount',
+  'serialNumber',
+  'virtualDeviceId',
+  ]
+CHROMEBROWSER_ANNOTATED_FIELDS_LIST = ['annotatedAssetId', 'annotatedLocation', 'annotatedNotes', 'annotatedUser', 'deviceId']
+CHROMEBROWSER_FULL_ACCESS_FIELDS = {'browsers', 'lastDeviceUsers', 'lastStatusReportTime', 'machinePolicies'}
+
+# gam info chromebrowser <ChromeBrowserName>
+#	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+#	[formatjson]
+def doInfoChromeBrowser():
+  GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
+  GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  browserName = _getChromeBrowserName()
+  fieldsList = []
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if getFieldsList(myarg, CHROMEBROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='browserPermanentId'):
+      pass
+    else:
+      FJQC.GetFormatJSON(myarg)
+  if not fieldsList:
+    fieldsList.extend(CHROMEBROWSER_BASIC_FIELDS)
+  fields = getFieldsFromFieldsList(fieldsList)
+  try:
+    browser = callGAPI(cm.customers().chromeBrowsers(), 'get',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                       name=browserName, fields=fields)
+    _showChromeBrowser(browser, FJQC)
+  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_BROWSER, browserName], str(e))
+
 CHROMEBROWSER_ORDERBY_CHOICE_MAP = {
-  'browserpermanentid': 'browser_permanent_id',
+  'browserpermanentid': 'browserPermanentId',
   'lastsync': 'last_sync',
-  'annotated_user': 'annotated_user',
-  'annotatedlocation': 'annotated_location',
-  'annotatedassetid': 'annotated_asset_id',
-  'annotatednotes': 'annotated_notes',
+  'annotateduser': 'annotatedUser',
+  'annotatedlocation': 'annotatedLocation',
+  'annotatedassetid': 'annotatedAssetId',
+  'annotatednotes': 'annotatedNotes',
   'orgunitpath': 'org_unit_path',
-  'osversion': 'os_version',
+  'osversion': 'osVersion',
   'enrollmentdate': 'enrollment_date',
-  'extensioncount': 'extension_count',
-  'policycount': 'policy_count',
+  'extensioncount': 'extensionCount',
+  'policycount': 'policyCount',
   'lastsignedinuser': 'last_signed_in_user',
-  'machinename': 'machine_name',
+  'machinename': 'machineName',
   'browserversionchannel': 'browser_version_channel',
-  'osplatformversion': 'os_platform_version',
-  'lastactivitytime': 'last_activity_time',
-  'browserversion': 'browser_version',
+  'osplatformversion': 'osPlatformVersion',
+  'lastactivitytime': 'lastActivityTime',
+  'browserversion': 'browserVersion',
   }
 
 # gam show chromebrowsers
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
 #	[querytime<String> <Time>]
-#	[orderby <BrowserOrderByFieldName> [ascending|descending]]
+#	[orderby <ChromeBrowserOrderByFieldName> [ascending|descending]]
 #	[formatjson]
 # gam print chromebrowsers [todrive <ToDriveAttribute>*]
 #	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
 #	[querytime<String> <Time>]
-#	[orderby <BrowserOrderByFieldName> [ascending|descending]]
+#	[orderby <ChromwBrowserOrderByFieldName> [ascending|descending]]
 #	[sortheaders] [formatjson [quotechar <Character>]]
 def doPrintShowChromeBrowsers():
-  def _showBrowser(browser, FJQC, i=0, count=0):
-    if FJQC.formatJSON:
-      printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
-      return
-    printEntity([Ent.CHROME_BROWSER, browser['browserPermanentId']], i, count)
-    Ind.Increment()
-    showJSON(None, browser, timeObjects=BROWSER_TIME_OBJECTS, dictObjectsKey={'machinePolicies': 'name'})
-    Ind.Decrement()
-
-  def _printBrowser(browser):
-    row = flattenJSON(browser, timeObjects=BROWSER_TIME_OBJECTS)
+  def _printChromeBrowser(browser):
+    row = flattenJSON(browser, timeObjects=CHROMEBROWSER_TIME_OBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
@@ -27023,18 +27114,255 @@ def doPrintShowChromeBrowsers():
   GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
   GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
   cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  cd = buildGAPIObject(API.DIRECTORY)
   csvPF = CSVPrintFile(['browserPermanentId']) if Act.csvFormat() else None
   FJQC = FormatJSONQuoteChar(csvPF)
+  fieldsList = []
   OBY = OrderBy(CHROMEBROWSER_ORDERBY_CHOICE_MAP)
-  cbfilter = None
-  filterTimes = {}
+  entityList = None
+  queries = [None]
+  queryTimes = {}
   sortHeaders = sortRows = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
+    elif getFieldsList(myarg, CHROMEBROWSER_FIELDS_CHOICE_MAP, fieldsList, initialField='browserPermanentId'):
+      pass
+    elif myarg == 'select':
+      _, entityList = getEntityToModify(defaultEntityType=Cmd.ENTITY_BROWSER, browserAllowed=True, crosAllowed=False, userAllowed=False)
     elif myarg == 'orderby':
       OBY.GetChoice()
+    elif myarg in {'query', 'queries'}:
+      queries = getDeviceQueries(myarg, Ent.CHROME_BROWSER)
+    elif myarg.startswith('querytime'):
+      queryTimes[myarg] = getTimeOrDeltaFromNow()[0:19]
+    elif myarg == 'sortheaders':
+      sortHeaders = True
+    else:
+      FJQC.GetFormatJSONQuoteChar(myarg, True)
+  if FJQC.formatJSON:
+    sortHeaders = False
+  if not fieldsList:
+    fieldsList.extend(CHROMEBROWSER_BASIC_FIELDS)
+  substituteQueryTimes(queries, queryTimes)
+  customerId = _getCustomerId()
+  if entityList is None:
+    fields = getItemFieldsFromFieldsList('chromeBrowsers', fieldsList)
+    j = jcount = 0
+    parent = f'customers/{customerId}'
+    for query in queries:
+      printGettingAllAccountEntities(Ent.CHROME_BROWSER, query)
+      pageMessage = getPageMessage()
+      try:
+        feed = yieldGAPIpages(cm.customers().chromeBrowsers(), 'list', 'chromeBrowsers',
+                              pageMessage=pageMessage,
+                              throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
+                              retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
+                              parent=parent, filter=query, orderBy=OBY.orderBy, fields=fields)
+        for browsers in feed:
+          if not csvPF:
+            jcount += len(browsers)
+            if not FJQC.formatJSON:
+              performActionNumItems(jcount, Ent.CHROME_BROWSER)
+            Ind.Increment()
+            for browser in browsers:
+              j += 1
+              if 'orgUnitId' in browser:
+                browser['orgUnitPath'] = convertOrgUnitIDtoPath(cd, f"id:{browser['orgUnitId']}")
+              _showChromeBrowser(browser, FJQC, j, jcount)
+            Ind.Decrement()
+          else:
+            for browser in browsers:
+              if 'orgUnitId' in browser:
+                browser['orgUnitPath'] = convertOrgUnitIDtoPath(cd, f"id:{browser['orgUnitId']}")
+              _printChromeBrowser(browser)
+      except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
+        entityActionFailedExit([Ent.CHROME_BROWSER, query], str(e))
+  else:
+    sortRows = True
+    jcount = len(entityList)
+    fields = getFieldsFromFieldsList(fieldsList)
+    j = 0
+    for name in entityList:
+      j += 1
+      if not name.startswith('customers'):
+        name = f'customers/{customerId}/chromeBrowsers/{name}'
+      try:
+        browser = callGAPI(cm.customers().chromeBrowsers(), 'get',
+                           throwReasons=[GAPI.BAD_REQUEST, GAPI.RESOURCE_NOT_FOUND, GAPI.INVALID_ARGUMENT, GAPI.FORBIDDEN],
+                           name=name, fields=fields)
+        if not csvPF:
+          _showChromeBrowser(browser, FJQC, j, jcount)
+        else:
+          _printChromeBrowser(browser)
+      except GAPI.invalidArgument as e:
+        entityActionFailedWarning([Ent.CHROME_BROWSER, name], str(e))
+      except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+        checkEntityAFDNEorAccessErrorExit(None, Ent.CHROME_BROWSER, name)
+  if csvPF:
+#    if sortRows and OBY.orderBy:
+#      csvPF.SortRows(OBY.orderBy, reverse=sortOrder == 'DESCENDING')
+    if sortHeaders:
+      csvPF.SetSortTitles(['browserPermanentId'])
+    csvPF.writeCSVfile('Chrome Browsers')
+
+CHROMEBROWSER_TOKEN_TIME_OBJECTS = {'createTime', 'expireTime', 'revokeTime'}
+
+def _cleanChromeBrowserToken(browser, cd):
+  if 'orgUnitId' in browser:
+    browser['orgUnitPath'] = convertOrgUnitIDtoPath(cd, f"id:{browser['orgUnitId']}")
+  if 'state' in browser:
+    browser['state'] = browser['state'].replace('ENROLLMENT_TOKEN_STATE_', '').lower()
+  if 'tokenType' in browser:
+    browser['tokenType'] = browser['tokenType'].replace('ENROLLMENT_TOKEN_TYPE_', '').replace('CHROME_BROWSER', 'chromeBrowser')
+  
+def _showChromeBrowserToken(browser, FJQC, i=0, count=0):
+  if FJQC.formatJSON:
+    printLine(json.dumps(cleanJSON(browser), ensure_ascii=False, sort_keys=True))
+    return
+  printEntity([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, browser['token']], i, count)
+  Ind.Increment()
+  showJSON(None, browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS)
+  Ind.Decrement()
+
+# gam create chromebrowsertoken
+#	[formatjson]
+def doCreateChromeBrowserToken():
+  GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
+  GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  customerId = _getCustomerId()
+  parent = f'customers/{customerId}'
+  enrollmentTokenId = str(uuid.uuid4())
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'enrollmentTokenId':
+      pass
+    else:
+      FJQC.GetFormatJSON(myarg)
+  try:
+    browser = callGAPI(cm.customers().enrollmentTokens(), 'create',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                       parent=parent, enrollmentTokenId=enrollmentTokenId)
+    if not FJQC.formatJSON:
+      entityActionPerformed([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, browser['token']])
+    Ind.Increment()
+    _showChromeBrowserToken(browser, FJQC, 0, 0)
+    Ind.Decrement()
+  except GAPI.invalidArgument as e:
+    entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
+  except (GAPI.badRequest, GAPI.forbidden):
+    accessErrorExit(None)
+
+def _getChromeBrowserTokenName():
+  browserName = getString(Cmd.OB_CHROMEBROWSER_NAME)
+  if not browserName.startswith('customers'):
+    customerId = _getCustomerId()
+    browserName = f'customers/{customerId}/enrollmentTokens/{browserName}'
+  return browserName
+
+# gam revoke chromebrowsertoken <BrowserTokenPermanentID>
+def doRevokeChromeBrowserToken():
+  GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
+  GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  name = _getChromeBrowserTokenName()
+  checkForExtraneousArguments()
+  try:
+    callGAPI(cm.customers().enrollmentTokens(), 'revoke',
+             throwReasons=[GAPI.INVALID, GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
+             name=name)
+    entityActionPerformed([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, name])
+  except (GAPI.invalid, GAPI.invalidArgument, GAPI.badRequest, GAPI.resourceNotFound, GAPI.invalidOrgunit) as e:
+    entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, name], str(e))
+  except GAPI.forbidden:
+    accessErrorExit(None)
+
+CHROMEBROWSER_TOKEN_FIELDS_CHOICE_MAP = {
+  'createtime': 'createTime',
+  'creatorid': 'creatorId',
+  'customerid': 'customerId',
+  'expiretime': 'expireTime',
+  'name': 'name',
+  'org': 'orgUnitPath',
+  'orgunit': 'orgUnitPath',
+  'orgunitpath': 'orgUnitPath',
+  'ou': 'orgUnitPath',
+  'revoketime': 'revokeTime',
+  'revokerid': 'revokerId',
+  'state': 'state',
+  'token': 'token',
+  'tokenpermanentid': 'tokenPermanentId',
+  }
+
+
+# gam info chromebrowsertoken <ChromeBrowserTokenName>
+#	<ChromeProfileFieldName>* [fields <ChromeProfileFieldNameList>]
+#	[formatjson]
+def doInfoChromeBrowserToken():
+  GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
+  GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  cd = buildGAPIObject(API.DIRECTORY)
+  browserName = _getChromeBrowserTokenName()
+  fieldsList = []
+  FJQC = FormatJSONQuoteChar()
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if getFieldsList(myarg, CHROMEBROWSER_TOKEN_FIELDS_CHOICE_MAP, fieldsList, initialField='token'):
+      pass
+    else:
+      FJQC.GetFormatJSON(myarg)
+  fields = getFieldsFromFieldsList(fieldsList)
+  try:
+    browser = callGAPI(cm.customers().enrollmentTokens(), 'get',
+                       throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.NOT_FOUND, GAPI.PERMISSION_DENIED],
+                       name=browserName, fields=fields)
+    _cleanChromeBrowserToken(browser, cd)
+    _showChromeBrowserToken(browser, FJQC)
+  except (GAPI.invalidArgument, GAPI.notFound, GAPI.permissionDenied) as e:
+    entityActionFailedExit([Ent.CHROME_BROWSER, browserName], str(e))
+
+# gam show chromebrowsertokens
+#	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
+#	[querytime<String> <Time>]
+#	[orderby <BrowserTokenFieldName> [ascending|descending]]
+#	[allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+#	[formatjson]
+# gam print chromebrowsertokens [todrive <ToDriveAttribute>*]
+#	([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
+#	[querytime<String> <Time>]
+#	[orderby <BrowserTokenFieldName> [ascending|descending]]
+#	[allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+#	[sortheaders] [formatjson [quotechar <Character>]]
+def doPrintShowChromeBrowserTokens():
+  def _printChromeBrowserToken(browser):
+    row = flattenJSON(browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS)
+    if not FJQC.formatJSON:
+      csvPF.WriteRowTitles(row)
+    elif csvPF.CheckRowTitles(row):
+      csvPF.WriteRowNoFilter({'token': browser['token'],
+                              'JSON': json.dumps(cleanJSON(browser, timeObjects=BROWSER_TOKEN_TIME_OBJECTS),
+                                                 ensure_ascii=False, sort_keys=True)})
+
+  GM.Globals[GM.DEVELOPER_PREVIEW_APIS].add(API.CHROMEMANAGEMENT)
+  GM.Globals[GM.DEVELOPER_PREVIEW_LABEL] = DEVELOPER_TRUSTED_DISCOVERY_URI
+  cm = buildGAPIObject(API.CHROMEMANAGEMENT)
+  cd = buildGAPIObject(API.DIRECTORY)
+  csvPF = CSVPrintFile(['token']) if Act.csvFormat() else None
+  FJQC = FormatJSONQuoteChar(csvPF)
+  fieldsList = []
+  cbfilter = None
+  filterTimes = {}
+  sortHeaders = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if csvPF and myarg == 'todrive':
+      csvPF.GetTodriveParameters()
+    elif getFieldsList(myarg, CHROMEBROWSER_TOKEN_FIELDS_CHOICE_MAP, fieldsList, initialField='token'):
+      pass
     elif myarg.startswith('filtertime'):
       filterTimes[myarg] = getTimeOrDeltaFromNow()
     elif myarg in {'filter', 'filters'}:
@@ -27043,6 +27371,7 @@ def doPrintShowChromeBrowsers():
       sortHeaders = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
+  fields = getItemFieldsFromFieldsList('enrollmentTokens', fieldsList)
   if filterTimes and cbfilter is not None:
     for filterTimeName, filterTimeValue in filterTimes.items():
       cbfilter = cbfilter.replace(f'#{filterTimeName}#', filterTimeValue)
@@ -27050,34 +27379,40 @@ def doPrintShowChromeBrowsers():
     sortHeaders = False
   customerId = _getCustomerId()
   parent = f'customers/{customerId}'
-  printGettingAllAccountEntities(Ent.CHROME_BROWSER, cbfilter)
+  printGettingAllAccountEntities(Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, cbfilter)
   pageMessage = getPageMessage()
   try:
-    feed = yieldGAPIpages(cm.customers().chromeBrowsers(), 'list', 'chromeBrowsers',
-                          pageMessage=pageMessage,
-                          throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
-                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
-                          parent=parent, filter=cbfilter, orderBy=OBY.orderBy)
-    for browsers in feed:
-      if not csvPF:
-        jcount = len(browsers)
-        if not FJQC.formatJSON:
-          performActionNumItems(jcount, Ent.CHROME_BROWSER)
-        Ind.Increment()
-        j = 0
-        for browser in browsers:
-          j += 1
-          _showBrowser(browser, FJQC, j, jcount)
-        Ind.Decrement()
-      else:
-        for browser in browsers:
-          _printBrowser(browser)
-  except (GAPI.invalidArgument, GAPI.permissionDenied) as e:
-    entityActionFailedExit([Ent.CHROME_BROWSER, cbfilter], str(e))
+    browsers = callGAPIpages(cm.customers().enrollmentTokens(), 'list', 'enrollmentTokens',
+                             pageMessage=pageMessage,
+                             throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.BAD_REQUEST, GAPI.INVALID_ORGUNIT, GAPI.FORBIDDEN],
+                             parent=parent, filter=cbfilter, fields=fields)
+    if not csvPF:
+      jcount = len(browsers)
+      performActionNumItems(jcount, Ent.CHROME_BROWSER_ENROLLMENT_TOKEN)
+      Ind.Increment()
+      j = 0
+      for browser in browsers:
+        j += 1
+        _cleanChromeBrowserToken(browser, cd)
+        _showChromeBrowserToken(browser, FJQC, j, jcount)
+      Ind.Decrement()
+    else:
+      for browser in browsers:
+        _cleanChromeBrowserToken(browser, cd)
+        _printChromeBrowserToken(browser)
+  except GAPI.invalidArgument as e:
+    if cbfilter:
+      entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], invalidQuery(cbfilter))
+    else:
+      entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
+  except GAPI.invalidOrgunit as e:
+    entityActionFailedWarning([Ent.CHROME_BROWSER_ENROLLMENT_TOKEN, None], str(e))
+  except (GAPI.badRequest, GAPI.resourceNotFound, GAPI.forbidden):
+    accessErrorExit(None)
   if csvPF:
     if sortHeaders:
-      csvPF.SetSortTitles(['browserPermanentId'])
-    csvPF.writeCSVfile('Chrome Browsers')
+      csvPF.SetSortTitles(['token'])
+    csvPF.writeCSVfile('Chrome Browser Enrollment Tokens')
 
 BROWSER_TOKEN_TIME_OBJECTS = {'createTime', 'expireTime', 'revokeTime'}
 
@@ -43053,10 +43388,10 @@ def _purgeCalendarEvents(origUser, user, origCal, calIds, count, calendarEventEn
         _deleteCalendarEvents(origUser, user, cal, [calId], count, calendarEventEntity, parameters)
         if not parameters['doIt']:
           continue
+      Act.Set(Act.CREATE)
       purgeCalId = callGAPI(cal.calendars(), 'insert',
                             throwReasons=GAPI.CALENDAR_THROW_REASONS+[GAPI.FORBIDDEN],
                             body=body, fields='id')['id']
-      Act.Set(Act.CREATE)
       entityActionPerformed(entityValueList)
       Ind.Increment()
       Act.Set(Act.MOVE)
@@ -81513,6 +81848,7 @@ MAIN_ADD_CREATE_FUNCTIONS = {
   Cmd.ARG_BUILDING:		doCreateBuilding,
   Cmd.ARG_CAALEVEL:		doCreateCAALevel,
   Cmd.ARG_CHATMESSAGE:		doCreateChatMessage,
+  Cmd.ARG_CHROMEBROWSERTOKEN:	doCreateChromeBrowserToken,
   Cmd.ARG_CHROMENETWORK:	doCreateChromeNetwork,
   Cmd.ARG_CHROMEPOLICYIMAGE:	doCreateChromePolicyImage,
   Cmd.ARG_CHROMEPROFILECOMMAND:	doCreateChromeProfileCommand,
@@ -81724,6 +82060,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHATMESSAGE:	doInfoChatMessage,
       Cmd.ARG_CHATSPACE:	doInfoChatSpace,
       Cmd.ARG_CHROMEAPP:	doInfoChromeApp,
+      Cmd.ARG_CHROMEBROWSER:	doInfoChromeBrowser,
+      Cmd.ARG_CHROMEBROWSERTOKEN:	doInfoChromeBrowserToken,
       Cmd.ARG_CHROMEPROFILE:	doInfoChromeProfile,
       Cmd.ARG_CHROMEPROFILECOMMAND:	doInfoChromeProfileCommand,
       Cmd.ARG_CHROMESCHEMA:	doInfoChromePolicySchemas,
@@ -81812,6 +82150,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
       Cmd.ARG_CHROMEBROWSER:	doPrintShowChromeBrowsers,
+      Cmd.ARG_CHROMEBROWSERTOKEN:	doPrintShowChromeBrowserTokens,
       Cmd.ARG_CHROMEDEVICECOUNTS:	doPrintShowChromeDeviceCounts,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
@@ -81918,6 +82257,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
   'revoke':
     (Act.REVOKE,
      {Cmd.ARG_BROWSERTOKEN:	doRevokeBrowserToken,
+      Cmd.ARG_CHROMEBROWSERTOKEN:	doRevokeChromeBrowserToken,
      }
     ),
   'send':
@@ -81952,6 +82292,7 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_CHROMEAPPDEVICES:	doPrintShowChromeAppDevices,
       Cmd.ARG_CHROMEAUES:	doPrintShowChromeAues,
       Cmd.ARG_CHROMEBROWSER:	doPrintShowChromeBrowsers,
+      Cmd.ARG_CHROMEBROWSERTOKEN:	doPrintShowChromeBrowserTokens,
       Cmd.ARG_CHROMEDEVICECOUNTS:	doPrintShowChromeDeviceCounts,
       Cmd.ARG_CHROMEHISTORY:	doPrintShowChromeHistory,
       Cmd.ARG_CHROMENEEDSATTN:	doPrintShowChromeNeedsAttn,
@@ -82144,6 +82485,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,
   Cmd.ARG_CHROMEAPPS:		Cmd.ARG_CHROMEAPP,
   Cmd.ARG_CHROMEBROWSERS:	Cmd.ARG_CHROMEBROWSER,
+  Cmd.ARG_CHROMEBROWSERTOKENS:	Cmd.ARG_CHROMEBROWSERTOKEN,
   Cmd.ARG_CHROMENETWORKS:	Cmd.ARG_CHROMENETWORK,
   Cmd.ARG_CHROMEPOLICIES:	Cmd.ARG_CHROMEPOLICY,
   Cmd.ARG_CHROMEPROFILES:	Cmd.ARG_CHROMEPROFILE,
