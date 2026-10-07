@@ -7439,11 +7439,46 @@ def _addEmbeddedImagesToMessage(message, embeddedImages):
       else:
         msg = MIMEBase(main_type, sub_type)
         msg.set_payload(readFile(imageFilename, 'rb'))
-      msg.add_header('Content-Disposition', 'attachment', filename=os.path.basename(imageFilename))
+      msg.add_header('Content-Disposition', 'inline', filename=os.path.basename(imageFilename))
       msg.add_header('Content-ID', f'<{embeddedImage[1]}>')
       message.attach(msg)
     except (IOError, UnicodeDecodeError) as e:
       usageErrorExit(f'{imageFilename}: {str(e)}')
+
+# Build a message from text and/or HTML bodies, attachments and embedded images
+# multipart/mixed (only if attachments)
+#   multipart/alternative (only if text and HTML)
+#     text/plain
+#     multipart/related (only if embedded images)
+#       text/html
+#       embedded images (inline)
+#   attachments
+def _buildMessageWithAttachments(msgText, msgHTML, attachments, embeddedImages, charset=UTF8):
+  if msgHTML:
+    body = MIMEText(msgHTML, 'html', charset)
+    if embeddedImages:
+      related = MIMEMultipart('related')
+      related.attach(body)
+      _addEmbeddedImagesToMessage(related, embeddedImages)
+      body = related
+    if msgText:
+      alternative = MIMEMultipart('alternative')
+      alternative.attach(MIMEText(msgText, 'plain', charset))
+      alternative.attach(body)
+      body = alternative
+  else:
+    body = MIMEText(msgText, 'plain', charset)
+# Without an HTML part, embedded images go in the outer message as before
+  outerImages = embeddedImages if not msgHTML else None
+  if not attachments and not outerImages:
+    return body
+  message = MIMEMultipart()
+  message.attach(body)
+  if attachments:
+    _addAttachmentsToMessage(message, attachments)
+  if outerImages:
+    _addEmbeddedImagesToMessage(message, outerImages)
+  return message
 
 # Send an email
 def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msgFrom=None, msgReplyTo=None,
@@ -7483,13 +7518,8 @@ def send_email(msgSubject, msgBody, msgTo, i=0, count=0, clientAccess=False, msg
   if not attachments and not embeddedImages:
     message = MIMEText(msgBody, ['plain', 'html'][html], charset)
   else:
-    message = MIMEMultipart()
-    msg = MIMEText(msgBody, ['plain', 'html'][html], charset)
-    message.attach(msg)
-    if attachments:
-      _addAttachmentsToMessage(message, attachments)
-    if embeddedImages:
-      _addEmbeddedImagesToMessage(message, embeddedImages)
+    message = _buildMessageWithAttachments(None if html else msgBody, msgBody if html else None,
+                                           attachments, embeddedImages, charset)
   message['Subject'] = msgSubject
   message['From'], msgFromAddr = cleanAddr(msgFrom)
   if msgReplyTo is not None:
@@ -76103,22 +76133,7 @@ def _draftImportInsertMessage(users, operation):
         tmpText = _processTagReplacements(tagReplacements, msgText)
         tmpHTML = _processTagReplacements(tagReplacements, msgHTML)
       if attachments or embeddedImages:
-        if tmpText and tmpHTML:
-          message = MIMEMultipart('alternative')
-          textpart = MIMEText(tmpText, 'plain', UTF8)
-          message.attach(textpart)
-          htmlpart = MIMEText(tmpHTML, 'html', UTF8)
-          message.attach(htmlpart)
-        elif tmpHTML:
-          message = MIMEMultipart()
-          htmlpart = MIMEText(tmpHTML, 'html', UTF8)
-          message.attach(htmlpart)
-        else:
-          message = MIMEMultipart()
-          textpart = MIMEText(tmpText, 'plain', UTF8)
-          message.attach(textpart)
-        _addAttachmentsToMessage(message, attachments)
-        _addEmbeddedImagesToMessage(message, embeddedImages)
+        message = _buildMessageWithAttachments(tmpText, tmpHTML, attachments, embeddedImages)
       else:
         if tmpText and tmpHTML:
           message = MIMEMultipart('alternative')
