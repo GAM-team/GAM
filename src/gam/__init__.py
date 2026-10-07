@@ -31817,6 +31817,7 @@ def _makeDeviceId(name, device):
 DEVICE_TYPE_MAP = {
   'android': 'ANDROID',
   'chromeos': 'CHROME_OS',
+  'googlebook': 'GOOGLEBOOK',
   'googlesync': 'GOOGLE_SYNC',
   'ios': 'IOS',
   'linux': 'LINUX',
