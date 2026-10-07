@@ -17,9 +17,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Enable 3.15 lazy loading without syntax errors in 3.10–3.14
+import sys
+if hasattr(sys, "set_lazy_imports"):
+  sys.set_lazy_imports("all")
+
 import multiprocessing
 import platform
-import sys
 
 import gam
 
