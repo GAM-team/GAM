@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.23
+
+Fixed bug in `gam <UserTypeEntity> draft|import|insert message` and `gam <UserTypeEntity> sendemail`
+where `attach <FileName>` and `embedimage <FileName>` were not properly handled.
+
+Thanks to @ramonchu
+
 7.48.22
 
 Fixed bug in `gam info inboundssoprofile id:inboundSamlSsoProfiles/<String>` that caused an error.
