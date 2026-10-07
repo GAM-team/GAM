@@ -148,6 +148,7 @@ jobs:
           freethreaded: ${{ matrix.freethreaded }}
 
       - name: common variables for all runs
+        id: common-vars
         env:
           ACTIONS_GOAL: ${{ matrix.goal }}
           freethreaded: ${{ matrix.freethreaded }}
@@ -168,6 +169,8 @@ jobs:
           echo "DEPS_CUTOFF=${DEPS_CUTOFF}" >> $GITHUB_ENV
           export JID=$(( ${{ strategy.job-index }} + 1 ))
           echo "JID=${JID}" >> $GITHUB_ENV
+          # We must also output JID so we can use it later in GH actions env outside the shell.
+          echo "jid=${JID}" >> $GITHUB_OUTPUT
           echo "freethreaded=${freethreaded}" >> $GITHUB_ENV
           if "$freethreaded"; then
             # Hush some warnings while we test
@@ -474,7 +477,7 @@ jobs:
       - name: Configure user and service account auth
         id: configserviceaccount
         env:
-          oa2: ${{ secrets[format('GAM_GHA_{0}', strategy.job-index)] }}
+          oa2: ${{ secrets[format('GAM_GHA_{0}', steps.common-vars.outputs.jid)] }}
         run: |
           ../.github/actions/decrypt.sh "${GAMCFGDIR}"
           $gam create signjwtserviceaccount
