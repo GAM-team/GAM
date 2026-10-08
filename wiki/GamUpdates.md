@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.24
+
+Updated `gam <UserTypeEntity> draft|import|insert message` and `gam <UserTypeEntity> sendemail`
+with `embedimage <FileName>` to add additional headers to make message compatible with Gmail.
+
+Thanks to @ramonchu
+
 7.48.23
 
 Fixed bug in `gam <UserTypeEntity> draft|import|insert message` and `gam <UserTypeEntity> sendemail`
