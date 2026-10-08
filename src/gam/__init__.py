@@ -7441,6 +7441,10 @@ def _addEmbeddedImagesToMessage(message, embeddedImages):
         msg.set_payload(readFile(imageFilename, 'rb'))
       msg.add_header('Content-Disposition', 'inline', filename=os.path.basename(imageFilename))
       msg.add_header('Content-ID', f'<{embeddedImage[1]}>')
+# Gmail marks its own inline images with these headers; without them, a draft later sent
+# from the Gmail web UI has its images rewritten as regular attachments
+      msg.add_header('X-Attachment-Id', embeddedImage[1])
+      msg.add_header('X-Attachment-Content-Disposition', 'inline')
       message.attach(msg)
     except (IOError, UnicodeDecodeError) as e:
       usageErrorExit(f'{imageFilename}: {str(e)}')
