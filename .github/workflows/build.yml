@@ -109,14 +109,14 @@ jobs:
             name: Test Python 3.13
           - os: ubuntu-26.04
             goal: test
-            python: "3.15-dev"
+            python: "3.14"
             freethreaded: false
-            name: Test Python 3.15-dev
+            name: Test Python 3.14
           - os: ubuntu-26.04
             goal: test
-            python: "3.14"
+            python: "3.15"
             freethreaded: true
-            name: Test Python 3.14 freethread
+            name: Test Python 3.15 freethread
 
     steps:
 
