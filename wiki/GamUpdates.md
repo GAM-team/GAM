@@ -10,6 +10,14 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.25
+
+Added options `addlabelid <LabelID>` and `removelabelid <LabelID>` to `gam <UserTypeEntity> modify messages`
+that avoid the extra API calls required by `addlabel <LabelName>` and `removelabel <LabelName>`.
+
+Added option `oneitemperrow` to `gam <UserTypeEntity> print messages|threads ... showlabels countsonly`
+that displays label counts on separate rows rather than in columns on a single row.
+
 7.48.24
 
 Updated `gam <UserTypeEntity> draft|import|insert message` and `gam <UserTypeEntity> sendemail`
