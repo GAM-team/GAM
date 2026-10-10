@@ -8176,7 +8176,7 @@ gam <UserTypeEntity> modify messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
          [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
-        ((addlabel <LabelName>)|(removelabel <LabelName>))+
+        ((addlabel <LabelName>)|(removelabel <LabelName>)|(addlabelid <LabelID>)|(removelabelid <LabelID>))+
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> spam messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
@@ -8223,7 +8223,9 @@ gam <UserTypeEntity> show messages|threads
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [countsonly|positivecountsonly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-        [showlabels] [useronly] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [showlabels] [useronly]
+        [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [countsonly|positivecountsonly]
         [maxmessagesperthread <Number>]
         [[attachmentnamepattern <REMatchPattern>]
             [showattachments [noshowtextplain]]
@@ -8234,11 +8236,12 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
-        [countsonly|positivecountsonly]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String> [dateheaderconverttimezone [<Boolean>]]]
-        [showlabels] [useronly] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [showlabels] [useronly] [delimiter <Character>]
+        [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [countsonly|positivecountsonly] [oneitemperrow]
         [maxmessagesperthread <Number>]
-        [convertcrnl] [delimiter <Character>]
+        [convertcrnl]
         [[attachmentnamepattern <REMatchPattern>]
             [showattachments [noshowtextplain]]]
         (addcsvdata <FieldName> <String>)*

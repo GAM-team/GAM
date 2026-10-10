@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.24'
+__version__ = '7.48.25'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -75823,14 +75823,18 @@ def _processMessagesThreads(users, entityType):
       addLabelNames.append(getString(Cmd.OB_LABEL_NAME))
     elif (function == 'modify') and (myarg == 'removelabel'):
       removeLabelNames.append(getString(Cmd.OB_LABEL_NAME))
+    elif (function == 'modify') and (myarg == 'addlabelid'):
+      addLabelIds.append(getString(Cmd.OB_LABEL_ID))
+    elif (function == 'modify') and (myarg == 'removelabelid'):
+      removeLabelIds.append(getString(Cmd.OB_LABEL_ID))
     elif myarg == 'csv':
       csvPF = CSVPrintFile(['User', entityHeader, 'action', 'error'])
     elif csvPF and myarg == 'todrive':
       csvPF.GetTodriveParameters()
     else:
       unknownArgumentExit()
-  if function == 'modify' and not addLabelNames and not removeLabelNames:
-    missingArgumentExit('(addlabel <LabelName>)|(removelabel <LabelName>)')
+  if function == 'modify' and not addLabelNames and not removeLabelNames and not addLabelIds and not removeLabelIds:
+    missingArgumentExit('(addlabel <LabelName>)|(removelabel <LabelName>)|(addlabelid <LabelId>)|(removelabelid <LabelId>)')
   _finalizeMessageSelectParameters(parameters, True)
   includeSpamTrash = Act.Get() in [Act.DELETE, Act.MODIFY, Act.UNTRASH]
   if function == 'spam':
@@ -75849,8 +75853,8 @@ def _processMessagesThreads(users, entityType):
       if not userGmailLabels:
         continue
       labelNameMap = _initLabelNameMap(userGmailLabels)
-      addLabelIds = _convertLabelNamesToIds(gmail, user, i, count, addLabelNames, labelNameMap, True)
-      removeLabelIds = _convertLabelNamesToIds(gmail, user, i, count, removeLabelNames, labelNameMap, False)
+      addLabelIds.extend(_convertLabelNamesToIds(gmail, user, i, count, addLabelNames, labelNameMap, True))
+      removeLabelIds.extend(_convertLabelNamesToIds(gmail, user, i, count, removeLabelNames, labelNameMap, False))
       if not addLabelIds and not removeLabelIds:
         entityActionNotPerformedWarning([Ent.USER, user], Msg.NO_LABELS_TO_PROCESS, i, count)
         continue
@@ -75914,7 +75918,7 @@ def _processMessagesThreads(users, entityType):
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
 #	 [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
-#	(addlabel <LabelName>)* (removelabel <LabelName>)*
+#	((addlabel <LabelName>)|(removelabel <LabelName>)|(addlabelid <LabelID>)|(removelabelid <LabelID>))+
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
@@ -75944,6 +75948,7 @@ def processMessages(users):
 #	 [labelids <LabelIDList>]
 #	 [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
+#	(addlabelid <LabelID>)* (removelabelid <LabelID>)*
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
@@ -77075,7 +77080,7 @@ def printShowMessagesThreads(users, entityType):
   parameters = _initMessageThreadParameters(entityType, True, 0)
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
-  countsOnly = positiveCountsOnly = includeSpamTrash = onlyUser = overwrite = save_attachments = upload_attachments = False
+  countsOnly = positiveCountsOnly = includeSpamTrash = oneItemPerRow = onlyUser = overwrite = save_attachments = upload_attachments = False
   show_all_headers = show_attachments = show_body = show_date = show_html = show_labels = show_size = show_snippet = False
   noshow_text_plain = False
   attachmentNamePattern = None
@@ -77136,6 +77141,8 @@ def printShowMessagesThreads(users, entityType):
       countsOnly = True
     elif myarg == 'positivecountsonly':
       countsOnly = positiveCountsOnly = True
+    elif myarg == 'oneitemperrow':
+      oneItemPerRow = True
     elif myarg in {'onlyuser', 'useronly'}:
       onlyUser = getBoolean()
     elif myarg == 'dateheaderformat':
@@ -77164,16 +77171,21 @@ def printShowMessagesThreads(users, entityType):
           sortTitles = ['User']
         else:
           sortTitles = ['User', 'Sender']
-        csvPF.SetIndexedTitles(['Labels'])
+        if not oneItemPerRow:
+          csvPF.SetIndexedTitles(['Labels'])
+        else:
+          sortTitles.extend(['Label', 'Count', 'Type'])
+          if show_size:
+            sortTitles.append('Size')
         _callbacks = {'batch': _callbackCountLabels, 'process': _countMessageLabels if entityType == Ent.MESSAGE else _countThreadLabels}
       else:
         if not senderMatchPattern:
           sortTitles = ['User', parameters['listType']]
         else:
           sortTitles = ['User', 'Sender', parameters['listType']]
+        if show_size:
+          sortTitles.append('size')
         _callbacks = {'batch': _callbackCountLabels, 'process': _countMessages if entityType == Ent.MESSAGE else _countThreads}
-      if show_size:
-        sortTitles.append('size')
       if addCSVData:
         sortTitles.extend(sorted(addCSVData.keys()))
       csvPF.SetTitles(sortTitles)
@@ -77311,7 +77323,7 @@ def printShowMessagesThreads(users, entityType):
               if not show_size:
                 printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
               else:
-                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Size', label['size'], 'Type', label['type']], j, jcount)
+                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type'], 'Size', label['size']], j, jcount)
             Ind.Decrement()
         else:
           for sender, labelsMap in sorted(senderLabelsMaps.items()):
@@ -77323,7 +77335,16 @@ def printShowMessagesThreads(users, entityType):
                 label.pop('size', None)
             if addCSVData:
               row.update(addCSVData)
-            csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(labelsMap.values(), key=lambda k: k['name'])}, flattened=row))
+            if not oneItemPerRow:
+              csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(labelsMap.values(), key=lambda k: k['name'])}, flattened=row))
+            else:
+              baseRow = row.copy()
+              for label in sorted(labelsMap.values(), key=lambda k: k['name']):
+                row = baseRow.copy()
+                row.update({Ent.Singular(Ent.LABEL): label['name'], 'Count': label['count'], 'Type': label['type']})
+                if show_size:
+                  row['Size'] = label['size']
+                csvPF.WriteRow(row)
       elif not senderMatchPattern:
         v = messageThreadCounts[parameters['listType']]
         if not positiveCountsOnly or v > 0:
@@ -77331,7 +77352,7 @@ def printShowMessagesThreads(users, entityType):
             if not show_size:
               printEntityKVList([Ent.USER, user], [parameters['listType'], v], i, count)
             else:
-              printEntityKVList([Ent.USER, user], [parameters['listType'], v, 'size', messageThreadCounts['size']], i, count)
+              printEntityKVList([Ent.USER, user], [parameters['listType'], v, 'Size', messageThreadCounts['size']], i, count)
           else:
             if not show_size:
               messageThreadCounts.pop('size', None)
@@ -77353,11 +77374,11 @@ def printShowMessagesThreads(users, entityType):
           if not csvPF:
             for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
-                printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'size', v['size']], i, count)
+                printEntityKVList([Ent.USER, user, Ent.SENDER, k], [parameters['listType'], v['count'], 'Size', v['size']], i, count)
           else:
             for k, v in sorted(senderCounts.items()):
               if not positiveCountsOnly or v['count'] > 0:
-                row = {'User': user, 'Sender': k, parameters['listType']: v['count'], 'size': v['size']}
+                row = {'User': user, 'Sender': k, parameters['listType']: v['count'], 'Size': v['size']}
                 if addCSVData:
                   row.update(addCSVData)
                 csvPF.WriteRow(row)
@@ -77383,9 +77404,10 @@ def printShowMessagesThreads(users, entityType):
 #	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [useronly] [delimiter <Character>] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
-#	[convertcrnl] [delimiter <Character>]
-#	[countsonly|positivecountsonly] [useronly]
+#	[showlabels] [useronly] [delimiter <Character>]
+#	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
+#	[countsonly|positivecountsonly] [oneitemperrow]
+#	[convertcrnl]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
@@ -77395,7 +77417,8 @@ def printShowMessagesThreads(users, entityType):
 #	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [useronly] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+#	[showlabels] [useronly]
+#	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[countsonly|positivecountsonly]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]
@@ -77412,7 +77435,7 @@ def printShowMessages(users):
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
 #	[convertcrnl] [delimiter <Character>]
-#	[countsonly|positivecountsonly] [useronly]
+#	[countsonly|positivecountsonly] [useronly] [oneitemperrow]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
