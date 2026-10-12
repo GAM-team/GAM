@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.25'
+__version__ = '7.48.26'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -77081,7 +77081,7 @@ def printShowMessagesThreads(users, entityType):
   convertCRNL = GC.Values[GC.CSV_OUTPUT_CONVERT_CR_NL]
   delimiter = GC.Values[GC.CSV_OUTPUT_FIELD_DELIMITER]
   countsOnly = positiveCountsOnly = includeSpamTrash = oneItemPerRow = onlyUser = overwrite = save_attachments = upload_attachments = False
-  show_all_headers = show_attachments = show_body = show_date = show_html = show_labels = show_size = show_snippet = False
+  show_all_headers = show_attachments = show_body = show_date = show_html = show_labels = show_label_ids = show_size = show_snippet = False
   noshow_text_plain = False
   attachmentNamePattern = None
   targetFolderPattern = GC.Values[GC.DRIVE_DIR]
@@ -77115,6 +77115,8 @@ def printShowMessagesThreads(users, entityType):
       show_html = True
     elif myarg == 'showlabels':
       show_labels = True
+    elif myarg == 'showlabelids':
+      show_label_ids = True
     elif myarg == 'showsize':
       show_size = True
     elif myarg == 'showsnippet':
@@ -77177,6 +77179,8 @@ def printShowMessagesThreads(users, entityType):
           sortTitles.extend(['Label', 'Count', 'Type'])
           if show_size:
             sortTitles.append('Size')
+          if show_label_ids:
+            sortTitles.append('Id')
         _callbacks = {'batch': _callbackCountLabels, 'process': _countMessageLabels if entityType == Ent.MESSAGE else _countThreadLabels}
       else:
         if not senderMatchPattern:
@@ -77318,12 +77322,15 @@ def printShowMessagesThreads(users, entityType):
             entityPerformActionNumItems(kvlist, jcount, Ent.LABEL, i, count)
             Ind.Increment()
             j = 0
-            for label in sorted(labelsMap.values(), key=lambda k: k['name']):
+            for labelId, label in sorted(labelsMap.items(), key=lambda k: k[1]['name']):
               j += 1
-              if not show_size:
-                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type']], j, jcount)
-              else:
-                printEntityKVList([Ent.LABEL, label['name']], ['Count', label['count'], 'Type', label['type'], 'Size', label['size']], j, jcount)
+              kvlist = [Ent.LABEL, label['name']]
+              itemlist = ['Count', label['count'], 'Type', label['type']]
+              if show_size:
+                itemlist.extend(['Size', label['size']])
+              if show_label_ids:
+                itemlist.extend(['Id', labelId])
+              printEntityKVList(kvlist, itemlist, j, jcount)
             Ind.Decrement()
         else:
           for sender, labelsMap in sorted(senderLabelsMaps.items()):
@@ -77339,11 +77346,13 @@ def printShowMessagesThreads(users, entityType):
               csvPF.WriteRowTitles(flattenJSON({'Labels': sorted(labelsMap.values(), key=lambda k: k['name'])}, flattened=row))
             else:
               baseRow = row.copy()
-              for label in sorted(labelsMap.values(), key=lambda k: k['name']):
+              for labelId, label in sorted(labelsMap.items(), key=lambda k: k[1]['name']):
                 row = baseRow.copy()
                 row.update({Ent.Singular(Ent.LABEL): label['name'], 'Count': label['count'], 'Type': label['type']})
                 if show_size:
                   row['Size'] = label['size']
+                if show_label_ids:
+                  row['Id'] = labelId
                 csvPF.WriteRow(row)
       elif not senderMatchPattern:
         v = messageThreadCounts[parameters['listType']]
@@ -77406,7 +77415,7 @@ def printShowMessagesThreads(users, entityType):
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [useronly] [delimiter <Character>]
 #	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
-#	[countsonly|positivecountsonly] [oneitemperrow]
+#	[countsonly|positivecountsonly] [showlabelids] [oneitemperrow]
 #	[convertcrnl]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]]
@@ -77419,7 +77428,7 @@ def printShowMessagesThreads(users, entityType):
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [useronly]
 #	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
-#	[countsonly|positivecountsonly]
+#	[countsonly|positivecountsonly] [showlabelids]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]
 #	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
@@ -77433,9 +77442,10 @@ def printShowMessages(users):
 #	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
-#	[convertcrnl] [delimiter <Character>]
-#	[countsonly|positivecountsonly] [useronly] [oneitemperrow]
+#	[showlabels] [useronly] [delimiter <Character>]
+#	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
+#	[countsonly|positivecountsonly] [showlabelids] [oneitemperrow]
+#	[convertcrnl]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]]
 #	(addcsvdata <FieldName> <String>)*
@@ -77445,8 +77455,9 @@ def printShowMessages(users):
 #	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-#	[showlabels] [showbody] [showhtml] [showdate] [showsize] [showsnippet]
-#	[countsonly|positivecountsonly] [useronly]
+#	[showlabels] [useronly]
+#	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
+#	[countsonly|positivecountsonly] [showlabelids]
 #	[[attachmentnamepattern <REMatchPattern>]
 #	    [showattachments [noshowtextplain]]
 #	    [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
