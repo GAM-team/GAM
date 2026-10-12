@@ -6,6 +6,7 @@
 - [Empty the trash on My Drive](#empty-the-trash-on-my-drive)
 - [Empty the trash on a Shared Drive](#empty-the-trash-on-a-shared-drive)
 - [Delete contents of My Drive](#delete-contents-of-my-drive)
+- [Delete contents of a Shared Drive](#delete-contents-of-a-shared-drive)
 
 ## API documentation
 * [Drive API - Files](https://developers.google.com/drive/v3/reference/files)
@@ -69,7 +70,7 @@ gam redirect stdout ./DrivefileUsage.txt user user@domain.com show drivesettings
 ```
 Generate an initial list of files.
 ```
-gam redirect csv ./InitialFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby name
+gam redirect csv ./InitialFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby folder orderby name
 ```
 Purge top level files/folders; includes orphans.
 ```
@@ -77,7 +78,7 @@ gam config csv_input_row_filter "depth:count=0" redirect stdout ./PurgeTopLevelF
 ```
 Generate list of remaining files/folders; this list should be empty; investigate if not.
 ```
-gam redirect csv ./FinalFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby name
+gam redirect csv ./FinalFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby folder orderby name
 ```
 Show updated drive usage.
 ```
@@ -112,7 +113,7 @@ gam config csv_input_row_filter "depth:count=0" redirect stdout ./PurgeOrphanFil
 ```
 Generate list of remaining files/folders; this list should be empty; investigate if not.
 ```
-gam redirect csv ./FinalFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby name
+gam redirect csv ./FinalFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby folder orderby name
 ```
 Show updated drive usage.
 ```
@@ -146,9 +147,41 @@ gam config csv_input_row_filter "depth:count=0" redirect stdout ./PurgeOrphanFil
 ```
 Generate list of remaining files/folders; this list should be empty; investigate if not.
 ```
-gam redirect csv ./FinalFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby name
+gam redirect csv ./FinalFileList.csv user user@domain.com print filelist fields id,name,mimetype,basicpermissions,parents fullpath showdepth orderby folder orderby name
 ```
 Show updated drive usage.
 ```
 gam redirect stdout ./DrivefileUsage.txt append user user@domain.com show drivesettings
+```
+
+## Delete contents of a Shared Drive
+
+The following commands will delete the contents of a Shared Drive.
+
+The commands must be run as a manager/organizer of the Shared Drive; replace user@domain.com with actual value.
+
+This is not reversible, Think before proceeding.
+
+* Generate a complete list of files/folders on the Shared Drive; this gives you a record of the files/folders that will be deleted. 
+* This list may be quite large.
+* Delete the top level files/folders.
+
+Generate an initial list of files; this is optional.
+```
+gam redirect csv ./InitialFileList.csv user user@domain.com print filelist select shareddriveid <SharedDriveID> fields id,name,mimetype,driveid showdrivename fullpath orderby folder orderby name
+```
+
+Get list of top level files/folders.
+```
+gam redirect csv ./TopLevelFilesFolders.csv user user@domain.com print filelist select shareddriveid <SharedDriveID> fields id,name,mimetype,driveid query "'<SharedDriveID>' in parents" orderby folder orderby name
+```
+
+Purge top level files/folders.
+```
+gam redirect stdout ./PurgeTopLevelFilesFolders.txt multiprocess redirect stderr stdout csv ./TopLevelFilesFolders.csv gam user "~Owner" purge drivefile "~id"
+```
+
+Generate list of remaining files/folders; this list should be empty; investigate if not.
+```
+gam redirect csv ./FinalFileList.csv user user@domain.com print filelist select shareddriveid <SharedDriveID> fields id,name,mimetype,driveid showdrivename fullpath orderby folder orderby name
 ```

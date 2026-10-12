@@ -614,21 +614,20 @@ gam config auto_batch_min 1 groups_inde EastOffice delete message query "rfc822m
 
 ## Display messages/threads
 ```
-gam <UserTypeEntity> show messages|threads
+gam <UserTypeEntity> show messages
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
-        [showlabels] [useronly] [delimiter <Character>]
+        [showlabels] [useronly]
         [showbody] [showhtml] [showdate] [showsize] [showsnippet]
-        [countsonly|positivecountsonly]
-        [maxmessagesperthread <Number>]
+        [countsonly|positivecountsonly] [showlabelids]
         [[attachmentnamepattern <REMatchPattern>]
             [showattachments [noshowtextplain]]
             [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
             [uploadattachments [<DriveFileParentAttribute>]]]
-gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
+gam <UserTypeEntity> print messages [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
@@ -636,10 +635,36 @@ gam <UserTypeEntity> print messages|threads [todrive <ToDriveAttribute>*]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly] [delimiter <Character>]
         [showbody] [showhtml] [showdate] [showsize] [showsnippet]
-        [countsonly|positivecountsonly] [oneitemperrow]
+        [countsonly|positivecountsonly] [showlabelids] [oneitemperrow]
         [convertcrnl]
-        [maxmessagesperthread <Number>]
-        [attachmentnamepattern <REMatchPattern>]
+        [[attachmentnamepattern <REMatchPattern>]
+            [showattachments [noshowtextplain]]]
+        (addcsvdata <FieldName> <String>)*
+
+gam <UserTypeEntity> show thread|threads
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+         [labelids <LabelIDList>]
+         [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+        [labelmatchpattern <REMatchPattern>]
+        [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
+        [showlabels] [useronly]
+        [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [countsonly|positivecountsonly] [showlabelids]
+        [[attachmentnamepattern <REMatchPattern>]
+            [showattachments [noshowtextplain]]
+            [saveattachments [targetfolder <FilePath>] [overwrite [<Boolean>]]]
+            [uploadattachments [<DriveFileParentAttribute>]]]
+gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
+        (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
+         [labelids <LabelIDList>]
+         [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+        [labelmatchpattern <REMatchPattern>]
+        [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
+        [showlabels] [useronly] [delimiter <Character>]
+        [showbody] [showhtml] [showdate] [showsize] [showsnippet]
+        [countsonly|positivecountsonly] [showlabelids] [oneitemperrow]
+        [convertcrnl]
+        [[attachmentnamepattern <REMatchPattern>]
             [showattachments [noshowtextplain]]]
         (addcsvdata <FieldName> <String>)*
 ```
@@ -721,6 +746,7 @@ The `dateheaderconverttimezone [<Boolean>]>` option converts `<SMTPDateHeader>` 
 * `showlabels` - Display the message labels
 * `countsonly` - Display all message label counts
 * `positivecountsonly` - Display message label counts that are greater than 0
+* `showlabelids` - Display the label ID
 * `showsize` - Display the cumulative message size for each label
 * `useronly` - Do not display system labels
 * `oneitemperrow` - Display label counts on separate rows rather than in columns on a single row.
