@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.26'
+__version__ = '7.48.27'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -74876,7 +74876,7 @@ def buildLabelPath(gmail, user, i, count, body, label, labelSet, l=0, lcount=0):
                             throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE],
                             userId='me', body=body, fields='id,name')
         labelSet[newLabel['name']] = newLabel['id']
-        entityActionPerformed([Ent.USER, user, Ent.LABEL, labelPath], j, jcount)
+        entityActionPerformed([Ent.USER, user, Ent.LABEL, labelPath, Ent.LABEL_ID, newLabel['id']], j, jcount)
       except GAPI.duplicate:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL, labelPath], Msg.DUPLICATE, j, jcount)
         break
@@ -74926,10 +74926,10 @@ def createLabels(users, labelEntity):
       body['name'] = label
       if not buildPath:
         try:
-          callGAPI(gmail.users().labels(), 'create',
-                   throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.INVALID, GAPI.PERMISSION_DENIED],
-                   userId='me', body=body, fields='')
-          entityActionPerformed([Ent.USER, user, Ent.LABEL, label], l, lcount)
+          result = callGAPI(gmail.users().labels(), 'create',
+                            throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.DUPLICATE, GAPI.INVALID, GAPI.PERMISSION_DENIED],
+                            userId='me', body=body, fields='id')
+          entityActionPerformed([Ent.USER, user, Ent.LABEL, label, Ent.LABEL_ID, result['id']], l, lcount)
         except GAPI.duplicate:
           entityActionFailedWarning([Ent.USER, user, Ent.LABEL, label], Msg.DUPLICATE, l, lcount)
         except (GAPI.invalid, GAPI.permissionDenied) as e:
@@ -76918,7 +76918,7 @@ def printShowMessagesThreads(users, entityType):
           labelsMap[labelId]['size'] += result['sizeEstimate']
         else:
           labelsMap[labelId] = {'name': labelId, 'count': 1, 'size': result['sizeEstimate'], 'type': LABEL_TYPE_USER,
-                                'match': True if not labelMatchPattern else labelMatchPattern.match(labelId) is not None}
+                                'match': labelMatchPattern is None}
     elif not labelMatchPattern:
       labelsMap['*None*']['count'] += 1
       labelsMap['*None*']['size'] += result['sizeEstimate']
@@ -77072,7 +77072,7 @@ def printShowMessagesThreads(users, entityType):
         executeBatch(dbatch)
         dbatch = gmail.new_batch_http_request(callback=_callbacks['batch'])
         bcount = 0
-        if labelMatchPattern and parameters['messagesProcessed'] == parameters['maxToProcess']:
+        if labelMatchPattern and parameters['maxToProcess'] and parameters['messagesProcessed'] >= parameters['maxToProcess']:
           break
     if bcount > 0:
       dbatch.execute()
