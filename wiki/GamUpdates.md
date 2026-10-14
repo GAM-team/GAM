@@ -10,13 +10,6 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
-7.48.27
-
-Fixed bug in `gam <UserTypeEntity> print messages|threads ... showlabels countsonly labelmatchpattern <REMatchPattern>`
-where label counts were not correctly displayed.
-
-Updated `gam <UserTypeEntity> [create] label <String>` to display the ID of the created label.
-
 7.48.26
 
 Added option `showlabelids` to `gam <UserTypeEntity> print messages|threads ... showlabels countsonly`
