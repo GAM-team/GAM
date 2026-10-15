@@ -13,7 +13,9 @@ See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Ins
 7.48.29
 
 Updated `gam <UserTypeEntity> delete labelid <LabelID>` to handle the following error:
-`ERROR: 400: failedPrecondition - Precondition check failed.`
+```
+ERROR: 400: failedPrecondition - Precondition check failed.
+```
 
 7.48.28
 
@@ -85,14 +87,19 @@ Addded `showownorganizationonly` to `<CalendarSelectProperty>` that is by used b
 a user's calendars to show only entries for calendars from the organization.
 
 Updated `gam delete|print|show policies` to handle the following error:
-`ERROR: 503: serviceNotAvailable - The service is currently unavailable.`
+```
+ERROR: 503: serviceNotAvailable - The service is currently unavailable.
+```
 
 7.48.14
 
 Updated `gam whatis user@domain.com` to replace this error message:
-`ERROR: There are no scopes authorized for the API(s): Cloud Identity API - User Invitations`
+```
+ERROR: There are no scopes authorized for the API(s): Cloud Identity API - User Invitations```
 with this error message:
-`Email Address: user@domain.com, Does not exist`
+```
+Email Address: user@domain.com, Does not exist
+```
 when no Cloud Identity scopes are enabled other than `Cloud Identity API - User Invitations`.
 
 All other `userinvitation` commands are also fixed.
@@ -126,7 +133,9 @@ For backwards compatability, in all commands the following synonyms apply:
 7.48.09
 
 Updated `gam calendars <CalendarEntity> modify <CalendarSettings>` to handle the following error:
-`ERROR: 403: requiredAccessLevel - You need to have owner access to this calendar.`
+```
+ERROR: 403: requiredAccessLevel - You need to have owner access to this calendar.
+```
 
 7.48.08
 
@@ -145,7 +154,9 @@ Added option `expires <DateTime>` to `gam create admin` that specifies when the 
 7.48.05
 
 Updated `gam print|show policies` to handle the following (inappropriate I believe) error:
-`ERROR: 404: notFound - Requested entity was not found.`
+```
+ERROR: 404: notFound - Requested entity was not found.
+```
 
 Fixed bug in `gam print|show policies group <REMatchPattern>` that mistakenly displayed orgUnit policies.
 
@@ -153,12 +164,16 @@ Updated `gam print policies` to improve column name sorting.
 
 Updated `gam version extended` and `gam <UserTypeEntity> check|update serviceaccount` to handle
 the following error when a proxy is being used:
-`ERROR: Socket error: 403: Forbidden`
+```
+ERROR: Socket error: 403: Forbidden
+```
 
 7.48.04
 
 Updated `gam [<UserTypeEntity>] create|update shareddrive` to handle API changes and the following error:
-`ERROR: 403: insufficientFilePermissions - The user does not have sufficient permissions for this file.`
+```
+ERROR: 403: insufficientFilePermissions - The user does not have sufficient permissions for this file.
+```
 
 7.48.02
 
@@ -168,7 +183,9 @@ Fixed bug in `gam create|update policy` that caused the following error:
 7.48.01
 
 Updated `gam create datatransfer` to handle the following error:
-`ERROR: Invalid choice (looker studio): Expected <drive and docs|calendar|data studio>`
+```
+ERROR: Invalid choice (looker studio): Expected <drive and docs|calendar|data studio>
+```
 
 Upgraded to OpenSSL 4.0.2.
 
@@ -186,7 +203,9 @@ Added `levels <String>` and `subject String>` to `<CourseAttribute>`.
 7.47.06
 
 Updated `gam print cigroups` to handle the following error:
-`ERROR: 500: internalError - Internal error encountered.`
+```
+ERROR: 500: internalError - Internal error encountered.
+```
 
 7.47.05
 
@@ -225,7 +244,9 @@ select `12)  Chat API - User Availability (supports readonly)`.
 7.46.11
 
 Updated `gam <UserTypeEntity> update user` to handle the following error:
-`ERROR: 404: resourceNotFound - Does not exist`
+```
+ERROR: 404: resourceNotFound - Does not exist
+```
 
 7.46.10
 
