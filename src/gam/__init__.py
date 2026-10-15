@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.28'
+__version__ = '7.48.29'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -75257,11 +75257,12 @@ def deleteLabelIds(users, labelEntity):
       l += 1
       try:
         callGAPI(gmail.users().labels(), 'delete',
-                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID,
+                 throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION, GAPI.INVALID,
                                                         GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
                  userId='me', id=labelId)
         entityActionPerformed([Ent.USER, user, Ent.LABEL_ID, labelId], l, lcount)
-      except (GAPI.notFound, GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
+      except (GAPI.notFound, GAPI.failedPrecondition, GAPI.invalid,
+              GAPI.invalidArgument, GAPI.permissionDenied) as e:
         entityActionFailedWarning([Ent.USER, user, Ent.LABEL_ID, labelId], str(e), l, lcount)
       except GAPI.serviceNotAvailable:
         userGmailServiceNotEnabledWarning(user, i, count)
