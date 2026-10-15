@@ -52,6 +52,8 @@ API_CALLS_RATE_CHECK = 'api_calls_rate_check'
 API_CALLS_RATE_LIMIT = 'api_calls_rate_limit'
 # API calls tries limit
 API_CALLS_TRIES_LIMIT = 'api_calls_tries_limit'
+# Automatically downgrade HTTP/2 to HTTP/1.1 on connection failure
+AUTO_DOWNGRADE_HTTP2 = 'auto_downgrade_http2'
 # Automatically generate gam batch command if number of users specified in gam users xxx command exceeds this number
 # Default: 0, do not automatically generate gam batch commands
 AUTO_BATCH_MIN = 'auto_batch_min'
@@ -175,6 +177,8 @@ ENABLE_GCLOUD_REAUTH = 'enable_gcloud_reauth'
 EVENT_MAX_RESULTS = 'event_max_results'
 # Path to extra_args.txt
 EXTRA_ARGS = 'extra_args'
+# Force HTTP/1.1 connections (disable HTTP/2)
+FORCE_HTTP11 = 'force_http11'
 # Google Cloud Project Organization ID
 GCP_ORG_ID = 'gcp_org_id'
 # Gmail CSE certificates directory
@@ -343,6 +347,7 @@ Defaults = {
   API_CALLS_RATE_LIMIT: '100',
   API_CALLS_TRIES_LIMIT: '10',
   AUTO_BATCH_MIN: '0',
+  AUTO_DOWNGRADE_HTTP2: TRUE,
   BAIL_ON_INTERNAL_ERROR_TRIES: '2',
   BATCH_SIZE: '50',
   CACERTS_PEM: '',
@@ -402,6 +407,7 @@ Defaults = {
   ENABLE_GCLOUD_REAUTH: FALSE,
   EVENT_MAX_RESULTS: '250',
   EXTRA_ARGS: '',
+  FORCE_HTTP11: FALSE,
   GCP_ORG_ID: '',
   GMAIL_CSE_INCERT_DIR: '',
   GMAIL_CSE_INKEY_DIR: '',
@@ -517,6 +523,7 @@ VAR_INFO = {
   API_CALLS_RATE_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (50, None)},
   API_CALLS_TRIES_LIMIT: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (3, 30)},
   AUTO_BATCH_MIN: {VAR_TYPE: TYPE_INTEGER, VAR_ENVVAR: 'GAM_AUTOBATCH', VAR_LIMITS: (0, 100)},
+  AUTO_DOWNGRADE_HTTP2: {VAR_TYPE: TYPE_BOOLEAN, VAR_ENVVAR: 'GAM_AUTO_DOWNGRADE_HTTP2'},
   BAIL_ON_INTERNAL_ERROR_TRIES: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 10)},
   BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_ENVVAR: 'GAM_BATCH_SIZE', VAR_LIMITS: (1, 1000)},
   CACERTS_PEM: {VAR_TYPE: TYPE_FILE, VAR_ENVVAR: 'GAM_CA_FILE', VAR_ACCESS: os.R_OK},
@@ -576,6 +583,7 @@ VAR_INFO = {
   ENABLE_GCLOUD_REAUTH: {VAR_TYPE: TYPE_BOOLEAN},
   EVENT_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 2500)},
   EXTRA_ARGS: {VAR_TYPE: TYPE_FILE, VAR_SIGFILE: FN_EXTRA_ARGS_TXT, VAR_SFFT: ('', FN_EXTRA_ARGS_TXT), VAR_ACCESS: os.R_OK},
+  FORCE_HTTP11: {VAR_TYPE: TYPE_BOOLEAN, VAR_ENVVAR: 'GAM_FORCE_HTTP11'},
   GCP_ORG_ID: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   GMAIL_CSE_INCERT_DIR: {VAR_TYPE: TYPE_DIRECTORY},
   GMAIL_CSE_INKEY_DIR: {VAR_TYPE: TYPE_DIRECTORY},

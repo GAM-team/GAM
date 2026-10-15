@@ -119,14 +119,16 @@ from google.auth.compute_engine import _metadata as gce_metadata
 from google.auth.jwt import Credentials as JWTCredentials
 import google.oauth2.service_account
 import google_auth_oauthlib.flow
+import modern_httplib2.auto
+import modern_httplib2 as httplib2
+
+httplib2.RETRIES = 5
+
 import google_auth_httplib2
 import googleapiclient
 import googleapiclient.discovery
 import googleapiclient.errors
 import googleapiclient.http
-import httplib2
-
-httplib2.RETRIES = 5
 
 from passlib.hash import sha512_crypt
 from filelock import FileLock
@@ -4234,6 +4236,10 @@ def SetGlobalVariables():
   GM.Globals[GM.OAUTH2_TXT_LOCK] = f'{GC.Values[GC.OAUTH2_TXT]}.lock'
 # Override httplib2 settings
   httplib2.debuglevel = GC.Values[GC.DEBUG_LEVEL]
+  if GC.Values[GC.FORCE_HTTP11]:
+    httplib2.force_http11()
+  elif GC.Values[GC.AUTO_DOWNGRADE_HTTP2]:
+    httplib2.set_auto_downgrade_http2(True)
 # Override requests debuglevel also. Requests is used with
 # SignJWT/WIF/GCE and a few other places.
   http.client.HTTPConnection.debuglevel = GC.Values[GC.DEBUG_LEVEL]
@@ -4439,7 +4445,9 @@ def getHttpObj(cache=None, timeout=None, override_min_tls=None, override_max_tls
                           ca_certs=GC.Values[GC.CACERTS_PEM],
                           disable_ssl_certificate_validation=GC.Values[GC.NO_VERIFY_SSL],
                           tls_maximum_version=tls_maximum_version,
-                          tls_minimum_version=tls_minimum_version)
+                          tls_minimum_version=tls_minimum_version,
+                          enable_http2=not GC.Values[GC.FORCE_HTTP11],
+                          auto_downgrade_http2=GC.Values[GC.AUTO_DOWNGRADE_HTTP2])
   httpObj.redirect_codes = set(httpObj.redirect_codes) - {308}
   return httpObj
 
@@ -9594,9 +9602,15 @@ def _getServerTLSUsed(location):
   triesLimit = 5
   for n in range(1, triesLimit+1):
     try:
-      httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
-      cipher_name, tls_ver, _ = httpObj.connections[conn].sock.cipher()
-      return tls_ver, cipher_name
+      response, _ = httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
+      sock = httpObj.connections[conn].sock
+      cipher_name, tls_ver, _ = sock.cipher()
+      proto = getattr(response, 'http_version', None)
+      if not proto:
+        ver_map = {20: 'HTTP/2', 11: 'HTTP/1.1', 10: 'HTTP/1.0', 9: 'HTTP/0.9'}
+        ver = getattr(response, 'version', None)
+        proto = ver_map.get(ver, f'HTTP/{ver // 10}.{ver % 10}' if isinstance(ver, int) else 'Unknown HTTP')
+      return proto, tls_ver, cipher_name
     except (httplib2.HttpLib2Error, RuntimeError) as e:
       if n != triesLimit:
         httpObj.connections = {}
@@ -9832,13 +9846,13 @@ def doVersion(checkForArgs=True):
     doGAMCheckForUpdates(forceCheck)
   if extended:
     printKeyValueList([ssl.OPENSSL_VERSION])
-    tls_ver, cipher_name = _getServerTLSUsed(testLocation)
+    proto, tls_ver, cipher_name = _getServerTLSUsed(testLocation)
     for lib in glverlibs.GAM_VER_LIBS:
       try:
         writeStdout(f'{lib} {lib_version(lib)}\n')
       except:
         pass
-    printKeyValueList([f'{testLocation} connects using {tls_ver} {cipher_name}'])
+    printKeyValueList([f'{testLocation} connects using {proto} and {tls_ver} {cipher_name}'])
 
 # gam help
 def doUsage():

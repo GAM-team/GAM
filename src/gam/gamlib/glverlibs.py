@@ -31,7 +31,7 @@ GAM_VER_LIBS = [
   'google-auth-oauthlib',
   'google-auth',
   'lxml',
-  'httplib2',
+  'modern-httplib2',
   'passlib',
   'pathvalidate',
   'pyscard',
