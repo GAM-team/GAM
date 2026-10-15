@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.29
+
+Updated `gam <UserTypeEntity> delete labelid <LabelID>` to handle the following error:
+`ERROR: 400: failedPrecondition - Precondition check failed.`
+
 7.48.28
 
 Fixed bug in `gam <UserTypeEntity> print messages|threads ... showlabels countsonly labelmatchpattern <REMatchPattern>`
