@@ -96,6 +96,7 @@ ERROR: 503: serviceNotAvailable - The service is currently unavailable.
 Updated `gam whatis user@domain.com` to replace this error message:
 ```
 ERROR: There are no scopes authorized for the API(s): Cloud Identity API - User Invitations
+```
 with this error message:
 ```
 Email Address: user@domain.com, Does not exist
