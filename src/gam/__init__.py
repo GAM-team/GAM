@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.29'
+__version__ = '7.48.30'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4520,14 +4520,12 @@ def doGAMCheckForUpdates(forceCheck):
       _gamLatestVersionNotAvailable()
       return
     current_version = __version__
-    latest_version = release_data['tag_name']
-    if latest_version[0].lower() == 'v':
-      latest_version = latest_version[1:]
-      printKeyValueList(['Version Check', None])
-      Ind.Increment()
-      printKeyValueList(['Current', current_version])
-      printKeyValueList([' Latest', latest_version])
-      Ind.Decrement()
+    latest_version = release_data['name'].replace('GAM ', '')
+    printKeyValueList(['Version Check', None])
+    Ind.Increment()
+    printKeyValueList(['Current', current_version])
+    printKeyValueList([' Latest', latest_version])
+    Ind.Decrement()
     if forceCheck < 0:
       setSysExitRC(1 if latest_version > current_version else 0)
       return
