@@ -1,3 +1,11 @@
+7.48.31
+
+Added the following License SKUs:
+```
+1010430002 Google Workspace Additional Storage 100GB
+1010430003 Google Workspace Additional Storage 1TB
+```
+
 7.48.30
 
 Fixed `gam version check` to handle GitHib change that prevented version info from being displayed.

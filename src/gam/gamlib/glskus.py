@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -92,7 +92,11 @@ _SKUS = {
   '1010400001': {
     'product': '101040', 'aliases': ['beyondcorp', 'beyondcorpenterprise', 'bce', 'cep', 'chromeenterprisepremium'], 'displayName': 'Chrome Enterprise Premium'},
   '1010430001': {
-    'product': '101043', 'aliases': ['gwas', 'plusstorage'], 'displayName': 'Google Workspace Additional Storage'},
+    'product': '101043', 'aliases': ['gwas10tb', 'plusstorage10tb', 'gwas', 'plusstorage'], 'displayName': 'Google Workspace Additional Storage 10TB'},
+  '1010430002': {
+    'product': '101043', 'aliases': ['gwas100gb', 'plusstorage100gb'], 'displayName': 'Google Workspace Additional Storage 100GB'},
+  '1010430003': {
+    'product': '101043', 'aliases': ['gwas1tb', 'plusstorage1tb'], 'displayName': 'Google Workspace Additional Storage 1TB'},
   '1010470001': {
     'product': '101047', 'aliases': ['geminient', 'duetai'], 'displayName': 'Gemini Enterprise - Legacy'},
   '1010470002': {
