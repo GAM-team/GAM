@@ -82,7 +82,9 @@
 | Google Voice Premier | 1010330002 | voicepremier |
 | Google Voice Standard | 1010330004 | voicestandard |
 | Google Voice Starter | 1010330003 | voicestarter |
-| Google Workspace Additional Storage | 1010430001 | gwas |
+| Google Workspace Additional Storage 10TB | 1010430001 | gwas10tb |
+| Google Workspace Additional Storage 100GB | 1010430002 | gwas100gb |
+| Google Workspace Additional Storage 1TB | 1010430003 | gwas1tb |
 | Google Workspace Business - Archived User | 1010340002 | gsuitebusinessarchived |
 | Google Workspace Business Plus | 1010020025 | wsbizplus |
 | Google Workspace Business Plus - Archived User | 1010340003 | wsbizplusarchived |
@@ -163,7 +165,7 @@
         assuredcontrolsplus | 1010390002 | Assured Controls Plus |
         bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
-        cloudidentityfree| cloudidentity | identity | 1010010001 | Cloud Identity Free |
+        cloudidentityfree | cloudidentity | identity | 1010010001 | Cloud Identity Free |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
         colabpro | 1010500001 | Colab Pro |
@@ -172,7 +174,7 @@
         gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
         geminiedupremium| 1010470005 | Gemini Education Premium |
-        geminient| duetai | 1010470001 | Gemini Enterprise - Legacy|
+        geminient| duetai | 1010470001 | Gemini Enterprise - Legacy |
         geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
@@ -202,7 +204,9 @@
         voicepremier | gvpremier | googlevoicepremier | 1010330002 | Google Voice Premier 
         voicestandard | gvstandard | googlevoicestandard | 1010330004 | Google Voice Standard |
         voicestarter | gvstarter | googlevoicestarter | 1010330003 | Google Voice Starter |
-        wsas | plusstorage | 1010430001 | Google Workspace Additional Storage |
+        wsas10tb | plusstorage10tb | 1010430001 | Google Workspace Additional Storage 10TB |
+        wsas100gb | plusstorage10gb | 1010430002 | Google Workspace Additional Storage 100GB |
+        wsas1tb | plusstorage1tb | 1010430003 | Google Workspace Additional Storage 1TB |
         wsbizplus | workspacebusinessplus | 1010020025 | Google Workspace Business Plus |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 | Google Workspace Business Plus - Archived User |
         wsbizstan | workspacebusinessstandard | 1010020028 | Google Workspace Business Standard }

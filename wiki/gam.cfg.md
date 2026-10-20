@@ -74,6 +74,13 @@ auto_batch_min
         Default: 0, don't automatically generate gam batch commands
         Range: 0 - 100
         Environment variable: GAM_AUTOBATCH
+auto_downgrade_http2
+        If GAM is using HTTP/2 and a connection fails due to a network or protocol reset
+        (e.g. proxy RST on HTTP/2 preface, stream errors, or closed connections),
+        GAM will downgrade to HTTP/1.1. If the value is False and a connection fails,
+        an exception will be raised.
+        Default: True
+        Environment variable: GAM_AUTO_DOWNGRADE_HTTP2
 bail_on_internal_error_tries
         When Google returns 'Internal error' error on an API call and
         experience has shown that retrying the call is unlikely to succeed,
@@ -364,6 +371,10 @@ extra_args
         Path to extra_args.txt
         Default: Blank
         Data file: extra_args.txt
+force_http11
+        GAM uses HTTP/2 by default, set this to True to have GAM use HTTP/1.1.o
+        Default: False
+        Environment variable: GAM_FORCE_HTTP11
 gcp_org_id
         The Google Cloud organization ID for your workspace.
         Default: Blank

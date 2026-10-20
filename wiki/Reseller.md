@@ -51,26 +51,32 @@ Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
         appsheetstandard | appsheetenterprisestandard | 1010380002 | AppSheet Enterprise Standard |
         appsheetplus | appsheetenterpriseplus | 1010380003 | AppSheet Enterprise Plus |
         assuredcontrols | 1010390001 | Assured Controls |
+        assuredcontrolsplus | 1010390002 | Assured Controls Plus |
         bce | beyondcorp | beyondcorpenterprise | cep | chromeenterprisepremium | 1010400001 | Chrome Enterprise Premium |
         cdm | chrome | googlechromedevicemanagement | Google-Chrome-Device-Management |
-        cloudidentity | identity | 1010010001 | Cloud Identity |
+        cloudidentityfree | cloudidentity | identity | 1010010001 | Cloud Identity Free |
         cloudidentitypremium | identitypremium | 1010050001 | Cloud Identity Premium |
         cloudsearch | 1010350001 | Cloud Search |
         colabpro | 1010500001 | Colab Pro |
         colabpro+ | colabproplus | 1010500002 | Colab Pro+ |
         eeu | 1010490001 | SKU Endpoint Education Upgrade |
+        gaiproedu | geminiedu | 1010470004 | Google AI Pro for Education |
         geminibiz | 1010470003 | Gemini Business |
-        geminiedu | 1010470004 | Gemini Education |
         geminiedupremium| 1010470005 | Gemini Education Premium |
         geminient| duetai | 1010470001 | Gemini Enterprise - Legacy |
+        geminiultra | 1010470008 | Google AI Ultra for Business |
         gsuitebasic | gafb | gafw | basic | Google-Apps-For-Business |
         gsuitebusiness | gau | gsb | unlimited | Google-Apps-Unlimited |
         gsuitebusinessarchived | gsbau | businessarchived | 1010340002 | Google Workspace Business - Archived User |
+        gsuiteedu | gafe | gsuiteeducation | Google-Apps-For-Education |
         gsuiteenterprisearchived | gseau | enterprisearchived | 1010340001 | Google Workspace Enterprise Plus - Archived User |
         gsuiteenterpriseeducation | gsefe | e4e | 1010310002 | Google Workspace for Education Plus - Legacy |
         gsuiteenterpriseeducationstudent | gsefes | e4es | 1010310003 | Google Workspace for Education Plus - Legacy (Student) |
         gsuitegov | gafg | gsuitegovernment | Google-Apps-For-Government |
         gsuitelite | gal | gsl | lite | Google-Apps-Lite |
+        gwef | workspaceeducationfundamentals | 1010070001 | Google Workspace for Education Fundamentals |
+        gwefau | gwefarchived | workspaceeducationfundamentalsarchived | 1010340007 | Google Workspace for Education Fundamentals - Archived User |
+        gwegmo | workspaceeducationgmailonly | 1010070004 | Google Workspace for Education Gmail Only |
         gwep | workspaceeducationplus | 1010310008 | Google Workspace for Education Plus |
         gwepstaff | workspaceeducationplusstaff | 1010310009 | Google Workspace for Education Plus (Staff) |
         gwepstudent | workspaceeducationplusstudent | 1010310010 | Google Workspace for Education Plus (Extra Student)|
@@ -87,7 +93,9 @@ Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
         voicepremier | gvpremier | googlevoicepremier | 1010330002 | Google Voice Premier 
         voicestandard | gvstandard | googlevoicestandard | 1010330004 | Google Voice Standard |
         voicestarter | gvstarter | googlevoicestarter | 1010330003 | Google Voice Starter |
-        wsas | plusstorage | 1010430001 | Google Workspace Additional Storage |
+        wsas10tb | plusstorage10tb | 1010430001 | Google Workspace Additional Storage 10TB |
+        wsas100gb | plusstorage10gb | 1010430002 | Google Workspace Additional Storage 100GB |
+        wsas1tb | plusstorage1tb | 1010430003 | Google Workspace Additional Storage 1TB |
         wsbizplus | workspacebusinessplus | 1010020025 | Google Workspace Business Plus |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 | Google Workspace Business Plus - Archived User |
         wsbizstan | workspacebusinessstandard | 1010020028 | Google Workspace Business Standard }
@@ -95,14 +103,15 @@ Thanks to Duncan Isaksen-Loxton for a script to help manage multiple domains.
         wsbizstarter | workspacebusinessstarter | wsbizstart | 1010020027 | Google Workspace Business Starter |
         wsbizstarterarchived | workspacebusinessstarterarchived | 1010340005 | Google Workspace Business Starter - Archived User |
         wsentess | workspaceenterpriseessentials | 1010060003 | Google Workspace Enterprise Essentials |
-        wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 | Google Workspace Enterprise Plus |
+        wsentplus | workspaceenterpriseplus | gae | gse | enterprise | gsuiteenterprise | 1010020020 | Google Workspace Enterprise Plus (formerly G Suite Enterprise) |
         wsentstan | workspaceenterprisestandard | 1010020026 | Google Workspace Enterprise Standard |
         wsentstanarchived | workspaceenterprisestandardarchived | 1010340004 | Google Workspace Enterprise Standard - Archived User |
         wsentstarter | workspaceenterprisestarter | wes | 1010020029 | Workspace Enterprise Starter |
-        wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials |
-        wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Essentials Plus |
+        wsess | workspaceesentials | gsuiteessentials | essentials | d4e | driveenterprise | drive4enterprise | 1010060001 | Google Workspace Essentials (formerly G Suite Essentials) |
+        wsessplus | workspaceessentialsplus | 1010060005 | Google Workspace Enterprise Essentials Plus |
         wsflw | workspacefrontline | workspacefrontlineworker | 1010020030 | Google Workspace Frontline Starter |
-        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard
+        wsflwstan | workspacefrontlinestan | workspacefrontlineworkerstan | 1010020031 | Google Workspace Frontline Standard |
+        wsflwplus | workspacefrontlineplus | workspacefrontlineworkerplus | 1010020034 | Google Workspace Frontline Plus
 ```
 ## Manage Resold Customers
 ```
