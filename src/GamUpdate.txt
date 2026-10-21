@@ -1,3 +1,7 @@
+7.48.32
+
+Updated `google enable apis` to avoid a trap on a Google Compute Engine.
+
 7.48.31
 
 Added the following License SKUs:
@@ -8,7 +12,7 @@ Added the following License SKUs:
 
 7.48.30
 
-Fixed `gam version check` to handle GitHib change that prevented version info from being displayed.
+Fixed `gam version check` to handle GitHub change that prevented version info from being displayed.
 
 7.48.29
 
