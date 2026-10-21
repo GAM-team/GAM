@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.32'
+__version__ = '7.48.33'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -32621,6 +32621,7 @@ def doPrintCIDevices():
   getDeviceUsers = True
   getClientStates = False
   oneUserPerRow = showItemCountOnly = False
+  useYield = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -32647,6 +32648,8 @@ def doPrintCIDevices():
       pass
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
+    elif myarg == 'useyield':
+      useYield = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   fields = getItemFieldsFromFieldsList('devices', fieldsList)
@@ -32661,15 +32664,35 @@ def doPrintCIDevices():
     printGettingAllAccountEntities(entityType, query)
     pageMessage = getPageMessage()
     try:
-      devices = callGAPIpages(ci.devices(), 'list', 'devices',
-                              pageMessage=pageMessage,
-                              throwReasons=throwReasons,
-                              retryReasons=retryReasons,
-                              customer=customer, filter=query,
-                              orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
-      if showItemCountOnly:
-        itemCount += len(devices)
-        continue
+      if not useYield:
+        devices = callGAPIpages(ci.devices(), 'list', 'devices',
+                                pageMessage=pageMessage,
+                                throwReasons=throwReasons,
+                                retryReasons=retryReasons,
+                                customer=customer, filter=query,
+                                orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
+        if showItemCountOnly:
+          itemCount += len(devices)
+          continue
+      else:
+        devices = []
+        seenNames = set()
+        for pageDevices in yieldGAPIpages(ci.devices(), 'list', 'devices',
+                                          pageMessage=pageMessage,
+                                          throwReasons=throwReasons,
+                                          retryReasons=retryReasons,
+                                          customer=customer, filter=query,
+                                          orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100):
+          newDevices = [device for device in pageDevices if device['name'] not in seenNames]
+          if pageDevices and not newDevices:
+            _finalizeGAPIpagesResult(pageMessage)
+            stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {len(devices)} devices')
+            break
+          seenNames.update(device['name'] for device in newDevices)
+          devices.extend(newDevices)
+        if showItemCountOnly:
+          itemCount += len(devices)
+          continue
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([entityType, None], str(e))
       continue

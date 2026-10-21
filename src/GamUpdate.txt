@@ -1,3 +1,8 @@
+7.48.33
+
+Added option `useyield` to `gam print devices` that can be used to work around a Cloud Identity API bug
+that is returning duplicate devices.
+
 7.48.32
 
 Updated `google enable apis` to avoid a trap on a Google Compute Engine.
