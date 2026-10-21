@@ -18,9 +18,10 @@
 # limitations under the License.
 
 # Enable 3.15 lazy loading without syntax errors in 3.10–3.14
+# disabled for now to workaround https://github.com/GAM-team/GAM/issues/2012
 import sys
-if hasattr(sys, "set_lazy_imports"):
-  sys.set_lazy_imports("all")
+#if hasattr(sys, "set_lazy_imports"):
+#  sys.set_lazy_imports("all")
 
 import multiprocessing
 import platform
