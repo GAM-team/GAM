@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.48.33'
+__version__ = '7.48.35'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -32652,10 +32652,7 @@ def doPrintCIDevices():
       checkForAPIbug = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  if not checkForAPIbug:
-    fields = getItemFieldsFromFieldsList('devices', fieldsList)
-  else:
-    fields = getFieldsFromFieldsList(fieldsList)
+  fields = getItemFieldsFromFieldsList('devices', fieldsList)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
   substituteQueryTimes(queries, queryTimes)
   if FJQC.formatJSON and oneUserPerRow:
@@ -32698,16 +32695,16 @@ def doPrintCIDevices():
                 newDevices.append(device)
             if not newDevices:
               _finalizeGAPIpagesResult(pageMessage)
-              stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {totalItems} devices')
+              stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {len(devices)} devices')
               break
             devices.extend(newDevices)
             del feed
           if not pageToken:
             _finalizeGAPIpagesResult(pageMessage)
-            printGotAccountEntities(totalItems)
+            printGotAccountEntities(len(devices))
             break
         if showItemCountOnly:
-          itemCount += totalItems
+          itemCount += len(devices)
           continue
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([entityType, None], str(e))

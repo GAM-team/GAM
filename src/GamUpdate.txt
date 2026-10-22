@@ -1,3 +1,7 @@
+7.48.34
+
+Fixed bug in `gam print devices ... checkforapibug ... fields <DeviceFieldNameList>`.
+
 7.48.33
 
 Added option `checkforapibug` to `gam print devices` that can be used to work around a Cloud Identity API bug
