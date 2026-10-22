@@ -32621,7 +32621,7 @@ def doPrintCIDevices():
   getDeviceUsers = True
   getClientStates = False
   oneUserPerRow = showItemCountOnly = False
-  useYield = False
+  checkForAPIbug = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -32648,11 +32648,14 @@ def doPrintCIDevices():
       pass
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
-    elif myarg == 'useyield':
-      useYield = True
+    elif myarg == 'checkforapibug':
+      checkForAPIbug = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
-  fields = getItemFieldsFromFieldsList('devices', fieldsList)
+  if not checkForAPIbug:
+    fields = getItemFieldsFromFieldsList('devices', fieldsList)
+  else:
+    fields = getFieldsFromFieldsList(fieldsList)
   userFields = getItemFieldsFromFieldsList('deviceUsers', userFieldsList)
   substituteQueryTimes(queries, queryTimes)
   if FJQC.formatJSON and oneUserPerRow:
@@ -32664,7 +32667,7 @@ def doPrintCIDevices():
     printGettingAllAccountEntities(entityType, query)
     pageMessage = getPageMessage()
     try:
-      if not useYield:
+      if not checkForAPIbug:
         devices = callGAPIpages(ci.devices(), 'list', 'devices',
                                 pageMessage=pageMessage,
                                 throwReasons=throwReasons,
@@ -32677,21 +32680,34 @@ def doPrintCIDevices():
       else:
         devices = []
         seenNames = set()
-        for pageDevices in yieldGAPIpages(ci.devices(), 'list', 'devices',
-                                          pageMessage=pageMessage,
-                                          throwReasons=throwReasons,
-                                          retryReasons=retryReasons,
-                                          customer=customer, filter=query,
-                                          orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100):
-          newDevices = [device for device in pageDevices if device['name'] not in seenNames]
-          if pageDevices and not newDevices:
+        pageToken=None
+        totalItems = 0
+        while True:
+          feed = callGAPI(ci.devices(), 'list',
+                          throwReasons=throwReasons,
+                          retryReasons=retryReasons,
+                          pageToken=pageToken,
+                          customer=customer, filter=query,
+                          orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
+          pageToken, totalItems = _processGAPIpagesResult(feed, 'devices', None, totalItems, pageMessage, None, entityType)
+          if feed:
+            newDevices = []
+            for device in feed.get('devices', []):
+              if device['name'] not in seenNames:
+                seenNames.add(device['name'])
+                newDevices.append(device)
+            if not newDevices:
+              _finalizeGAPIpagesResult(pageMessage)
+              stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {totalItems} devices')
+              break
+            devices.extend(newDevices)
+            del feed
+          if not pageToken:
             _finalizeGAPIpagesResult(pageMessage)
-            stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {len(devices)} devices')
+            printGotAccountEntities(totalItems)
             break
-          seenNames.update(device['name'] for device in newDevices)
-          devices.extend(newDevices)
         if showItemCountOnly:
-          itemCount += len(devices)
+          itemCount += totalItems
           continue
     except (GAPI.invalid, GAPI.invalidArgument, GAPI.permissionDenied) as e:
       entityActionFailedWarning([entityType, None], str(e))
