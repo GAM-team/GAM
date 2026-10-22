@@ -10,6 +10,11 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.48.33
+
+Added option `checkforapibug` to `gam print devices` that can be used to work around a Cloud Identity API bug
+that is returning duplicate devices.
+
 7.48.32
 
 Updated `google enable apis` to avoid a trap on a Google Compute Engine.
