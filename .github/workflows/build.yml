@@ -831,6 +831,7 @@ jobs:
           # printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
           # run_gam info printer "$printerid"
           # run_gam delete printer "$printerid"
+          run_gam check ou "${newou}" devices users subous shareddrives
           run_gam delete ou "${newou}"
 
   publish:
