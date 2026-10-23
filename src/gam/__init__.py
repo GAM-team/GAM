@@ -18498,8 +18498,8 @@ def _doDeleteOrgs(entityList):
                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                customerId=GC.Values[GC.CUSTOMER_ID], orgUnitPath=encodeOrgUnitPath(makeOrgUnitPathRelative(orgUnitPath)))
       entityActionPerformed([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], i, count)
-    except GAPI.conditionNotMet:
-      entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.HAS_CHILD_ORGS.format(Ent.Plural(Ent.ORGANIZATIONAL_UNIT)), i, count)
+    except GAPI.conditionNotMet as e:
+      entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], str(e), i, count)
     except (GAPI.invalidOrgunit, GAPI.orgunitNotFound, GAPI.backendError):
       entityActionFailedWarning([Ent.ORGANIZATIONAL_UNIT, orgUnitPath], Msg.DOES_NOT_EXIST, i, count)
     except (GAPI.invalidCustomerId, GAPI.serviceNotAvailable) as e:
