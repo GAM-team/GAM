@@ -828,10 +828,9 @@ jobs:
           echo "printer model count:"
           run_gam print printermodels | wc -l
           run_gam print printers
-          printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
-          run_gam info printer "$printerid"
-          run_gam delete printer "$printerid"
-          sleep 5
+          # printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
+          # run_gam info printer "$printerid"
+          # run_gam delete printer "$printerid"
           run_gam delete ou "${newou}"
 
   publish:
