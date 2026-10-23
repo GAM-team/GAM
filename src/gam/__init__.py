@@ -119,6 +119,8 @@ from google.auth.compute_engine import _metadata as gce_metadata
 from google.auth.jwt import Credentials as JWTCredentials
 import google.oauth2.service_account
 import google_auth_oauthlib.flow
+from google.auth.dpop import SoftwareDPoPSigner
+from google.oauth2.dpop_credentials import DPoPCredentials
 import modern_httplib2.auto
 import modern_httplib2 as httplib2
 
@@ -4642,6 +4644,161 @@ def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
   stderrErrorMsg(f'Authentication Token Error - {errMsg}')
   APIAccessDeniedExit()
 
+def doDPoPTest():
+  """Test the configured DPoP backend by constructing a signer and performing a test signature."""
+  import base64
+  import hashlib
+  import time
+  backend = GC.Values[GC.DPOP_BACKEND]
+  config = GC.Values[GC.DPOP_BACKEND_CONFIG]
+  dpop_enabled = GC.Values[GC.DPOP]
+  printLine('')
+  printKeyValueList(['DPoP Configuration'])
+  Ind.Increment()
+  printKeyValueList(['dpop', dpop_enabled])
+  printKeyValueList(['dpop_backend', backend])
+  printKeyValueList(['dpop_backend_config', config or '(not set)'])
+  Ind.Decrement()
+  printBlankLine()
+  if not dpop_enabled:
+    printLine('DPoP is not enabled. Set "dpop = true" in gam.cfg to enable.')
+    return
+  printLine('Constructing DPoP signer...')
+  try:
+    signer = _getDPoPSigner()
+  except SystemExit:
+    return
+  printLine('Signer created successfully.')
+  printBlankLine()
+  printKeyValueList(['Signer Details'])
+  Ind.Increment()
+  printKeyValueList(['Backend', backend])
+  printKeyValueList(['Algorithm', signer.algorithm])
+  printKeyValueList(['Key ID', signer.key_id or '(auto)'])
+  printKeyValueList(['JWK Thumbprint', signer.thumbprint])
+  jwk = signer.public_jwk
+  printKeyValueList(['Public JWK'])
+  Ind.Increment()
+  for k, v in jwk.items():
+    printKeyValueList([k, v])
+  Ind.Decrement()
+  Ind.Decrement()
+  printBlankLine()
+  # Perform a test signature
+  test_data = f'GAM DPoP test signature at {time.time()}'.encode('utf-8')
+  printLine('Performing test signature...')
+  try:
+    start_time = time.monotonic()
+    signature = signer.sign(test_data)
+    elapsed_ms = (time.monotonic() - start_time) * 1000
+  except Exception as e:
+    printLine(f'ERROR: Signature failed: {e}')
+    return
+  sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode('ascii')
+  printLine(f'Signature succeeded ({elapsed_ms:.1f} ms)')
+  printBlankLine()
+  printKeyValueList(['Signature Details'])
+  Ind.Increment()
+  printKeyValueList(['Signature length', f'{len(signature)} bytes'])
+  printKeyValueList(['Signature (base64url)', sig_b64[:48] + '...' if len(sig_b64) > 48 else sig_b64])
+  printKeyValueList(['Signing time', f'{elapsed_ms:.1f} ms'])
+  Ind.Decrement()
+  printBlankLine()
+  printLine('DPoP configuration is valid and working.')
+
+def _getDPoPSigner():
+  """Constructs a DPoPSigner based on gam.cfg dpop_backend and dpop_backend_config."""
+  backend = GC.Values[GC.DPOP_BACKEND]
+  config = GC.Values[GC.DPOP_BACKEND_CONFIG]
+  if backend == 'software':
+    if config:
+      key_path = os.path.expanduser(config)
+      if not os.path.isabs(key_path):
+        key_path = os.path.expanduser(os.path.join(GC.Values[GC.CONFIG_DIR], key_path))
+      key_data = readFile(key_path, mode='rb')
+      if key_data is None:
+        systemErrorExit(USAGE_ERROR_RC, f'DPoP software key file not found: {key_path}')
+      return SoftwareDPoPSigner.from_pem(key_data)
+    else:
+      from cryptography.hazmat.primitives.asymmetric import ec as ec_module
+      private_key = ec_module.generate_private_key(ec_module.SECP256R1())
+      return SoftwareDPoPSigner(private_key)
+  elif backend == 'yubikey':
+    try:
+      from dpop_signer_yubikey import YubiKeyDPoPSigner, YubiKeyDPoPError
+    except ImportError:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP yubikey backend requires the dpop-signer-yubikey package. Install with: pip install "gam7[yubikey]"')
+    parts = [p.strip() for p in config.split(',')] if config else []
+    serial = int(parts[0]) if len(parts) > 0 and parts[0] else None
+    slot = parts[1] if len(parts) > 1 and parts[1] else '9c'
+    pin = parts[2] if len(parts) > 2 and parts[2] else None
+    try:
+      return YubiKeyDPoPSigner(serial=serial, slot=slot, pin=pin)
+    except YubiKeyDPoPError as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey error: {e}')
+  elif backend == 'ecp':
+    try:
+      from dpop_signer_ecp import ECPDPoPSigner, ECPDPoPError
+    except ImportError:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP ecp backend requires the dpop-signer-ecp package. Install with: pip install "gam7[ecp]"')
+    ecp_config_path = config or None
+    if ecp_config_path:
+      ecp_config_path = os.path.expanduser(ecp_config_path)
+      if not os.path.isabs(ecp_config_path):
+        ecp_config_path = os.path.expanduser(os.path.join(GC.Values[GC.CONFIG_DIR], ecp_config_path))
+    try:
+      return ECPDPoPSigner(config_path=ecp_config_path)
+    except ECPDPoPError as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP error: {e}')
+  elif backend == 'macos_secureenclave':
+    try:
+      from dpop_signer_macos_secureenclave import SecureEnclaveDPoPSigner, SecureEnclaveDPoPError
+    except ImportError:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP macos_secureenclave backend requires the dpop-signer-macos-secureenclave package. Install with: pip install "gam7[macos_secureenclave]"')
+    parts = [p.strip() for p in config.split(',')] if config else []
+    label = parts[0] if len(parts) > 0 and parts[0] else None
+    application_tag = parts[1] if len(parts) > 1 and parts[1] else None
+    if not label and not application_tag:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP macos_secureenclave backend requires dpop_backend_config set to: label[,application_tag]')
+    try:
+      return SecureEnclaveDPoPSigner(label=label, application_tag=application_tag)
+    except SecureEnclaveDPoPError as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave error: {e}')
+  elif backend == 'linux_tpm':
+    try:
+      from dpop_signer_linux_tpm import LinuxTPMDPoPSigner, LinuxTPMDPoPError
+    except ImportError:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP linux_tpm backend requires the dpop-signer-linux-tpm package. Install with: pip install "gam7[linux_tpm]"')
+    parts = [p.strip() for p in config.split(',')] if config else []
+    handle_str = parts[0] if len(parts) > 0 and parts[0] else None
+    handle = int(handle_str, 0) if handle_str else 0x81000001
+    tcti = parts[1] if len(parts) > 1 and parts[1] else None
+    auth = parts[2] if len(parts) > 2 and parts[2] else None
+    try:
+      return LinuxTPMDPoPSigner(handle=handle, tcti=tcti, auth=auth)
+    except LinuxTPMDPoPError as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM error: {e}')
+  elif backend == 'windows_tpm':
+    try:
+      from dpop_signer_windows_tpm import WindowsCNGDPoPSigner, WindowsCNGDPoPError
+    except ImportError:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires the dpop-signer-windows-tpm package. Install with: pip install "gam7[windows_tpm]"')
+    subject = None
+    thumbprint = None
+    if config:
+      if config.lower().startswith('thumbprint:'):
+        thumbprint = config[len('thumbprint:'):]
+      else:
+        subject = config
+    if not subject and not thumbprint:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires dpop_backend_config set to: subject_cn_substring or thumbprint:hex_string')
+    try:
+      return WindowsCNGDPoPSigner(subject=subject, thumbprint=thumbprint)
+    except WindowsCNGDPoPError as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM error: {e}')
+  else:
+    systemErrorExit(USAGE_ERROR_RC, f'Unknown DPoP backend: {backend}')
+
 def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   if not noDASA and GC.Values[GC.ENABLE_DASA]:
     jsonData = readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
@@ -4687,7 +4844,17 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
         if GC.Values[GC.TRUNCATE_CLIENT_ID]:
           # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
           jsonDict['client_id'] = re.sub(r'\.apps\.googleusercontent\.com$', '', jsonDict['client_id'])
-        creds = google.oauth2.credentials.Credentials.from_authorized_user_info(jsonDict)
+        if GC.Values[GC.DPOP]:
+          dpop_signer = _getDPoPSigner()
+          # Don't pass the stored thumbprint to DPoPCredentials - the local
+          # thumbprint check is a convenience but the real security guarantee
+          # comes from Google's server rejecting proofs signed with the wrong
+          # key. Stripping it here also allows security testing with
+          # intentionally mismatched keys.
+          jsonDict.pop('dpop_thumbprint', None)
+          creds = DPoPCredentials.from_authorized_user_info(jsonDict, dpop_signer=dpop_signer)
+        else:
+          creds = google.oauth2.credentials.Credentials.from_authorized_user_info(jsonDict)
         if 'id_token_jwt' not in jsonDict:
           creds.token = jsonDict['token']
           creds._id_token = jsonDict['id_token']
@@ -4739,6 +4906,12 @@ def writeClientCredentials(creds, filename):
     'token_expiry': creds.expiry.strftime(YYYYMMDDTHHMMSSZ_FORMAT),
     'token_uri': creds.token_uri,
     }
+  if GC.Values[GC.DPOP]:
+    dpop_signer = _getDPoPSigner()
+    creds_data['dpop_thumbprint'] = dpop_signer.thumbprint
+    dpop_nonce = getattr(creds, 'dpop_nonce', None) or getattr(creds, '_dpop_nonce', None)
+    if dpop_nonce:
+      creds_data['dpop_nonce'] = dpop_nonce
   expected_iss = ['https://accounts.google.com', 'accounts.google.com']
   if _getValueFromOAuth('iss', creds) not in expected_iss:
     systemErrorExit(OAUTH2_TXT_REQUIRED_RC, f'Wrong OAuth 2.0 credentials issuer. Got {_getValueFromOAuth("iss", creds)} expected one of {", ".join(expected_iss)}')
@@ -11167,6 +11340,18 @@ def _waitForUserInput(d):
   d['code'] = readStdin(Msg.ENTER_VERIFICATION_CODE_OR_URL)
 
 class _GamOauthFlow(google_auth_oauthlib.flow.InstalledAppFlow):
+  @classmethod
+  def from_client_config(cls, client_config, scopes, **kwargs):
+    # Pop dpop_signer before it reaches OAuth2Session/requests.Session
+    # which don't understand it. The fork handles this itself but the
+    # stock google-auth-oauthlib does not.
+    dpop_signer = kwargs.pop('dpop_signer', None)
+    instance = super().from_client_config(client_config, scopes, **kwargs)
+    if dpop_signer is not None:
+      instance.dpop_signer = dpop_signer
+      instance._dpop_hook_registered = False
+    return instance
+
   def run_dual(self, **kwargs):
     mgr = multiprocessing.Manager()
     d = mgr.dict()
@@ -11376,7 +11561,8 @@ class Credentials(google.oauth2.credentials.Credentials):
                           access_type='offline',
                           login_hint=None,
                           filename=None,
-                          open_browser=True):
+                          open_browser=True,
+                          dpop_signer=None):
     """Runs an OAuth Flow from client secrets to generate credentials.
 
     Args:
@@ -11397,6 +11583,7 @@ class Credentials(google.oauth2.credentials.Credentials):
       filename: String, the path to a file to use to save the credentials.
       open_browser: Boolean: whether or not GAM should try to open the browser
         automatically.
+      dpop_signer: Optional DPoPSigner, if provided enables DPoP for the OAuth flow.
 
     Returns:
       Credentials
@@ -11411,9 +11598,12 @@ class Credentials(google.oauth2.credentials.Credentials):
         }
     }
 
+    flow_create_kwargs = {'autogenerate_code_verifier': True}
+    if dpop_signer is not None:
+      flow_create_kwargs['dpop_signer'] = dpop_signer
     flow = _GamOauthFlow.from_client_config(client_config,
                                             scopes,
-                                            autogenerate_code_verifier=True)
+                                            **flow_create_kwargs)
     flow_kwargs = {'access_type': access_type,
                    'open_browser': open_browser}
     if login_hint:
@@ -11483,13 +11673,15 @@ def doOAuthRequest(currentScopes, login_hint, verifyScopes=False):
   login_hint = _getValidateLoginHint(login_hint)
 # Needs to be set so oauthlib doesn't puke when Google changes our scopes
   os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = 'true'
+  dpop_signer = _getDPoPSigner() if GC.Values[GC.DPOP] else None
   credentials = Credentials.from_client_secrets(
     client_id,
     client_secret,
     scopes=list(scopes),
     access_type='offline',
     login_hint=login_hint,
-    open_browser=not GC.Values[GC.NO_BROWSER])
+    open_browser=not GC.Values[GC.NO_BROWSER],
+    dpop_signer=dpop_signer)
   lock = FileLock(GM.Globals[GM.OAUTH2_TXT_LOCK], mode=GC.Values[GC.OAUTH2_TXT_LOCK_MODE])
   with lock:
     writeClientCredentials(credentials, GC.Values[GC.OAUTH2_TXT])
@@ -82017,6 +82209,8 @@ MAIN_COMMANDS_WITH_OBJECTS = {
       Cmd.ARG_ISINVITABLE:	doCheckCIUserInvitations,
       Cmd.ARG_ORG:		doCheckOrgUnit,
       Cmd.ARG_SUSPENDED:	doCheckUserSuspended,
+      Cmd.ARG_DPOP:		doDPoPTest,
+      Cmd.ARG_CONNECTION:	doCheckConnection,
      }
     ),
   'clear':
@@ -82570,6 +82764,7 @@ MAIN_COMMANDS_OBJ_ALIASES = {
   Cmd.ARG_CHANNELPRODUCTS:	Cmd.ARG_CHANNELPRODUCT,
   Cmd.ARG_CHANNELSKUS:		Cmd.ARG_CHANNELSKU,
   Cmd.ARG_CHATSPACES:		Cmd.ARG_CHATSPACE,
+  'conn':			Cmd.ARG_CONNECTION,
   Cmd.ARG_CHROMEAPPS:		Cmd.ARG_CHROMEAPP,
   Cmd.ARG_CHROMEBROWSERS:	Cmd.ARG_CHROMEBROWSER,
   Cmd.ARG_CHROMEBROWSERTOKENS:	Cmd.ARG_CHROMEBROWSERTOKEN,

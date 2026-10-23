@@ -15,8 +15,8 @@ dependencies = [
     "filelock==4.0.7",
     "google-api-python-client==2.201.0",
     "google-auth-httplib2==0.4.3",
-    "google-auth-oauthlib==1.5.0",
-    "google-auth==2.59.1",
+    "google-auth-oauthlib @ git+https://github.com/jay0lee/google-cloud-python.git@dpop-oauthlib#subdirectory=packages/google-auth-oauthlib",
+    "google-auth @ git+https://github.com/jay0lee/google-cloud-python.git@dpop-oauthlib#subdirectory=packages/google-auth",
     "modern-httplib2==1.32.0.post2",
     "lxml==6.1.3",
     "passlib==1.7.4",
@@ -45,7 +45,19 @@ text = "Apache License (2.0)"
 
 [project.optional-dependencies]
 yubikey = [
-    "yubikey-manager==5.9.2",
+    "dpop-signer-yubikey @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=yubikey",
+]
+ecp = [
+    "dpop-signer-ecp @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=ecp",
+]
+macos_secureenclave = [
+    "dpop-signer-macos-secureenclave @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=macos-secureenclave",
+]
+linux_tpm = [
+    "dpop-signer-linux-tpm @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=linux-tpm",
+]
+windows_tpm = [
+    "dpop-signer-windows-tpm @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=windows-tpm",
 ]
 
 [project.scripts]
@@ -56,6 +68,9 @@ Homepage = "https://github.com/GAM-team/GAM"
 Issues = "https://github.com/GAM-team/GAM/issues"
 Discussion = "https://groups.google.com/group/google-apps-manager"
 Chat = "https://git.io/gam-chat"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 path = "src/gam/__init__.py"

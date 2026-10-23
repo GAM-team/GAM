@@ -161,6 +161,18 @@ DEVELOPER_PREVIEW_APIS = 'developer_preview_apis'
 DEVELOPER_PREVIEW_API_KEY = 'developer_preview_api_key'
 # When retrieving lists of ChromeOS devices from API, how many should be retrieved in each chunk
 DEVICE_MAX_RESULTS = 'device_max_results'
+# Enable DPoP (Demonstrating Proof-of-Possession) for OAuth tokens
+DPOP = 'dpop'
+# DPoP backend type: software, yubikey, ecp, macos_secureenclave, linux_tpm, windows_tpm
+DPOP_BACKEND = 'dpop_backend'
+# Backend-specific DPoP configuration
+# software: path to PEM key file
+# yubikey: serial_number,slot,pin
+# ecp: path to certificate_config.json
+# macos_secureenclave: label[,application_tag]
+# linux_tpm: handle[,tcti][,auth]
+# windows_tpm: subject or thumbprint:hex_string
+DPOP_BACKEND_CONFIG = 'dpop_backend_config'
 # Domain obtained from gam.cfg or oauth2.txt
 DOMAIN = 'domain'
 # directory for file output
@@ -400,6 +412,9 @@ Defaults = {
   DEVELOPER_PREVIEW_API_KEY: '',
   DEVICE_MAX_RESULTS: '200',
   DOMAIN: '',
+  DPOP: FALSE,
+  DPOP_BACKEND: 'software',
+  DPOP_BACKEND_CONFIG: '',
   DRIVE_DIR: '',
   DRIVE_MAX_RESULTS: '1000',
   EMAIL_BATCH_SIZE: '50',
@@ -576,6 +591,9 @@ VAR_INFO = {
   DEVELOPER_PREVIEW_API_KEY: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   DEVICE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   DOMAIN: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GA_DOMAIN', VAR_LIMITS: (0, None)},
+  DPOP: {VAR_TYPE: TYPE_BOOLEAN},
+  DPOP_BACKEND: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'software': 'software', 'yubikey': 'yubikey', 'ecp': 'ecp', 'macos_secureenclave': 'macos_secureenclave', 'linux_tpm': 'linux_tpm', 'windows_tpm': 'windows_tpm'}},
+  DPOP_BACKEND_CONFIG: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   DRIVE_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMDRIVEDIR'},
   DRIVE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
   EMAIL_BATCH_SIZE: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 100)},
