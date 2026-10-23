@@ -1,5 +1,8 @@
 7.48.34
 
+Added option `(addcsvdata <FieldName> <String>)*` to `gam <UserTypeEntity> print drivefileacls`
+that adds additional columns of data to the CSV file output.
+
 Fixed bug in `gam print devices ... checkforapibug ... fields <DeviceFieldNameList>`.
 
 7.48.33

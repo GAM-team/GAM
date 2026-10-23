@@ -69756,6 +69756,7 @@ def getDriveFilePermissionsFields(myarg, fieldsList):
 #	[oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
 #	[showtitles|(addtitle <String>)]]
 #	(orderby <DriveFileOrderByFieldName> [ascending|descending])*
+#	(addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
 #	[formatjson [quotechar <Character>]] [asadmin]
 # gam [<UserTypeEntity>] show drivefileacls <DriveFileEntity>
 #	(role|roles <DriveFileACLRoleList>)*
@@ -69773,6 +69774,8 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       row = baserow.copy()
+      if addCSVData and includeCSVDataInJSON:
+        permission.update(addCSVData)
       row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
@@ -69790,6 +69793,8 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
   fieldsList = []
   OBY = OrderBy(DRIVEFILE_ORDERBY_CHOICE_MAP)
   PM = PermissionMatch()
+  addCSVData = {}
+  includeCSVDataInJSON = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -69822,6 +69827,10 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
       pass
     elif myarg == 'includepermissionsforview':
       _getIncludePermissionsForView(includePermissionsForView)
+    elif myarg == 'addcsvdata':
+      getAddCSVData(addCSVData)
+    elif myarg == 'includecsvdatainjson':
+      includeCSVDataInJSON = getBoolean()
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
@@ -69831,6 +69840,9 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
   includePermissionsForView = _finalizeIncludePermissionsForView(includePermissionsForView)
   fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
   printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
+  if addCSVData:
+    csvPF.AddTitles(sorted(addCSVData.keys()))
+    csvPF.AddJSONTitles(sorted(addCSVData.keys()))
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -69895,6 +69907,8 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
         baserow = {'Owner': user, 'id': fileId}
         if showTitles or addTitle:
           baserow['name'] = fileName
+        if addCSVData:
+          baserow.update(addCSVData)
         if oneItemPerRow:
           for permission in permissions:
             _mapDrivePermissionNames(permission)
@@ -69913,6 +69927,8 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
+            if addCSVData and includeCSVDataInJSON:
+              permission.update(addCSVData)
             baserow['JSON'] = json.dumps(cleanJSON({'permissions': permissions}, timeObjects=timeObjects),
                                          ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(baserow)
@@ -69920,6 +69936,9 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
   if csvPF:
     if not oneItemPerRow:
       csvPF.SetIndexedTitles(['permissions'])
+    if FJQC.formatJSON:
+      if 'JSON' in csvPF.JSONtitlesList:
+        csvPF.MoveJSONTitlesToEnd(['JSON'])
     csvPF.writeCSVfile('Drive File ACLs')
 
 def doPrintShowDriveFileACLs():
@@ -77041,7 +77060,8 @@ def printShowMessagesThreads(users, entityType):
           break
     messageThreadCounts['threads'] += 1
 
-  _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST, GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
+  _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
+                                        GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
 
   def _handleGmailError(exception, ri):
     http_status, reason, message = checkGAPIError(exception)
@@ -77055,7 +77075,7 @@ def printShowMessagesThreads(users, entityType):
       return
     try:
       response = callGAPI(service, 'get',
-                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID],
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID, GAPI.UNKNOWN_ERROR],
                           userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_size or show_body or show_attachments or save_attachments or upload_attachments])
       if countsOnly:
         _callbacks['process'](ri[RI_ENTITY], response)
@@ -77068,6 +77088,8 @@ def printShowMessagesThreads(users, entityType):
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.invalidMessageId:
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.INVALID_MESSAGE_ID, int(ri[RI_J]), int(ri[RI_JCOUNT]))
+    except GAPI.unknownError as e:
+      entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.serviceNotAvailable:
       userGmailServiceNotEnabledWarning(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
 

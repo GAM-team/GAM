@@ -309,7 +309,9 @@ If an item contains spaces, it should be surrounded by ".
         voicepremier | gvpremier | googlevoicepremier | 1010330002 | Google Voice Premier 
         voicestandard | gvstandard | googlevoicestandard | 1010330004 | Google Voice Standard |
         voicestarter | gvstarter | googlevoicestarter | 1010330003 | Google Voice Starter |
-        wsas | plusstorage | 1010430001 | Google Workspace Additional Storage |
+        wsas10tb | plusstorage10tb | 1010430001 | Google Workspace Additional Storage 10TB |
+        wsas100gb | plusstorage10gb | 1010430002 | Google Workspace Additional Storage 100GB |
+        wsas1tb | plusstorage1tb | 1010430003 | Google Workspace Additional Storage 1TB |
         wsbizplus | workspacebusinessplus | 1010020025 | Google Workspace Business Plus |
         wsbizplusarchived | workspacebusinessplusarchived | 1010340003 | Google Workspace Business Plus - Archived User |
         wsbizstan | workspacebusinessstandard | 1010020028 | Google Workspace Business Standard }
@@ -685,6 +687,7 @@ If an item contains spaces, it should be surrounded by ".
         (tdupdatesheet [<Boolean>])|
         (tduploadnodata [<Boolean>])|
         (tduser <EmailAddress>)
+<TokenID> ::= <String>
 <TransferID> ::= <String>
 <URI> ::= <String>
 <URL> ::= <String>
@@ -704,6 +707,7 @@ If an item contains spaces, it should be surrounded by ".
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <AssetTagList> ::= "<AssetTag>(,<AssetTag>)*"
+<BrowserIDList> ::= "<BrowserID>(,<BrowserID>)*"
 <CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
@@ -805,6 +809,7 @@ If an item contains spaces, it should be surrounded by ".
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
+<TokenIDList> ::= "<TokenID>(,<TokenID>)*"
 <URLList> ::= "<URL>(,<URL>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 <YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
@@ -5274,6 +5279,7 @@ gam print drivefileacls <SharedDriveEntityAdmin> [todrive <ToDriveAttribute>*]
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [showtitles|(addtitle <String>)]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 gam create|add permissions <SharedDriveEntityAdmin> <DriveFilePermissionEntity>
         [expires|expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
@@ -5315,6 +5321,7 @@ gam <UserTypeEntity> print drivefileacls <SharedDriveEntityAdmin> [todrive <ToDr
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [showtitles|(addtitle <String>)]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> create|add permissions <SharedDriveEntityAdmin> <DriveFilePermissionEntity>
         [expires|expiration <Time>] [sendemail|sendnotification] [emailmessage <String>] adminaccess
@@ -7306,6 +7313,7 @@ gam <UserTypeEntity> print drivefileacls <DriveFileEntity> [todrive <ToDriveAttr
         [includepermissionsforview published]
         [oneitemperrow] [showtitles] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 gam <UserTypeEntity> create|add permissions <DriveFileEntity> <DriveFilePermissionEntity>
         [expires|expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
