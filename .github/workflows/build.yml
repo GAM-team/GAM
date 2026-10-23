@@ -791,6 +791,7 @@ jobs:
           run_gam create device serialnumber $sn devicetype android
           run_gam config enable_dasa true save
           run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
+          run_gam csv ./users.csv gam update  user ~primaryEmail ou /
           run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
           run_gam print mobile
           run_gam print devices clientstates
@@ -828,9 +829,9 @@ jobs:
           echo "printer model count:"
           run_gam print printermodels | wc -l
           run_gam print printers
-          # printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
-          # run_gam info printer "$printerid"
-          # run_gam delete printer "$printerid"
+          printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
+          run_gam info printer "$printerid"
+          run_gam delete printer "$printerid"
           run_gam print ous showitemcountonly
           run_gam check ou "${newou}"
           run_gam delete ou "${newou}"
