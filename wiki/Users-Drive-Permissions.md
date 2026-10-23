@@ -324,6 +324,7 @@ gam <UserTypeEntity> print drivefileacls <DriveFileEntity> [todrive <ToDriveAttr
         [oneitemperrow] [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [showtitles|(addtitle <String>)]]
         (orderby <DriveFileOrderByFieldName> [ascending|descending])*
+        (addcsvdata <FieldName> <String>)* [includecsvdatainjson [<Boolean>]]
         [formatjson [quotechar <Character>]]
 ```
 By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
@@ -337,9 +338,17 @@ By default, all ACLS are displayed; use the following option to select a subset 
 * `role|roles <DriveFileACLRoleList>` - Display ACLs for the specified roles only.
 * `<PermissionMatch>* [<PermissionMatchAction>]` - Use permission matching to display a subset of the ACLs for each file; this only applies when `pmselect` is not specified
 
-
 With `print drivefileacls` or `show drivefileacls formatjson`, the ACLs selected for display are all output on one row/line as a repeating item with the matching file id.
 When `oneitemperrow` is specified, each ACL is output on a separate row/line with the matching file id. This simplifies processing the CSV file with subsequent Gam commands.
+
+Add additional columns of data from the command line to the output
+* `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+
+By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
+* `formatjson` - Display the fields in JSON format.
+
+If `formatjson` and `addcsvdata` are specified, the option `includecsvdatainjson` causes GAM to add the
+additional field values to the JSON data.
 
 By default, when writing CSV files, Gam uses a quote character of double quote `"`. The quote character is used to enclose columns that contain
 the quote character itself, the column delimiter (comma by default) and new-line characters. Any quote characters within the column are doubled.
