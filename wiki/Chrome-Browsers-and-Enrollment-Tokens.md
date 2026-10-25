@@ -362,7 +362,7 @@ The characters following `querytime` can be any combination of lowercase letters
 
 For example, query for Chrome browsers last synced more than a year ago:
 ```
-querytime1year -1y query "sync:..#querytime1year#"
+querytime1year -1y query 'last_policy_fetch_time<="#querytime1year#"'
 ```
 
 The first column will always be browserPermanentId; the remaining field names will be sorted if `allfields`, `basic`, `full` or `sortheders` is specified;
@@ -384,26 +384,6 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
-
-### Examples
-
-Print information about Chrome browsers synced more than 30 days ago:
-
-```
-gam print browsers query "sync:..#querytime1#" querytime1 -30d
-```
-
-Print information about Chrome browsers synced in the last 30 days:
-
-```
-gam print browsers query "sync:#querytime1#.." querytime1 -30d
-```
-
-Print information about Chrome browsers synced between 45 days ago and 30 days ago:
-
-```
-gam print browsers query "sync:#querytime1#..#querytime2#" querytime1 -45d querytime2 -30d
-```
 
 ## Browser Query Searchable Fields
 
@@ -453,15 +433,20 @@ where every term appears in at least one indexed string field (whereas a single 
 like "machine 73" matches the contiguous phrase within a single field).
 ```
 
-### Location
-Enter location: as the operator. For example, to match Seattle, enter the following:
+### Asset ID
+Enter annotated_asset_id: as the operator. For example, to match the partial Asset ID 1234, enter the following:
 
-`gam print browsers query "annotated_location:seattle"`
+`gam print browsers query "annotated_asset_id:1234*"`
+
+### Location
+Enter annotated_location: as the operator. For example, to match browsers with Seattle in the location:
+
+`gam print browsers query "annotated_location:Seattle"`
 
 ### Notes
-Enter note: as the operator. For example, to match loaned from John, enter the following with quotation marks:
+Enter annotated_note: as the operator. For example, to match browsers with John in the notes:
 
-`gam print browsers query "annotated_note:'loaned from john'"`
+`gam print browsers query "annotated_note:John"`
 
 ### Times
 ```
@@ -472,11 +457,23 @@ Enter note: as the operator. For example, to match loaned from John, enter the f
 * `field <= "<Time>"` - All dates on or before a date
 * `field >= "<Time>"` - All dates on or after a date
 ```
+Print information about Chrome browsers synced more than 1 year  ago:
 
-### Asset ID
-Enter annotated_asset_id: as the operator. For example, to match the partial Asset ID 1234, enter the following:
+```
+gam print browsers querytime1year -1y query 'last_policy_fetch_time<="#querytime1year#"'
+```
 
-`gam print browsers query "annotated_asset_id:1234*"`
+Print information about Chrome browsers synced in the last 30 days:
+
+```
+gam print browsers querytime30d -30d query 'last_policy_fetch_time>="#querytime30d#"'
+```
+
+Print information about Chrome browsers synced between 45 days ago and 30 days ago:
+
+```
+gam print browsers querytime45d -45d querytime30d -30d query 'last_policy_fetch_time>="#querytime45d#" and last_policy_fetch_time<="querytime30d#"'
+```
 
 ## Create Chrome browser enrollment tokens
 Create a browser enrollment token.
@@ -520,9 +517,9 @@ gam show browsertokens
         <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson]
 ```
-Use these options to select Chrome browsers; if none are chosen, all Chrome browsers in the account are selected:
+Use these options to select Chrome browsers; if none are chosen, all Chrome browser tokens in the account are selected:
 * `ou|org|orgunit|browserou <OrgUnitPath>` - Limit browsers to those in the specified OU; this option can be used in conjunction with query
-* `(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)` - Limit browsers  to those that match a query
+* `(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)` - Limit browser tokens to those that match a query
 
 Use the `querytime<String> <Time>` option to allow times, usually relative, to be substituted into the `query <QueryBrowserToken>` and `queries <QueryBrowserTokenList>` options.
 The `querytime<String> <Time>` value replaces the string `#querytime<String>#` in any queries.
@@ -542,16 +539,13 @@ gam print browsertokens [todrive <ToDriveAttribute>*]
         <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson [quotechar <Character>]]
 ```
-Use these options to select Chrome browsers; if none are chosen, all Chrome browsers in the account are selected:
+Use these options to select Chrome browsers; if none are chosen, all Chrome browser tokens in the account are selected:
 * `ou|org|orgunit|browserou <OrgUnitPath>` - Limit browsers to those in the specified OU; this option can be used in conjunction with query
-* `(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)` - Limit browser s to those that match a query
+* `(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)` - Limit browser tokens to those that match a query
 
 Use the `querytime<String> <Time>` option to allow times, usually relative, to be substituted into the `query <QueryBrowserToken>` and `queries <QueryBrowserTokenList>` options.
 The `querytime<String> <Time>` value replaces the string `#querytime<String>#` in any queries.
 The characters following `querytime` can be any combination of lowercase letters and numbers.
-
-The first column will always be token; the remaining field names will be sorted if `allfields`, `basic`, `full` or `sortheders` is specified;
-otherwise, the remaining field names will appear in the order specified.
 
 Select the fields to be displayed:
 * Display all fields; this is the default
