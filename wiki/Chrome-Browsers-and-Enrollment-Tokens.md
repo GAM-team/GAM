@@ -13,6 +13,7 @@
 - [Create Chrome browser enrollment tokens](#create-chrome-browser-enrollment-tokens)
 - [Revoke Chrome browser enrollment tokens](#revoke-chrome-browser-enrollment-tokens)
 - [Display Chrome browser enrollment tokens](#display-chrome-browser-enrollment-tokens)
+- [Token Query Searchable Fields](#token-query-searchable-fields)
 
 ## Notes
 
@@ -559,3 +560,14 @@ the quote character itself, the column delimiter (comma by default) and new-line
 When using the `formatjson` option, double quotes are used extensively in the data resulting in hard to read/process output.
 The `quotechar <Character>` option allows you to choose an alternate quote character, single quote for instance, that makes for readable/processable output.
 `quotechar` defaults to `gam.cfg/csv_output_quote_char`. When uploading CSV files to Google, double quote `"` should be used.
+
+## Token Query Searchable Fields
+
+```
+device_type:<String> - Currently only CHROME_BROWSER is supported
+
+token_state:<String> - Supported values: ACTIVE, EXPIRED, REVOKED
+org_unit_path:<String> - The full path of the org unit, such as /Montreal/Sales
+
+org_unit_id:<String> - The obfuscated id of the org unit, not the full path.
+```
