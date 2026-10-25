@@ -17,7 +17,7 @@
 
 ## Notes
 
-GAM 7.49.00 and higher use the `Chrome Management API` to manage/display Chrome Browers and Chrome Browser Ertollment Tokens
+GAM 7.49.00 and higher use the `Chrome Management API` to manage/display Chrome Browers and Chrome Browser Enrollment Tokens
 rather then the `Chrome Enterprise Core API` and the `Chrome Browser Token Enrollment API`.
 
 To use these commands you should do the following.
