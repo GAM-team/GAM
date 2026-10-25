@@ -25,7 +25,7 @@ To use these commands you should do the following.
 gam oauth update.
 
 This scope:
-```
+
 [*]  1)  Chrome Browser Cloud Management API (supports readonly)
 
 has been replaced by these scopes:
