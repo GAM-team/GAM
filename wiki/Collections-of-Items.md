@@ -138,7 +138,7 @@ Data fields identified in a `csvkmd` argument.
 <AllowlistedDomainsIDEntity> ::=
         <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
-        <DeviceIDList> |
+        <BrowserPermanentIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
         <FileSelector> | <CSVFileSelector>

@@ -75,7 +75,7 @@ Client Access
 * [Calendars - Events](Calendars-Events)
 * [Calendars - Secondary Calendars with no Owner](No-Owner-Secondary-Calendars)
 * [Chrome Auto Update Expiration Counts](Chrome-AUE-Counts)
-* [Chrome Browser Cloud Management](Chrome-Browser-Cloud-Management)
+* [Chrome Browsers and Enrollment Tokens](Chrome-Browsers-and-Enrollment-Tokens)
 * [Chrome Device Counts](Chrome-Device-Counts)
 * [Chrome Device Needs Attention Counts](Chrome-Needs-Attention-Counts)
 * [Chrome Installed Apps](Chrome-Installed-Apps)

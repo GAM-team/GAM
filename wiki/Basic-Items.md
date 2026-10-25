@@ -272,7 +272,7 @@
 <APPID> ::= <String>
 <ASPID> ::= <String>
 <AssetTag> ::= <String>
-<BrowserTokenPermanentID> ::= <String>
+<BrowserPermanentID> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CAALevelName> ::= <String>
 <CalendarACLScope> ::=
@@ -581,6 +581,7 @@
         (tdupdatesheet [<Boolean>])|
         (tduploadnodata [<Boolean>])|
         (tduser <EmailAddress>)
+<TokenPermanentID> ::= <String>
 <TransferID> ::= <String>
 <URI> ::= <String>
 <URL> ::= <String>

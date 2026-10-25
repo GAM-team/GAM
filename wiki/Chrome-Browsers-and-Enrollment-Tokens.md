@@ -1,41 +1,59 @@
-# Chrome Browser Cloud Management
+# Chrome Browsers and Enrollment Tokens
+- [Notes](#notes)
 - [API documentation](#api-documentation)
-- [Query documentation](#query-documentation)
 - [Definitions](#definitions)
 - [Raw Fields](#raw-fields)
-- [Manage Chrome browsers](#manage-chrome-browsers)
-  - [Update Chrome browsers](#update-chrome-browsers)
-    - [Example: Add a new note to existing notes](#example-add-a-new-note-to-existing-notes)
-  - [Move Chrome browsers from one OU to another](#move-chrome-browsers-from-one-ou-to-another)
-  - [Delete Chrome browsers](#delete-chrome-browsers)
+- [Update Chrome browsers](#update-chrome-browsers)
+  - [Example: Add a new note to existing notes](#example-add-a-new-note-to-existing-notes)
+- [Move Chrome browsers from one OU to another](#move-chrome-browsers-from-one-ou-to-another)
+- [Delete Chrome browsers](#delete-chrome-browsers)
 - [Display Chrome browsers](#display-chrome-browsers)
   - [Examples](#examples)
 - [Browser Query Searchable Fields](#browser-query-searchable-fields)
-- [Manage Chrome browser enrollment tokens](#manage-chrome-browser-enrollment-tokens)
+- [Create Chrome browser enrollment tokens](#create-chrome-browser-enrollment-tokens)
+- [Revoke Chrome browser enrollment tokens](#revoke-chrome-browser-enrollment-tokens)
 - [Display Chrome browser enrollment tokens](#display-chrome-browser-enrollment-tokens)
 
-## API documentation
-* [Chrome Enterprise Core API](https://support.google.com/chrome/a/answer/9681204)
-* [Chrome Browser Enrollment Token API](https://support.google.com/chrome/a/answer/9949706)
+## Notes
 
-## Query documentation
-* [Search Chrome Browser Devices](https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account)
+GAM 7.49.00 and higher use the `Chrome Management API` to manage/display Chrome Browers and Chrome Browser Ertollment Tokens
+rather then the `Chrome Enterprise Core API` and the `Chrome Browser Token Enrollment API`.
+
+To use these commands you should do the following.
+```
+
+gam oauth update.
+
+This scope:
+```
+[*]  1)  Chrome Browser Cloud Management API (supports readonly)
+
+has been replaced by these scopes:
+
+[*]  2)  Chrome Management API - Browsers (supports readonly)
+[*]  3)  Chrome Management API - Enrollment Tokens (supports readonly)
+```
+
+## API documentation
+* [Chrome Browsers](https://developers.google.com/chrome/management/reference/rest/v1/customers.chromeBrowsers)
+* [Chrome Browser Enrollment Tokens](https://developers.google.com/chrome/management/reference/rest/v1/customers.enrollmentTokens)
 
 ## Definitions
 * [`<CrOSTypeEntity>`](Collections-of-ChromeOS-Devices)
 
 ```
-<BrowserTokenPermanentID> ::= <String>
+<BrowserPermanentID> ::= <String>
+<BrowserPermanmentIDList> ::= "<BrowserPermanmentID>(,<BrowserPermanmentID>)*"
 <OrgUnitPath> ::= /|(/<String)+
-<QueryBrowser> ::= <String> See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
+<QueryBrowser> ::= <String> See: https://developers.google.com/chrome/management/reference/rest/v1/customers.chromeBrowsers/list, scroll down to filter
 <QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
-<QueryBrowserToken> ::= <String> https://support.google.com/chrome/a/answer/9949706, scroll down to Filter Query Language
+<QueryBrowserToken> ::= <String> See: https://developers.google.com/chrome/management/reference/rest/v1/customers.enrollmentTokens/list, scroll down to Filter 
 <QueryBrowserTokenList> ::= "<QueryBrowserToken>(,<QueryBrowserToken>)*"
-<DeviceID> ::= <String>
-<DeviceIDList> ::= "<DeviceID>(,<DeviceID>)*"
+<TokenPermanentID> ::= <String>
+<TokenPermanmentIDList> ::= "<TokenPermanmentID>(,<TokenPermanmentID>)*"
 
 <BrowserEntity> ::=
-        <DeviceIDList> | 
+        <BrowserPermanmentIDList> | 
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
         <FileSelector> | <CSVFileSelector>
@@ -48,111 +66,150 @@
         (annotateduser|user <String>
 
 <BrowserFieldName> ::=
-        annotatedassetid|asset|assetid|
-        annotatedlocation|location|
-        annotatednotes|notes|
-        annotateduser|user|
-        browsers|
-        browserversions|
-        deviceid|
-        deviceidentifiershistory|
-        extensioncount|
-        lastactivitytime|
-        lastdeviceuser|
-        lastdeviceusers|
-        lastpolicyfetchtime|
-        lastregistrationtime|
-        laststatusreporttime|
-        machinename|
-        machinepolicies|
-        orgunitpath|org|orgunit|ou|
-        osarchitecture|
-        osplatform|
-        osplatformversion|
-        osversion|
-        policycount|
-        safebrowsingclickthroughcount|
-        serialnumber|
+        annotatedassetid | asset |assetid |
+        annotatedlocation | location |
+        annotatednotes | notes |
+        annotateduser | user |
+        attestationcredential |
+        browserpermanentid | deviceid |
+        browsers |
+        browserversions |
+        deviceidentifiershistory |
+        extensioncount |
+        lastactivitytime |
+        lastdeviceuser |
+        lastdeviceusers |
+        lastpolicyfetchtime |
+        lastregistrationtime |
+        laststatusreporttime |
+        machinename |
+        machinepolicies |
+        machineextensionpolicies |
+        omaharecentfetchtime |
+        orgunitid | orgunitpath | org | orgunit |ou |
+        osarchitecture |
+        osplatform |
+        osplatformversion |
+        osversion |
+        policycount |
+        serialnumber |
         virtualdeviceid
 <BrowserFieldNameList> ::= "<BrowseFieldName>(,<BrowserFieldName>)*"
 
 <BrowserOrderByFieldName> ::=
-        annotatedassetid|assetassetid|
-        annotatedlocation|location|
-        annotatednotes|notes|
-        annotateduser|user|
-        browserversionchannel|
-        browserversionsortable|
-        deviceid|id|
-        enrollmentdate|
-        extensioncount|
-        lastactivity|
-        lastsignedinuser|
-        lastsync|
-        machinename|
-        orgunit|ou|org|
-        osversion|
-        osversionsortable|
-        platformmajorversion|
+        annotatedassetid | asset | assetid |
+        annotatedlocation | location |
+        annotatednotes | notes |
+        annotateduser | user |
+        browserpermanentid | deviceid | id |
+        browserversionchannel |
+        browserversionsortable |
+        enrollmentdate |
+        extensioncount |
+        lastactivitytime | lastactivity |
+        lastpolicyfetchtime | lastsync |
+        lastregistrationtime | enrollmentdate |
+        lastdeviceuser | lastsignedinuser |
+        lastsync |
+        machinename |
+        orgunit | org | ou |
+        osversion |
+        osversionsortable |
+        platformmajorversion |
         policycount
 ```
 ```
 <BrowserTokenFieldName> ::=
-        createtime|
-        creatorid|
-        customerid|
-        expiretime|
-        org|
-        orgunit|
-        orgunitpath|
-        revoketime|
-        revokerid|
-        state|
-        token|
-        tokenpermanentid
-<BrowserTokenFieldNameList> ::= "<BrowseTokenFieldName>(,<BrowserTokenFieldName>)*"
+        createtime |
+        creatorid |
+        customerid |
+        expiretime |
+        name |
+        orgunitid | orgunitpath | org | orgunit | ou |
+        revokerid |
+        revoketime |
+        state |
+        token |
+        tokenpermanentid |
+        tokentype
+<BrowserTokenFieldNameList> ::= "<BrowserTokenFieldName>(,<BrowserTokenFieldName>)*"
 ```
 ## Raw Fields
 
 This is the list of Browser fields showing their subfields.
 You enter `rawfields` like this: the field names must be entered exactly as shown.
 ```
-rawfields "deviceId,browsers(profiles(id,name,extensions(appType,name))),lastDeviceUsers(userName),osPlatform,osVersion"
+rawfields "browserPermanwnrId,browsers(profiles(id,name,extensions(appType,name))),lastDeviceUsers(userName),osPlatform,osVersion"
 ```
 ```
 annotatedAssetId
 annotatedLocation
 annotatedNotes
 annotatedUser
-deviceId
+attestationCredential
+  keyRotationTime
+  keyTrustLevel
+  keyType
+  publicKey
+browserPermanentId
 browserVersions
 browsers
   browserVersion
   channel
   executablePath
   lastStatusReportTime
+  lastPOlicyFetchTime
   pendingInstallVersion
+  plugins
+    pluginName
+    description
+    filename
   profiles
+    profileName
     id
-    chromeSignedInUserEmail
-    lastPolicyFetchTime
     lastStatusReportTime
-    name
+    lastPolicyFetchTime
+    safeBrowsingWarnings
+    safeBrowsingWarningsClickThroughs
+    safeBrowsingWarningsResetTime
+    chromeSignedInUserEmail
     extensions
       appType
+      configuredAppPolicy
       description
+      disabled
       extensionId
-      homepageUrl
+      extensionName
+      homepageUri
+      icons
+        size
+	uri
       installType
       manifestVersion
-      name
       permissions
       version
+    extensionPolicies
+      extensionId
+      extensionName
+      policies
+        policyName
+        source
+        value
+        error
+    userPolicies
+      policyName
+      source
+      value
+      error
 deviceIdentifiersHistory
+  deviceIdCollision
+  lastDeviceIdCollisionDetectionTime
   records
     firstRecordTime
     identifiers
+      hostName
       machineName
+      serialNumber
     lastActivityTime
 extensionCount
 lastActivityTime
@@ -163,12 +220,21 @@ lastDeviceUsers
 lastPolicyFetchTime
 lastRegistrationTime
 lastStatusReportTime
+machineExtensionPolicies
+  extensionId
+  extensionName
+  policies
+    policyName
+    source
+    value
+    error
 machineName
 machinePolicies
   error
   name
   source
   value
+omahaRecentFetchTime
 orgUnitPath
 osArchitecture
 osPlatform
@@ -180,7 +246,6 @@ serialNumber
 virtualDeviceId
 ```
 
-## Manage Chrome browsers
 ## Update Chrome browsers
 There are four attributes that can be set for a browser.
 ```
@@ -192,27 +257,27 @@ gam update browser <BrowserDeviceEntity> <BrowserAttibute>+
 If you specify the `updatenotes <String>` option and it contains the string `#notes#`, the existing notes value will replace `#notes#`.
 This requires an additional API to get the existing value.
 
-If you have a CSV file, UpdateBrowsers.csv with two columns: deviceId,notes
+If you have a CSV file, UpdateBrowsers.csv with two columns: browserPermanentId,notes
 this command will add a new line of notes to the front of the existing notes:
 
 ```
-gam csv UpdateBrowsers.csv gam update browser "~deviceId" updatenotes "~~notes~~\n#notes#"
+gam csv UpdateBrowsers.csv gam update browser "~browserPermanentId" updatenotes "~~notes~~\n#notes#"
 ```
 
 ## Move Chrome browsers from one OU to another
 ```
 gam move browsers ou|org|orgunit <OrgUnitPath>
-        ((ids <DeviceIDList>) |
+        ((ids <BrowserPermanentIDList>) |
          (queries <QueryBrowserList> [querytime<String> <Time>]) |
          (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
          <FileSelector> | <CSVFileSelector>)
         [batchsize <Integer>]
 ```
 
-Batches of devices are processed to minimize the number of API calls; `batch_size` controls the number of deviceIds handled in each batch
+Batches of devices are processed to minimize the number of API calls; `batch_size` controls the number of browserPermanentIds handled in each batch
 `batch_size` defaults to the value from `gam.cfg`, its maximum value is 600.
 
-Google performs  error checking of the browser  deviceIDs, if any deviceID in a batch is invalid, none of the browsers in the batch are moved.
+Google performs  error checking of the browserPermanentIDs, if any browserPermanentID in a batch is invalid, none of the browsers in the batch are moved.
 
 ### Example: Move Chrome browsers from one OU to another
 
@@ -221,21 +286,21 @@ gam move browsers ou /Students/2021 browserou /Students/2020
 ```
 
 ## Delete Chrome browsers
-Deletes a browser; the browser will be removed from Google's admin console and no longer sync policy or reporting. However, existing policies will still be applied until the device registration and dm tokens are removed.
+Deletes the data collected from a Chrome browser profile.
 ```
-gam delete browser <BrowserDeviceEntity>
+gam delete browser <BrowserPermanentID>
 ```
 
 ## Display Chrome browsers
 ```
-gam info browser <BrowserEntity>
+gam info browser <BrowserPermanentID>
         (basic|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
          (rawfields "<BrowserFieldNameList>"))
         [formatjson]
 ```
 Select the fields to be displayed:
-* `annotated` - Display these fields: deviceId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
+* `annotated` - Display these fields: browserPermanentId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
 * `basic` - Display all fields except: browsers, lastDeviceUsers, lastStatusReportTime, machinePolicies; this is the default
 * `allfields/full` - Display all fields
 * `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Display a selected list of fields
@@ -249,7 +314,7 @@ gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        (basic|full|annotated | 
+        (basic|allfields|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
          (rawfields "<BrowserFieldNameList>"))
         [formatjson]
@@ -261,8 +326,8 @@ Use these options to select Chrome browsers; if none are chosen, all Chrome brow
 * `select <BrowserEntity>` - Select a specific set of browsers to display
 
 Select the fields to be displayed:
-* `annotated` - Display these fields: deviceId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
-* `basic` - Display all fields except: browsers, lastDeviceUsers, lastStatusReportTime, machinePloicies; this is the default
+* `annotated` - Display these fields: browserPermanentId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
+* `basic` - Display all fields except: browsers, lastDeviceUsers, machinePloicies; this is the default
 * `allfields/full` - Display all fields
 * `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Display a selected list of fields
   * Note that `ou, org and orgunit` are both command line options and field names; use `fields` to include them in the selected list of fields
@@ -280,7 +345,7 @@ gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        (basic|full|annotated | 
+        (basic|full|allfields|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
          (rawfields "<BrowserFieldNameList>"))
         [sortheaders] [formatjson [quotechar <Character>]]
@@ -300,12 +365,12 @@ For example, query for Chrome browsers last synced more than a year ago:
 querytime1year -1y query "sync:..#querytime1year#"
 ```
 
-The first column will always be deviceId; the remaining field names will be sorted if `allfields`, `basic`, `full` or `sortheders` is specified;
+The first column will always be browserPermanentId; the remaining field names will be sorted if `allfields`, `basic`, `full` or `sortheders` is specified;
 otherwise, the remaining field names will appear in the order specified.
 
 Select the fields to be displayed:
-* `annotated` - Display these fields: deviceId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
-* `basic` - Display all fields except: browsers, lastDeviceUsers, lastStatusReportTime, machinePloicies; this is the default
+* `annotated` - Display these fields: browserPermanentIdId,annotatedAssetId,annotatedLocation,annotatedNotes,annotatedUser
+* `basic` - Display all fields except: browsers, lastDeviceUsers, machinePolicies; this is the default
 * `allfields/full` - Display all fields
 * `<BrowserFieldName>* [fields <BrowserFieldNameList>]` - Display a selected list of fields
   * Note that `ou, org and orgunit` are both command line options and field names; use `fields` to include them in the selected list of fields
@@ -344,40 +409,43 @@ gam print browsers query "sync:#querytime1#..#querytime2#" querytime1 -45d query
 
 These are the fields that can be used in a query:
 ```
-Field             Description
-arch              The CPU architecture for the Chrome browser device. (e.g. x86_64)
-asset_id          The annotated asset ID for the Chrome browser device.
-browser_version   A reported Chrome browser installed on the Chrome browser device (e.g. 73)
-enrollment_token  The enrollment token used to register the Chrome browser device.
-last_activity     The last time the Chrome browser device has shown activity (policy fetch or reporting).
-location          The annotated location for the Chrome browser device.
-machine_name      The machine name for the Chrome browser device.
-machine_user      The last reported user of the Chrome browser device.
-note              The annotated note for the Chrome browser device.
-num_extensions    The number of extensions reported by the Chrome browser device.
-num_policies      The number of policies reported by the Chrome browser device.
-os                The combine OS platform and major OS version for the Chrome browser device (e.g. "Windows 10")
-os_platform       The OS platform for the Chrome browser device. (e.g. Windows)
-os_version        The OS version for the chrome browser device. (e.g. 10.0.16299.904)
-register          The registration time for the Chrome browser device.
-report            The last report time for the Chrome browser device
-sync              The last policy sync time for the Chrome browser device.
-user              The annotated user for the Chrome browser device.
+    annotated_asset_id
+    annotated_location
+    annotated_note
+    annotated_user
+    browser_permanent_id
+    browser_version
+    device_id_collision
+    extension_count
+    last_activity_time
+    last_device_user
+    last_policy_fetch_time
+    last_registration_time
+    last_status_report_time
+    machine_name
+    org_unit_id
+    org_unit_path
+    os_architecture
+    os_platform
+    os_platform_version
+    os_version
+    policy_count
+
+The following functions can be used in the filter:
+
+    in_group(string): Filters browsers that belong to the specified Cloud Identity group resource name (e.g. in_group("groups/{groupId}")).
+
+Any of the above fields or functions can be used to specify a filter, and filtering by multiple fields or functions is supported with AND operator.
+
+String type, Integer type fields and enum type fields support = and : operators.
+
+The timestamp type fields support =, <= and >= operators. Timestamps expect an RFC-3339 formatted string enclosed in double quotes (e.g., "2012-04-21T11:30:00-04:00").
+
+Wildcard * is only supported for machine_name, annotated_asset_id, and browser_version.
+
+In addition, global string literal filtering without a field name is supported: a single term (e.g., ABC) matches if any indexed string field contains ABC,
+and multiple terms joined by AND or whitespace (e.g., machine AND 73 or machine 73) match browsers where every term appears in at least one indexed string field (whereas a single quoted phrase like "machine 73" matches the contiguous phrase within a single field).
 ```
-
-For fields that accept time (register, report, sync, last_activity) the time format is YYYY-MM-DDThh:mm:ss (e.g. 2020-01-01T12:00:00). You may also specify open or closed ranges for the time:
-```
-datetime           exactly on the given date or time, e.g., 2011-03-23 2011-04-26T14:23:05
-
-datetime..datetime within (inclusive) the given interval of date or time, e.g., 2011-03-23..2011-04-26
-
-datetime..         on or after the given date or time; e.g., 2011-04-26T14:23:05..
-
-..datetime         on or before the given date or time; e.g., ..2011-04-26T14:23:05
-```
-To search within a specific field only (for example, to search for a specific user), you can enter an operator followed by an argument -- for example, `user:jsmith`. You can use single words or quoted lists of words as an argument when running an operator query.
-
-To run an operator query, follow these guidelines for each field:
 
 ### User
 Enter user: as the operator. For example, to match the name Joe, but not Joey, enter the following:
@@ -391,45 +459,34 @@ To match the name Tom Sawyer or A. Tom Sawyer, but not Tom A. Sawyer, enter with
 ### Location
 Enter location: as the operator. For example, to match Seattle, enter the following:
 
-`gam print browsers query "location:seattle"`
+`gam print browsers query "annotated_location:seattle"`
 
-Notes
+### Notes
 Enter note: as the operator. For example, to match loaned from John, enter the following with quotation marks:
 
-`gam print browsers query "note:'loaned from john'"`
+`gam print browsers query "annotated_note:'loaned from john'"`
 
-### Register
-This field is not displayed on the Chrome OS settings page. However, you can search for devices that were registered on a given date, or within a given time range.
-
-Enter register: as the operator, and enter a date and time (or time range) as the argument. For example, to search for all devices registered on April 15, 2020, enter the following:
-
-`gam print browsers query "register:2020-04-15"`
-
-For additional examples using dates, times, and ranges, see "Format for date searches" below.
-
-### Last Sync
-Enter sync: as the operator and a date or time range as the argument. For example, to search for all devices that were last synced with policy settings on April 15, 2020, enter the following:
-
-`gam print browsers query "sync:2020-04-15"`
-
-For additional examples using dates, times, and ranges, see "Format for date searches" below.
-
-### Format for date searches
-* `YYYY-MM-DD` - A single date
-* `YYYY-MM-DD..YYYY-MM-DD` - A date range
-* `..YYYY-MM-DD` - All dates on or before a date
-* `YYYY-MM-DD..` - All dates on or after a date
+### Times
+```
+<Time> ::=
+        <Year>-<Month>-<Day>T<Hour>:<Minute>:<Second>(Z|(+|-(<Hour>:<Minute>)))
+* `field = "<Time>"` - A single time
+* `field >= "<Time>" and field <= "<Time>"` - A date range
+* `field <= "<Time>"` - All dates on or before a date
+* `field >= "<Time>"` - All dates on or after a date
 
 ### Asset ID
-Enter asset_id: as the operator. For example, to match the partial Asset ID 1234, enter the following:
+Enter annotated_asset_id: as the operator. For example, to match the partial Asset ID 1234, enter the following:
 
-`gam print browsers query "asset_id:1234"`
+`gam print browsers query "annotated_asset_id:1234*"`
 
-## Manage Chrome browser enrollment tokens
+## Create Chrome browser enrollment tokens
 Create a browser enrollment token. The Google API that supports this call always returns an error.
 ```
 gam create browsertoken
-        [ou|org|orgunit|browserou <OrgUnitPath>] [expire|expires <Time>]
+        [ou|org|orgunit|browserou <OrgUnitPath>]
+        [enrollmenttokenid <String>]
+        [expire|expires <Time>]
         [formatjson]
 ```
 By default, the enrollment token is created for the root OU; use `ou|org|orgunit|browserou <OrgUnitPath>`
@@ -438,20 +495,31 @@ to create the token for a specific OU.
 By default, Gam displays the created token as an indented list of keys and values:
 - `formatjson` - Display the token in JSON format.
 
-Revoke a browser enrollment token.
+## Revoke Chrome browser enrollment tokens
 An enrollment token is revoked by referencing its `tokenPermanentId` which can be obtained
 from `gam show|print browsertokens`.
 ```
-gam revoke browsertoken <BrowserTokenPermanentID>
+gam revoke browsertoken <TokenPermanentID>
 
 ```
 ## Display Chrome browser enrollment tokens
 ```
+gam info browsertoken <TokenPermanentID>
+        <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        [formatjson]
+```
+Select the fields to be displayed:
+* Display all fields; this is the default
+* `<BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]` - Display a selected list of fields
+
+By default, Gam displays the information as an indented list of keys and values:
+- `formatjson` - Display the fields in JSON format.
+
+```
 gam show browsertokens
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
         [querytime<String> <Time>]
-        [orderby <BrowserTokenFieldName> [ascending|descending]]
-        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson]
 ```
 Use these options to select Chrome browsers; if none are chosen, all Chrome browsers in the account are selected:
@@ -463,8 +531,8 @@ The `querytime<String> <Time>` value replaces the string `#querytime<String>#` i
 The characters following `querytime` can be any combination of lowercase letters and numbers.
 
 Select the fields to be displayed:
-* `allfields` - Display all fields; this is the default
-* `<BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]` - Displaya selected list of fields
+* Display all fields; this is the default
+* `<BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]` - Display a selected list of fields
 
 By default, Gam displays the information as an indented list of keys and values:
 - `formatjson` - Display the fields in JSON format.
@@ -473,9 +541,8 @@ By default, Gam displays the information as an indented list of keys and values:
 gam print browsertokens [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken)|(queries <QueryBrowserTokenList>)))
         [querytime<String> <Time>]
-        [orderby <BrowserTokenFieldName> [ascending|descending]]
-        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
-        [sortheaders] [formatjson [quotechar <Character>]]
+        <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        [formatjson [quotechar <Character>]]
 ```
 Use these options to select Chrome browsers; if none are chosen, all Chrome browsers in the account are selected:
 * `ou|org|orgunit|browserou <OrgUnitPath>` - Limit browsers to those in the specified OU; this option can be used in conjunction with query
@@ -485,12 +552,12 @@ Use the `querytime<String> <Time>` option to allow times, usually relative, to b
 The `querytime<String> <Time>` value replaces the string `#querytime<String>#` in any queries.
 The characters following `querytime` can be any combination of lowercase letters and numbers.
 
-The first column will always be deviceId; the remaining field names will be sorted if `allfields`, `basic`, `full` or `sortheders` is specified;
+The first column will always be token; the remaining field names will be sorted if `allfields`, `basic`, `full` or `sortheders` is specified;
 otherwise, the remaining field names will appear in the order specified.
 
 Select the fields to be displayed:
-* `allfields` - Display all fields; this is the default
-* `<BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]` - Displaya selected list of fields
+* Display all fields; this is the default
+* `<BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]` - Display a selected list of fields
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format:
 * `formatjson` - Display the fields in JSON format.

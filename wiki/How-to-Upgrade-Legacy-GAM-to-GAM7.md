@@ -251,7 +251,7 @@ writes the credentials into the file oauth2.txt.
 ```
 gamteam@server:/Users/gamteam$ rm -f /Users/gamteam/GAMConfig/oauth2.txt
 gamteam@server:/Users/gamteam$ gam version
-GAM 7.48.34 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.49.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.15.0 64-bit final
 macOS Golden Gate 27.0.1 arm64
@@ -261,62 +261,63 @@ Config File: /Users/gamteam/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my
 gamteam@server:/Users/gamteam$ gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
-[*]  1)  Chrome Browser Cloud Management API (supports readonly)
-[*]  2)  Chrome Management API - AppDetails readonly
-[*]  3)  Chrome Management API - Profiles (supports readonly)
-[*]  4)  Chrome Management API - Telemetry readonly
-[*]  5)  Chrome Management API - readonly
-[*]  6)  Chrome Policy API (supports readonly)
-[*]  7)  Chrome Printer Management API (supports readonly)
-[ ]  8)  Chrome Version History API
-[*]  9)  Classroom API - Course Announcements (supports readonly)
-[*] 10)  Classroom API - Course Topics (supports readonly)
-[*] 11)  Classroom API - Course Work/Materials (supports readonly)
-[*] 12)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 13)  Classroom API - Courses (supports readonly)
-[*] 14)  Classroom API - Profile Emails
-[*] 15)  Classroom API - Profile Photos
-[*] 16)  Classroom API - Rosters (supports readonly)
-[*] 17)  Classroom API - Student Guardians (supports readonly)
-[ ] 18)  Cloud Channel API (supports readonly)
-[*] 19)  Cloud Identity API - Allowlisted Domains (supports readonly)
-[*] 20)  Cloud Identity API - Groups (supports readonly)
-[*] 21)  Cloud Identity API - Groups Beta (supports readonly)
-[ ] 22)  Cloud Identity API - Inbound SSO Settings (supports readonly)
-[*] 23)  Cloud Identity API - OrgUnits Beta (supports readonly)
-[*] 24)  Cloud Identity API - Policy (supports readonly)
-[*] 25)  Cloud Identity API - User Invitations (supports readonly)
-[ ] 26)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
-[*] 27)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
-[*] 28)  Contact Delegation API (supports readonly)
-[*] 29)  Contacts API - Domain Shared Contacts
-[*] 30)  Data Transfer API (supports readonly)
-[*] 31)  Directory API - Chrome OS Devices (supports readonly)
-[*] 32)  Directory API - Customers (supports readonly)
-[*] 33)  Directory API - Domains (supports readonly)
-[*] 34)  Directory API - Groups (supports readonly)
-[*] 35)  Directory API - Mobile Devices Directory (supports readonly and actiononly)
-[*] 36)  Directory API - Organizational Units (supports readonly)
-[*] 37)  Directory API - Resource Calendars (supports readonly)
-[*] 38)  Directory API - Roles (supports readonly)
-[*] 39)  Directory API - User Schemas (supports readonly)
-[*] 40)  Directory API - User Security
-[*] 41)  Directory API - Users (supports readonly)
-[ ] 42)  Email Audit API
-[*] 43)  Groups Migration API
-[*] 44)  Groups Settings API
-[*] 45)  License Manager API
-[*] 46)  People API (supports readonly)
-[*] 47)  People Directory API - readonly
-[ ] 48)  Pub / Sub API
-[*] 49)  Reports API - Audit Reports readonly
-[*] 50)  Reports API - Usage Reports readonly
-[ ] 51)  Reseller API
-[*] 52)  Resource Manager API - Organizations readonly
-[*] 53)  Resource Manager API - Projects readonly
-[ ] 54)  Service Account Lookup pseudo-API
-[ ] 55)  Site Verification API
-[*] 56)  Vault API (supports readonly)
+[*]  1)  Chrome Management API - AppDetails readonly
+[*]  2)  Chrome Management API - Browsers (supports readonly)
+[*]  3)  Chrome Management API - Enrollment Tokens (supports readonly)
+[*]  4)  Chrome Management API - Profiles (supports readonly)
+[*]  5)  Chrome Management API - Reports readonly
+[*]  6)  Chrome Management API - Telemetry readonly
+[*]  7)  Chrome Policy API (supports readonly)
+[*]  8)  Chrome Printer Management API (supports readonly)
+[*]  9)  Chrome Version History API
+[*] 10)  Classroom API - Course Announcements (supports readonly)
+[*] 11)  Classroom API - Course Topics (supports readonly)
+[*] 12)  Classroom API - Course Work/Materials (supports readonly)
+[*] 13)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 14)  Classroom API - Courses (supports readonly)
+[*] 15)  Classroom API - Profile Emails
+[*] 16)  Classroom API - Profile Photos
+[*] 17)  Classroom API - Rosters (supports readonly)
+[*] 18)  Classroom API - Student Guardians (supports readonly)
+[ ] 19)  Cloud Channel API (supports readonly)
+[ ] 20)  Cloud Identity API - Allowlisted Domains (supports readonly)
+[*] 21)  Cloud Identity API - Groups (supports readonly)
+[ ] 22)  Cloud Identity API - Groups Beta (supports readonly)
+[*] 23)  Cloud Identity API - Inbound SSO Settings (supports readonly)
+[*] 24)  Cloud Identity API - OrgUnits Beta (supports readonly)
+[R] 25)  Cloud Identity API - Policy (supports readonly)
+[*] 26)  Cloud Identity API - User Invitations (supports readonly)
+[ ] 27)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
+[ ] 28)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
+[*] 29)  Contact Delegation API (supports readonly)
+[*] 30)  Contacts API - Domain Shared Contacts
+[*] 31)  Data Transfer API (supports readonly)
+[*] 32)  Directory API - Chrome OS Devices (supports readonly)
+[*] 33)  Directory API - Customers (supports readonly)
+[*] 34)  Directory API - Domains (supports readonly)
+[*] 35)  Directory API - Groups (supports readonly)
+[*] 36)  Directory API - Mobile Devices Directory (supports readonly and actiononly)
+[*] 37)  Directory API - Organizational Units (supports readonly)
+[*] 38)  Directory API - Resource Calendars (supports readonly)
+[*] 39)  Directory API - Roles (supports readonly)
+[*] 40)  Directory API - User Schemas (supports readonly)
+[*] 41)  Directory API - User Security
+[*] 42)  Directory API - Users (supports readonly)
+[ ] 43)  Email Audit API
+[*] 44)  Groups Migration API
+[*] 45)  Groups Settings API
+[*] 46)  License Manager API
+[*] 47)  People API (supports readonly)
+[*] 48)  People Directory API - readonly
+[ ] 49)  Pub / Sub API
+[*] 50)  Reports API - Audit Reports readonly
+[*] 51)  Reports API - Usage Reports readonly
+[ ] 52)  Reseller API
+[ ] 53)  Resource Manager API - Organizations readonly
+[ ] 54)  Resource Manager API - Projects readonly
+[*] 55)  Service Account Lookup pseudo-API
+[ ] 56)  Site Verification API
+[*] 57)  Vault API (supports readonly)
 
 Select an unselected scope [ ] by entering a number; yields [*]
 For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]
@@ -385,7 +386,7 @@ gamteam@server:/Users/gamteam$ gam user gamteam@domain.com update serviceaccount
 [*] 32)  Gmail API - Full Access (Labels, Messages) except delete message
 [ ] 33)  Gmail API - Full Access - readonly
 [ ] 34)  Gmail API - Send Messages - including todrive
-[*] 35)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
+`[*] 35)  Gmail API - Sharing Settings (Delegates, Forwarding, SendAs) - write
 [*] 36)  Keep API (supports readonly)
 [*] 37)  Meet API - Manage/Display Meeting Spaces
 [*] 38)  Meet API - Read Meeting Spaces metadata readonly
@@ -1046,7 +1047,7 @@ writes the credentials into the file oauth2.txt.
 ```
 C:\>del C:\GAMConfig\oauth2.txt
 C:\>gam version
-GAM 7.48.34- https://github.com/GAM-team/GAM - pythonsource
+GAM 7.49.00- https://github.com/GAM-team/GAM - pythonsource
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.15.0 64-bit final
 Windows 11 10.0.26200 AMD64
@@ -1056,62 +1057,63 @@ Config File: C:\GAMConfig\gam.cfg, Section: DEFAULT, customer_id: my_customer, d
 C:\>gam oauth create
 
 [*]  0)  Calendar API (supports readonly)
-[*]  1)  Chrome Browser Cloud Management API (supports readonly)
-[*]  2)  Chrome Management API - AppDetails readonly
-[*]  3)  Chrome Management API - Profiles (supports readonly)
-[*]  4)  Chrome Management API - Telemetry readonly
-[*]  5)  Chrome Management API - readonly
-[*]  6)  Chrome Policy API (supports readonly)
-[*]  7)  Chrome Printer Management API (supports readonly)
-[ ]  8)  Chrome Version History API
-[*]  9)  Classroom API - Course Announcements (supports readonly)
-[*] 10)  Classroom API - Course Topics (supports readonly)
-[*] 11)  Classroom API - Course Work/Materials (supports readonly)
-[*] 12)  Classroom API - Course Work/Submissions (supports readonly)
-[*] 13)  Classroom API - Courses (supports readonly)
-[*] 14)  Classroom API - Profile Emails
-[*] 15)  Classroom API - Profile Photos
-[*] 16)  Classroom API - Rosters (supports readonly)
-[*] 17)  Classroom API - Student Guardians (supports readonly)
-[ ] 18)  Cloud Channel API (supports readonly)
-[*] 19)  Cloud Identity API - Allowlisted Domains (supports readonly)
-[*] 20)  Cloud Identity API - Groups (supports readonly)
-[*] 21)  Cloud Identity API - Groups Beta (supports readonly)
-[ ] 22)  Cloud Identity API - Inbound SSO Settings (supports readonly)
-[*] 23)  Cloud Identity API - OrgUnits Beta (supports readonly)
-[*] 24)  Cloud Identity API - Policy (supports readonly)
-[*] 25)  Cloud Identity API - User Invitations (supports readonly)
-[ ] 26)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
-[*] 27)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
-[*] 28)  Contact Delegation API (supports readonly)
-[*] 29)  Contacts API - Domain Shared Contacts
-[*] 30)  Data Transfer API (supports readonly)
-[*] 31)  Directory API - Chrome OS Devices (supports readonly)
-[*] 32)  Directory API - Customers (supports readonly)
-[*] 33)  Directory API - Domains (supports readonly)
-[*] 34)  Directory API - Groups (supports readonly)
-[*] 35)  Directory API - Mobile Devices Directory (supports readonly and actiononly)
-[*] 36)  Directory API - Organizational Units (supports readonly)
-[*] 37)  Directory API - Resource Calendars (supports readonly)
-[*] 38)  Directory API - Roles (supports readonly)
-[*] 39)  Directory API - User Schemas (supports readonly)
-[*] 40)  Directory API - User Security
-[*] 41)  Directory API - Users (supports readonly)
-[ ] 42)  Email Audit API
-[*] 43)  Groups Migration API
-[*] 44)  Groups Settings API
-[*] 45)  License Manager API
-[*] 46)  People API (supports readonly)
-[*] 47)  People Directory API - readonly
-[ ] 48)  Pub / Sub API
-[*] 49)  Reports API - Audit Reports readonly
-[*] 50)  Reports API - Usage Reports readonly
-[ ] 51)  Reseller API
-[*] 52)  Resource Manager API - Organizations readonly
-[*] 53)  Resource Manager API - Projects readonly
-[ ] 54)  Service Account Lookup pseudo-API
-[ ] 55)  Site Verification API
-[*] 56)  Vault API (supports readonly)
+[*]  1)  Chrome Management API - AppDetails readonly
+[*]  2)  Chrome Management API - Browsers (supports readonly)
+[*]  3)  Chrome Management API - Enrollment Tokens (supports readonly)
+[*]  4)  Chrome Management API - Profiles (supports readonly)
+[*]  5)  Chrome Management API - Reports readonly
+[*]  6)  Chrome Management API - Telemetry readonly
+[*]  7)  Chrome Policy API (supports readonly)
+[*]  8)  Chrome Printer Management API (supports readonly)
+[*]  9)  Chrome Version History API
+[*] 10)  Classroom API - Course Announcements (supports readonly)
+[*] 11)  Classroom API - Course Topics (supports readonly)
+[*] 12)  Classroom API - Course Work/Materials (supports readonly)
+[*] 13)  Classroom API - Course Work/Submissions (supports readonly)
+[*] 14)  Classroom API - Courses (supports readonly)
+[*] 15)  Classroom API - Profile Emails
+[*] 16)  Classroom API - Profile Photos
+[*] 17)  Classroom API - Rosters (supports readonly)
+[*] 18)  Classroom API - Student Guardians (supports readonly)
+[ ] 19)  Cloud Channel API (supports readonly)
+[ ] 20)  Cloud Identity API - Allowlisted Domains (supports readonly)
+[*] 21)  Cloud Identity API - Groups (supports readonly)
+[ ] 22)  Cloud Identity API - Groups Beta (supports readonly)
+[*] 23)  Cloud Identity API - Inbound SSO Settings (supports readonly)
+[*] 24)  Cloud Identity API - OrgUnits Beta (supports readonly)
+[R] 25)  Cloud Identity API - Policy (supports readonly)
+[*] 26)  Cloud Identity API - User Invitations (supports readonly)
+[ ] 27)  Cloud Storage API (Read Only, Vault/Takeout Download, Cloud Storage)
+[ ] 28)  Cloud Storage API (Read/Write, Vault/Takeout Copy/Download, Cloud Storage)
+[*] 29)  Contact Delegation API (supports readonly)
+[*] 30)  Contacts API - Domain Shared Contacts
+[*] 31)  Data Transfer API (supports readonly)
+[*] 32)  Directory API - Chrome OS Devices (supports readonly)
+[*] 33)  Directory API - Customers (supports readonly)
+[*] 34)  Directory API - Domains (supports readonly)
+[*] 35)  Directory API - Groups (supports readonly)
+[*] 36)  Directory API - Mobile Devices Directory (supports readonly and actiononly)
+[*] 37)  Directory API - Organizational Units (supports readonly)
+[*] 38)  Directory API - Resource Calendars (supports readonly)
+[*] 39)  Directory API - Roles (supports readonly)
+[*] 40)  Directory API - User Schemas (supports readonly)
+[*] 41)  Directory API - User Security
+[*] 42)  Directory API - Users (supports readonly)
+[ ] 43)  Email Audit API
+[*] 44)  Groups Migration API
+[*] 45)  Groups Settings API
+[*] 46)  License Manager API
+[*] 47)  People API (supports readonly)
+[*] 48)  People Directory API - readonly
+[ ] 49)  Pub / Sub API
+[*] 50)  Reports API - Audit Reports readonly
+[*] 51)  Reports API - Usage Reports readonly
+[ ] 52)  Reseller API
+[ ] 53)  Resource Manager API - Organizations readonly
+[ ] 54)  Resource Manager API - Projects readonly
+[*] 55)  Service Account Lookup pseudo-API
+[ ] 56)  Site Verification API
+[*] 57)  Vault API (supports readonly)
 
 Select an unselected scope [ ] by entering a number; yields [*]
 For scopes that support readonly, enter a number and an 'r' to grant read-only access; yields [R]

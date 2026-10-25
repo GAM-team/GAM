@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.49.00
+
+Use the `Chrome Management API` to manage/display Chrome Browers and Chrome Browser Enrollment Tokens
+rather then the `Chrome Enterprise Core API` and the `Chrome Browser Token Enrollment API`.
+
+* See: https://github.com/GAM-team/GAM/wiki/Chrome-Browsers-and-Enrollment-Tokens
+
 7.48.34
 
 Added option `(addcsvdata <FieldName> <String>)*` to `gam <UserTypeEntity> print drivefileacls`
