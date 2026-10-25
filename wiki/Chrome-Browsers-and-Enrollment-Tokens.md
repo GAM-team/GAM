@@ -447,15 +447,6 @@ In addition, global string literal filtering without a field name is supported: 
 and multiple terms joined by AND or whitespace (e.g., machine AND 73 or machine 73) match browsers where every term appears in at least one indexed string field (whereas a single quoted phrase like "machine 73" matches the contiguous phrase within a single field).
 ```
 
-### User
-Enter user: as the operator. For example, to match the name Joe, but not Joey, enter the following:
-
-`gam print browsers query "user:joe"`
-
-To match the name Tom Sawyer or A. Tom Sawyer, but not Tom A. Sawyer, enter with quotation marks:
-
-`gam print browsers query "user:'tom sawyer'"`
-
 ### Location
 Enter location: as the operator. For example, to match Seattle, enter the following:
 
@@ -474,6 +465,7 @@ Enter note: as the operator. For example, to match loaned from John, enter the f
 * `field >= "<Time>" and field <= "<Time>"` - A date range
 * `field <= "<Time>"` - All dates on or before a date
 * `field >= "<Time>"` - All dates on or after a date
+```
 
 ### Asset ID
 Enter annotated_asset_id: as the operator. For example, to match the partial Asset ID 1234, enter the following:
