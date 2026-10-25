@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -298,7 +298,6 @@ GOT = 'Got'
 GROUP_MAPS_TO_MULTIPLE_OUS = 'File: {0}, Group: {1} references multiple OUs: {2}'
 GROUP_MAPS_TO_OU_INVALID_ROW = 'File: {0}, Invalid row, must contain non-blank <EmailAddress> and <OrgUnitPath>: <{1}> <{2}>'
 GUARDIAN_INVITATION_STATUS_NOT_PENDING = 'Guardian invitation status is not PENDING'
-HAS_CHILD_ORGS = 'Has child {0}'
 HAS_INVALID_FORMAT = '{0}: {1}, Has invalid format'
 HEADER_NOT_FOUND_IN_CSV_HEADERS = 'Header "{0}" not found in CSV headers of "{1}".'
 HELP_SYNTAX = 'Help: Syntax in file {0}\n'

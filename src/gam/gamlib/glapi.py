@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -25,7 +25,6 @@ ALERTCENTER = 'alertcenter'
 ANALYTICS_ADMIN = 'analyticsadmin'
 CALENDAR = 'calendar'
 BUSINESSACCOUNTMANAGEMENT = 'mybusinessaccountmanagement'
-CBCM = 'cbcm'
 CHAT = 'chat'
 CHAT_AVAILABILITY = 'chatavailability'
 CHAT_CUSTOM_EMOJIS = 'chatcustomemojis'
@@ -42,6 +41,8 @@ CHROMEMANAGEMENT = 'chromemanagement'
 CHROMEMANAGEMENT_APPDETAILS = 'chromemanagementappdetails'
 CHROMEMANAGEMENT_CHROMEBROWSERS = 'chromemanagementchromebrowsers'
 CHROMEMANAGEMENT_CHROMEPROFILES = 'chromemanagementchromeprofiles'
+CHROMEMANAGEMENT_ENROLLMENTTOKENS = 'chromemanagementchrometokens'
+CHROMEMANAGEMENT_REPORTS = 'chromemanagementreports'
 CHROMEMANAGEMENT_TELEMETRY = 'chromemanagementtelemetry'
 CHROMEPOLICY = 'chromepolicy'
 CHROMEVERSIONHISTORY = 'versionhistory'
@@ -108,14 +109,21 @@ VAULT = 'vault'
 YOUTUBE = 'youtube'
 #
 CHROMEVERSIONHISTORY_URL = 'https://versionhistory.googleapis.com/v1/chrome/platforms'
-DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
-DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
-DRIVE_READONLY_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
-GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
 GOOGLE_AUTH_PROVIDER_X509_CERT_URL = 'https://www.googleapis.com/oauth2/v1/certs'
 GOOGLE_OAUTH2_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
 GOOGLE_OAUTH2_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
+
+CBCM_SCOPE = 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers'
+CBCM_READONLY_SCOPE = 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers.readonly'
+CM_BROWSERS_SCOPE = 'https://www.googleapis.com/auth/chrome.management.browsers'
+CM_BROWSERS_READONLY_SCOPE = 'https://www.googleapis.com/auth/chrome.management.browsers.readonly'
+CM_ENROLLMENTTOKENS_SCOPE = 'https://www.googleapis.com/auth/chrome.management.enrollmenttokens'
+CM_ENROLLMENTTOKENS_READONLY_SCOPE = 'https://www.googleapis.com/auth/chrome.management.enrollmenttokens.readonly'
 CLOUD_PLATFORM_SCOPE = 'https://www.googleapis.com/auth/cloud-platform'
+DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+DRIVE_READONLY_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
+DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send'
 IAM_SCOPE = 'https://www.googleapis.com/auth/iam'
 PEOPLE_SCOPE = 'https://www.googleapis.com/auth/contacts'
 STORAGE_READONLY_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
@@ -124,6 +132,7 @@ USERINFO_EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email' # email
 USERINFO_PROFILE_SCOPE = 'https://www.googleapis.com/auth/userinfo.profile' # profile
 REQUIRED_SCOPES = [USERINFO_EMAIL_SCOPE, USERINFO_PROFILE_SCOPE]
 REQUIRED_SCOPES_SET = set(REQUIRED_SCOPES)
+
 NUM_CLIENT_SCOPES_ERROR_LIMIT = 48
 #
 JWT_APIS = {
@@ -155,10 +164,6 @@ EXTRA_SCOPES = {
   VAULT: ['https://www.googleapis.com/auth/ediscovery', 'https://www.googleapis.com/auth/ediscovery.readonly'],
 }
 EXTRA_SCOPES[CLOUDRESOURCEMANAGERV1] = EXTRA_SCOPES[CLOUDRESOURCEMANAGER]
-
-APIS_NEEDING_ACCESS_TOKEN = {
-  CBCM: ['https://www.googleapis.com/auth/admin.directory.device.chromebrowsers']
-  }
 #
 DEPRECATED_SCOPES = {
   'https://www.googleapis.com/auth/cloud-identity',
@@ -241,7 +246,6 @@ _INFO = {
   ANALYTICS_ADMIN: {'name': 'Analytics Admin API', 'version': 'v1beta', 'v2discovery': True},
   BUSINESSACCOUNTMANAGEMENT: {'name': 'Business Account Management API', 'version': 'v1', 'v2discovery': True},
   CALENDAR: {'name': 'Calendar API', 'version': 'v3', 'v2discovery': True, 'mappedAPI': 'calendar-json'},
-  CBCM: {'name': 'Chrome Browser Cloud Management API', 'version': 'v1.1beta1', 'v2discovery': True, 'localjson': True},
   CHAT: {'name': 'Chat API', 'version': 'v1', 'v2discovery': True},
   CHAT_AVAILABILITY: {'name': 'Chat API - User Availability', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_CUSTOM_EMOJIS: {'name': 'Chat API - Custom Emojis', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
@@ -255,9 +259,12 @@ _INFO = {
   CHAT_SPACES_DELETE: {'name': 'Chat API - Spaces Delete', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CHAT_SPACES_DELETE_ADMIN: {'name': 'Chat API - Spaces Delete Admin', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHAT},
   CLASSROOM: {'name': 'Classroom API', 'version': 'v1', 'v2discovery': True},
-  CHROMEMANAGEMENT: {'name': 'Chrome Management API', 'version': 'v1', 'v2discovery': True},
-  CHROMEMANAGEMENT_APPDETAILS: {'name': 'Chrome Management API - AppDetails', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
-  CHROMEMANAGEMENT_TELEMETRY: {'name': 'Chrome Management API - Telemetry', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
+  CHROMEMANAGEMENT_APPDETAILS: {'name': 'Chrome Management API - AppDetails readonly', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
+  CHROMEMANAGEMENT_CHROMEBROWSERS: {'name': 'Chrome Management API - Browsers', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
+  CHROMEMANAGEMENT_CHROMEPROFILES: {'name': 'Chrome Management API - Profiles', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
+  CHROMEMANAGEMENT_ENROLLMENTTOKENS: {'name': 'Chrome Management API - Enrollmnent Tokens', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
+  CHROMEMANAGEMENT_REPORTS: {'name': 'Chrome Management API - Reoorts readonly', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
+  CHROMEMANAGEMENT_TELEMETRY: {'name': 'Chrome Management API - Telemetry readonly', 'version': 'v1', 'v2discovery': True, 'mappedAPI': CHROMEMANAGEMENT},
   CHROMEPOLICY: {'name': 'Chrome Policy API', 'version': 'v1', 'v2discovery': True},
   CHROMEVERSIONHISTORY: {'name': 'Chrome Version History API', 'version': 'v1', 'v2discovery': True},
   CLOUDCHANNEL: {'name': 'Cloud Channel API', 'version': 'v1', 'v2discovery': True},
@@ -328,24 +335,24 @@ _CLIENT_SCOPES = [
    'api': CALENDAR,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/calendar'},
-  {'name': 'Chrome Browser Cloud Management API',
-   'api': CBCM,
-   'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/admin.directory.device.chromebrowsers'},
-  {'name': 'Chrome Management API - readonly',
-   'api': CHROMEMANAGEMENT,
-   'scope': 'https://www.googleapis.com/auth/chrome.management.reports.readonly'},
   {'name': 'Chrome Management API - AppDetails readonly',
    'api': CHROMEMANAGEMENT_APPDETAILS,
    'scope': 'https://www.googleapis.com/auth/chrome.management.appdetails.readonly'},
   {'name': 'Chrome Management API - Browsers',
    'api': CHROMEMANAGEMENT_CHROMEBROWSERS,
    'subscopes': READONLY,
-   'scope': 'https://www.googleapis.com/auth/chrome.management.browsers'},
+   'scope': CM_BROWSERS_SCOPE},
   {'name': 'Chrome Management API - Profiles',
    'api': CHROMEMANAGEMENT_CHROMEPROFILES,
    'subscopes': READONLY,
    'scope': 'https://www.googleapis.com/auth/chrome.management.profiles'},
+  {'name': 'Chrome Management API - Enrollment Tokens',
+   'api': CHROMEMANAGEMENT_ENROLLMENTTOKENS,
+   'subscopes': READONLY,
+   'scope': CM_ENROLLMENTTOKENS_SCOPE},
+  {'name': 'Chrome Management API - Reports readonly',
+   'api': CHROMEMANAGEMENT_REPORTS,
+   'scope': 'https://www.googleapis.com/auth/chrome.management.reports.readonly'},
   {'name': 'Chrome Management API - Telemetry readonly',
    'api': CHROMEMANAGEMENT_TELEMETRY,
    'scope': 'https://www.googleapis.com/auth/chrome.management.telemetry.readonly'},
@@ -875,3 +882,12 @@ def findAPIforScope(scopesList):
   if not requiredAPIs:
     requiredAPIs = scopesList
   return ' or '.join(requiredAPIs)
+
+def mapCBCMScopes(currentScopes):
+  if CBCM_SCOPE in currentScopes:
+    currentScopes.remove(CBCM_SCOPE)
+    currentScopes.extend([CM_BROWSERS_SCOPE, CM_ENROLLMENTTOKENS_SCOPE])
+  elif CBCM_READONLY_SCOPE in currentScopes:
+    currentScopes.remove(CBCM_READONLY_SCOPE)
+    currentScopes.extend([CM_BROWSERS_READONLY_SCOPE, CM_ENROLLMENTTOKENS_READONLY_SCOPE])
+  

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2026 Ross Scroggs All Rights Reserved.
+# Copyright (C) 2026 All Rights Reserved.
 #
 # All Rights Reserved.
 #
@@ -26,7 +26,7 @@ class GamCLArgs():
   ENTITY_BROWSER = 'ids'
   ENTITY_BROWSER_OU = 'browserou'
   ENTITY_BROWSER_OUS = 'browserous'
-  ENTITY_BROWSER_QUERIES = 'browserqueies'
+  ENTITY_BROWSER_QUERIES = 'browserqueries'
   ENTITY_BROWSER_QUERY = 'browserquery'
   ENTITY_CIGROUP = 'cigroup'
   ENTITY_CIGROUPS = 'cigroups'
@@ -856,7 +856,6 @@ class GamCLArgs():
   ARG_CHATSPACE = 'chatspace'
   ARG_CHATSPACES = 'chatspaces'
   ARG_CHATSPACEDM = 'chatspacedm'
-  ARG_CHROMEDEVICECOUNTS = 'chromedevicecounts'
   ARG_CHROMEAPP = 'chromeapp'
   ARG_CHROMEAPPS = 'chromeapps'
   ARG_CHROMEAPPDEVICES = 'chromeappdevices'
@@ -865,6 +864,7 @@ class GamCLArgs():
   ARG_CHROMEBROWSERS = 'chromebrowsers'
   ARG_CHROMEBROWSERTOKEN = 'chromebrowsertoken'
   ARG_CHROMEBROWSERTOKENS = 'chromebrowsertokens'
+  ARG_CHROMEDEVICECOUNTS = 'chromedevicecounts'
   ARG_CHROMEHISTORY = 'chromehistory'
   ARG_CHROMENEEDSATTN = 'chromeneedsattn'
   ARG_CHROMENETWORK = 'chromenetwork'
@@ -879,6 +879,7 @@ class GamCLArgs():
   ARG_CHROMESCHEMA = 'chromeschema'
   ARG_CHROMESCHEMAS = 'chromeschemas'
   ARG_CHROMESNVALIDITY = 'chromesnvalidity'
+  ARG_CHROMETELEMETRY = 'chrometelemetry'
   ARG_CHROMEVERSIONS = 'chromeversions'
   ARG_CIALD = 'allowlisteddomain'
   ARG_CIALDS = 'allowlisteddomains'

@@ -1,3 +1,8 @@
+7.49.00
+
+Use the `Chrome Management API` to manage/display Chrome Browers and Chrome Browser Enrollment Tokens
+rather then the `Chrome Enterprise Core API` and the `Chrome Browser Token Enrollment API`.
+
 7.48.34
 
 Added option `(addcsvdata <FieldName> <String>)*` to `gam <UserTypeEntity> print drivefileacls`

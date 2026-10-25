@@ -378,7 +378,7 @@ If an item contains spaces, it should be surrounded by ".
 <APPID> ::= <String>
 <ASPID> ::= <String>
 <AssetTag> ::= <String>
-<BrowserTokenPermanentID> ::= <String>
+<BrowserPermanentID> ::= <String>
 <BuildingID> ::= <String>|id:<String>
 <CAALevelName> ::= <String>
 <CalendarACLScope> ::=
@@ -687,7 +687,7 @@ If an item contains spaces, it should be surrounded by ".
         (tdupdatesheet [<Boolean>])|
         (tduploadnodata [<Boolean>])|
         (tduser <EmailAddress>)
-<TokenID> ::= <String>
+<TokenPermanentID> ::= <String>
 <TransferID> ::= <String>
 <URI> ::= <String>
 <URL> ::= <String>
@@ -707,7 +707,7 @@ If an item contains spaces, it should be surrounded by ".
 <APIScopeURLList> ::= "<APIScopeURL>(,<APIScopeURL>)*"
 <ASPIDList> ::= "<ASPID>(,<ASPID>)*"
 <AssetTagList> ::= "<AssetTag>(,<AssetTag>)*"
-<BrowserIDList> ::= "<BrowserID>(,<BrowserID>)*"
+<BrowserPermanentIDList> ::= "<BrowserPermanentID>(,<BrowserPermanentID>)*"
 <CalendarACLScopeList> ::= "<CalendarACLScope>(,<CalendarACLScope>)*"
 <CalendarList> ::= "<CalendarItem>(,<CalendarItem>)*"
 <ChatSpaceList> ::= "<ChatSpace>(,<ChatSpace>)*"
@@ -809,7 +809,7 @@ If an item contains spaces, it should be surrounded by ".
 <TasklistIDTaskIDList> ::= "<TasklistIDTaskID>(,<TasklistIDTaskID>)*"
 <ThreadIDList> ::= "<ThreadID>(,<ThreadID>)*"
 <TimeList> ::= "<Time>(,<Time>)*"
-<TokenIDList> ::= "<TokenID>(,<TokenID>)*"
+<TokenPermanentIDList> ::= "<TokenPermanentID>(,<TokenPermanentID>)*"
 <URLList> ::= "<URL>(,<URL>)*"
 <UserList> ::= "<UserItem>(,<UserItem>)*"
 <YouTubeChannelIDList> ::= "<YouTubeChannelID>(,<YouTubeChannelID>)*"
@@ -1063,7 +1063,7 @@ Specify a collection of items by directly specifying them; the item type is dete
 <AllowlistedDomainsIDEntity> ::=
         <AllowlistedDomainsIDList> | <FileSelector> | <CSVFileSelector> | <CSVkmdSet>
 <BrowserEntity> ::=
-        <DeviceIDList> |
+        <BrowserPermanentIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
         <FileSelector> | <CSVFileSelector>
@@ -2138,14 +2138,14 @@ gam info chatmessage name <ChatMessage>
 gam info chatevent name <ChatEvent>
         [formatjson]
 
-# Chrome Browser Cloud Management
+# Chrome Browser Management
 
 <QueryBrowser> ::= <String>
         See: https://support.google.com/chrome/a/answer/9681204#retrieve_all_chrome_devices_for_an_account
 <QueryBrowserList> ::= "<QueryBrowser>(,<QueryBrowser>)*"
 
 <BrowserEntity> ::=
-        <DeviceIDList> |
+        <BrowserPermanentIDList> |
         (query:<QueryBrowser>)|(query:orgunitpath:<OrgUnitPath>)|(query <QueryBrowser>) |
         (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
         <FileSelector> | <CSVFileSelector>
@@ -2207,17 +2207,17 @@ gam info chatevent name <ChatEvent>
         platformmajorversion|
         policycount
 
-gam delete browser <DeviceID>
+gam delete browser <BrowserPermanentID>
 gam update browser <BrowserEntity> <BrowserAttibute>+
 gam move browsers ou|org|orgunit <OrgUnitPath>
-        ((ids <DeviceIDList>) |
-         (queries <QueryBrowserList> [querytime<String> <Time>]) |
+        ((ids <BrowserPermanentIDList>) |
+         (queries <QueryBrowserPermanentList> [querytime<String> <Time>]) |
          (browserou <OrgUnitItem>) | (browserous <OrgUnitList>) |
          <FileSelector> | <CSVFileSelector>)
         [batchsize <Integer>]
 
-gam info browser <DeviceID>
-        (basic|full|annotated | 
+gam info browser <BrowserPermanentID>
+        (basic|allfields|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
          (rawfields "<BrowserFieldNameList>"))
         [formatjson]
@@ -2225,7 +2225,7 @@ gam show browsers
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        (basic|full|annotated | 
+        (basic|allfields|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
          (rawfields "<BrowserFieldNameList>"))
         [formatjson]
@@ -2233,7 +2233,7 @@ gam print browsers [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowser>)|(queries <QueryBrowserList>))|(select <BrowserEntity>))
         [querytime<String> <Time>]
         [orderby <BrowserOrderByFieldName> [ascending|descending]]
-        (basic|full|annotated | 
+        (basic|allields|full|annotated | 
          (<BrowserFieldName>* [fields <BrowserFieldNameList>]) |
          (rawfields "<BrowserFieldNameList>"))
         [sortheaders]
@@ -2242,7 +2242,7 @@ gam print browsers [todrive <ToDriveAttribute>*]
 gam create browsertoken
         [ou|org|orgunit|browserou <OrgUnitPath>] [expire|expires <Time>]
         [formatjson]
-gam revoke browsertoken <BrowserTokenPermanentID>
+gam revoke browsertoken <TokenPermanentID>
 
 <BrowserTokenFieldName> ::=
         createtime|
@@ -2260,18 +2260,20 @@ gam revoke browsertoken <BrowserTokenPermanentID>
         tokenpermanentid
 <BrowserTokenFieldNameList> ::= "<BrowserTokenFieldName>(,<BrowserTokenFieldName>)*"
 
+gam info browsertoken <TokenPermanentID>
+        <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        [formatjson]
 gam show browsertokens
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
         [querytime<String> <Time>]
         [orderby <BrowserTokenFieldName> [ascending|descending]]
-        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
+        <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson]
 gam print browsertokens [todrive <ToDriveAttribute>*]
         ([ou|org|orgunit|browserou <OrgUnitPath>] [(query <QueryBrowserToken>)|(queries <QueryBrowserTokenList>)))
         [querytime<String> <Time>]
         [orderby <BrowserTokenFieldName> [ascending|descending]]
-        [allfields] <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
-        [sortheaders]
+        <BrowserTokenFieldName>* [fields <BrowserTokenFieldNameList>]
         [formatjson [quotechar <Character>]]
 
 # Chrome Auto Update Expiration Counts
