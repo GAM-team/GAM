@@ -479,7 +479,7 @@ Enter annotated_asset_id: as the operator. For example, to match the partial Ass
 `gam print browsers query "annotated_asset_id:1234*"`
 
 ## Create Chrome browser enrollment tokens
-Create a browser enrollment token. The Google API that supports this call always returns an error.
+Create a browser enrollment token.
 ```
 gam create browsertoken
         [ou|org|orgunit|browserou <OrgUnitPath>]
