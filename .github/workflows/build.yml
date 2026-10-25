@@ -833,7 +833,7 @@ jobs:
           run_gam info printer "$printerid"
           run_gam delete printer "$printerid"
           run_gam print ous showitemcountonly
-          run_gam check ou "${newou}"
+          run_gam check ou "${newou}" devices shareddrives subous users
           run_gam -a "0 50" delete ou "${newou}"
 
   publish:
