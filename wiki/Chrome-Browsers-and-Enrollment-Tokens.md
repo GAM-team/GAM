@@ -433,18 +433,24 @@ These are the fields that can be used in a query:
 
 The following functions can be used in the filter:
 
-    in_group(string): Filters browsers that belong to the specified Cloud Identity group resource name (e.g. in_group("groups/{groupId}")).
+in_group(string): Filters browsers that belong to the specified Cloud Identity group resource name
+(e.g. in_group("groups/{groupId}")).
 
-Any of the above fields or functions can be used to specify a filter, and filtering by multiple fields or functions is supported with AND operator.
+Any of the above fields or functions can be used to specify a filter, and filtering by multiple fields
+or functions is supported with AND operator.
 
 String type, Integer type fields and enum type fields support = and : operators.
 
-The timestamp type fields support =, <= and >= operators. Timestamps expect an RFC-3339 formatted string enclosed in double quotes (e.g., "2012-04-21T11:30:00-04:00").
+The timestamp type fields support =, <= and >= operators. Timestamps expect an RFC-3339 formatted string enclosed in
+double quotes (e.g., "2012-04-21T11:30:00-04:00").
 
 Wildcard * is only supported for machine_name, annotated_asset_id, and browser_version.
 
-In addition, global string literal filtering without a field name is supported: a single term (e.g., ABC) matches if any indexed string field contains ABC,
-and multiple terms joined by AND or whitespace (e.g., machine AND 73 or machine 73) match browsers where every term appears in at least one indexed string field (whereas a single quoted phrase like "machine 73" matches the contiguous phrase within a single field).
+In addition, global string literal filtering without a field name is supported: a single term
+(e.g., ABC) matches if any indexed string field contains ABC.
+Multiple terms joined by AND or whitespace (e.g., machine AND 73 or machine 73) match browsers
+where every term appears in at least one indexed string field (whereas a single quoted phrase
+like "machine 73" matches the contiguous phrase within a single field).
 ```
 
 ### Location
