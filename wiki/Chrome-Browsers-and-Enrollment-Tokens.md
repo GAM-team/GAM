@@ -567,6 +567,7 @@ The `quotechar <Character>` option allows you to choose an alternate quote chara
 device_type:<String> - Currently only CHROME_BROWSER is supported
 
 token_state:<String> - Supported values: ACTIVE, EXPIRED, REVOKED
+
 org_unit_path:<String> - The full path of the org unit, such as /Montreal/Sales
 
 org_unit_id:<String> - The obfuscated id of the org unit, not the full path.
