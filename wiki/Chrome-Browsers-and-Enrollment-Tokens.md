@@ -482,7 +482,6 @@ Create a browser enrollment token.
 gam create browsertoken
         [ou|org|orgunit|browserou <OrgUnitPath>]
         [enrollmenttokenid <String>]
-        [expire|expires <Time>]
         [formatjson]
 ```
 By default, the enrollment token is created for the root OU; use `ou|org|orgunit|browserou <OrgUnitPath>`
