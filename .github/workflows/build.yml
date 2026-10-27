@@ -791,7 +791,7 @@ jobs:
           run_gam create device serialnumber $sn devicetype android
           run_gam config enable_dasa true save
           run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
-          run_gam csv ./users.csv gam update  user ~primaryEmail ou /
+          run_gam csv ./users.csv gam update  user ~primaryEmail ou root
           run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
           run_gam print mobile
           run_gam print devices clientstates
