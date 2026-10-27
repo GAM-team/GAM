@@ -440,6 +440,9 @@ jobs:
             -a 'fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign'
           tpm2_evictcontrol -C o -c /tmp/primary.ctx 0x81000001
           tpm2_readpublic -c 0x81000001
+          # Verify signing works at the tpm2-tools level
+          echo "swtpm sign test" | tpm2_sign -c 0x81000001 -g sha256 -o /dev/null
+          echo "tpm2_sign succeeded"
 
       - name: Test DPoP Linux TPM backend
         if: matrix.goal == 'build' && runner.os == 'Linux'
