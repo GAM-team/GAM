@@ -418,8 +418,10 @@ jobs:
 
       - name: Test DPoP software backend
         if: matrix.goal == 'build'
+        shell: bash
         run: |
-          $gam config dpop true dpop_backend software save
+          openssl ecparam -genkey -name prime256v1 -noout -out "$GAMCFGDIR/dpop_software.pem"
+          $gam config dpop true dpop_backend software dpop_backend_config dpop_software.pem save
           $gam check dpop
 
       - name: Setup software TPM
