@@ -4686,8 +4686,7 @@ def doDPoPTest():
     signature = signer.sign(test_data)
     elapsed_ms = (time.monotonic() - start_time) * 1000
   except Exception as e:
-    printLine(f'ERROR: Signature failed: {e}')
-    return
+    systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'Signature failed: {e}')
   sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode('ascii')
   printLine(f'Signature succeeded.')
   printBlankLine()
