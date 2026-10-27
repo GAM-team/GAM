@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.49.01
+
+Various commands have arguments like `max_to_xxx <Number>` to specify a limit on the number of actions taken.
+When `<Number>` is `0` there was no limit imposed. This could be counter-intuitive, you can now also specify
+`max_to_xxx all` to specify no limit.
+
 7.49.00
 
 Use the `Chrome Management API` to manage/display Chrome Browers and Chrome Browser Enrollment Tokens

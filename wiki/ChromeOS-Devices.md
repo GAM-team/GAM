@@ -418,8 +418,10 @@ gam update ou csvkmd cros.csv keyfield OU datafield deviceId add croscsvdata dev
         disable|
         reenable
 
+gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
+        [actionbatchsize <Integer>] [max_to_deprov all<Integer>]
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>] [maxtodeprov <Integer>]
+        [actionbatchsize <Integer>] [max_to_deprov all|<Integer>]
 ```
 ChromeOS devices are now processed in batches.
 The batch size defaults to 10, the `actionbatchsize <Integer>` option can be used to set a batch size between 10 and 250.
@@ -441,11 +443,11 @@ was derived from an OU, this was desirable. However, if `<CrOSEntity>` was deriv
 more devices than desired may have been deprovisioned. In version 7.43.05 and higher,
 GAM defaults to not deprovisioning devices if the number of devices exceeds one.
 
-The  option `max_to_deprov <Integer>` can be used to verify the number of devices to be deprovisioned;
+The  option `max_to_deprov all|<Integer>` can be used to verify the number of devices to be deprovisioned;
 no deprovisions are processed if the number of devices in `<CrOSEntity>` exceeds `<Integer>`;
-the default value is one; set `<Number>` to 0 for no limit.
+the default value is one; set `max_to_deprov all|0` for no limit.
 
-When `<CrOSEntity>` is derived from an OU, set `max_to_deprov 0` and all devices will be deprovisioned.
+When `<CrOSEntity>` is derived from an OU, set `max_to_deprov all|0` and all devices will be deprovisioned.
 
 When `<CrOSEntity>` is derived from a query, e.g., `cros_sn <SerialNumber>`, the default `max_to_deprov 1`
 protects you from accidentally deprovisioning more devices than desired.

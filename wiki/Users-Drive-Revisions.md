@@ -58,12 +58,12 @@
 ## Delete file revisions
 ```
 gam <UserTypeEntity> delete filerevisions <DriveFileEntity> select <DriveFileRevisionIDEntity>
-        [previewdelete] [showtitles] [doit] [max_to_delete <Number>]
+        [previewdelete] [showtitles] [doit] [max_to_delete all|<Number>]
 ```
 * `showtitles` - output file title as well as file id in messages; this requires an additional API call per file.
 * `previewdelete` - output revisions to be deleted but do not delete them
 * `doit` - no revisions are deleted unless doit is specified
-* `max_to_delete <Number>` - no revisions are deleted if the number of revisions to delete exceeds `<Number>`; the default value is one. Set `<Number>` to 0 for no limit.
+* `max_to_delete all|<Number>` - no revisions are deleted if the number of revisions to delete exceeds `<Number>`; the default value is one. Set `all|0` for no limit.
 
 When deleting revisions, the last remaining revision can not be deleted. If the `<Number>` or `<Time>` selections identify all of the revisions for a file,
 the following adjustments are made:
@@ -81,7 +81,7 @@ value at the moment.
 ```
 gam <UserTypeEntity> update filerevisions <DriveFileEntity> select <DriveFileRevisionIDEntity>
         [published [<Boolean>]] [publishauto [<Boolean>]] [publishedoutsidedomain [<Boolean>]]
-        [previewupdate] [showtitles] [doit] [max_to_update <Number>]
+        [previewupdate] [showtitles] [doit] [max_to_update all|<Number>]
 ```
 When `select <DriveFileRevisionIDEntity>` is omitted, all revisions are updated. 
 
@@ -97,7 +97,7 @@ When `select <DriveFileRevisionIDEntity>` is omitted, all revisions are updated.
 * `showtitles` - output file title as well as file id in messages; this requires an additional API call per file.
 * `previewupdate` - output revisions to be updated but do not update them
 * `doit` - no revisions are updated unless doit is specified
-* `max_to_update <Number>` - no revisions are updated if the number of revisions to update exceeds `<Number>`; the default value is one. Set `<Number>` to 0 for no limit.
+* `max_to_update all|<Number>` - no revisions are updated if the number of revisions to update exceeds `<Number>`; the default value is one. Set `all|0` for no limit.
 
 ## Display file revisions
 ```

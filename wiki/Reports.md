@@ -102,7 +102,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [networkinfofilter <String>] [statusfilter <String>]
         [applicationinfofilter <String>] [includesensitivedata]
         [notimesort]
-        [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
+        [maxactivities all|<Number>] [maxevents all|<Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
 ```
@@ -174,10 +174,10 @@ Limit to a specific IP address.
 * `ip <String>`
 
 Limit the total number of activites.
-* `maxactivities <Number>`
+* `maxactivities all|<Number>` - Use `all` or a value of 0 for no limit
 
 Limit the  number of events per activity; this only applies when `countsonly` is False.
-* `maxevents <Number>`
+* `maxevents all|<Number>` - Use `all` or a value of 0 for no limit
 
 Limit the number of activities downloaded per API call; infrequently used.
 * `maxresults <Number>`
