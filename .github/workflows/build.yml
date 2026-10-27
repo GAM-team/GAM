@@ -425,29 +425,43 @@ jobs:
       - name: Setup software TPM
         if: matrix.goal == 'build' && runner.os == 'Linux'
         run: |
-          sudo apt-get -qq --yes install swtpm swtpm-tools tpm2-tools libtss2-tcti-swtpm0
+          sudo apt-get -qq --yes install swtpm swtpm-tools tpm2-tools tpm2-abrmd libtss2-tcti-swtpm0 libtss2-tcti-tabrmd0
           mkdir -p /tmp/tpm-state
+          # Start software TPM
           swtpm socket --tpm2 \
             --tpmstate dir=/tmp/tpm-state \
             --server type=tcp,port=2321 \
             --ctrl type=tcp,port=2322 \
-            --flags startup-clear \
-            --daemon
+            --flags not-need-init,startup-clear &
           sleep 2
-          export TPM2TOOLS_TCTI="swtpm:host=localhost,port=2321"
-          tpm2_getcap properties-fixed | head -5
+          # Start TPM Access Broker & Resource Manager (like kernel /dev/tpmrm0)
+          DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --fork --print-address --address="unix:tmpdir=/tmp")
+          export DBUS_SESSION_BUS_ADDRESS
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> "$GITHUB_ENV"
+          tpm2-abrmd \
+            --tcti="swtpm:host=127.0.0.1,port=2321" \
+            --session \
+            --allow-root &
+          sleep 1
+          export TPM2TOOLS_TCTI="tabrmd:bus_type=session"
+          # Relax DA lockout for CI testing
+          tpm2_dictionarylockout --setup \
+            --max-tries=1000 \
+            --recovery-time=1 \
+            --lockout-recovery-time=1
+          # Create an unrestricted P-256 signing key and persist it
           tpm2_createprimary -C o -G ecc:ecdsa-sha256 -c /tmp/primary.ctx \
             -a 'fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign'
           tpm2_evictcontrol -C o -c /tmp/primary.ctx 0x81000001
           tpm2_readpublic -c 0x81000001
-          # Verify signing works at the tpm2-tools level
+          # Verify signing works
           echo "swtpm sign test" | tpm2_sign -c 0x81000001 -g sha256 -o /dev/null
           echo "tpm2_sign succeeded"
 
       - name: Test DPoP Linux TPM backend
         if: matrix.goal == 'build' && runner.os == 'Linux'
         run: |
-          $gam config dpop_backend linux_tpm dpop_backend_config "0x81000001,swtpm:host=localhost,port=2321" save
+          $gam config dpop_backend linux_tpm dpop_backend_config "0x81000001,tabrmd:bus_type=session" save
           $gam check dpop
 
       - name: Create CNG test certificate
