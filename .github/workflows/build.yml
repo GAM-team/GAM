@@ -425,17 +425,18 @@ jobs:
       - name: Setup software TPM
         if: matrix.goal == 'build' && runner.os == 'Linux'
         run: |
-          sudo apt-get -qq --yes install swtpm swtpm-tools tpm2-tools
+          sudo apt-get -qq --yes install swtpm swtpm-tools tpm2-tools libtss2-tcti-swtpm0
           mkdir -p /tmp/tpm-state
           swtpm socket --tpm2 \
             --tpmstate dir=/tmp/tpm-state \
             --server type=tcp,port=2321 \
             --ctrl type=tcp,port=2322 \
-            --flags not-need-init,startup-clear \
+            --flags startup-clear \
             --daemon
-          sleep 1
+          sleep 2
           export TPM2TOOLS_TCTI="swtpm:host=localhost,port=2321"
-          tpm2_createprimary -C o -G ecc256:ecdsa-sha256 -c /tmp/primary.ctx \
+          tpm2_getcap properties-fixed | head -5
+          tpm2_createprimary -C o -G ecc:ecdsa-sha256 -c /tmp/primary.ctx \
             -a 'fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign'
           tpm2_evictcontrol -C o -c /tmp/primary.ctx 0x81000001
           tpm2_readpublic -c 0x81000001
