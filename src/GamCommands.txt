@@ -2240,7 +2240,8 @@ gam print browsers [todrive <ToDriveAttribute>*]
         [formatjson [quotechar <Character>]]
 
 gam create browsertoken
-        [ou|org|orgunit|browserou <OrgUnitPath>] [expire|expires <Time>]
+        [ou|org|orgunit|browserou <OrgUnitPath>]\
+        [enrollmenttokenid <String>]
         [formatjson]
 gam revoke browsertoken <TokenPermanentID>
 
@@ -2489,9 +2490,9 @@ gam print chromehistory releases [todrive <ToDriveAttribute>*]
         pre_provisioned_reenable
 
 gam update cros <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>] [maxtodeprov <Integer>]
+        [actionbatchsize <Integer>] [max_to_deprov all<Integer>]
 gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
-        [actionbatchsize <Integer>] [maxtodeprov <Integer>]
+        [actionbatchsize <Integer>] [max_to_deprov all|<Integer>]
 
 <CrOSCommand>
         reboot|
@@ -4746,7 +4747,7 @@ gam report <ActivityApplicationName> [todrive <ToDriveAttribute>*]
         [networkinfofilter <String>] [statusfilter <String>]
         [applicationinfofilter <String>] [includesensitivedata]
         [notimesort]
-        [maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
+        [maxactivities all|<Number>] [maxevents all|<Number>] [maxresults <Number>]
         [countsonly [bydate|summary] [eventrowfilter]]
         (addcsvdata <FieldName> <String>)* [shownoactivities]
 
@@ -7404,10 +7405,10 @@ gam <UserTypeEntity> print filecomments <DriveFileEntity> [todrive <ToDriveAttri
 <RevisionsFieldNameList> ::= "<RevisionsFieldName>(,<RevisionsFieldName>)*"
 
 gam <UserTypeEntity> delete filerevisions <DriveFileEntity> select <DriveFileRevisionIDEntity>
-        [previewdelete] [showtitles] [doit] [max_to_delete <Number>]
+        [previewdelete] [showtitles] [doit] [max_to_delete all|<Number>]
 gam <UserTypeEntity> update filerevisions <DriveFileEntity> select <DriveFileRevisionIDEntity>
         [published [<Boolean>]] [publishauto [<Boolean>]] [publishedoutsidedomain [<Boolean>]]
-        [previewupdate] [showtitles] [doit] [max_to_update <Number>]
+        [previewupdate] [showtitles] [doit] [max_to_update all|<Number>]
 
 gam <UserTypeEntity> show filerevisions <DriveFileEntity>
         [select <DriveFileRevisionIDEntity>]
@@ -8175,61 +8176,61 @@ gam <UserTypeEntity> insert message
 gam <UserTypeEntity> archive messages <GroupItem>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_archive all|<Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> delete messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_delete all|<Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> modify messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_modify all|<Number>])|(ids <MessageIDEntity>)
         ((addlabel <LabelName>)|(removelabel <LabelName>)|(addlabelid <LabelID>)|(removelabelid <LabelID>))+
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> spam messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_spam all|<Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> trash messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_trash all|<Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 gam <UserTypeEntity> untrash messages|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_untrash all|<Number>])|(ids <MessageIDEntity>)
         [csv [todrive <ToDriveAttribute>*]]
 
 gam <UserTypeEntity> export message|messages
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_export <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_export all|<Number>])|(ids <MessageIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 gam <UserTypeEntity> export thread|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_export <Number>])|(ids <ThreadIDEntity>)
+         [quick|notquick] [doit] [max_to_export all|<Number>])|(ids <ThreadIDEntity>)
         [targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 
 gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
+         [quick|notquick] [doit] [max_to_forward all|<Number>])|(ids <MessageIDEntity>)
         [subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 gam <UserTypeEntity> forward thread|thtreads [recipient|to] <RecipientEntity>
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
          [labelids <LabelIDList>]
-         quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
+         quick|notquick] [doit] [max_to_forward all|<Number>])|(ids <ThreadIDEntity>)
         [subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 
 gam <UserTypeEntity> show messages
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
-         [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+         [quick|notquick] [max_to_show all|<Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly]
@@ -8242,7 +8243,7 @@ gam <UserTypeEntity> show messages
 gam <UserTypeEntity> print messages [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
-         [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+         [quick|notquick] [max_to_print all|<Number>] [includespamtrash])|(ids <MessageIDEntity>)
         [labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly] [delimiter <Character>]
@@ -8256,7 +8257,8 @@ gam <UserTypeEntity> print messages [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
-         [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+         [quick|notquick] [max_to_print all|<Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+	[max_messages_per_thread all|<Number>]
         [labelmatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly] [delimiter <Character>]
@@ -8269,7 +8271,8 @@ gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
 gam <UserTypeEntity> show thread|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
-         [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+         [quick|notquick] [max_to_show all|<Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+	[max_messages_per_thread all|<Number>]
         [labelmatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly]

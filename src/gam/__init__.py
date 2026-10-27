@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.49.00'
+__version__ = '7.49.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -1565,6 +1565,12 @@ def getIntegerEmptyAllowed(minVal=None, maxVal=None, default=0):
       pass
     invalidArgumentExit(integerLimits(minVal, maxVal))
   return default
+
+def getMaxToProcess():
+  if Cmd.ArgumentsRemaining() and Cmd.Current().strip().lower().replace('_', '') == 'all':
+    Cmd.Advance()
+    return 0
+  return getInteger(minVal=0)
 
 def getNumberRangeList():
   if Cmd.ArgumentsRemaining():
@@ -14070,7 +14076,7 @@ REPORT_ACTIVITIES_TIME_OBJECTS = {'time'}
 #	[networkinfofilter <String>] [statusfilter <String>]
 #	[applicationinfofilter <String>] [includesensitivedata]
 #	[notimesort]
-#	[maxactivities <Number>] [maxevents <Number>] [maxresults <Number>]
+#	[maxactivities all|<Number>] [maxevents all|<Number>] [maxresults <Number>]
 #	[countsonly [bydate|summary] [eventrowfilter]]
 #	(addcsvdata <FieldName> <String>)* [shownoactivities]
 # gam report users|user [todrive <ToDriveAttribute>*]
@@ -14477,9 +14483,9 @@ def doReport():
     elif customerReports and myarg == 'noauthorizedapps':
       noAuthorizedApps = True
     elif activityReports and myarg == 'maxactivities':
-      maxActivities = getInteger(minVal=0)
+      maxActivities = getMaxToProcess()
     elif activityReports and myarg == 'maxevents':
-      maxEvents = getInteger(minVal=0)
+      maxEvents = getMaxToProcess()
     elif activityReports and myarg in {'start', 'starttime', 'end', 'endtime', 'yesterday', 'today'}:
       startEndTime.Get(myarg)
     elif activityReports and myarg in {'event', 'events'}:
@@ -24325,7 +24331,7 @@ CROS_ACTION_NAME_MAP = {
 
 # gam <CrOSTypeEntity> update <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 # gam <CrOSTypeEntity> update action <CrOSAction> [acknowledge_device_touch_requirement]
-#	[actionbatchsize <Integer>] [maxtodeprov <Integer>]
+#	[actionbatchsize <Integer>] [max_to_deprov all|<Integer>]
 def updateCrOSDevices(entityList):
   cd = buildGAPIObject(API.DIRECTORY)
   noBatchUpdate = False
@@ -24335,7 +24341,7 @@ def updateCrOSDevices(entityList):
   ackWipe = False
   quickCrOSMove = GC.Values[GC.QUICK_CROS_MOVE]
   actionBatchSize = 10
-  maxToDeprovision = None
+  maxToDeprovision = 1
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg in UPDATE_CROS_ARGUMENT_TO_PROPERTY_MAP:
@@ -24362,7 +24368,7 @@ def updateCrOSDevices(entityList):
     elif myarg == 'actionbatchsize':
       actionBatchSize = getInteger(minVal=10, maxVal=250)
     elif myarg == 'maxtodeprov':
-      maxToDeprovision = getInteger(minVal=0)
+      maxToDeprovision = getMaxToProcess()
     else:
       unknownArgumentExit()
   if action_body and update_body:
@@ -24380,8 +24386,6 @@ def updateCrOSDevices(entityList):
       if not ackWipe:
         stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_DEVICES.format(count))
         systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
-      if maxToDeprovision is None:
-        maxToDeprovision = 1
       if count > maxToDeprovision > 0:
         stderrWarningMsg(Msg.REFUSING_TO_DEPROVISION_N_DEVICES.format(count, maxToDeprovision))
         systemErrorExit(ACTION_NOT_PERFORMED_RC, None)
@@ -24443,6 +24447,7 @@ def updateCrOSDevices(entityList):
 
 # gam update cros|croses <CrOSEntity> <CrOSAttribute>+ [quickcrosmove [<Boolean>]] [nobatchupdate]
 # gam update cros|croses <CrOSEntity> action <CrOSAction> [acknowledge_device_touch_requirement]
+#	[actionbatchsize <Integer>] [max_to_deprov all|<Integer>]
 def doUpdateCrOSDevices():
   updateCrOSDevices(getCrOSDeviceEntity())
 
@@ -27070,7 +27075,6 @@ def _showChromeBrowserToken(token, cd, FJQC, i=0, count=0):
 # gam create browsertoken
 #	[ou|org|orgunit|browserou <OrgUnitPath>]
 #	[enrollmenttokenid <String>]
-#	[expire|expires <Time>]
 #	[formatjson]
 def doCreateChromeBrowserToken():
   cd = buildGAPIObject(API.DIRECTORY)
@@ -27087,10 +27091,9 @@ def doCreateChromeBrowserToken():
     elif myarg in {'ou', 'org', 'orgunit'}:
       _, orgUnitId = getOrgUnitId()
       body['orgUnitId'] =  orgUnitId.replace('id:', '')
-    elif myarg in ['expire', 'expires']:
-      body['revokeTime'] = getTimeOrDeltaFromNow()
     else:
       FJQC.GetFormatJSON(myarg)
+  body['name'] = f'{parent}/enrollmentTokens/{enrollmentTokenId}'
   try:
     token = callGAPI(cm.customers().enrollmentTokens(), 'create',
                      throwReasons=[GAPI.INVALID_ARGUMENT, GAPI.PERMISSION_DENIED],
@@ -59560,7 +59563,7 @@ def _selectRevisionIds(drive, fileId, origUser, user, i, count, j, jcount, revis
   return revisionIds
 
 # gam <UserTypeEntity> delete filerevisions <DriveFileEntity> select <DriveFileRevisionIdEntity> [previewdelete]
-#	[showtitles] [doit] [max_to_delete <Number>]
+#	[showtitles] [doit] [max_to_delete all|<Number>]
 def deleteFileRevisions(users):
   fileIdEntity = getDriveFileEntity()
   revisionsEntity = None
@@ -59577,7 +59580,7 @@ def deleteFileRevisions(users):
     elif myarg == 'doit':
       doIt = True
     elif myarg in {'maxtodelete', 'maxtoprocess'}:
-      maxToProcess = getInteger(minVal=0)
+      maxToProcess = getMaxToProcess()
     else:
       unknownArgumentExit()
   if not revisionsEntity:
@@ -59647,7 +59650,7 @@ REVISIONS_FIELDS_CHOICE_MAP = {
 # gam <UserTypeEntity> update filerevisions <DriveFileEntity> select <DriveFileRevisionIdEntity> [previewupdate]
 #	[published [<Boolean>]] [publishauto [<Boolean>]] [publishedoutsidedomain [<Boolean>]]
 #	[keepforever [<Boolean>]}
-#	[showtitles] [doit] [max_to_update <Number>]
+#	[showtitles] [doit] [max_to_update all|<Number>]
 def updateFileRevisions(users):
   fileIdEntity = getDriveFileEntity()
   revisionsEntity = None
@@ -75276,9 +75279,9 @@ def _getMessageSelectParameters(myarg, parameters):
   elif myarg == 'doit':
     parameters['doIt'] = True
   elif myarg in parameters['maxToKeywords']:
-    parameters['maxToProcess'] = getInteger(minVal=0)
+    parameters['maxToProcess'] = getMaxToProcess()
   elif myarg == 'maxmessagesperthread':
-    parameters['maxMessagesPerThread'] = getInteger(minVal=0)
+    parameters['maxMessagesPerThread'] = getMaxToProcess()
   else:
     return False
   return True
@@ -75317,7 +75320,7 @@ def _finalizeMessageSelectParameters(parameters, queryOrIdsRequired):
 # gam <UserTypeEntity> archive messages <GroupItem>
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_archive <Number>])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [doit] [max_to_archive all|<Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 def archiveMessages(users):
   def _processMessageFailed(user, idsList, errMsg, j=0, jcount=0):
@@ -75613,28 +75616,28 @@ def _processMessagesThreads(users, entityType):
 # gam <UserTypeEntity> delete message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_delete <Number>])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [doit] [max_to_delete all|<Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> modify message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_modify <Number>])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [doit] [max_to_modify all|<Number>])|(ids <MessageIDEntity>)
 #	((addlabel <LabelName>)|(removelabel <LabelName>)|(addlabelid <LabelID>)|(removelabelid <LabelID>))+
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_spam <Number>])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [doit] [max_to_spam all|<Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> trash message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_trash <Number>])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [doit] [max_to_trash all|<Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> untrash message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [doit] [max_to_untrash all|<Number>])|(ids <MessageIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 def processMessages(users):
   _processMessagesThreads(users, Ent.MESSAGE)
@@ -75642,29 +75645,29 @@ def processMessages(users):
 # gam <UserTypeEntity> delete thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_delete <Number>])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [doit] [max_to_delete all|<Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> modify thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_modify <Number>])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [doit] [max_to_modify all|<Number>])|(ids <ThreadIDEntity>)
 #	(addlabel <LabelName>)* (removelabel <LabelName>)*
 #	(addlabelid <LabelID>)* (removelabelid <LabelID>)*
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> spam thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_spam <Number>])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [doit] [max_to_spam all|<Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> trash thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_trash <Number>])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [doit] [max_to_trash all|<Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 # gam <UserTypeEntity> untrash thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [doit] [max_to_untrash <Number>])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [doit] [max_to_untrash all|<Number>])|(ids <ThreadIDEntity>)
 #	[csv [todrive <ToDriveAttribute>*]]
 def processThreads(users):
   _processMessagesThreads(users, Ent.THREAD)
@@ -75776,13 +75779,13 @@ def exportMessagesThreads(users, entityType):
     Ind.Decrement()
 
 # gam <UserTypeEntity> export message|messages
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export all|<Number>])|(ids <MessageIDEntity>)
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 def exportMessages(users):
   exportMessagesThreads(users, Ent.MESSAGE)
 
 # gam <UserTypeEntity> export thread|threads
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [max_to_export all|<Number>])|(ids <ThreadIDEntity>)
 #	[targetfolder <FilePath>] [targetname <FileName>] [overwrite [<Boolean>]]
 def exportThreads(users):
   exportMessagesThreads(users, Ent.THREAD)
@@ -75802,10 +75805,10 @@ def _decodeHeader(header):
       return header
 
 # gam <UserTypeEntity> forward message|messages [recipient|to] <RecipientEntity>
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <MessageIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward all|<Number>])|(ids <MessageIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 # gam <UserTypeEntity> forward thread|threads [recipient|to] <RecipientEntity>
-#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward <Number>])|(ids <ThreadIDEntity>)
+#	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])+ [quick|notquick] [doit] [max_to_forward all|<Number>])|(ids <ThreadIDEntity>)
 #	[subject <String>] [addorigfieldstosubject [<Boolean>]] [altcharset <String>]
 def forwardMessagesThreads(users, entityType):
   checkArgumentPresent({'recipient', 'recipients', 'to'})
@@ -77114,7 +77117,7 @@ def printShowMessagesThreads(users, entityType):
 # gam <UserTypeEntity> print message|messages [todrive <ToDriveAttribute>*]
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [max_to_print all|<Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [useronly] [delimiter <Character>]
@@ -77127,7 +77130,7 @@ def printShowMessagesThreads(users, entityType):
 # gam <UserTypeEntity> show message|messages
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <MessageIDEntity>)
+#	 [quick|notquick] [max_to_show all|<Number>] [includespamtrash])|(ids <MessageIDEntity>)
 #	[labelmatchpattern <REMatchPattern>] [sendermatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [useronly]
@@ -77143,8 +77146,9 @@ def printShowMessages(users):
 # gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [max_to_print <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [max_to_print all|<Number>] [includespamtrash])|(ids <ThreadIDEntity>)
 #	[labelmatchpattern <REMatchPattern>]
+#	[max_messages_per_thread all|<Number>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [useronly] [delimiter <Character>]
 #	[showbody] [showhtml] [showdate] [showsize] [showsnippet]
@@ -77156,7 +77160,8 @@ def printShowMessages(users):
 # gam <UserTypeEntity> show thread|threads
 #	(((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
 #	 [labelids <LabelIDList>]
-#	 [quick|notquick] [max_to_show <Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	 [quick|notquick] [max_to_show all|<Number>] [includespamtrash])|(ids <ThreadIDEntity>)
+#	[max_messages_per_thread all|<Number>]
 #	[labelmatchpattern <REMatchPattern>]
 #	[headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
 #	[showlabels] [useronly]
