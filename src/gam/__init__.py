@@ -4676,12 +4676,6 @@ def doDPoPTest():
   printKeyValueList(['Algorithm', signer.algorithm])
   printKeyValueList(['Key ID', signer.key_id or '(auto)'])
   printKeyValueList(['JWK Thumbprint', signer.thumbprint])
-  jwk = signer.public_jwk
-  printKeyValueList(['Public JWK'])
-  Ind.Increment()
-  for k, v in jwk.items():
-    printKeyValueList([k, v])
-  Ind.Decrement()
   Ind.Decrement()
   printBlankLine()
   # Perform a test signature
@@ -4695,7 +4689,7 @@ def doDPoPTest():
     printLine(f'ERROR: Signature failed: {e}')
     return
   sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode('ascii')
-  printLine(f'Signature succeeded ({elapsed_ms:.1f} ms)')
+  printLine(f'Signature succeeded.')
   printBlankLine()
   printKeyValueList(['Signature Details'])
   Ind.Increment()
