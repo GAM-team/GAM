@@ -751,6 +751,7 @@ jobs:
           run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./sd.csv user $gam_user print shareddrives asadmin
           run_gam csv ./sd.csv gam user $gam_user delete shareddrive ~id nukefromorbit
           run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
+          run_gam csv ./users.csv gam update user ~primaryEmail ou /
           run_gam csv ./users.csv gam delete user ~primaryEmail
           run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./ous.csv print ous fromparent "aaaGithub Actions"
           run_gam csv ./ous.csv gam delete ou ~orgUnitId
@@ -890,6 +891,7 @@ jobs:
           run_gam create device serialnumber $sn devicetype android
           run_gam config enable_dasa true save
           run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
+          run_gam csv ./users.csv gam update user ~primaryEmail ou /
           run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
           run_gam print mobile
           run_gam print devices clientstates
@@ -914,8 +916,8 @@ jobs:
           run_gam delete caalevel "zzz_${newbase}"
           run_gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
           run_gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
+          run_gam user $gam_user update shareddrive "${driveid}" ou "/" # so we can delete our OU...
           run_gam user $gam_user show shareddrives asadmin
-          run_gam user $gam_user update shareddrive "${driveid}" ou "aaaGithub Actions" # so we can delete our OU...
           run_gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
           ssoprofile=$(run_gam config debug_level 1 create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
           if [ ${ssoprofile} != 'inProgress' ]; then
