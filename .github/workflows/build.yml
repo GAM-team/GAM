@@ -916,7 +916,7 @@ jobs:
           run_gam delete caalevel "zzz_${newbase}"
           run_gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
           run_gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
-          run_gam user $gam_user update shareddrive "${driveid}" ou "/" # so we can delete our OU...
+          run_gam user $gam_user update shareddrive "${driveid}" ou root # so we can delete our OU...
           run_gam user $gam_user show shareddrives asadmin
           run_gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
           ssoprofile=$(run_gam config debug_level 1 create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
