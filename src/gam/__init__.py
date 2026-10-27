@@ -4704,18 +4704,17 @@ def _getDPoPSigner():
   backend = GC.Values[GC.DPOP_BACKEND]
   config = GC.Values[GC.DPOP_BACKEND_CONFIG]
   if backend == 'software':
-    if config:
-      key_path = os.path.expanduser(config)
-      if not os.path.isabs(key_path):
-        key_path = os.path.expanduser(os.path.join(GC.Values[GC.CONFIG_DIR], key_path))
-      key_data = readFile(key_path, mode='rb')
-      if key_data is None:
-        systemErrorExit(USAGE_ERROR_RC, f'DPoP software key file not found: {key_path}')
-      return SoftwareDPoPSigner.from_pem(key_data)
-    else:
-      from cryptography.hazmat.primitives.asymmetric import ec as ec_module
-      private_key = ec_module.generate_private_key(ec_module.SECP256R1())
-      return SoftwareDPoPSigner(private_key)
+    if not config:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP software backend requires dpop_backend_config set to the path of a PEM private key file')
+    key_path = os.path.expanduser(config)
+    if not os.path.isabs(key_path):
+      key_path = os.path.expanduser(os.path.join(GC.Values[GC.CONFIG_DIR], key_path))
+    if not os.path.isfile(key_path):
+      systemErrorExit(USAGE_ERROR_RC, f'DPoP software key file not found: {key_path}')
+    key_data = readFile(key_path, mode='rb')
+    if key_data is None:
+      systemErrorExit(USAGE_ERROR_RC, f'DPoP software key file could not be read: {key_path}')
+    return SoftwareDPoPSigner.from_pem(key_data)
   elif backend == 'yubikey':
     try:
       from dpop_signer_yubikey import YubiKeyDPoPSigner, YubiKeyDPoPError
