@@ -416,6 +416,72 @@ jobs:
           echo "GAM Version ${GAMVERSION}"
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
+      - name: Test DPoP software backend
+        if: matrix.goal == 'build'
+        run: |
+          $gam config dpop true dpop_backend software save
+          $gam check dpop
+
+      - name: Setup software TPM
+        if: matrix.goal == 'build' && runner.os == 'Linux'
+        run: |
+          sudo apt-get -qq --yes install swtpm swtpm-tools tpm2-tools
+          mkdir -p /tmp/tpm-state
+          swtpm socket --tpm2 \
+            --tpmstate dir=/tmp/tpm-state \
+            --server type=tcp,port=2321 \
+            --ctrl type=tcp,port=2322 \
+            --flags not-need-init,startup-clear \
+            --daemon
+          sleep 1
+          export TPM2TOOLS_TCTI="swtpm:host=localhost,port=2321"
+          tpm2_createprimary -C o -G ecc256:ecdsa-sha256 -c /tmp/primary.ctx \
+            -a 'fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign'
+          tpm2_evictcontrol -C o -c /tmp/primary.ctx 0x81000001
+          tpm2_readpublic -c 0x81000001
+
+      - name: Test DPoP Linux TPM backend
+        if: matrix.goal == 'build' && runner.os == 'Linux'
+        run: |
+          $gam config dpop_backend linux_tpm dpop_backend_config "0x81000001,swtpm:host=localhost,port=2321" save
+          $gam check dpop
+
+      - name: Create CNG test certificate
+        if: matrix.goal == 'build' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $inf = @"
+          [Version]
+          Signature="`$Windows NT`$"
+          [NewRequest]
+          Subject = "CN=GAM DPoP CI Test"
+          KeyAlgorithm = ECDSA_P256
+          ProviderName = "Microsoft Software Key Storage Provider"
+          ProviderType = 0
+          KeyUsage = 0x80
+          MachineKeySet = FALSE
+          RequestType = Cert
+          "@
+          $inf | Out-File -Encoding ascii "$env:TEMP\dpop-ci.inf"
+          certreq -new -f "$env:TEMP\dpop-ci.inf" "$env:TEMP\dpop-ci.cer"
+
+      - name: Test DPoP Windows CNG backend
+        if: matrix.goal == 'build' && runner.os == 'Windows'
+        run: |
+          $gam config dpop_backend windows_tpm dpop_backend_config "GAM DPoP CI Test" save
+          $gam check dpop
+
+      - name: Create Secure Enclave key
+        if: matrix.goal == 'build' && runner.os == 'macOS' && runner.arch == 'ARM64'
+        run: |
+          sc_auth create-ctk-identity -l gam-dpop-ci -k p-256-ne -t none
+
+      - name: Test DPoP macOS Secure Enclave backend
+        if: matrix.goal == 'build' && runner.os == 'macOS' && runner.arch == 'ARM64'
+        run: |
+          $gam config dpop_backend macos_secureenclave dpop_backend_config "gam-dpop-ci" save
+          $gam check dpop
+
       - name: Setup Certum Code Signing
         id: certum
         if: runner.os == 'Windows'
