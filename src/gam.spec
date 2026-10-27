@@ -35,7 +35,17 @@ datas += [('gam/meet-v2beta.json', '.')]
 datas += [('gam/serviceaccountlookup-v1.json', '.')]
 hiddenimports = [
      'gam.gamlib.yubikey',
+     'google.auth.dpop',
+     'dpop_signer_yubikey',
+     'dpop_signer_ecp',
      ]
+
+if platform == 'darwin':
+    hiddenimports += ['dpop_signer_macos_secureenclave']
+elif platform == 'win32':
+    hiddenimports += ['dpop_signer_windows_tpm']
+elif platform == 'linux':
+    hiddenimports += ['dpop_signer_linux_tpm']
 
 excludes = [
     'pkg_resources',

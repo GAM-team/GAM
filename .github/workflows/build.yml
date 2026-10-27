@@ -211,7 +211,7 @@ jobs:
         run: |
           echo "RUNNING: apt update..."
           sudo apt-get -qq --yes update
-          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev libffi-dev pkg-config
+          sudo apt-get -qq --yes install swig libpcsclite-dev libxslt1-dev libsqlite3-dev libffi-dev pkg-config libtss2-dev
 
       - name: MacOS install tools
         if: runner.os == 'macOS'
@@ -287,7 +287,15 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*[^t]-macosx_15_0_x86_64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
-          "$PYTHON" -m pip install ..[yubikey]
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            "$PYTHON" -m pip install ..[yubikey,ecp,linux_tpm]
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            "$PYTHON" -m pip install ..[yubikey,ecp,macos_secureenclave]
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            "$PYTHON" -m pip install ..[yubikey,ecp,windows_tpm]
+          else
+            "$PYTHON" -m pip install ..[yubikey,ecp]
+          fi
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
