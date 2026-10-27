@@ -287,6 +287,8 @@ jobs:
             gh release download --repo "jay0lee/cryptography-wheels" --pattern "*[^t]-macosx_15_0_x86_64.whl" --clobber
             "$PYTHON" -m pip install cryptography-*.whl
           fi
+          # google-cloud-python monorepo has paths exceeding Windows 260-char limit
+          git config --global core.longpaths true
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             "$PYTHON" -m pip install ..[yubikey,ecp,linux_tpm]
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
