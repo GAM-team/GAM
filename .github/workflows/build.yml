@@ -420,13 +420,7 @@ jobs:
         if: matrix.goal == 'build'
         shell: bash
         run: |
-          python3 -c "
-          from cryptography.hazmat.primitives.asymmetric import ec
-          from cryptography.hazmat.primitives import serialization
-          key = ec.generate_private_key(ec.SECP256R1())
-          pem = key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
-          open('$GAMCFGDIR/dpop_software.pem', 'wb').write(pem)
-          "
+          openssl ecparam -genkey -name prime256v1 -noout -out "$GAMCFGDIR/dpop_software.pem"
           $gam config dpop true dpop_backend software dpop_backend_config dpop_software.pem save
           $gam check dpop
 
