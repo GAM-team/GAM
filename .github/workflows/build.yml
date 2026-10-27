@@ -482,6 +482,11 @@ jobs:
           $gam config dpop_backend macos_secureenclave dpop_backend_config "gam-dpop-ci" save
           $gam check dpop
 
+      - name: Reset DPoP config
+        if: matrix.goal == 'build'
+        run: |
+          $gam config dpop false save
+
       - name: Setup Certum Code Signing
         id: certum
         if: runner.os == 'Windows'
