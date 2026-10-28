@@ -935,7 +935,7 @@ jobs:
           # run_gam info printer "$printerid"
           # run_gam delete printer "$printerid"
           run_gam check ou "${newou}"
-          run_gam delete ou "${newou}"
+          run_gam -a "0 50" delete ou "${newou}"
 
   publish:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
