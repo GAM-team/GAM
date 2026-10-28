@@ -226,6 +226,7 @@ gam print devices [todrive <ToDriveAttribute>*]
         [all|company|personal|nocompanydevices|nopersonaldevices]
         [nodeviceusers|oneuserperrow]
         [clientstates]
+        [showitemcountonly] [deleteduplicates]
         [formatjson [quotechar <Character>]]
 ```
 By default, all devices are displayed; use the query options to limit the display.

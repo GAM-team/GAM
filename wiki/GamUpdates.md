@@ -10,6 +10,12 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.49.03
+
+Added option `deleteduplicates` to `gam print devices` that can be used to display and delete duplicate devices
+returned by the Cloud Identity API. This is a reworking of the `checkforapibug` option.
+If any duplicates are deleted, the return code will be set to 68.
+
 7.49.02
 
 Improved Gmail API error handling in `gam <UserTypeEntity> print|show messages`.
