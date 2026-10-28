@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.49.01'
+__version__ = '7.49.02'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -75472,10 +75472,10 @@ def _processMessagesThreads(users, entityType):
         mcount += bcount
       bcount = min(jcount-mcount, GC.Values[GC.MESSAGE_BATCH_SIZE])
 
-  _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
-                                        GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID,
-                                        GAPI.FAILED_PRECONDITION: Msg.FAILED_PRECONDITION,
-                                        GAPI.QUOTA_EXCEEDED: Msg.QUOTA_EXCEEDED}
+  _GMAIL_PROCESS_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
+                                                GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID,
+                                                GAPI.FAILED_PRECONDITION: Msg.FAILED_PRECONDITION,
+                                                GAPI.QUOTA_EXCEEDED: Msg.QUOTA_EXCEEDED}
 
   def _callbackProcessMessage(request_id, _, exception):
     ri = request_id.splitlines()
@@ -75487,7 +75487,7 @@ def _processMessagesThreads(users, entityType):
     else:
       http_status, reason, message = checkGAPIError(exception)
       _processMessageFailed(ri[RI_ENTITY], ri[RI_ITEM],
-                            getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message),
+                            getHTTPError(_GMAIL_PROCESS_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message),
                             int(ri[RI_J]), int(ri[RI_JCOUNT]))
 
   def _batchProcessMessagesThreads(service, function, user, jcount, messageIds, **kwargs):
@@ -76696,13 +76696,15 @@ def printShowMessagesThreads(users, entityType):
           break
     messageThreadCounts['threads'] += 1
 
-  _GMAIL_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
-                                        GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
+  _GMAIL_PRINT_ERROR_REASON_TO_MESSAGE_MAP = {GAPI.NOT_FOUND: Msg.DOES_NOT_EXIST,
+                                              GAPI.INVALID_MESSAGE_ID: Msg.INVALID_MESSAGE_ID}
+
+  _GMAIL_PRINT_RETRY_REASONS = GAPI.DEFAULT_RETRY_REASONS+GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS+[GAPI.FAILED_PRECONDITION, GAPI.UNKNOWN_ERROR]
 
   def _handleGmailError(exception, ri):
     http_status, reason, message = checkGAPIError(exception)
-    errMsg = getHTTPError(_GMAIL_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message)
-    if reason not in GAPI.DEFAULT_RETRY_REASONS:
+    errMsg = getHTTPError(_GMAIL_PRINT_ERROR_REASON_TO_MESSAGE_MAP, http_status, reason, message)
+    if reason not in _GMAIL_PRINT_RETRY_REASONS:
       if not csvPF:
         printKeyValueListWithCount([Ent.Singular(entityType), ri[RI_ITEM], errMsg], int(ri[RI_J]), int(ri[RI_JCOUNT]))
         setSysExitRC(ACTION_FAILED_RC)
@@ -76711,7 +76713,9 @@ def printShowMessagesThreads(users, entityType):
       return
     try:
       response = callGAPI(service, 'get',
-                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID, GAPI.UNKNOWN_ERROR],
+                          throwReasons=GAPI.GMAIL_THROW_REASONS+[GAPI.NOT_FOUND, GAPI.INVALID_MESSAGE_ID,
+                                                                 GAPI.FAILED_PRECONDITION, GAPI.UNKNOWN_ERROR],
+                          retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                           userId='me', id=ri[RI_ITEM], format=['metadata', 'full'][show_size or show_body or show_attachments or save_attachments or upload_attachments])
       if countsOnly:
         _callbacks['process'](ri[RI_ENTITY], response)
@@ -76724,7 +76728,7 @@ def printShowMessagesThreads(users, entityType):
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.DOES_NOT_EXIST, int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.invalidMessageId:
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], Msg.INVALID_MESSAGE_ID, int(ri[RI_J]), int(ri[RI_JCOUNT]))
-    except GAPI.unknownError as e:
+    except (GAPI.badRequest, GAPI.unknownError, GAPI.failedPrecondition) as e:
       entityActionFailedWarning([Ent.USER, ri[RI_ENTITY], entityType, ri[RI_ITEM]], str(e), int(ri[RI_J]), int(ri[RI_JCOUNT]))
     except GAPI.serviceNotAvailable:
       userGmailServiceNotEnabledWarning(ri[RI_ENTITY], int(ri[RI_I]), int(ri[RI_COUNT]))
@@ -76962,6 +76966,7 @@ def printShowMessagesThreads(users, entityType):
         listResult = callGAPIpages(service, 'list', parameters['listType'],
                                    pageMessage=getPageMessageForWhom(), maxItems=parameters['maxItems'],
                                    throwReasons=GAPI.GMAIL_THROW_REASONS+GAPI.GMAIL_LIST_THROW_REASONS,
+                                   retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                    userId='me', q=parameters['query'], labelIds=parameters['labelIds'],
                                    fields=parameters['fields'], includeSpamTrash=includeSpamTrash,
                                    maxResults=GC.Values[GC.MESSAGE_MAX_RESULTS])
