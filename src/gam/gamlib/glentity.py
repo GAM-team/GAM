@@ -190,6 +190,7 @@ class GamEntity():
   DEVICE = 'devi'
   DEVICE_FILE = 'devf'
   DIRECTORY = 'drct'
+  DEVICE_NAME = 'devn'
   DEVICE_USER = 'devu'
   DEVICE_USER_CLIENT_STATE = 'ducs'
   DISCOVERY_JSON_FILE = 'disc'
@@ -563,6 +564,7 @@ class GamEntity():
     DELIVERY: ['Delivery', 'Delivery'],
     DEVICE: ['Devices', 'Device'],
     DEVICE_FILE: ['Device Files', 'Device File'],
+    DEVICE_NAME: ['Device Names', 'Device Name'],
     DEVICE_USER: ['Device Users', 'Device User'],
     DEVICE_USER_CLIENT_STATE: ['Device Users Client States', 'Device User Client State'],
     DIRECTORY: ['Directories', 'Directory'],

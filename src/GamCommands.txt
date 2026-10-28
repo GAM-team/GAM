@@ -4371,8 +4371,8 @@ gam print devices [todrive <ToDriveAttribute>*]
         [all|company|personal|nocompanydevices|nopersonaldevices]
         [nodeviceusers|oneuserperrow]
         [clientstates]
+        [showitemcountonly] [deleteduplicates]
         [formatjson [quotechar <Character>]]
-        [showitemcountonly]
 
 <DeviceUserAction> ::=
         approve|

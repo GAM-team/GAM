@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.49.02'
+__version__ = '7.49.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -367,6 +367,7 @@ MULTIPLE_DELETED_USERS_FOUND_RC = 65
 MULTIPLE_PROJECT_FOLDERS_FOUND_RC = 65
 STDOUT_STDERR_ERROR_RC = 66
 INSUFFICIENT_PERMISSIONS_RC = 67
+DUPLICATE_ITEMS_DELETED_RC = 68
 REQUEST_COMPLETED_NO_RESULTS_RC = 71
 REQUEST_NOT_COMPLETED_RC = 72
 SERVICE_NOT_APPLICABLE_RC = 73
@@ -32250,8 +32251,8 @@ DEVICE_ORDERBY_CHOICE_MAP = {
 #	[all|company|personal|nocompanydevices|nopersonaldevices]
 #	[nodeviceusers|oneuserperrow]
 #	[clientstates]
+# 	[showitemcountonly] [deleteduplicates]
 #	[formatjson [quotechar <Character>]]
-# 	[showitemcountonly]
 def doPrintCIDevices():
   ci = buildGAPICIDeviceServiceObject()
   customer = _getCustomersCustomerIdNoC()
@@ -32267,7 +32268,7 @@ def doPrintCIDevices():
   getDeviceUsers = True
   getClientStates = False
   oneUserPerRow = showItemCountOnly = False
-  checkForAPIbug = False
+  deleteDuplicates = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -32294,8 +32295,8 @@ def doPrintCIDevices():
       pass
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
-    elif myarg == 'checkforapibug':
-      checkForAPIbug = True
+    elif myarg in ['checkforduplicates', 'checkforapibug']:
+      deleteDuplicates = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
   fields = getItemFieldsFromFieldsList('devices', fieldsList)
@@ -32323,7 +32324,7 @@ def doPrintCIDevices():
                         orderBy=OBY.orderBy, view=view, fields=fields, pageSize=100)
         pageToken, totalItems = _processGAPIpagesResult(feed, 'devices', None, totalItems, pageMessage, None, entityType)
         if feed:
-          if not checkForAPIbug:
+          if not deleteDuplicates:
             devices.extend(feed.get('devices', []))
           else:
             newDevices = []
@@ -32331,10 +32332,9 @@ def doPrintCIDevices():
               if device['name'] not in seenNames:
                 seenNames.add(device['name'])
                 newDevices.append(device)
-            if not newDevices:
-              _finalizeGAPIpagesResult(pageMessage)
-              stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {len(devices)} devices')
-              break
+              else:
+                stderrWarningMsg(f"A duplicate {Ent.Singular(Ent.DEVICE_NAME)}: {device['name']} was returned, it was deleted")
+                setSysExitRC(DUPLICATE_ITEMS_DELETED_RC)
             devices.extend(newDevices)
           del feed
         if not pageToken:
