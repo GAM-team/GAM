@@ -12,11 +12,11 @@
 
 ## What is DPoP?
 
-**DPoP** (Demonstrating Proof-of-Possession, [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)) is an OAuth 2.0 extension that binds access tokens and refresh tokens to a specific cryptographic key. Every time GAM uses a token, it must also present a signed proof that it possesses the private key the token was bound to.
+**DPoP** (Demonstrating Proof-of-Possession, [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)) is an OAuth 2.0 extension that binds OAuth tokens to a specific cryptographic key. Every time GAM uses a refresh token, it must also present a signed proof that it possesses the private key the token was bound to.
 
 ### The Problem DPoP Solves
 
-Without DPoP, GAM's OAuth tokens are **bearer tokens** — anyone who obtains a copy can use them. A stolen `oauth2.txt` file gives an attacker full Google Workspace admin access until the token is revoked. Common attack vectors include:
+Without DPoP, GAM's OAuth tokens are **bearer tokens** — anyone who has a copy can use them. A stolen `oauth2.txt` file gives an attacker full Google Workspace admin access until the token is revoked. Possible attack vectors include:
 
 - Malware exfiltrating files from the GAM config directory
 - Backup systems storing unencrypted copies of `oauth2.txt`
@@ -28,8 +28,8 @@ Without DPoP, GAM's OAuth tokens are **bearer tokens** — anyone who obtains a 
 With DPoP enabled, GAM's refresh token is **bound to a private key** during the initial OAuth authorization flow. From that point on:
 
 1. Every token refresh request must include a **DPoP proof** — a signed JWT proving possession of the private key.
-2. The authorization server verifies the proof's signature against the public key the token was bound to.
-3. A stolen `oauth2.txt` is **useless** without the corresponding private key.
+2. Google's authorization server verifies the proof's signature against the public key the token was bound to.
+3. A stolen `oauth2.txt` is cannot be refreshed without the corresponding private key.
 
 If the private key is stored in hardware (TPM, Secure Enclave, YubiKey), it **cannot be extracted** — even with root/admin access to the machine. The token becomes bound to a physical device.
 
@@ -40,19 +40,18 @@ With DPoP:          stolen oauth2.txt = worthless
                     (attacker also needs the private key)
 
 With hardware DPoP: stolen oauth2.txt = worthless
-                    (key can't be extracted from hardware,
-                     even with root access)
+                    (attacker must also *physically steal hardware)
 ```
 
 ### What DPoP Does and Does Not Protect
 
-DPoP protects the **refresh token** — the long-lived credential stored in `oauth2.txt` that GAM uses to obtain short-lived access tokens. The DPoP proof is required when GAM exchanges the refresh token for a new access token.
+Google's implementation of DPoP protects the **refresh token** — the long-lived credential stored in `oauth2.txt` that GAM uses to obtain short-lived access tokens. The DPoP proof is required when GAM exchanges the refresh token for a new access token. Usually this is needed once an hour.
 
-**Access tokens themselves are not DPoP-bound.** Once GAM obtains an access token, it uses it as a normal bearer token for Google API calls. However, access tokens are short-lived (60 minutes or less), so the window of exposure is very limited compared to a refresh token that may be valid for months or years.
+**Google Access tokens themselves are not DPoP-bound.** Once GAM obtains an access token, it uses it as a normal bearer token for Google API calls. However, access tokens are short-lived (60 minutes or less), so the window of exposure is very limited compared to a refresh token that may be valid for months or years.
 
 ## Choosing a Backend
 
-GAM supports multiple DPoP signer backends. Choose based on your operating system and security requirements:
+GAM supports multiple DPoP signer backends where the private key can be stored. Choose based on your operating system and security requirements:
 
 | Backend | Platform | Key Storage | Hardware-Backed | Best For |
 |---------|----------|-------------|-----------------|----------|
@@ -83,7 +82,7 @@ The Secure Enclave is a dedicated security coprocessor in Apple Silicon Macs (M1
 
 **Requirements:**
 - macOS 15 (Sequoia) or later
-- Apple Silicon (M1/M2/M3/M4) Mac — Intel Macs do not have a Secure Enclave
+- Apple Silicon (M1/M2/M3/M4) Mac
 
 #### Step 1: Create the Secure Enclave Key
 
@@ -126,7 +125,7 @@ On Windows, GAM uses CNG (Cryptography Next Generation) to access keys in the Wi
 
 **Requirements:**
 - Windows 10/11 or Windows Server 2019+
-- TPM 2.0 (for hardware-backed keys)
+- TPM 2.0 (for hardware-backed keys). Windows 11 requires a TPM 2.0 device.
 
 #### Step 1: Generate a TPM-Backed Key
 
@@ -243,6 +242,12 @@ sudo usermod -aG tss $USER
 # Log out and back in for the group change to take effect
 ```
 
+> [!TIP]
+> VMs running on VMWare, Proxmox, etc can create vTPM (virtual TPM)
+> devices for guest VMs. These vTPMs protect the private key even if
+> an attacker has root access to the guest VM but anyone with access
+> to the host VM server can access the vTPM private keys directly.
+
 ---
 
 ### YubiKey — PIV (Cross-Platform)
@@ -302,6 +307,8 @@ gam config dpop_backend_config ",9a,mypin" save
 
 > [!TIP]
 > Change the default PIV PIN: `ykman piv access change-pin`
+> Even if the Yubikey is lost the attacker would need the PIN
+> which is stored in the GAM config making the theft harder.
 
 ---
 
