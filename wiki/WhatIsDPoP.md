@@ -15,9 +15,9 @@
 
 **DPoP** (Demonstrating Proof-of-Possession, [RFC 9449](https://datatracker.ietf.org/doc/html/rfc9449)) is an OAuth 2.0 extension that binds OAuth tokens to a specific cryptographic key. Every time GAM uses a refresh token, it must also present a signed proof that it possesses the private key the token was bound to.
 
-### The Problem DPoP Solves
+### The Problem with GAM oauth2.txt
 
-Without DPoP, GAM's OAuth tokens are **bearer tokens** — anyone who has a copy can use them. A stolen `oauth2.txt` file gives an attacker full Google Workspace admin access until the token is revoked. Possible attack vectors include:
+GAM's OAuth tokens are **bearer tokens** — anyone who has a copy can use them. A stolen `oauth2.txt` file gives an attacker full Google Workspace admin access until the token is revoked. Possible attack vectors include:
 
 - Malware exfiltrating files from the GAM config directory
 - Backup systems storing unencrypted copies of `oauth2.txt`
@@ -79,7 +79,7 @@ GAM supports multiple DPoP signer backends where the private key can be stored. 
 
 ### macOS — Secure Enclave (Recommended for Apple Silicon Macs)
 
-The Secure Enclave is a dedicated security coprocessor in Apple Silicon Macs (M1 and later). Keys generated in the Secure Enclave cannot be exported or read — signing operations happen inside the chip.
+The [Apple Secure Enclave](https://support.apple.com/guide/security/the-secure-enclave-sec59b0b31ff/web) is a dedicated security coprocessor in Apple Silicon Macs (M1 and later). Keys generated in the Secure Enclave cannot be exported or read — signing operations happen inside the chip.
 
 **Requirements:**
 - macOS 15 (Sequoia) or later
@@ -122,7 +122,7 @@ gam config dpop true dpop_backend macos_secureenclave dpop_backend_config "gam-d
 
 ### Windows — CNG/TPM (Recommended for Windows with TPM)
 
-On Windows, GAM uses CNG (Cryptography Next Generation) to access keys in the Windows certificate store. When a TPM is present and the correct provider is used, the private key is stored in the TPM.
+On Windows, GAM uses [CNG (Cryptography Next Generation)](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal) to access keys in the Windows certificate store. When a TPM is present and the correct provider is used, the private key is stored in the TPM.
 
 **Requirements:**
 - Windows 10/11 or Windows Server 2019+
@@ -256,7 +256,7 @@ sudo usermod -aG tss $USER
 YubiKey PIV stores a private key in the YubiKey's secure element. The key is generated on the YubiKey and never leaves it. Works on any OS where GAM runs.
 
 **Requirements:**
-- YubiKey 5 series or newer (with PIV support)
+- [YubiKey 5 series](https://www.yubico.com/products/yubikey-5-overview/) or newer (with PIV support)
 - [`ykman`](https://docs.yubico.com/software/yubikey/tools/ykman/) (YubiKey Manager) installed
 
 #### Step 1: Generate a Key on the YubiKey
