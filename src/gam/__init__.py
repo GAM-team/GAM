@@ -121,6 +121,29 @@ import google.oauth2.service_account
 import google_auth_oauthlib.flow
 from google.auth.dpop import SoftwareDPoPSigner
 from google.oauth2.dpop_credentials import DPoPCredentials
+
+
+class _DeferredSignerDPoPCredentials(DPoPCredentials):
+  """DPoPCredentials that constructs the signer on first refresh, not at load time.
+
+  This avoids touching hardware (TPM, Secure Enclave, YubiKey) on every GAM
+  command. The signer is only needed when the cached access token expires and a
+  refresh grant must be sent to the authorization server.
+  """
+
+  def _call_refresh_grant(self, request, token_uri, refresh_token,
+                          client_id, client_secret, scopes=None,
+                          rapt_token=None):
+    if self._dpop_signer is None:
+      self._dpop_signer = _getDPoPSigner()
+    return super()._call_refresh_grant(
+        request, token_uri, refresh_token, client_id, client_secret,
+        scopes=scopes, rapt_token=rapt_token)
+
+  def _after_refresh(self, request, method, url, headers):
+    if self._dpop_signer is None:
+      self._dpop_signer = _getDPoPSigner()
+    super()._after_refresh(request, method, url, headers)
 import modern_httplib2.auto
 import modern_httplib2 as httplib2
 
@@ -4667,7 +4690,7 @@ def doDPoPTest():
   try:
     signer = _getDPoPSigner()
   except SystemExit:
-    return
+    raise
   printLine('Signer created successfully.')
   printBlankLine()
   printKeyValueList(['Signer Details'])
@@ -4721,13 +4744,18 @@ def _getDPoPSigner():
     except ImportError:
       systemErrorExit(USAGE_ERROR_RC, 'DPoP yubikey backend requires the dpop-signer-yubikey package. Install with: pip install "gam7[yubikey]"')
     parts = [p.strip() for p in config.split(',')] if config else []
-    serial = int(parts[0]) if len(parts) > 0 and parts[0] else None
+    try:
+      serial = int(parts[0]) if len(parts) > 0 and parts[0] else None
+    except ValueError:
+      systemErrorExit(USAGE_ERROR_RC, f'DPoP yubikey dpop_backend_config: serial must be an integer, got: {parts[0]}')
     slot = parts[1] if len(parts) > 1 and parts[1] else '9c'
     pin = parts[2] if len(parts) > 2 and parts[2] else None
     try:
       return YubiKeyDPoPSigner(serial=serial, slot=slot, pin=pin)
     except YubiKeyDPoPError as e:
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey error: {e}')
+    except Exception as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey unexpected error: {e}')
   elif backend == 'ecp':
     try:
       from dpop_signer_ecp import ECPDPoPSigner, ECPDPoPError
@@ -4742,6 +4770,8 @@ def _getDPoPSigner():
       return ECPDPoPSigner(config_path=ecp_config_path)
     except ECPDPoPError as e:
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP error: {e}')
+    except Exception as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP unexpected error: {e}')
   elif backend == 'macos_secureenclave':
     try:
       from dpop_signer_macos_secureenclave import SecureEnclaveDPoPSigner, SecureEnclaveDPoPError
@@ -4756,6 +4786,8 @@ def _getDPoPSigner():
       return SecureEnclaveDPoPSigner(label=label, application_tag=application_tag)
     except SecureEnclaveDPoPError as e:
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave error: {e}')
+    except Exception as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave unexpected error: {e}')
   elif backend == 'linux_tpm':
     try:
       from dpop_signer_linux_tpm import LinuxTPMDPoPSigner, LinuxTPMDPoPError
@@ -4763,13 +4795,18 @@ def _getDPoPSigner():
       systemErrorExit(USAGE_ERROR_RC, 'DPoP linux_tpm backend requires the dpop-signer-linux-tpm package. Install with: pip install "gam7[linux_tpm]"')
     parts = [p.strip() for p in config.split(',')] if config else []
     handle_str = parts[0] if len(parts) > 0 and parts[0] else None
-    handle = int(handle_str, 0) if handle_str else 0x81000001
+    try:
+      handle = int(handle_str, 0) if handle_str else 0x81000001
+    except ValueError:
+      systemErrorExit(USAGE_ERROR_RC, f'DPoP linux_tpm dpop_backend_config: handle must be a hex integer, got: {handle_str}')
     tcti = parts[1] if len(parts) > 1 and parts[1] else None
     auth = parts[2] if len(parts) > 2 and parts[2] else None
     try:
       return LinuxTPMDPoPSigner(handle=handle, tcti=tcti, auth=auth)
     except LinuxTPMDPoPError as e:
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM error: {e}')
+    except Exception as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM unexpected error: {e}')
   elif backend == 'windows_tpm':
     try:
       from dpop_signer_windows_tpm import WindowsCNGDPoPSigner, WindowsCNGDPoPError
@@ -4788,6 +4825,8 @@ def _getDPoPSigner():
       return WindowsCNGDPoPSigner(subject=subject, thumbprint=thumbprint)
     except WindowsCNGDPoPError as e:
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM error: {e}')
+    except Exception as e:
+      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM unexpected error: {e}')
   else:
     systemErrorExit(USAGE_ERROR_RC, f'Unknown DPoP backend: {backend}')
 
@@ -4837,14 +4876,11 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
           jsonDict['client_id'] = re.sub(r'\.apps\.googleusercontent\.com$', '', jsonDict['client_id'])
         if GC.Values[GC.DPOP]:
-          dpop_signer = _getDPoPSigner()
-          # Don't pass the stored thumbprint to DPoPCredentials - the local
-          # thumbprint check is a convenience but the real security guarantee
-          # comes from Google's server rejecting proofs signed with the wrong
-          # key. Stripping it here also allows security testing with
-          # intentionally mismatched keys.
+          # Use deferred signer — hardware is not touched until a token
+          # refresh is actually needed. This avoids Touch ID prompts,
+          # YubiKey access and TPM connections on every GAM command.
           jsonDict.pop('dpop_thumbprint', None)
-          creds = DPoPCredentials.from_authorized_user_info(jsonDict, dpop_signer=dpop_signer)
+          creds = _DeferredSignerDPoPCredentials.from_authorized_user_info(jsonDict)
         else:
           creds = google.oauth2.credentials.Credentials.from_authorized_user_info(jsonDict)
         if 'id_token_jwt' not in jsonDict:
@@ -4899,8 +4935,12 @@ def writeClientCredentials(creds, filename):
     'token_uri': creds.token_uri,
     }
   if GC.Values[GC.DPOP]:
-    dpop_signer = _getDPoPSigner()
-    creds_data['dpop_thumbprint'] = dpop_signer.thumbprint
+    # Get thumbprint from the signer already attached to the credentials
+    # (constructed during oauth create or during a deferred refresh).
+    # Avoids touching hardware again just to write the file.
+    dpop_signer = getattr(creds, '_dpop_signer', None)
+    if dpop_signer is not None:
+      creds_data['dpop_thumbprint'] = dpop_signer.thumbprint
     dpop_nonce = getattr(creds, 'dpop_nonce', None) or getattr(creds, '_dpop_nonce', None)
     if dpop_nonce:
       creds_data['dpop_nonce'] = dpop_nonce
