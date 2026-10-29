@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.49.05
+
+Updated `gam <UserTypeEntity> copy drivefile <DriveFileEntity> ... copysheetprotectedranges ...`
+to handle the following error that occurs when the Google Sheet has no protected ranges.
+```
+User: user@domain.com, Spreadsheet: <FileName>, Copy Failed: Must specify at least one request.
+```
 7.49.04
 
 Fixed bug and improved `gam print devices deleteduplicates`.
