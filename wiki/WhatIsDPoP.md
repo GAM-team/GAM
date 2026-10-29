@@ -7,9 +7,11 @@
 >
 > Do not enable DPoP on production GAM installations. Use a separate test
 > environment with non-critical credentials.
->
-> The latest alpha DPoP build is at:
-> [pre-release](https://github.com/GAM-team/GAM/releases/tag/20261028.113254)
+
+----
+The latest alpha DPoP build is at:
+[pre-release](https://github.com/GAM-team/GAM/releases/tag/20261029.183941)
+----
 
 ## What is DPoP?
 
@@ -26,13 +28,13 @@ GAM's OAuth tokens are **bearer tokens** — anyone who has a copy can use them.
 
 ### How DPoP Fixes This
 
-With DPoP enabled, GAM's refresh token is **bound to a private key** during the initial OAuth authorization flow. From that point on:
+With DPoP enabled, GAM binds the refresh token **to a private key on your machine** during the initial OAuth authorization flow. From that point on:
 
-1. Every token refresh request must include a **DPoP proof** — a signed JWT proving possession of the private key.
+1. Every token refresh request which needs to happen roughly hourly or on next GAM command after that, must include a **DPoP proof** — a signed JWT proving it has possession of the private key.
 2. Google's authorization server verifies the proof's signature against the public key the token was bound to.
-3. A stolen `oauth2.txt` is cannot be refreshed without the corresponding private key.
+3. A stolen `oauth2.txt` file cannot be refreshed without the corresponding private key.
 
-If the private key is stored in hardware (TPM, Secure Enclave, YubiKey), it **cannot be extracted** — even with root/admin access to the machine. The token becomes bound to a physical device.
+If the private key is stored in hardware (TPM, Secure Enclave, YubiKey), it **cannot be extracted** — even with root/admin access to the machine. The refresh token becomes bound to a physical device and only that device can use the `oauth2.txt` refresh token.
 
 ```
 Without DPoP:       stolen oauth2.txt = full admin access
