@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.49.04
+
+Fixed bug and improved `gam print devices deleteduplicates`.
+
+Updated `gam <UserTypeEntity> info|show|print sheet <DriveFileEntity> ... fields ...sheets`
+to improve performance when `includegriddata` was not specified.
+
 7.49.03
 
 Added option `deleteduplicates` to `gam print devices` that can be used to display and delete duplicate devices

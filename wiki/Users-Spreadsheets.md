@@ -72,6 +72,7 @@
         basicfilter|
         charts|
         columngroups|
+        commentanchors|
         conditionalformats|
         data|
         developermetadata|
@@ -80,7 +81,8 @@
         properties|
         protectedranges|
         rowgroups|
-        slicers
+        slicers|
+        tables
 <SpreadsheetRange> ::= <String>
 <SpreadsheetRangeList> ::= "'<SpreadsheetRange>'(,'<SpreadsheetRange>')*"
 <SpreadsheetValue> ::= "<String>"|<Number>|true|false
@@ -231,7 +233,10 @@ gam user testuser@domain.com update sheet <DriveFileItem> json file Sheet.json
 gam <UserTypeEntity> info|show sheet <DriveFileEntity>
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
         (range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-        [includegriddata [<Boolean>]] [shownames]
+        [includegriddata [<Boolean>]]
+        [excludetablesinbandedranges [<Boolean>]]
+        [commentsviewmode included|omitted]
+	[shownames]
         [formatjson]
 ```
 By default, the Sheets API does not return the sheet file name, use the `shownames` option to have GAM
@@ -243,7 +248,10 @@ The output is formatted for human readability. Use the following option to produ
 gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
         (range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-        [includegriddata [<Boolean>]] [shownames]
+        [includegriddata [<Boolean>]]
+        [excludetablesinbandedranges [<Boolean>]]
+        [commentsviewmode included|omitted]
+	[shownames]
         [formatjson [quotechar <Character>]]
 ```
 By default, the Sheets API does not return the sheet file name, use the `shownames` option to have GAM

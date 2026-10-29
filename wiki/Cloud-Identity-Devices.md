@@ -244,6 +244,8 @@ Select the view of devices to display:
 * `company|nopersonaldevices` - Company devices
 * `personal|nocompanydevices` - Personal devices
 
+Some users have experienced issues with duplicate entries being returned, use `deleteduplicates` to remove them.
+
 By default, Gam makes additional API calls to display the device users for the devices;
 use `nodeviceusers` to suppress making the additional calls.
 
