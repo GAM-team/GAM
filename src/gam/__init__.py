@@ -131,6 +131,15 @@ class _DeferredSignerDPoPCredentials(DPoPCredentials):
   refresh grant must be sent to the authorization server.
   """
 
+  # Only _call_refresh_grant is overridden. _after_refresh is intentionally
+  # NOT overridden: before the first refresh the signer is None so the parent
+  # skips the resource-server DPoP header (Google ignores it anyway). Once
+  # _call_refresh_grant runs it sets the signer, so the parent's
+  # _after_refresh works normally from that point on. Overriding
+  # _after_refresh would defeat deferred construction because
+  # before_request() calls _after_refresh() on EVERY HTTP request, not
+  # only after an actual token refresh.
+
   def _call_refresh_grant(self, request, token_uri, refresh_token,
                           client_id, client_secret, scopes=None,
                           rapt_token=None):
@@ -139,11 +148,6 @@ class _DeferredSignerDPoPCredentials(DPoPCredentials):
     return super()._call_refresh_grant(
         request, token_uri, refresh_token, client_id, client_secret,
         scopes=scopes, rapt_token=rapt_token)
-
-  def _after_refresh(self, request, method, url, headers):
-    if self._dpop_signer is None:
-      self._dpop_signer = _getDPoPSigner()
-    super()._after_refresh(request, method, url, headers)
 import modern_httplib2.auto
 import modern_httplib2 as httplib2
 
