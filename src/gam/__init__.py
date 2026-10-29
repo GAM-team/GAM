@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.49.03'
+__version__ = '7.49.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -32295,7 +32295,7 @@ def doPrintCIDevices():
       pass
     elif myarg == 'showitemcountonly':
       showItemCountOnly = True
-    elif myarg in ['checkforduplicates', 'checkforapibug']:
+    elif myarg in ['deleteduplicates', 'checkforduplicates', 'checkforapibug']:
       deleteDuplicates = True
     else:
       FJQC.GetFormatJSONQuoteChar(myarg, True)
@@ -32313,6 +32313,7 @@ def doPrintCIDevices():
     try:
       devices = []
       seenNames = set()
+      seenPageTokens = set()
       pageToken=None
       totalItems = 0
       while True:
@@ -32333,14 +32334,25 @@ def doPrintCIDevices():
                 seenNames.add(device['name'])
                 newDevices.append(device)
               else:
-                stderrWarningMsg(f"A duplicate {Ent.Singular(Ent.DEVICE_NAME)}: {device['name']} was returned, it was deleted")
+                stderrWarningMsg(f"A duplicate {Ent.Singular(Ent.DEVICE_NAME)}: {device['name']} was returned, it was left out of the output")
                 setSysExitRC(DUPLICATE_ITEMS_DELETED_RC)
             devices.extend(newDevices)
+            if feed.get('devices') and not newDevices:
+              _finalizeGAPIpagesResult(pageMessage)
+              stderrWarningMsg(f'Query ({query}): the API is returning devices it already returned; stopping after {len(devices)} devices')
+              printGotAccountEntities(len(devices))
+              break
           del feed
         if not pageToken:
           _finalizeGAPIpagesResult(pageMessage)
           printGotAccountEntities(len(devices))
           break
+        if pageToken in seenPageTokens:
+          _finalizeGAPIpagesResult(pageMessage)
+          stderrWarningMsg(f'Query ({query}): the API returned a page token it already returned; stopping after {len(devices)} devices')
+          printGotAccountEntities(len(devices))
+          break
+        seenPageTokens.add(pageToken)
       if showItemCountOnly:
         itemCount += len(devices)
         continue
