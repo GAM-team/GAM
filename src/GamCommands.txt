@@ -8994,6 +8994,10 @@ The following right-hand side characters are part of the meta-syntax: <>()*|
           "responseRanges": ["<SpreadsheetRange>"(,"<SpreadsheetRange>")],
           "responseIncludeGridData": true|false}
 <SpreadsheetField> ::=
+        comments|
+        commentsviewmode|
+        datasources|
+        datasourceschedules|
         developermetadata|
         namedranges|
         properties|

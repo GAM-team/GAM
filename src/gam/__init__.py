@@ -73516,6 +73516,10 @@ SPREADSHEET_SHEETS_NON_GRID_FIELDS = ['bandedRanges', 'basicFilter', 'charts', '
                                       'protectedRanges', 'rowGroups', 'slicers', 'tables']
 
 SPREADSHEET_FIELDS_CHOICE_MAP = {
+  'comments': 'comments',
+  'commentsviewmode': 'commentsViewMode',
+  'datasources': 'dataSources',
+  'datasourceschedules': 'dataSourceSchedules',
   'developermetadata': 'developerMetadata',
   'namedranges': 'namedRanges',
   'properties': 'properties',
@@ -73612,8 +73616,10 @@ def infoPrintShowSheets(users):
       # so request every other part of each sheet
       fieldsList = [field for field in fieldsList if field != 'sheets']
       fieldsList.extend([f'sheets.{field}' for field in SPREADSHEET_SHEETS_NON_GRID_FIELDS])
-  if 'sheets.commentAnchors' in fieldsList and kwargs['commentsViewMode'] == 'COMMENTS_VIEW_MODE_OMITTED':
-    fieldsList.remove('sheets.commentAnchors')
+    if kwargs['commentsViewMode'] == 'COMMENTS_VIEW_MODE_OMITTED':
+      for field in ['comments', 'sheets.commentAnchors']:
+        if field in fieldsList:
+          fieldsList.remove(field)
   fields = getFieldsFromFieldsList(fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -73659,7 +73665,8 @@ def infoPrintShowSheets(users):
           Ind.Increment()
           if 'spreadsheetUrl' in result:
             printKeyValueList(['spreadsheetUrl', result['spreadsheetUrl']])
-          for field in ['properties', 'sheets', 'namedRanges', 'developerMetadata', 'dataSources', 'dataSourceSchedules']:
+          for field in ['properties', 'sheets', 'namedRanges', 'comments', 'commentsViewMode',
+                        'developerMetadata', 'dataSources', 'dataSourceSchedules']:
             if field in result:
               if field != 'sheets':
                 showJSON(field, result[field])
