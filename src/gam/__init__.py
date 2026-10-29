@@ -73510,6 +73510,11 @@ def updateSheets(users):
         break
     Ind.Decrement()
 
+# Every part of a Sheet except data (grid data) - Sheets API v4 Sheet resource
+SPREADSHEET_SHEETS_NON_GRID_FIELDS = ['bandedRanges', 'basicFilter', 'charts', 'columnGroups', 'commentAnchors',
+                                      'conditionalFormats', 'developerMetadata', 'filterViews', 'merges', 'properties',
+                                      'protectedRanges', 'rowGroups', 'slicers', 'tables']
+
 SPREADSHEET_FIELDS_CHOICE_MAP = {
   'developermetadata': 'developerMetadata',
   'namedranges': 'namedRanges',
@@ -73520,19 +73525,21 @@ SPREADSHEET_FIELDS_CHOICE_MAP = {
   }
 
 SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP = {
-  'properties': 'sheets.properties',
-  'data': 'sheets.data',
-  'merges': 'sheets.merges',
-  'conditionalformats': 'sheets.conditionalFormats',
-  'filterviews': 'sheets.filterViews',
-  'protectedranges': 'sheets.protectedRanges',
+  'bandedranges': 'sheets.bandedRanges',
   'basicfilter': 'sheets.basicFilter',
   'charts': 'sheets.charts',
-  'bandedranges': 'sheets.bandedRanges',
-  'developermetadata': 'sheets.developerMetadata',
-  'rowgroups': 'sheets.rowGroups',
   'columngroups': 'sheets.columnGroups',
+  'commentanchors': 'sheets.commentAnchors',
+  'conditionalformats': 'sheets.conditionalFormats',
+  'data': 'sheets.data',
+  'developermetadata': 'sheets.developerMetadata',
+  'filterviews': 'sheets.filterViews',
+  'merges': 'sheets.merges',
+  'properties': 'sheets.properties',
+  'protectedranges': 'sheets.protectedRanges',
+  'rowgroups': 'sheets.rowGroups',
   'slicers': 'sheets.slicers',
+  'tables': 'sheets.tables',
   }
 
 # gam <UserTypeEntity> info|show sheet <DriveFileEntity>
@@ -73582,6 +73589,11 @@ def infoPrintShowSheets(users):
       csvPF.MoveJSONTitlesToEnd(['JSON'])
   if includeGridData and fieldsList:
     fieldsList.append(SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP['data'])
+  elif 'sheets' in fieldsList:
+    # A field mask makes the API ignore includeGridData=False and 'sheets' includes sheets.data (every cell),
+    # so request every other part of each sheet
+    fieldsList = [field for field in fieldsList if field != 'sheets']
+    fieldsList.extend([f'sheets.{field}' for field in SPREADSHEET_SHEETS_NON_GRID_FIELDS])
   fields = getFieldsFromFieldsList(fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:

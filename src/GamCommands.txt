@@ -9006,6 +9006,7 @@ The following right-hand side characters are part of the meta-syntax: <>()*|
         basicfilter|
         charts|
         columngroups|
+        commentanchors|
         conditionalformats|
         data|
         developermetadata|
@@ -9014,7 +9015,8 @@ The following right-hand side characters are part of the meta-syntax: <>()*|
         properties|
         protectedranges|
         rowgroups|
-        slicers
+        slicers|
+        tables
 <SpreadsheetSheetsFieldList> ::= "<SpreadsheetSheetsField>(,<SpreadsheetSheetsField>)*"
 <SpreadsheetRange> ::= <String>
 <SpreadsheetRangeList> ::= "'<SpreadsheetRange>'(,'<SpreadsheetRange>')*"

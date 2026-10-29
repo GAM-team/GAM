@@ -2,6 +2,9 @@
 
 Fixed bug and improved `gam print devices deleteduplicates`.
 
+Updated `gam <UserTypeEntity> info|show|print sheet <DriveFileEntity> ... fields ...sheets`
+to improve performance when `includegriddata` was not specified.
+
 7.49.03
 
 Added option `deleteduplicates` to `gam print devices` that can be used to display and delete duplicate devices
