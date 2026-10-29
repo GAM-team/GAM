@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.49.04'
+__version__ = '7.49.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -64952,8 +64952,9 @@ def copyDriveFile(users):
                                'copySheetProtectedRangesInheritedPermissions',
                                'copySheetProtectedRangesNonInheritedPermissions',
                                True)
-              _updateSheetProtectedRanges(sheet, user, i, count, k, kcount, result['id'], result['name'], protectedSheetRanges,
-                                          statistics, STAT_FILE_PROTECTEDRANGES_FAILED)
+              if protectedSheetRanges:
+                _updateSheetProtectedRanges(sheet, user, i, count, k, kcount, result['id'], result['name'], protectedSheetRanges,
+                                            statistics, STAT_FILE_PROTECTEDRANGES_FAILED)
             elif copyMoveOptions['copyFilePermissions']:
               _copyPermissions(drive, user, i, count, k, kcount,
                                Ent.DRIVE_FILE, childId, childName, result['id'], result['name'],
@@ -65227,8 +65228,9 @@ def copyDriveFile(users):
                              'copySheetProtectedRangesInheritedPermissions',
                              'copySheetProtectedRangesNonInheritedPermissions',
                              True)
-            _updateSheetProtectedRanges(sheet, user, i, count, j, jcount, result['id'], result['name'], protectedSheetRanges,
-                                        statistics, STAT_FILE_PROTECTEDRANGES_FAILED)
+            if protectedSheetRanges:
+              _updateSheetProtectedRanges(sheet, user, i, count, j, jcount, result['id'], result['name'], protectedSheetRanges,
+                                          statistics, STAT_FILE_PROTECTEDRANGES_FAILED)
           elif copyMoveOptions['copyFilePermissions']:
             _copyPermissions(drive, user, i, count, j, jcount,
                              Ent.DRIVE_FILE, sourceId, sourceName, result['id'], result['name'],
