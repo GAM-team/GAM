@@ -73542,15 +73542,25 @@ SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP = {
   'tables': 'sheets.tables',
   }
 
+SPREADSHEET_COMMENTSVIEWMODE_MAP = {
+  'included': 'COMMENTS_VIEW_MODE_INCLUDED',
+  'omitted': 'COMMENTS_VIEW_MODE_OMITTED'
+  }
+
 # gam <UserTypeEntity> info|show sheet <DriveFileEntity>
 #	[fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
 #	(range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-#	[includegriddata [<Boolean>]] [shownames]
+#	[includegriddata [<Boolean>]]
+#	[excludetablesinbandedranges [<Boolean>]]
+#	[commentsviewmode included|omitted]
 #	[formatjson]
 # gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	[fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
 #	(range <SpreadsheetRange>)* (rangelist <SpreadsheetRangeList>)*
-#	[includegriddata [<Boolean>]] [shownames]
+#	[includegriddata [<Boolean>]]
+#	[excludetablesinbandedranges [<Boolean>]]
+#	[commentsviewmode included|omitted]
+#	[shownames]
 #	[formatjson [quotechar <Character>]]
 def infoPrintShowSheets(users):
   csvPF = CSVPrintFile(['User', 'spreadsheetId'], 'sortall') if Act.csvFormat() else None
@@ -73558,7 +73568,10 @@ def infoPrintShowSheets(users):
   spreadsheetIdEntity = getDriveFileEntity()
   fieldsList = []
   ranges = []
-  includeGridData = showSheetNames = False
+  kwargs = {'includeGridData': False,
+            'excludeTablesInBandedRanges': False,
+            'commentsViewMode': 'COMMENTS_VIEW_MODE_OMITTED'}
+  showSheetNames = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if csvPF and myarg == 'todrive':
@@ -73568,7 +73581,11 @@ def infoPrintShowSheets(users):
     elif myarg == 'rangelist':
       ranges.extend(convertEntityToList(getString(Cmd.OB_SPREADSHEET_RANGE_LIST), shlexSplit=True))
     elif myarg == 'includegriddata':
-      includeGridData = getBoolean()
+      kwargs['includeGridData'] = getBoolean()
+    elif myarg == 'excludetablesinbandedranges':
+      kwargs['excludeTablesInBandedRanges'] = getBoolean()
+    elif myarg == 'commentsviewmode':
+      kwargs['commentsViewMode'] = getChoice(SPREADSHEET_COMMENTSVIEWMODE_MAP, mapChoice=True)
     elif getFieldsList(myarg, SPREADSHEET_FIELDS_CHOICE_MAP, fieldsList, initialField='spreadsheetId'):
       pass
     elif myarg == 'sheetsfields':
@@ -73587,13 +73604,16 @@ def infoPrintShowSheets(users):
     if FJQC.formatJSON:
       csvPF.AddJSONTitles('spreadsheetName')
       csvPF.MoveJSONTitlesToEnd(['JSON'])
-  if includeGridData and fieldsList:
-    fieldsList.append(SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP['data'])
-  elif 'sheets' in fieldsList:
-    # A field mask makes the API ignore includeGridData=False and 'sheets' includes sheets.data (every cell),
-    # so request every other part of each sheet
-    fieldsList = [field for field in fieldsList if field != 'sheets']
-    fieldsList.extend([f'sheets.{field}' for field in SPREADSHEET_SHEETS_NON_GRID_FIELDS])
+  if fieldsList:
+    if kwargs['includeGridData']:
+      fieldsList.append(SPREADSHEET_SHEETS_SUBFIELDS_CHOICE_MAP['data'])
+    elif 'sheets' in fieldsList:
+      # A field mask makes the API ignore includeGridData=False and 'sheets' includes sheets.data (every cell),
+      # so request every other part of each sheet
+      fieldsList = [field for field in fieldsList if field != 'sheets']
+      fieldsList.extend([f'sheets.{field}' for field in SPREADSHEET_SHEETS_NON_GRID_FIELDS])
+  if 'sheets.commentAnchors' in fieldsList and kwargs['commentsViewMode'] == 'COMMENTS_VIEW_MODE_OMITTED':
+    fieldsList.remove('sheets.commentAnchors')
   fields = getFieldsFromFieldsList(fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:
@@ -73612,8 +73632,9 @@ def infoPrintShowSheets(users):
       try:
         result = callGAPI(sheet.spreadsheets(), 'get',
                           throwReasons=GAPI.SHEETS_ACCESS_THROW_REASONS,
-                          spreadsheetId=spreadsheetId, ranges=ranges, includeGridData=includeGridData, fields=fields)
-        if not includeGridData and 'sheets' in result:
+                          spreadsheetId=spreadsheetId, ranges=ranges,
+                          fields=fields, **kwargs)
+        if not kwargs['includeGridData'] and 'sheets' in result:
           for usheet in result['sheets']:
             usheet.pop('data', None)
         if showSheetNames:
