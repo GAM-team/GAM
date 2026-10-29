@@ -9,7 +9,7 @@
 > environment with non-critical credentials.
 >
 > The latest alpha DPoP build is at:
-> [pre-release](https://github.com/GAM-team/GAM/releases/tag/20261028.113254)
+> [pre-release](https://github.com/GAM-team/GAM/releases/tag/20261029.183941)
 
 ## What is DPoP?
 
