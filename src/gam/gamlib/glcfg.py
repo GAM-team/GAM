@@ -25,6 +25,9 @@ FALSE = 'false'
 DEFAULT_CHARSET = 'utf-8'
 MY_CUSTOMER = 'my_customer'
 NEVER = 'Never'
+CELL_WRAP_MAP = {'': '', 'clip': 'CLIP', 'overflow': 'OVERFLOW_CELL', 'overflowcell': 'OVERFLOW_CELL', 'wrap': 'WRAP'}
+CELL_NUMBER_FORMAT_MAP = {'': '', 'text': 'TEXT', 'number': 'NUMBER'}
+ 
 TLS_CHOICE_MAP = {
   '': '',
   'tlsv1_2': 'TLSv1_2', 'tlsv1.2': 'TLSv1_2',
@@ -276,10 +279,14 @@ SMTP_USERNAME = 'smtp_username'
 SMTP_PASSWORD = 'smtp_password'
 # Time Zone
 TIMEZONE = 'timezone'
-## Minimum TLS Version required for HTTPS connections
+# Minimum TLS Version required for HTTPS connections
 TLS_MIN_VERSION = 'tls_min_version'
-## Maximum TLS Version used for HTTPS connections
+# Maximum TLS Version used for HTTPS connections
 TLS_MAX_VERSION = 'tls_max_version'
+# Cell number format
+TODRIVE_CELLNUMBERFORMAT = 'todrive_cellnumberformat'
+# Cell wrapping
+TODRIVE_CELLWRAP = 'todrive_cellwrap'
 # Clear basic filter when updating an existing sheet
 TODRIVE_CLEARFILTER = 'todrive_clearfilter'
 # Use client access for todrive
@@ -457,6 +464,8 @@ Defaults = {
   TIMEZONE: 'utc',
   TLS_MIN_VERSION: 'TLSv1_3',
   TLS_MAX_VERSION: '',
+  TODRIVE_CELLNUMBERFORMAT: '',
+  TODRIVE_CELLWRAP: '',
   TODRIVE_CLEARFILTER: FALSE,
   TODRIVE_CLIENTACCESS: FALSE,
   TODRIVE_CONVERSION: TRUE,
@@ -633,6 +642,8 @@ VAR_INFO = {
   TIMEZONE: {VAR_TYPE: TYPE_TIMEZONE},
   TLS_MIN_VERSION: {VAR_TYPE: TYPE_CHOICE, VAR_ENVVAR: 'GAM_TLS_MIN_VERSION', VAR_CHOICES: TLS_CHOICE_MAP},
   TLS_MAX_VERSION: {VAR_TYPE: TYPE_CHOICE, VAR_ENVVAR: 'GAM_TLS_MAX_VERSION', VAR_CHOICES: TLS_CHOICE_MAP},
+  TODRIVE_CELLNUMBERFORMAT: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: CELL_NUMBER_FORMAT_MAP},
+  TODRIVE_CELLWRAP: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: CELL_WRAP_MAP},
   TODRIVE_CLEARFILTER: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_CLIENTACCESS: {VAR_TYPE: TYPE_BOOLEAN},
   TODRIVE_CONVERSION: {VAR_TYPE: TYPE_BOOLEAN},
