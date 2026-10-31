@@ -10,6 +10,29 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.50.00
+
+Added the following variables to `gam.cfg` that were previously only available as command line options.
+By executing `gam config todrive_cellnumberformat text save` you can prevent Google Sheets from
+converting large numbers to scientific notation when `todrive` is used create/update a spreadsheet.
+```
+todrive_cellnumberformat
+        Set format for cells containing numbers
+        '' - Numbers are formatted according to sheet setting
+        number - Number formatting, very large numbers can be converted to scientific notation
+        text - Numbers are treated as text; this is probably the best choice as it prevents
+               conversions to scientfic notation
+        Default: ''
+todrive_cellwrap
+        Set wrapping mode for cells
+        '' - Fields are wrapped according to sheet setting
+        clip - Fields that are longer than the cell width will be clipped.
+        overflow - Fields that are longer than the cell width will be written in the next cell over,
+        so long as that cell is empty. If the next cell over is non-empty, this behaves the same as CLIP.
+        wrap - Fields that are longer than a line are wrapped at the character level rather than clipped.
+        Default: ''
+```
+
 7.49.05
 
 Updated `gam <UserTypeEntity> copy drivefile <DriveFileEntity> ... copysheetprotectedranges ...`

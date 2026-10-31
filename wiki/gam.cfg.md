@@ -614,6 +614,21 @@ tls_min_version
         Allowed values: '', tlsv1_2, tlsv1.2, tlsv1_3, tlsv1.3
         The minimum TLS version to use in https connections
         Default: ''
+todrive_cellnumberformat
+        Set format for cells containing numbers
+        '' - Numbers are formatted according to sheet setting
+        number - Number formatting, very large numbers can be converted to scientific notation
+        text - Numbers are treated as text; this is probably the best choice as it prevents
+               conversions to scientfic notation
+        Default: ''
+todrive_cellwrap
+        Set wrapping mode for cells
+        '' - Fields are wrapped according to sheet setting
+        clip - Fields that are longer than the cell width will be clipped.
+        overflow - Fields that are longer than the cell width will be written in the next cell over,
+        so long as that cell is empty. If the next cell over is non-empty, this behaves the same as CLIP.
+        wrap - Fields that are longer than a line are wrapped at the character level rather than clipped.
+        Default: ''
 todrive_clearfilter
         Enable/disable clearing the spreadsheet basic filter when uploading data to an existing sheet in
         an existing file.
