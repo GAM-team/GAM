@@ -75,6 +75,28 @@ echo $?
 1
 ```
 
+Print the current and latest versions of Gam and, if the current version is not the latest version,
+download the latest version and install it in place of the current version.
+* Only GAM installed from a release on Linux or MacOS is updated; on Windows, download and run the latest installer from https://github.com/GAM-team/GAM/releases
+* The download is verified against the SHA-256 digest published with the release and the new version is run once before any files are replaced
+* Files that are not part of the GAM release, e.g., `oauth2.txt` and `client_secrets.json`, are not changed
+* If the update fails, the current version is restored
+```
+gam version update
+GAM 7.50.00 - https://github.com/GAM-team/GAM - pyinstaller
+GAM Team <google-apps-manager@googlegroups.com>
+Python 3.15.0 64-bit final
+macOS Golden Gate 27.2 arm64
+Path: /Users/gamteam/bin/gam7
+Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
+Time: 2026-02-15T07:51:00-08:00
+Version Check:
+  Current: 7.50.00
+   Latest: 7.50.01
+Downloading: https://github.com/GAM-team/GAM/releases/download/v7.50.01/gam-7.50.01-macos26.6-arm64.tar.xz
+GAM updated to version 7.50.01: /Users/gamteam/bin/gam7
+```
+
 Print the current version number without details
 ```
 gam version simple
