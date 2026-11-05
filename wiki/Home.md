@@ -30,7 +30,7 @@ BNF definitions of common items in the GAM7 command syntax.
 Information regarding use of command line options to control how GAM7 operates.
 
 ## Collections
-BNF Syntax definitions of ways to specify multiple Googlw Workspace opjects.
+BNF Syntax definitions of ways to specify multiple Google Workspace objects.
 
 ## Client Access
 Syntax, descriptions and examples of commands that are executed by your Google Workspace administrator.
