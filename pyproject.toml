@@ -9,10 +9,10 @@ authors = [
 ]
 dependencies = [
     "arrow==1.4.0",
-    "chardet==7.6.0",
+    "chardet==7.7.0",
     "cryptography==50.0.2",
     "distro==1.9.0 ; sys_platform=='linux'",
-    "filelock==4.2.0",
+    "filelock==4.2.4",
     "google-api-python-client==2.201.0",
     "google-auth-httplib2==0.4.4",
     "google-auth-oauthlib==1.5.0",
