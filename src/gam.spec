@@ -37,6 +37,7 @@ hiddenimports = [
      'google.auth.dpop',
      'dpop_signer_yubikey',
      'dpop_signer_ecp',
+     'dpop_signer_ephemeral',
      ]
 
 if platform == 'darwin':

@@ -5155,6 +5155,12 @@ def _getDPoPSigner():
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM error: {e}')
     except Exception as e:
       systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM unexpected error: {e}')
+  elif backend == 'ephemeral':
+    try:
+      from dpop_signer_ephemeral import EphemeralDPoPSigner
+    except ImportError:
+      systemErrorExit(USAGE_ERROR_RC, 'DPoP ephemeral backend requires the dpop-signer-ephemeral package. Install with: pip install \"gam7[ephemeral]\"')
+    return EphemeralDPoPSigner()
   else:
     systemErrorExit(USAGE_ERROR_RC, f'Unknown DPoP backend: {backend}')
 
