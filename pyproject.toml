@@ -59,6 +59,9 @@ linux_tpm = [
 windows_tpm = [
     "dpop-signer-windows-tpm @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=windows-tpm",
 ]
+ephemeral = [
+    "dpop-signer-ephemeral @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=ephemeral",
+]
 
 [project.scripts]
 gam = "gam.__main__:main"
