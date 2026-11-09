@@ -4580,7 +4580,10 @@ def _getGAMUpdateAsset(assets):
   return max(candidates)[2] if candidates else None
 
 def doGAMUpdate(release_data):
-  if GM.Globals[GM.GAM_TYPE] == 'pythonsource':
+# Only release executables update themselves; every other installation is updated by whatever installed it
+  if GM.Globals[GM.GAM_TYPE] == 'homebrew':
+    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_HOMEBREW)
+  if GM.Globals[GM.GAM_TYPE] not in {'staticx', 'pyinstaller'}:
     systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_PYTHON_SOURCE)
   if sys.platform.startswith('win'):
     systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_WINDOWS.format(GAM_RELEASES))
