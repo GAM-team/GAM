@@ -4516,6 +4516,10 @@ def doGAMCheckForUpdates(forceCheck):
     if forceCheck:
       systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
 
+# Compare versions numerically so that, e.g., 7.100.00 is newer than 7.99.00
+  def _versionTuple(version):
+    return tuple(int(v) for v in version.split('.') if v.isdigit())
+
   try:
     _, c = getHttpObj(timeout=10).request(GAM_LATEST_RELEASE, 'GET', headers={'Accept': 'application/vnd.github.v3.text+json'})
     try:
@@ -4534,7 +4538,7 @@ def doGAMCheckForUpdates(forceCheck):
     printKeyValueList([' Latest', latest_version])
     Ind.Decrement()
     if forceCheck < 0:
-      setSysExitRC(1 if latest_version > current_version else 0)
+      setSysExitRC(1 if _versionTuple(latest_version) > _versionTuple(current_version) else 0)
       return
   except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
           google.auth.exceptions.TransportError,
