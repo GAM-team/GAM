@@ -455,7 +455,8 @@ For `<UserTypeEntity>` See: [Collections of Users](Collections-of-Users)
 
 ## Update calendar events
 ```
-gam calendar <CalendarEntity> update event [<EventEntity>] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+gam calendar <CalendarEntity> update event [<EventEntity>] [replacemode]
+        <EventUpdateAttribute>+ [<EventNotificationAttribute>]
         [showdayofweek]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 ```

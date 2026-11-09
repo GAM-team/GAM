@@ -524,7 +524,8 @@ the calendar owner.
 
 ## Update calendar events
 ```
-gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>] [replacemode]
+        <EventUpdateAttribute>+ [<EventNotificationAttribute>]
         [showdayofweek]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 ```
