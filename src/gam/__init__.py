@@ -179,6 +179,10 @@ elif getattr(sys, 'frozen', False):
   # Pyinstaller executable
   GM.Globals[GM.GAM_PATH] = os.path.dirname(sys.executable)
   GM.Globals[GM.GAM_TYPE] = 'pyinstaller'
+elif '/Cellar/gam/' in os.path.realpath(sys.prefix):
+  # Homebrew formula, a virtualenv under the Homebrew Cellar
+  GM.Globals[GM.GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
+  GM.Globals[GM.GAM_TYPE] = 'homebrew'
 else:
   # Source code
   GM.Globals[GM.GAM_PATH] = os.path.dirname(os.path.realpath(__file__))
