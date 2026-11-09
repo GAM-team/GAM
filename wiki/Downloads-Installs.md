@@ -83,6 +83,15 @@ start a new terminal session and reissue the command from above.
   - Download the installer and run it.
   - Start a Command Prompt/PowerShell session.
 
+## Homebrew
+
+* Homebrew, Linux/Mac OS
+  - Start a terminal session and execute the following command:
+    - `brew install gam`
+  - Update to latest version
+    - `brew upgrade gam`
+  - Homebrew installs the `gam` command in its own path; the configuration directory defaults to `$HOME/.gam`.
+
 ## Source
 
 * Source, all platforms
