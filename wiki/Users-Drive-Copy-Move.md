@@ -103,15 +103,16 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
         <DriveFileCopyAttribute>*
         [skipids <DriveFileEntity>]
-        [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
-             [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
-        [copysubfilesownedby
-            any|me|others|
-            users <EmailAddressList>|
-            notusers <EmailAddressList>|
-            regex <REMatchPattern>|
-            notregex <REMatchPattern>]
-        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]|
+        [[copysubfiles [<Boolean>]]
+            [filenamematchpattern <REMatchPattern>]
+            [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+            [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+            [copysubfilesownedby
+                any|me|others|
+                users <EmailAddressList>|
+                notusers <EmailAddressList>|
+                regex <REMatchPattern>|
+                notregex <REMatchPattern>]]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
@@ -202,6 +203,7 @@ You can specify `<REMatchPattern>` patterns that limit the items copied based on
 * `shortcutnamematchpattern <REMatchPattern>` - Only shortcuts whose name matches `<REMatchPattern>` are copied
 
 ### By default, when copying sub files, all files, regardless of ownership, are copied.
+This option does not apply to sub files on Shared Drives.
 * `copysubfilesownedby any` - All files, regardless of ownership, are copied; this is the default.
 * `copysubfilesownedby me` - Only files owned by `<UserTypeEntity>`  are copied.
 * `copysubfilesownedby others` - Only files not owned by `<UserTypeEntity>`  are copied.
@@ -573,6 +575,16 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [createshortcutsfornonmovablefiles [<Boolean>]]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
+        [[movesubfiles [<Boolean>]]
+            [filenamematchpattern <REMatchPattern>]
+            [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+            [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+            [movesubfilesownedby
+                any|me|others|
+                users <EmailAddressList>|
+                notusers <EmailAddressList>|
+                regex <REMatchPattern>|
+                notregex <REMatchPattern>]]
         [copyfolderpermissions [<Boolean>]]
         [copymergewithparentfolderpermissions [<Boolean>]]
         [copymergedtopfolderpermissions [<Boolean>]]
@@ -638,6 +650,35 @@ When moving folders, these options control the action GAM takes when a target fo
 * `duplicatefolders uniquename` - The source file will be moved to the target folder after adding `(N)` to the base of the file name.
 * `duplicatefolders skip` - No move will be made.
 
+### By default, sub files are moved into their new parent folder. By specifying `movesubfiles false`,
+no sub files are moved to their new parent folder. The folder structure is copied and the source
+folder structure is retained.
+
+### By default, when moving sub files, all files, regardless of MIME type, are moved.
+You can specify restrictions on the MIME types to be moved.
+Specifying these options sets `retainsourcefolders true`.
+* `filemimetypes <MimeTypeList>` - Move sub files with the specified MIME types
+* `filemimetypes not <MimeTypeList>` - Move sub files with MIME types other than those specified 
+* `filemimetypes category <MimeTypeNameList>` - Move sub files with the specified MIME type categories
+
+### By default, when moving sub files, all files, regardless of their `modifiedTime`, are moved.
+You can specify restrictions on the `modifiedTime` to be moved.
+Specifying these options sets `retainsourcefolders true`.
+* `start|starttime <Date>|<Time>` - If specified, `modifiedTime` must be >= the value
+* `end|endtime <Date>|<Time>` - If specified, `modifiedTime` must be <= the value
+* `range <Date>|<Time> <Date>|<Time>` - first value <= `modifiedTime` <= second value
+
+### By default, when moving sub files, all files, regardless of ownership, are moved.
+This option does not apply to sub files on Shared Drives.
+Specifying any of  these options other than `movesubfilesownedby any` sets `retainsourcefolders true`.
+* `movesubfilesownedby any` - All files, regardless of ownership, are moved; this is the default.
+* `movesubfilesownedby me` - Only files owned by `<UserTypeEntity>` are moved.
+* `movesubfilesownedby others` - Only files not owned by `<UserTypeEntity>` are moved.
+* `movesubfilesownedby users <EmailAddressList>` - Only files owned by users in `<EmailAddressList>` are moved.
+* `movesubfilesownedby notusers <EmailAddressList>` - Only files not owned by users in `<EmailAddressList>` are moved.
+* `movesubfilesownedby regex <REMatchPattern>` - Only files owned by users whose email addresses match `<REMatchPattern>` are moved.
+* `movesubfilesownedby notregex <REMatchPattern>` - Only files owned by users whose email addresses do not match `<REMatchPattern>` are moved.
+
 ### Non-movable files
 By default, an error message is generated when a non-movable file is encountered.
 A common reason for this is for files owned by users outside of your domain.
@@ -646,7 +687,6 @@ The option `createshortcutsfornonmovablefiles [<Boolean>]` controls what happens
 * `createshortcutsfornonmovablefiles` omitted or `createshortcutsfornonmovablefiles false` - No shortcuts
 are created and an error message is given explaining why the file can't be moved.
 * `createshortcutsfornonmovablefiles true` - A shortcut is created that points to the non-movable file.
-
 
 ### Identify files owned by users outside of your domain
 Replace `domain.com` with your domain.
@@ -739,7 +779,7 @@ When `includepermissionsfromdomains <DomainNameList>` is specified, any ACLs tha
 When `mappermissionsemail <EmailAddress> <EmailAddress>` is specifed, an ACL that references the first `<EmailAddress>` will be removed;
 a new ACL with the same properties referencing the second `<EmailAddess>` will be created. The option can be repeated if multiple domain names are to be mapped.
 
-Bulk email address mapping can ge specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
+Bulk email address mapping can be specified with `mappermissionsemailfile <CSVFileInput> endcsv`.
 `<CSVFileInput>` must include these columns: `sourceEmail` and `destinationEmail`.
 
 When `mappermissionsdomain <DomainName> <DomainName>` is specified, any ACL that references the first `<DomainName>` will be removed;

@@ -162,7 +162,7 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
 gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>) (role <DriveFileACLRole>)
         [withlink|(allowfilediscovery|discoverable [<Boolean>])] [expiration <Time>]
-        (mappermissionsdomain <DomainName> <DomainName>)*
+        (mappermissionsdomain <DomainName1> <DomainName2>)*
         [movetonewownersroot [<Boolean>]]
         [sendemail] [emailmessage <String>]
         [updatesheetprotectedranges [<Boolean>]]

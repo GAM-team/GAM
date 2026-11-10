@@ -10,6 +10,32 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.51.00
+
+Added the following options to `gam <UserTypeEntity> move drivefile <DriveFileEntity>`
+that allow selecting the sub files to be moved; these options are similar to the ones in `copy drivefile`.
+Specifying `movesubfiles false` or any of the other options sets `retainsourcefolders true`.
+```
+[[movesubfiles [<Boolean>]]
+    [filenamematchpattern <REMatchPattern>]
+    [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+    [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+    [movesubfilesownedby
+        any|me|others|
+        users <EmailAddressList>|
+        notusers <EmailAddressList>|
+        regex <REMatchPattern>|
+        notregex <REMatchPattern>]]
+```
+
+Added `mapattendeedomain <DomainName> <DomainName>` to `<EventUpdateAttribute>` that is used
+to map attendee email address domains in the following commands.
+```
+gam <UserTypeEntity> update events <UserCalendarEntity> <EventUpdateAttribute>+
+gam calendar <CalendarEntity> update events [<EventEntity>] <EventUpdateAttribute>+
+gam calendar <CalendarEntity> updateevent <EventID> <EventUpdateAttribute>+
+```
+
 7.50.00
 
 Added the following variables to `gam.cfg` that were previously only available as command line options.

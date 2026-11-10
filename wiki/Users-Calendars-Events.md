@@ -584,6 +584,9 @@ You can remove attendees in the following ways:
 * `clearresources` - Clear all resource attendees from the event
 * `removeresource <ResourceID>` - Remove a resource attendee from the event
 
+You can map attendee domains:
+* `mapattendeedomain <DomainName1> <DomainName2>` - Maps `<DomainName1>` to `<DomainName2>` in the attendee list'
+
 For `<UserTypeEntity>` See: [Collections of Users](Collections-of-Users)
 
 ## Specify calendar attendees with JSON data
