@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.50.00'
+__version__ = '7.51.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -8930,14 +8930,14 @@ class CSVPrintFile():
       def processSheetRequests(sheet, spreadsheetId, sheetId, body, entityValueList):
         if not self.todrive['noPaste']:
           body['requests'].append({'updateCells': {'range': {'sheetId': sheetId}, 'fields': '*'}})
-        if self.todrive['cellwrap']:
-          body['requests'].append({'repeatCell': {'range': {'sheetId': sheetId},
-                                                  'fields': 'userEnteredFormat.wrapStrategy',
-                                                  'cell': {'userEnteredFormat': {'wrapStrategy': self.todrive['cellwrap']}}}})
-        if self.todrive['cellnumberformat']:
-          body['requests'].append({'repeatCell': {'range': {'sheetId': sheetId},
-                                                  'fields': 'userEnteredFormat.numberFormat',
-                                                  'cell': {'userEnteredFormat': {'numberFormat': {'type': self.todrive['cellnumberformat']}}}}})
+          if self.todrive['cellwrap']:
+            body['requests'].append({'repeatCell': {'range': {'sheetId': sheetId},
+                                                    'fields': 'userEnteredFormat.wrapStrategy',
+                                                    'cell': {'userEnteredFormat': {'wrapStrategy': self.todrive['cellwrap']}}}})
+          if self.todrive['cellnumberformat']:
+            body['requests'].append({'repeatCell': {'range': {'sheetId': sheetId},
+                                                    'fields': 'userEnteredFormat.numberFormat',
+                                                    'cell': {'userEnteredFormat': {'numberFormat': {'type': self.todrive['cellnumberformat']}}}}})
         if self.todrive['locale']:
           body['requests'].append({'updateSpreadsheetProperties':
                                    {'properties': {'locale': self.todrive['locale']}, 'fields': 'locale'}})
@@ -9112,9 +9112,8 @@ class CSVPrintFile():
             if not self.todrive['fileId'] or not self.todrive['retaintitle']:
               body['name'] = title
             kwargs = {}
-            if mimeType == 'text/csv' or not self.todrive['cellnumberformat']:
+            if mimeType == 'text/csv' or (not self.todrive['cellnumberformat'] and not not self.todrive['cellwrap']):
               kwargs['media_body'] = googleapiclient.http.MediaIoBaseUpload(io.BytesIO(csvFile.getvalue().encode()), mimetype='text/csv', resumable=True)
-              self.todrive['cellnumberformat'] = ''
               self.todrive['noPaste'] = True
             try:
               if not self.todrive['fileId']:
@@ -42349,6 +42348,9 @@ def _getCalendarEventAttribute(myarg, body, parameters, function):
     _, attendeeList = getEntityToModify(defaultEntityType=Cmd.ENTITY_USERS)
     for attendee in attendeeList:
       parameters['removeAttendees'].add(normalizeEmailAddressOrUID(attendee, noUid=True))
+  elif function == 'update' and myarg == 'mapattendeedomain':
+    oldDomain = getString(Cmd.OB_DOMAIN_NAME).lower()
+    parameters['mapAttendeeDomains'][oldDomain] = getString(Cmd.OB_DOMAIN_NAME).lower()
   elif myarg == 'attendee':
     parameters['attendees'].append({'email': getEmailAddress(noUid=True)})
   elif myarg == 'optionalattendee':
@@ -42694,7 +42696,7 @@ def _validateCalendarGetEvents(origUser, user, origCal, calId, j, jcount, calend
 def _getCalendarCreateImportUpdateEventOptions(function, entityType):
   body = {}
   parameters = {'clearAttendees': False, 'replaceMode': False, 'clearResources': False,
-                'attendees': [], 'removeAttendees': set(),
+                'attendees': [], 'removeAttendees': set(), 'mapAttendeeDomains': {},
                 'replaceDescription': [], 'sendUpdates': 'none',
                 'csvPF': None, 'FJQC': FormatJSONQuoteChar(None), 'showDayOfWeek': False}
   while Cmd.ArgumentsRemaining():
@@ -42822,7 +42824,7 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
   updateFieldList = []
   if parameters['replaceDescription']:
     updateFieldList.append('description')
-  if not parameters['replaceMode'] and (parameters['attendees'] or parameters['removeAttendees'] or parameters['clearResources']):
+  if not parameters['replaceMode'] and (parameters['attendees'] or parameters['removeAttendees'] or parameters['mapAttendeeDomains'] or parameters['clearResources']):
     updateFieldList.append('attendees')
   updateFields = ','.join(updateFieldList)
   if 'attendees' not in updateFieldList:
@@ -42874,6 +42876,11 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
               body['attendees'] = []
             if parameters['removeAttendees']:
               body['attendees'] = [attendee for attendee in body['attendees'] if attendee['email'].lower() not in parameters['removeAttendees']]
+            if parameters['mapAttendeeDomains']:
+              for attendee in body['attendees']:
+                email, domain = attendee['email'].lower().split('@', 1)
+                if domain in parameters['mapAttendeeDomains']:
+                  attendee['email'] = f"{email}@{parameters['mapAttendeeDomains'][domain]}"
             if parameters['clearResources']:
               body['attendees'] = [attendee for attendee in body['attendees'] if not attendee['email'].lower().endswith('@resource.calendar.google.com')]
         event = callGAPI(cal.events(), 'patch',
@@ -42907,7 +42914,8 @@ def _updateCalendarEvents(origUser, user, origCal, calIds, count, calendarEventE
   if parameters['csvPF']:
     parameters['csvPF'].writeCSVfile('Calendar Updated Events')
 
-# gam calendars <CalendarEntity> update events [<EventEntity>] [replacemode] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+# gam calendars <CalendarEntity> update events [<EventEntity>] [replacemode]
+#	<EventUpdateAttribute>+ [<EventNotificationAttribute>]
 #	[showdayofweek]
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def doCalendarsUpdateEvents(calIds):
@@ -42915,7 +42923,8 @@ def doCalendarsUpdateEvents(calIds):
   body, parameters = _getCalendarCreateImportUpdateEventOptions('update', Ent.CALENDAR)
   _updateCalendarEvents(None, None, None, calIds, len(calIds), calendarEventEntity, body, parameters)
 
-# gam calendar <CalendarEntity> updateevent <EventID> [replacemode] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+# gam calendar <CalendarEntity> updateevent <EventID> [replacemode]
+#	<EventUpdateAttribute>+ [<EventNotificationAttribute>]
 #	[showdayofweek]
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def doCalendarsUpdateEventsOld(calIds):
@@ -56118,7 +56127,8 @@ def createCalendarEvent(users):
 def importCalendarEvent(users):
   _createImportCalendarEvent(users, 'import')
 
-# gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>] [replacemode] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+# gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>] [replacemode]
+#	<EventUpdateAttribute>+ [<EventNotificationAttribute>]
 #	[showdayofweek]
 #	[csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 def updateCalendarEvents(users):
@@ -57971,6 +57981,9 @@ class MimeTypeCheck():
     if not self.reverse:
       return fileMimeType in self.mimeTypes
     return fileMimeType not in self.mimeTypes
+
+  def ChecksDefined(self):
+    return self.mimeTypes or self.category
 
 def initDriveFileAttributes():
   return {DFA_CREATED_TIME: None,
@@ -63864,8 +63877,9 @@ def initCopyMoveOptions(copyCmd):
     'folderNameMatchPattern': None,
     'shortcutNameMatchPattern': None,
     'mimeTypeCheck': MimeTypeCheck(),
-    'notMimeTypes': False,
     'copySubFilesOwnedBy': {},
+    'moveSubFiles': True,
+    'moveSubFilesOwnedBy': {},
     'copyPermissionRoles': set(DRIVEFILE_ACL_ROLES_MAP.values()),
     'copyPermissionTypes': set(DRIVEFILE_ACL_PERMISSION_TYPES),
     'checkModifiedTime': False,
@@ -63886,7 +63900,7 @@ DUPLICATE_FOLDER_CHOICES = {
   'skip': DUPLICATE_FOLDER_SKIP,
   }
 
-COPY_OWNED_BY_CHOICE_MAP = {
+COPY_MOVE_OWNED_BY_CHOICE_MAP = {
   'any': {},
   'me': {'mode': 'bool', 'value': True},
   'others': {'mode': 'bool', 'value': False},
@@ -63959,6 +63973,13 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
   elif myarg == 'mappermissionsdomain':
     oldDomain = getString(Cmd.OB_DOMAIN_NAME).lower()
     copyMoveOptions['mapPermissionsDomains'][oldDomain] = getString(Cmd.OB_DOMAIN_NAME).lower()
+  elif myarg == 'filenamematchpattern':
+    copyMoveOptions['fileNameMatchPattern'] = getREPattern(re.IGNORECASE)
+  elif myarg == 'filemimetype':
+    copyMoveOptions['mimeTypeCheck'].Get()
+  elif myarg in {'start', 'starttime', 'end', 'endtime', 'range'}:
+    copyMoveOptions['startEndTime'].Get(myarg)
+    copyMoveOptions['checkModifiedTime'] = True
   else:
 # Move arguments
     if not copyMoveOptions['copyCmd']:
@@ -63972,6 +63993,14 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
         copyMoveOptions['createShortcutsForNonmovableFiles'] = getBoolean()
       elif myarg == 'movefilepermissions':
         copyMoveOptions['moveFilePermissions'] = getBoolean()
+      elif myarg == 'movesubfiles':
+        copyMoveOptions['moveSubFiles'] = getBoolean()
+      elif myarg == 'movesubfilesownedby':
+        copyMoveOptions['moveSubFilesOwnedBy'] = getChoice(COPY_MOVE_OWNED_BY_CHOICE_MAP, mapChoice=True)
+        if copyMoveOptions['moveSubFilesOwnedBy']['mode'] in {'users', 'notusers'}:
+          copyMoveOptions['moveSubFilesOwnedBy']['value'] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
+        elif copyMoveOptions['moveSubFilesOwnedBy']['mode'] in {'regex', 'notregex'}:
+          copyMoveOptions['moveSubFilesOwnedBy']['value'] = getREPattern(re.IGNORECASE)
       else:
         return False
 # Copy arguments
@@ -64015,24 +64044,17 @@ def getCopyMoveOptions(myarg, copyMoveOptions):
         copyMoveOptions['copySubFolders'] = getBoolean()
       elif myarg == 'copysubshortcuts':
         copyMoveOptions['copySubShortcuts'] = getBoolean()
-      elif myarg == 'filenamematchpattern':
-        copyMoveOptions['fileNameMatchPattern'] = getREPattern(re.IGNORECASE)
       elif myarg == 'foldernamematchpattern':
         copyMoveOptions['folderNameMatchPattern'] = getREPattern(re.IGNORECASE)
       elif myarg == 'shortcutnamematchpattern':
         copyMoveOptions['shortcutNameMatchPattern'] = getREPattern(re.IGNORECASE)
-      elif myarg == 'filemimetype':
-        copyMoveOptions['mimeTypeCheck'].Get()
       elif myarg == 'copysubfilesownedby':
-        copyMoveOptions['copySubFilesOwnedBy'] = getChoice(COPY_OWNED_BY_CHOICE_MAP, mapChoice=True)
+        copyMoveOptions['copySubFilesOwnedBy'] = getChoice(COPY_MOVE_OWNED_BY_CHOICE_MAP, mapChoice=True)
         if copyMoveOptions['copySubFilesOwnedBy']:
           if copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'users', 'notusers'}:
             copyMoveOptions['copySubFilesOwnedBy']['value'] = set(getString(Cmd.OB_EMAIL_ADDRESS_LIST).replace(',', ' ').lower().split())
           elif copyMoveOptions['copySubFilesOwnedBy']['mode'] in {'regex', 'notregex'}:
             copyMoveOptions['copySubFilesOwnedBy']['value'] = getREPattern(re.IGNORECASE)
-      elif myarg in {'start', 'starttime', 'end', 'endtime', 'range'}:
-        copyMoveOptions['startEndTime'].Get(myarg)
-        copyMoveOptions['checkModifiedTime'] = True
       else:
         return False
   return True
@@ -64072,8 +64094,7 @@ def _getUniqueFilename(destFilename, mimeType, targetChildren):
     tbase, tcnt, text = _getFilenameParts(target['name'])
     if base != tbase or ext != text:
       continue
-    if tcnt > n:
-      n = tcnt
+    n = max(n, tcnt)
   if ext:
     return f'{base}({n+1}){ext}'
   return f'{base}({n+1})'
@@ -64580,13 +64601,15 @@ copyReturnItemMap = {
 #	[mergewithparent [<Boolean>]] [recursive [depth <Number>]]
 #	<DriveFileCopyAttribute>*
 #	[skipids <DriveFileEntity>]
-#	[copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>] [filemimetype [not] <MimeTypeList>]
-#	[copysubfilesownedby
-#	    any|me|others|
-#	    users <EmailAddressList>|
-#	    notusers <EmailAddressList>|
-#	    regex <REMatchPattern>|
-#	    notregex <REMatchPattern>]
+#	[[copysubfiles [<Boolean>]]
+#	    [filenamematchpattern <REMatchPattern>]
+#	    [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+#	    [copysubfilesownedby
+#	        any|me|others|
+#	        users <EmailAddressList>|
+#	        notusers <EmailAddressList>|
+#	        regex <REMatchPattern>|
+#	        notregex <REMatchPattern>]]
 #	[([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]|
 #	[copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
 #	[copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
@@ -64803,7 +64826,9 @@ def copyDriveFile(users):
     else:
       if not copyMoveOptions['copySubFiles']:
         return False
-      if copyMoveOptions['copySubFilesOwnedBy'] and child.get('driveId', None) is None:
+      if not copyMoveOptions['copySubFilesOwnedBy']:
+        pass
+      elif child.get('driveId', None) is None:
         if copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'bool':
           if child.get('ownedByMe', False) != copyMoveOptions['copySubFilesOwnedBy']['value']:
             return False
@@ -64811,20 +64836,18 @@ def copyDriveFile(users):
           childOwner = child.get('owners', [])
           if childOwner:
             childOwner = childOwner[0].get('emailAddress', '').lower()
-          else:
-            childOwner = ''
-          if copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'users':
-            if childOwner not in copyMoveOptions['copySubFilesOwnedBy']['value']:
-              return False
-          elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'notusers':
-            if childOwner in copyMoveOptions['copySubFilesOwnedBy']['value']:
-              return False
-          elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'regex':
-            if not copyMoveOptions['copySubFilesOwnedBy']['value'].match(childOwner):
-              return False
-          else: # elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'notregex':
-            if copyMoveOptions['copySubFilesOwnedBy']['value'].match(childOwner):
-              return False
+            if copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'users':
+              if childOwner not in copyMoveOptions['copySubFilesOwnedBy']['value']:
+                return False
+            elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'notusers':
+              if childOwner in copyMoveOptions['copySubFilesOwnedBy']['value']:
+                return False
+            elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'regex':
+              if not copyMoveOptions['copySubFilesOwnedBy']['value'].match(childOwner):
+                return False
+            else: # elif copyMoveOptions['copySubFilesOwnedBy']['mode'] == 'notregex':
+              if copyMoveOptions['copySubFilesOwnedBy']['value'].match(childOwner):
+                return False
       if not copyMoveOptions['mimeTypeCheck'].Check(childMimeType):
         return False
       if copyMoveOptions['checkModifiedTime']:
@@ -65488,6 +65511,16 @@ def _recursiveUpdateMovePermissions(drive, user, i, count,
 #	[createshortcutsfornonmovablefiles [<Boolean>]]
 #	[duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
 #	[duplicatefolders merge|duplicatename|uniquename|skip]
+#	[[movesubfiles [<Boolen>]]
+#	    [filenamematchpattern <REMatchPattern>]
+#	    [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+#	    [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+#	    [movesubfilesownedby
+#	        any|me|others|
+#	        users <EmailAddressList>|
+#	        notusers <EmailAddressList>|
+#	        regex <REMatchPattern>|
+#	        notregex <REMatchPattern>]]
 #	[copyfolderpermissions [<Boolean>]]
 #	[copymergewithparentfolderpermissions [<Boolean>]]
 #	[copymergedtopfolderpermissions [<Boolean>]]
@@ -65761,6 +65794,43 @@ def moveDriveFile(users):
         _makeMoveShortcut(drive, user, k, kcount, entityType, childId, childName, newParentId, newParentName)
     copyMoveOptions['retainSourceFolders'] = True
 
+  def _checkChildMoveAllowed(childMimeType, childName, child):
+    if not copyMoveOptions['moveSubFiles']:
+      return False
+    if not copyMoveOptions['moveSubFilesOwnedBy']:
+      pass
+    elif child.get('driveId', None) is None:
+      if copyMoveOptions['moveSubFilesOwnedBy']['mode'] == 'bool':
+        if child.get('ownedByMe', False) != copyMoveOptions['moveSubFilesOwnedBy']['value']:
+          return False
+      else:
+        childOwner = child.get('owners', [])
+        if childOwner:
+          childOwner = childOwner[0].get('emailAddress', '').lower()
+          if copyMoveOptions['moveSubFilesOwnedBy']['mode'] == 'users':
+            if childOwner not in copyMoveOptions['moveSubFilesOwnedBy']['value']:
+              return False
+          elif copyMoveOptions['moveSubFilesOwnedBy']['mode'] == 'notusers':
+            if childOwner in copyMoveOptions['moveSubFilesOwnedBy']['value']:
+              return False
+          elif copyMoveOptions['moveSubFilesOwnedBy']['mode'] == 'regex':
+            if not copyMoveOptions['moveSubFilesOwnedBy']['value'].match(childOwner):
+              return False
+          else: # elif copyMoveOptions['moveSubFilesOwnedBy']['mode'] == 'notregex':
+            if copyMoveOptions['moveSubFilesOwnedBy']['value'].match(childOwner):
+              return False
+    if not copyMoveOptions['mimeTypeCheck'].Check(childMimeType):
+      return False
+    if copyMoveOptions['checkModifiedTime']:
+      childModifiedTime = child.get('modifiedTime', None)
+      if not childModifiedTime:
+        return False
+      childModifiedTime = formatLocalTime(childModifiedTime)
+      if ((copyMoveOptions['startEndTime'].startTime is not None and childModifiedTime < copyMoveOptions['startEndTime'].startTime) or
+          (copyMoveOptions['startEndTime'].endTime is not None and childModifiedTime > copyMoveOptions['startEndTime'].endTime)):
+        return False
+    return not copyMoveOptions['fileNameMatchPattern'] or copyMoveOptions['fileNameMatchPattern'].match(childName)
+
   def _recursiveFolderMove(drive, user, i, count, j, jcount,
                            source, targetChildren, newFolderName, newParentId, newParentName, mergeParentModifiedTime, atTop):
     folderId = source['id']
@@ -65783,7 +65853,8 @@ def moveDriveFile(users):
                                    q=WITH_PARENTS.format(folderId),
                                    orderBy='folder desc,name,modifiedTime desc',
                                    fields='nextPageToken,files(id,name,parents,appProperties,capabilities,contentHints,copyRequiresWriterPermission,'\
-                                     'description,folderColorRgb,mimeType,modifiedTime,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare)',
+                                     'description,folderColorRgb,mimeType,modifiedTime,ownedByMe,properties,starred,driveId,trashed,viewedByMeTime,writersCanShare,'\
+                                     'owners(emailAddress))',
                                    pageSize=GC.Values[GC.DRIVE_MAX_RESULTS], **sourceSearchArgs)
     kcount = len(sourceChildren)
     if kcount > 0:
@@ -65804,6 +65875,7 @@ def moveDriveFile(users):
         childId = child['id']
         childName = child['name']
         childNameId = f'{childName}({childId})'
+        childMimeType = child['mimeType']
         if movedFiles.get(childId):
           continue
         trashed = child.pop('trashed', False)
@@ -65814,20 +65886,26 @@ def moveDriveFile(users):
           continue
         childParents = child.pop('parents', [])
         child['parents'] = [newFolderId]
-        if child['mimeType'] == MIMETYPE_GA_FOLDER:
+        if childMimeType == MIMETYPE_GA_FOLDER:
+          child.pop('ownedByMe', None)
+          child.pop('owners', None)
           child['oldparents'] = childParents
           _recursiveFolderMove(drive, user, i, count, k, kcount,
                                child, subTargetChildren, childName, newFolderId, newFolderName, child['modifiedTime'], False)
         else:
+          if not _checkChildMoveAllowed(childMimeType, childName, child):
+            continue
           if existingTargetFolder and _checkForDuplicateTargetFile(drive, user, k, kcount, child, childName, subTargetChildren, copyMoveOptions, statistics):
             copyMoveOptions['retainSourceFolders'] = True
             continue
+          child.pop('ownedByMe', None)
+          child.pop('owners', None)
           if childName != child['name']:
             body = {'name': child['name']}
           else:
             body = {}
           removeParents = ','.join(childParents)
-          _moveFile(drive, user, i, count, k, kcount, Ent.DRIVE_FILE, childId, childName, childName, newFolderId, newFolderName, removeParents, body)
+          _moveFile(drive, user, i, count, k, kcount, Ent.DRIVE_FILE, childId, childName, child['name'], newFolderId, newFolderName, removeParents, body)
       Ind.Decrement()
     sourceName = source['name']
     kvList = [Ent.USER, user, Ent.DRIVE_FOLDER, f"{sourceName}({folderId})"]
@@ -65857,6 +65935,14 @@ def moveDriveFile(users):
         return True
     return False
 
+  def anyFileOperations():
+    for field in ['fileNameMatchPattern', 'moveSubFilesOwnedBy', 'checkModifiedTime']:
+      if copyMoveOptions[field]:
+        return True
+    if copyMoveOptions['mimeTypeCheck'].ChecksDefined() or not copyMoveOptions['moveSubFiles']:
+      return True
+    return False
+
   fileIdEntity = getDriveFileEntity()
   parentBody = {}
   parentParms = initDriveFileAttributes()
@@ -65877,7 +65963,8 @@ def moveDriveFile(users):
   updateMovePermissions = ((not copyMoveOptions['moveFilePermissions']) or
                            copyMoveOptions['excludePermissionsFromDomains'] or copyMoveOptions['includePermissionsFromDomains'] or
                            copyMoveOptions['mapPermissionsDomains'] or copyMoveOptions['mapPermissionsEmails'])
-
+  if anyFileOperations():
+    copyMoveOptions['retainSourceFolders'] = True
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1

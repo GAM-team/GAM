@@ -1834,6 +1834,7 @@ The following attributes are equivalent:
         (clearprivateproperty <PropertyKey>)|
         clearresources|
         (clearsharedproperty <PropertyKey>)|
+        (mapattendeedomain <DomainName> <DomainName>)|
         (removeattendee <EmailAddress>)|
         (removeresource <ResourceID>)|
         (replacedescription <REMatchPattern> <RESubstitution>)|
@@ -1853,7 +1854,8 @@ gam calendar|calendars <CalendarEntity> create|add event [id <String>] <EventAtt
 gam calendar|calendars <CalendarEntity> import event icaluid <iCalUID> <EventImportAttribute>+
         [showdayofweek]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
-gam calendar|calendars <CalendarEntity> update events [<EventEntity>] [replacemode] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+gam calendar|calendars <CalendarEntity> update events [<EventEntity>] [replacemode]
+        <EventUpdateAttribute>+ [<EventNotificationAttribute>]
         [showdayofweek]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 gam calendar|calendars <CalendarEntity> delete events [<EventEntity>]
@@ -6483,7 +6485,8 @@ gam <UserTypeEntity> create|add event <UserCalendarEntity> [id <String>] <EventA
 gam <UserTypeEntity> import event <UserCalendarEntity> icaluid <iCalUID> <EventImportAttribute>+
         [showdayofweek]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
-gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>] [replacemode] <EventUpdateAttribute>+ [<EventNotificationAttribute>]
+gam <UserTypeEntity> update events <UserCalendarEntity> [<EventEntity>] [replacemode]
+        <EventUpdateAttribute>+ [<EventNotificationAttribute>]
         [showdayofweek]
         [csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]]
 gam <UserTypeEntity> delete events <UserCalendarEntity> [<EventEntity>]
@@ -7127,15 +7130,16 @@ gam <UserTypeEntity> copy drivefile <DriveFileEntity>
         [mergewithparent [<Boolean>]] [recursive [depth <Number>]]
         <DriveFileCopyAttribute>*
         [skipids <DriveFileEntity>]
-        [copysubfiles [<Boolean>]] [filenamematchpattern <REMatchPattern>]
-             [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
-        [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]|
-        [copysubfilesownedby
-            any|me|others|
-            users <EmailAddressList>|
-            notusers <EmailAddressList>|
-            regex <REMatchPattern>|
-            notregex <REMatchPattern>]
+        [[copysubfiles [<Boolean>]]
+            [filenamematchpattern <REMatchPattern>]
+            [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+            [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+            [copysubfilesownedby
+                any|me|others|
+                users <EmailAddressList>|
+                notusers <EmailAddressList>|
+                regex <REMatchPattern>|
+                notregex <REMatchPattern>]]
         [copysubfolders [<Boolean>]] [foldernamematchpattern <REMatchPattern>]
         [copysubshortcuts [<Boolean>]] [shortcutnamematchpattern <REMatchPattern>]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
@@ -7173,6 +7177,16 @@ gam <UserTypeEntity> move drivefile <DriveFileEntity> [newfilename <DriveFileNam
         [createshortcutsfornonmovablefiles [<Boolean>]]
         [duplicatefiles overwriteolder|overwriteall|duplicatename|uniquename|skip]
         [duplicatefolders merge|duplicatename|uniquename|skip]
+        [[movesubfiles [<Boolean>]]
+            [filenamematchpattern <REMatchPattern>]
+            [filemimetype [not] <MimeTypeList>] [filemimetype category <MimeTypeNameList>]
+            [([start|starttime <Date>|<Time>] [end|endtime <Date>|<Time>])|(range <Date>|<Time> <Date>|<Time>)]
+            [movesubfilesownedby
+                any|me|others|
+                users <EmailAddressList>|
+                notusers <EmailAddressList>|
+                regex <REMatchPattern>|
+                notregex <REMatchPattern>]]
         [copyfolderpermissions [<Boolean>]]
         [copymergewithparentfolderpermissions [<Boolean>]]
         [copymergedtopfolderpermissions [<Boolean>]]
