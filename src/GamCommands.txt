@@ -1391,7 +1391,7 @@ gam comment <String>*
 
 # Version and Help
 
-gam version [check|checkrc|simple|extended] [timeoffset] [location <HostName>]
+gam version [check|checkrc|update|simple|extended] [timeoffset] [location <HostName>]
 gam help
 
 # Bulk Processing

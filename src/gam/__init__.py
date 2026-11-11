@@ -66,6 +66,7 @@ import random
 import re
 from secrets import SystemRandom
 import shlex
+import shutil
 import signal
 import smtplib
 import socket
@@ -75,7 +76,8 @@ import string
 import struct
 import subprocess
 import sys
-from tempfile import TemporaryFile
+import tarfile
+from tempfile import mkdtemp, TemporaryFile
 try:
   import termios
 except ImportError:
@@ -4543,12 +4545,113 @@ def doGAMCheckForUpdates(forceCheck):
     Ind.Decrement()
     if forceCheck < 0:
       setSysExitRC(1 if _versionTuple(latest_version) > _versionTuple(current_version) else 0)
-      return
+      return None
+    return release_data if _versionTuple(latest_version) > _versionTuple(current_version) else None
   except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
           google.auth.exceptions.TransportError,
           RuntimeError, ConnectionError, OSError) as e:
     if forceCheck:
       handleServerError(e)
+
+def _getGAMUpdateAsset(assets):
+  def _versionTuple(version):
+    return tuple(int(v) for v in version.split('.') if v.isdigit())
+
+# Select the asset the installer would select: the build for the newest OS/glibc version not newer than this system's
+  machine = platform.machine().lower()
+  arch = {'amd64': 'x86_64', 'aarch64': 'arm64'}.get(machine, machine)
+  if sys.platform == 'darwin':
+    pattern = re.compile(rf'^gam-[0-9.]+-macos(?P<osver>[0-9.]+)-{arch}\.tar\.xz$')
+    osVersion = platform.mac_ver()[0]
+  else:
+    pattern = re.compile(rf'^gam-[0-9.]+-linux-{arch}-(?:glibc(?P<osver>[0-9.]+)|legacy)\.tar\.xz$')
+    try:
+      osVersion = os.confstr('CS_GNU_LIBC_VERSION').split()[-1] if GM.Globals[GM.GAM_TYPE] != 'staticx' else '0'
+    except (AttributeError, OSError, ValueError):
+      osVersion = '0'
+  osVersion = _versionTuple(osVersion)
+  candidates = []
+  for asset in assets:
+    mg = pattern.match(asset['name'])
+    if mg:
+      assetOSVersion = _versionTuple(mg.group('osver')) if mg.group('osver') else ()
+      if assetOSVersion <= osVersion:
+        candidates.append((assetOSVersion, asset['name'], asset))
+  return max(candidates)[2] if candidates else None
+
+def doGAMUpdate(release_data):
+# Only release executables update themselves; every other installation is updated by whatever installed it
+  if GM.Globals[GM.GAM_TYPE] == 'homebrew':
+    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_HOMEBREW)
+  if GM.Globals[GM.GAM_TYPE] not in {'staticx', 'pyinstaller'}:
+    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_PYTHON_SOURCE)
+  if sys.platform.startswith('win'):
+    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_WINDOWS.format(GAM_RELEASES))
+  if not release_data:
+    printKeyValueList([Msg.GAM_IS_ALREADY_THE_LATEST_VERSION])
+    return
+  latest_version = release_data['name'].replace('GAM ', '')
+  asset = _getGAMUpdateAsset(release_data.get('assets', []))
+  if not asset:
+    systemErrorExit(SYSTEM_ERROR_RC, Msg.GAM_UPDATE_NO_RELEASE_FOR_THIS_SYSTEM.format(latest_version, GAM_RELEASES))
+  gamPath = os.path.realpath(GM.Globals[GM.GAM_PATH])
+  if not os.access(gamPath, os.W_OK):
+    systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_NO_WRITE_ACCESS.format(gamPath))
+  printKeyValueList([Msg.DOWNLOADING, asset['browser_download_url']])
+  try:
+    resp, content = getHttpObj(timeout=300).request(asset['browser_download_url'], 'GET')
+  except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
+          google.auth.exceptions.TransportError,
+          RuntimeError, ConnectionError, OSError) as e:
+    handleServerError(e)
+  if resp.status != 200:
+    systemErrorExit(NETWORK_ERROR_RC, f'{resp.status}: {resp.reason}')
+  digest = asset.get('digest') or ''
+  if not digest.startswith('sha256:'):
+    systemErrorExit(DATA_ERROR_RC, Msg.GAM_UPDATE_NO_CHECKSUM.format(asset['name']))
+  if hashlib.sha256(content).hexdigest() != digest[7:]:
+    systemErrorExit(DATA_ERROR_RC, Msg.GAM_UPDATE_CHECKSUM_MISMATCH.format(asset['name']))
+# Extract into the installation folder so that renames stay on the same file system
+  try:
+    tempPath = mkdtemp(prefix='.gamupdate-', dir=gamPath)
+  except OSError as e:
+    systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_FAILED.format(str(e)))
+  newPath = os.path.join(tempPath, 'gam7')
+  backupPath = os.path.join(tempPath, 'backup')
+  backedUp = []
+  installed = []
+  try:
+    with tarfile.open(fileobj=io.BytesIO(content), mode='r:xz') as tar:
+      tar.extractall(tempPath, filter='data')
+# Verify that the new version runs on this system before replacing anything
+    env = os.environ.copy()
+    env.pop('STATICX_PROG_PATH', None)
+    env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+    newGam = os.path.join(newPath, 'gam')
+    result = subprocess.run([newGam, 'version', 'simple'], capture_output=True, text=True, timeout=300, env=env, check=False)
+    if result.stdout.strip() != latest_version:
+      raise ValueError(Msg.GAM_UPDATE_VERIFICATION_FAILED.format(latest_version, result.returncode, (result.stdout+result.stderr).strip()))
+    os.mkdir(backupPath)
+# Like the installer, replace lib even if the new version does not have one; files not in the release, e.g., oauth2.txt, are not touched
+    for entry in sorted(set(os.listdir(newPath)) | {'lib'}):
+      if os.path.lexists(os.path.join(gamPath, entry)):
+        os.rename(os.path.join(gamPath, entry), os.path.join(backupPath, entry))
+        backedUp.append(entry)
+      if os.path.lexists(os.path.join(newPath, entry)):
+        os.rename(os.path.join(newPath, entry), os.path.join(gamPath, entry))
+        installed.append(entry)
+  except (OSError, ValueError, tarfile.TarError, subprocess.SubprocessError, KeyboardInterrupt) as e:
+    try:
+      for entry in reversed(installed):
+        os.rename(os.path.join(gamPath, entry), os.path.join(newPath, entry))
+      for entry in reversed(backedUp):
+        os.rename(os.path.join(backupPath, entry), os.path.join(gamPath, entry))
+      shutil.rmtree(tempPath, ignore_errors=True)
+    except OSError:
+      stderrErrorMsg(Msg.GAM_UPDATE_ROLLBACK_FAILED.format(backupPath, gamPath))
+    systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_FAILED.format(str(e) or type(e).__name__))
+  shutil.rmtree(tempPath, ignore_errors=True)
+  printKeyValueList([Msg.GAM_UPDATED_TO_VERSION.format(latest_version), gamPath])
 
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 
@@ -9814,10 +9917,10 @@ def doCheckConnection():
 def doComment():
   writeStdout(Cmd.QuotedArgumentList(Cmd.Remaining())+'\n')
 
-# gam version [check|checkrc|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
+# gam version [check|checkrc|update|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
 def doVersion(checkForArgs=True):
   forceCheck = 0
-  extended = noOffsetError = timeOffset = simple = False
+  extended = noOffsetError = timeOffset = simple = update = False
   testLocation = GOOGLE_TIMECHECK_LOCATION
   if checkForArgs:
     while Cmd.ArgumentsRemaining():
@@ -9826,6 +9929,9 @@ def doVersion(checkForArgs=True):
         forceCheck = 1
       elif myarg == 'checkrc':
         forceCheck = -1
+      elif myarg == 'update':
+        forceCheck = 1
+        update = True
       elif myarg == 'simple':
         simple = True
       elif myarg == 'extended':
@@ -9860,7 +9966,10 @@ def doVersion(checkForArgs=True):
         systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
       stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
   if forceCheck:
-    doGAMCheckForUpdates(forceCheck)
+    release_data = doGAMCheckForUpdates(forceCheck)
+    if update:
+      doGAMUpdate(release_data)
+      return
   if extended:
     printKeyValueList([ssl.OPENSSL_VERSION])
     proto, tls_ver, cipher_name = _getServerTLSUsed(testLocation)
