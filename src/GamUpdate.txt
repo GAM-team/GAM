@@ -1,3 +1,17 @@
+7.52.00
+
+Added option `update` to `gam version`.
+
+Print the current and latest versions of GAM and, if the current version is not the latest version,
+download the latest version and install it in place of the current version.
+* Only GAM installed from a release on Linux or MacOS is updated; on Windows, download and run the latest installer from https://github.com/GAM-team/GAM/releases
+* Update GAM installed with Homebrew with `brew upgrade gam`, and Python source/library installations with git or pip
+* The download is verified against the SHA-256 digest published with the release and the new version is run once before any files are replaced
+* Files that are not part of the GAM release, e.g., `oauth2.txt` and `client_secrets.json`, are not changed
+* If the update fails, the current version is restored
+
+Thanks to @seidnerj
+
 7.51.00
 
 Added the following options to `gam <UserTypeEntity> move drivefile <DriveFileEntity>`
