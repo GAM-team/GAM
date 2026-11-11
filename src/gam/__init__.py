@@ -12104,17 +12104,21 @@ def _doDPoPOAuthInfo(credentials):
       pass
 
   dpop_enabled = GC.Values[GC.DPOP]
-  printKeyValueList(['DPoP', 'Enabled' if dpop_enabled else 'Disabled'])
   if dpop_enabled:
     backend = GC.Values[GC.DPOP_BACKEND]
-    printKeyValueList(['DPoP Backend', backend])
+    printKeyValueList(['DPoP', f'Enabled ({backend})'])
     if GC.Values[GC.DPOP_BACKEND_CONFIG]:
       printKeyValueList(['DPoP Backend Config', GC.Values[GC.DPOP_BACKEND_CONFIG]])
-  printKeyValueList(['DPoP Token Bound', 'True' if saved_thumbprint else 'False'])
-  if saved_thumbprint:
-    printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
-
-  if not dpop_enabled:
+    if saved_thumbprint:
+      printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
+    else:
+      printKeyValueList(['DPoP Token', 'Not bound (run "gam oauth create" to bind)'])
+  else:
+    if saved_thumbprint:
+      printKeyValueList(['DPoP', 'Disabled in gam.cfg (Warning: token in oauth2.txt requires DPoP)'])
+      printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
+    else:
+      printKeyValueList(['DPoP', 'Disabled'])
     return
 
   refresh_token = getattr(credentials, 'refresh_token', None)
