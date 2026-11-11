@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.52.00'
+__version__ = '7.52.01'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4517,7 +4517,109 @@ def transportCreateRequest(httpObj=None):
     httpObj = getHttpObj()
   return transportAgentRequest(httpObj)
 
-def doGAMCheckForUpdates(forceCheck):
+# Windows: a running gam.exe can be renamed but its lib folder can not (its DLLs are loaded),
+# so on Windows the verified new version is swapped in by this PowerShell helper after GAM exits.
+# Renames use [System.IO.File]::Move / [System.IO.Directory]::Move (all or nothing, like os.rename);
+# Move-Item is NOT used: when a folder can not be renamed it moves the files one by one.
+# The values are put in with str.replace (PowerShell uses braces), single quotes doubled.
+GAM_UPDATE_WINDOWS_SCRIPT = r'''
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+$gamPid = @@PID@@
+$gamPath = '@@GAMPATH@@'
+$tempPath = '@@TEMPPATH@@'
+$version = '@@VERSION@@'
+$quiet = @@QUIET@@
+$newPath = Join-Path -Path $tempPath -ChildPath 'gam7'
+$backupPath = Join-Path -Path $tempPath -ChildPath 'backup'
+function Say([string]$text) { [Console]::Out.WriteLine($text) }
+function Rename-Entry([string]$from, [string]$to) {
+  if (Test-Path -LiteralPath $from -PathType Container) {
+    [System.IO.Directory]::Move($from, $to)
+  } else {
+    [System.IO.File]::Move($from, $to)
+  }
+}
+# Wait, at most 5 minutes, for the GAM that started the update to exit
+$deadline = (Get-Date).AddMinutes(5)
+while ((Get-Process -Id $gamPid -ErrorAction SilentlyContinue) -and ((Get-Date) -lt $deadline)) {
+  Start-Sleep -Milliseconds 250
+}
+# Like the installer, replace lib even if the new version does not have one; files not in the release, e.g., oauth2.txt, are not touched
+$entries = @(@(Get-ChildItem -LiteralPath $newPath -Force | ForEach-Object { $_.Name }) + @('lib') | Sort-Object -Unique)
+$installed = New-Object -TypeName System.Collections.Generic.List[string]
+$backedUp = New-Object -TypeName System.Collections.Generic.List[string]
+function Restore-Previous {
+  for ($i = $installed.Count - 1; $i -ge 0; $i--) {
+    Rename-Entry (Join-Path -Path $gamPath -ChildPath $installed[$i]) (Join-Path -Path $newPath -ChildPath $installed[$i])
+  }
+  for ($i = $backedUp.Count - 1; $i -ge 0; $i--) {
+    Rename-Entry (Join-Path -Path $backupPath -ChildPath $backedUp[$i]) (Join-Path -Path $gamPath -ChildPath $backedUp[$i])
+  }
+  $installed.Clear()
+  $backedUp.Clear()
+}
+$failure = ''
+# Another GAM may still be running from this folder (its lib can not be renamed); try for about a minute
+for ($try = 1; $try -le 20; $try++) {
+  $failure = ''
+  try {
+    New-Item -ItemType Directory -Path $backupPath -Force | Out-Null
+    foreach ($entry in $entries) {
+      $current = Join-Path -Path $gamPath -ChildPath $entry
+      $new = Join-Path -Path $newPath -ChildPath $entry
+      if (Test-Path -LiteralPath $current) {
+        Rename-Entry $current (Join-Path -Path $backupPath -ChildPath $entry)
+        $backedUp.Add($entry)
+      }
+      if (Test-Path -LiteralPath $new) {
+        Rename-Entry $new $current
+        $installed.Add($entry)
+      }
+    }
+# Run the installed version once; anything but the expected version puts the previous one back
+    $env:PYINSTALLER_RESET_ENVIRONMENT = '1'
+    $ErrorActionPreference = 'Continue'
+    $result = (& (Join-Path -Path $gamPath -ChildPath 'gam.exe') version simple 2>&1 | Out-String).Trim()
+    $rc = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    if ($result -ne $version) {
+      $failure = "Downloaded GAM did not run correctly on this system, expected version: $version, rc: $rc, output: $result"
+    }
+  } catch {
+    $ErrorActionPreference = 'Stop'
+    $failure = $_.Exception.Message
+  }
+  if (-not $failure) {
+    break
+  }
+  try {
+    Restore-Previous
+  } catch {
+    Say ('GAM update could not restore the previous version; its files are in {0}, move them back to {1}' -f $backupPath, $gamPath)
+    exit 1
+  }
+  if ($failure -like 'Downloaded GAM did not run*') {
+    break
+  }
+  Start-Sleep -Seconds 3
+}
+if ($failure) {
+  Remove-Item -LiteralPath $tempPath -Recurse -Force -ErrorAction SilentlyContinue
+  Say "GAM update failed, GAM not updated: $failure"
+  if ($failure -notlike 'Downloaded GAM did not run*') {
+    Say 'If another GAM was running from this folder, wait for it to finish and run gam version update again'
+  }
+  exit 1
+}
+Remove-Item -LiteralPath $tempPath -Recurse -Force -ErrorAction SilentlyContinue
+if (-not $quiet) {
+  Say "GAM updated to version ${version}: $gamPath"
+}
+exit 0
+'''
+
+def doGAMCheckForUpdates(forceCheck, quiet=False):
   def _gamLatestVersionNotAvailable():
     if forceCheck:
       systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
@@ -4538,11 +4640,12 @@ def doGAMCheckForUpdates(forceCheck):
       return
     current_version = __version__
     latest_version = release_data['name'].replace('GAM ', '')
-    printKeyValueList(['Version Check', None])
-    Ind.Increment()
-    printKeyValueList(['Current', current_version])
-    printKeyValueList([' Latest', latest_version])
-    Ind.Decrement()
+    if not quiet:
+      printKeyValueList(['Version Check', None])
+      Ind.Increment()
+      printKeyValueList(['Current', current_version])
+      printKeyValueList([' Latest', latest_version])
+      Ind.Decrement()
     if forceCheck < 0:
       setSysExitRC(1 if _versionTuple(latest_version) > _versionTuple(current_version) else 0)
       return None
@@ -4560,6 +4663,13 @@ def _getGAMUpdateAsset(assets):
 # Select the asset the installer would select: the build for the newest OS/glibc version not newer than this system's
   machine = platform.machine().lower()
   arch = {'amd64': 'x86_64', 'aarch64': 'arm64'}.get(machine, machine)
+  if sys.platform.startswith('win'):
+# Windows releases are a zip with the same gam7 folder as the Linux/MacOS archives
+    pattern = re.compile(rf'^gam-[0-9.]+-windows-{arch}\.zip$')
+    for asset in assets:
+      if pattern.match(asset['name']):
+        return asset
+    return None
   if sys.platform == 'darwin':
     pattern = re.compile(rf'^gam-[0-9.]+-macos(?P<osver>[0-9.]+)-{arch}\.tar\.xz$')
     osVersion = platform.mac_ver()[0]
@@ -4579,16 +4689,37 @@ def _getGAMUpdateAsset(assets):
         candidates.append((assetOSVersion, asset['name'], asset))
   return max(candidates)[2] if candidates else None
 
-def doGAMUpdate(release_data):
+def _extractGAMUpdateZip(content, tempPath):
+# Every member must be inside gam7/: no absolute paths, drive letters or ..
+  with zipfile.ZipFile(io.BytesIO(content)) as zf:
+    for name in zf.namelist():
+      clean = name.replace('\\', '/')
+      if clean.startswith('/') or re.match(r'^[A-Za-z]:', clean) or '..' in clean.split('/') or not clean.startswith('gam7/'):
+        raise ValueError(f'Unexpected file in the GAM zip: {name}')
+    zf.extractall(tempPath)
+
+def _startGAMUpdateWindows(gamPath, tempPath, latest_version, quiet=False):
+# The helper inherits this console, so its result is shown after GAM exits
+  script = GAM_UPDATE_WINDOWS_SCRIPT.replace('@@QUIET@@', '$true' if quiet else '$false')
+  for key, value in (('@@PID@@', str(os.getpid())), ('@@GAMPATH@@', gamPath),
+                     ('@@TEMPPATH@@', tempPath), ('@@VERSION@@', latest_version)):
+    script = script.replace(key, value.replace("'", "''"))
+  powershell = os.path.join(os.environ.get('SystemRoot', r'C:\Windows'), 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+  subprocess.Popen([powershell, '-NoProfile', '-NonInteractive', '-EncodedCommand',
+                    base64.b64encode(script.encode('utf-16-le')).decode('ascii')],
+                   stdin=subprocess.DEVNULL, close_fds=False,
+                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+def doGAMUpdate(release_data, quiet=False):
 # Only release executables update themselves; every other installation is updated by whatever installed it
   if GM.Globals[GM.GAM_TYPE] == 'homebrew':
     systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_HOMEBREW)
   if GM.Globals[GM.GAM_TYPE] not in {'staticx', 'pyinstaller'}:
     systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_PYTHON_SOURCE)
-  if sys.platform.startswith('win'):
-    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_WINDOWS.format(GAM_RELEASES))
+  onWindows = sys.platform.startswith('win')
   if not release_data:
-    printKeyValueList([Msg.GAM_IS_ALREADY_THE_LATEST_VERSION])
+    if not quiet:
+      printKeyValueList([Msg.GAM_IS_ALREADY_THE_LATEST_VERSION])
     return
   latest_version = release_data['name'].replace('GAM ', '')
   asset = _getGAMUpdateAsset(release_data.get('assets', []))
@@ -4597,7 +4728,8 @@ def doGAMUpdate(release_data):
   gamPath = os.path.realpath(GM.Globals[GM.GAM_PATH])
   if not os.access(gamPath, os.W_OK):
     systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_NO_WRITE_ACCESS.format(gamPath))
-  printKeyValueList([Msg.DOWNLOADING, asset['browser_download_url']])
+  if not quiet:
+    printKeyValueList([Msg.DOWNLOADING, asset['browser_download_url']])
   try:
     resp, content = getHttpObj(timeout=300).request(asset['browser_download_url'], 'GET')
   except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
@@ -4621,16 +4753,24 @@ def doGAMUpdate(release_data):
   backedUp = []
   installed = []
   try:
-    with tarfile.open(fileobj=io.BytesIO(content), mode='r:xz') as tar:
-      tar.extractall(tempPath, filter='data')
+    if onWindows:
+      _extractGAMUpdateZip(content, tempPath)
+    else:
+      with tarfile.open(fileobj=io.BytesIO(content), mode='r:xz') as tar:
+        tar.extractall(tempPath, filter='data')
 # Verify that the new version runs on this system before replacing anything
     env = os.environ.copy()
     env.pop('STATICX_PROG_PATH', None)
     env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
-    newGam = os.path.join(newPath, 'gam')
+    newGam = os.path.join(newPath, 'gam.exe' if onWindows else 'gam')
     result = subprocess.run([newGam, 'version', 'simple'], capture_output=True, text=True, timeout=300, env=env, check=False)
     if result.stdout.strip() != latest_version:
       raise ValueError(Msg.GAM_UPDATE_VERIFICATION_FAILED.format(latest_version, result.returncode, (result.stdout+result.stderr).strip()))
+    if onWindows:
+      _startGAMUpdateWindows(gamPath, tempPath, latest_version, quiet)
+      if not quiet:
+        printKeyValueList([Msg.GAM_UPDATE_FINISHING_ON_WINDOWS.format(latest_version), gamPath])
+      return
     os.mkdir(backupPath)
 # Like the installer, replace lib even if the new version does not have one; files not in the release, e.g., oauth2.txt, are not touched
     for entry in sorted(set(os.listdir(newPath)) | {'lib'}):
@@ -4640,7 +4780,7 @@ def doGAMUpdate(release_data):
       if os.path.lexists(os.path.join(newPath, entry)):
         os.rename(os.path.join(newPath, entry), os.path.join(gamPath, entry))
         installed.append(entry)
-  except (OSError, ValueError, tarfile.TarError, subprocess.SubprocessError, KeyboardInterrupt) as e:
+  except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile, subprocess.SubprocessError, KeyboardInterrupt) as e:
     try:
       for entry in reversed(installed):
         os.rename(os.path.join(gamPath, entry), os.path.join(newPath, entry))
@@ -4651,7 +4791,74 @@ def doGAMUpdate(release_data):
       stderrErrorMsg(Msg.GAM_UPDATE_ROLLBACK_FAILED.format(backupPath, gamPath))
     systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_FAILED.format(str(e) or type(e).__name__))
   shutil.rmtree(tempPath, ignore_errors=True)
-  printKeyValueList([Msg.GAM_UPDATED_TO_VERSION.format(latest_version), gamPath])
+  if not quiet:
+    printKeyValueList([Msg.GAM_UPDATED_TO_VERSION.format(latest_version), gamPath])
+
+# gam version [check|checkrc|simple|extended|(update [quiet])] [timeoffset] [location <HostName>]
+def doVersion(checkForArgs=True):
+  forceCheck = 0
+  extended = noOffsetError = timeOffset = simple = update = quiet = False
+  testLocation = GOOGLE_TIMECHECK_LOCATION
+  if checkForArgs:
+    while Cmd.ArgumentsRemaining():
+      myarg = getArgument()
+      if myarg == 'check':
+        forceCheck = 1
+      elif myarg == 'checkrc':
+        forceCheck = -1
+      elif myarg == 'update':
+        forceCheck = 1
+        update = True
+      elif myarg == 'quiet':
+        quiet = True
+      elif myarg == 'simple':
+        simple = True
+      elif myarg == 'extended':
+        extended = timeOffset = True
+      elif myarg == 'timeoffset':
+        timeOffset = True
+      elif myarg == 'nooffseterror':
+        noOffsetError = True
+      elif myarg == 'location':
+        testLocation = getString(Cmd.OB_HOST_NAME)
+      else:
+        unknownArgumentExit()
+  if simple:
+    writeStdout(__version__)
+    return
+  if not quiet:
+    writeStdout((f'{GAM} {__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
+                 f'{__author__}\n'
+                 f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {struct.calcsize("P")*8}-bit {sys.version_info[3]}\n'
+                 f'{getOSPlatform()} {platform.machine()}\n'
+                 f'Path: {GM.Globals[GM.GAM_PATH]}\n'
+                 f'{Ent.Singular(Ent.CONFIG_FILE)}: {GM.Globals[GM.GAM_CFG_FILE]}, {Ent.Singular(Ent.SECTION)}: {GM.Globals[GM.GAM_CFG_SECTION_NAME]}, '
+                 f'{GC.CUSTOMER_ID}: {GC.Values[GC.CUSTOMER_ID]}, {GC.DOMAIN}: {GC.Values[GC.DOMAIN]}\n'
+                 f'Time: {ISOformatTimeStamp(todaysTime())}\n'
+                 ))
+    if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
+      printKeyValueList([Msg.UPDATE_GAM_TO_64BIT])
+  if timeOffset:
+    offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset(testLocation)
+    printKeyValueList([Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(testLocation, offsetFormatted)])
+    if offsetSeconds > MAX_LOCAL_GOOGLE_TIME_OFFSET:
+      if not noOffsetError:
+        systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+      stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
+  if forceCheck:
+    release_data = doGAMCheckForUpdates(forceCheck, quiet)
+    if update:
+      doGAMUpdate(release_data, quiet)
+      return
+  if extended:
+    printKeyValueList([ssl.OPENSSL_VERSION])
+    proto, tls_ver, cipher_name = _getServerTLSUsed(testLocation)
+    for lib in glverlibs.GAM_VER_LIBS:
+      try:
+        writeStdout(f'{lib} {lib_version(lib)}\n')
+      except:
+        pass
+    printKeyValueList([f'{testLocation} connects using {proto} and {tls_ver} {cipher_name}'])
 
 _DEFAULT_TOKEN_LIFETIME_SECS = 3600  # 1 hour in seconds
 
@@ -9916,69 +10123,6 @@ def doCheckConnection():
 # gam comment
 def doComment():
   writeStdout(Cmd.QuotedArgumentList(Cmd.Remaining())+'\n')
-
-# gam version [check|checkrc|update|simple|extended] [timeoffset] [nooffseterror] [location <HostName>]
-def doVersion(checkForArgs=True):
-  forceCheck = 0
-  extended = noOffsetError = timeOffset = simple = update = False
-  testLocation = GOOGLE_TIMECHECK_LOCATION
-  if checkForArgs:
-    while Cmd.ArgumentsRemaining():
-      myarg = getArgument()
-      if myarg == 'check':
-        forceCheck = 1
-      elif myarg == 'checkrc':
-        forceCheck = -1
-      elif myarg == 'update':
-        forceCheck = 1
-        update = True
-      elif myarg == 'simple':
-        simple = True
-      elif myarg == 'extended':
-        extended = timeOffset = True
-      elif myarg == 'timeoffset':
-        timeOffset = True
-      elif myarg == 'nooffseterror':
-        noOffsetError = True
-      elif myarg == 'location':
-        testLocation = getString(Cmd.OB_HOST_NAME)
-      else:
-        unknownArgumentExit()
-  if simple:
-    writeStdout(__version__)
-    return
-  writeStdout((f'{GAM} {__version__} - {GAM_URL} - {GM.Globals[GM.GAM_TYPE]}\n'
-               f'{__author__}\n'
-               f'Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]} {struct.calcsize("P")*8}-bit {sys.version_info[3]}\n'
-               f'{getOSPlatform()} {platform.machine()}\n'
-               f'Path: {GM.Globals[GM.GAM_PATH]}\n'
-               f'{Ent.Singular(Ent.CONFIG_FILE)}: {GM.Globals[GM.GAM_CFG_FILE]}, {Ent.Singular(Ent.SECTION)}: {GM.Globals[GM.GAM_CFG_SECTION_NAME]}, '
-               f'{GC.CUSTOMER_ID}: {GC.Values[GC.CUSTOMER_ID]}, {GC.DOMAIN}: {GC.Values[GC.DOMAIN]}\n'
-               f'Time: {ISOformatTimeStamp(todaysTime())}\n'
-               ))
-  if sys.platform.startswith('win') and str(struct.calcsize('P')*8).find('32') != -1 and platform.machine().find('64') != -1:
-    printKeyValueList([Msg.UPDATE_GAM_TO_64BIT])
-  if timeOffset:
-    offsetSeconds, offsetFormatted = getLocalGoogleTimeOffset(testLocation)
-    printKeyValueList([Msg.YOUR_SYSTEM_TIME_DIFFERS_FROM_GOOGLE.format(testLocation, offsetFormatted)])
-    if offsetSeconds > MAX_LOCAL_GOOGLE_TIME_OFFSET:
-      if not noOffsetError:
-        systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
-      stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
-  if forceCheck:
-    release_data = doGAMCheckForUpdates(forceCheck)
-    if update:
-      doGAMUpdate(release_data)
-      return
-  if extended:
-    printKeyValueList([ssl.OPENSSL_VERSION])
-    proto, tls_ver, cipher_name = _getServerTLSUsed(testLocation)
-    for lib in glverlibs.GAM_VER_LIBS:
-      try:
-        writeStdout(f'{lib} {lib_version(lib)}\n')
-      except:
-        pass
-    printKeyValueList([f'{testLocation} connects using {proto} and {tls_ver} {cipher_name}'])
 
 # gam help
 def doUsage():

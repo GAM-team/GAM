@@ -1,3 +1,10 @@
+7.52.01
+
+Updated `gam version update` to work on Windows. Added suboption `quiet` to `gam version update`
+that prints nothing when GAM is already current or was updated; failures are still printed and the return code is non-zero.
+
+Thanks to @gurugabe
+
 7.52.00
 
 Added option `update` to `gam version`.
