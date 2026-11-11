@@ -12187,14 +12187,14 @@ def _doDPoPOAuthInfo(credentials):
         scopes=scopes,
     )
     ephem_creds.refresh(request)
-    printKeyValueList(['With Ephemeral Key', 'Warning: Succeeded with arbitrary key (Key not bound)'])
+    printKeyValueList(['With Wrong Key', 'Warning: Succeeded with wrong key (Key not bound)'])
   except ImportError:
-    printKeyValueList(['With Ephemeral Key', 'Skipped (dpop-signer-ephemeral not installed)'])
+    printKeyValueList(['With Wrong Key', 'Skipped (dpop-signer-ephemeral not installed)'])
     ephem_rejected = True
   except Exception as e:
     ephem_rejected = True
     err_str = _formatRefreshError(e)
-    printKeyValueList(['With Ephemeral Key', f'Rejected as expected ({err_str})'])
+    printKeyValueList(['With Wrong Key', f'Rejected as expected ({err_str})'])
 
   Ind.Decrement()
 
