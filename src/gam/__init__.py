@@ -126,26 +126,20 @@ from google.oauth2.dpop_credentials import DPoPCredentials
 
 
 class _DeferredSignerDPoPCredentials(DPoPCredentials):
-  """DPoPCredentials that constructs the signer on first refresh, not at load time.
+  """DPoPCredentials that skips resource-request DPoP proof generation.
 
-  This avoids touching hardware (TPM, Secure Enclave, YubiKey) on every GAM
-  command. The signer is only needed when the cached access token expires and a
-  refresh grant must be sent to the authorization server.
+  Google resource servers do not validate DPoP proofs on resource requests.
+  Skipping _after_refresh avoids triggering the signer factory on every API
+  request and avoids hardware signer latency (TPM, Secure Enclave, YubiKey).
   """
 
-  # Only _call_refresh_grant is overridden. _after_refresh is intentionally
-  # NOT overridden: before the first refresh the signer is None so the parent
-  # skips the resource-server DPoP header (Google ignores it anyway). Once
-  # _call_refresh_grant runs it sets the signer, so the parent's
-  # _after_refresh works normally from that point on. Overriding
-  # _after_refresh would defeat deferred construction because
-  # before_request() calls _after_refresh() on EVERY HTTP request, not
-  # only after an actual token refresh.
+  def _after_refresh(self, request, method, url, headers):
+    pass
 
   def _call_refresh_grant(self, request, token_uri, refresh_token,
                           client_id, client_secret, scopes=None,
                           rapt_token=None):
-    if self._dpop_signer is None:
+    if self._dpop_signer is None and getattr(self, '_dpop_signer_factory', None) is None:
       self._dpop_signer = _getDPoPSigner()
     return super()._call_refresh_grant(
         request, token_uri, refresh_token, client_id, client_secret,
@@ -5206,11 +5200,12 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
           jsonDict['client_id'] = re.sub(r'\.apps\.googleusercontent\.com$', '', jsonDict['client_id'])
         if GC.Values[GC.DPOP]:
-          # Use deferred signer — hardware is not touched until a token
+          # Use deferred signer factory — hardware is not touched until a token
           # refresh is actually needed. This avoids Touch ID prompts,
           # YubiKey access and TPM connections on every GAM command.
-          jsonDict.pop('dpop_thumbprint', None)
-          creds = _DeferredSignerDPoPCredentials.from_authorized_user_info(jsonDict)
+          creds = _DeferredSignerDPoPCredentials.from_authorized_user_info(
+              jsonDict, dpop_signer=_getDPoPSigner)
+          creds._saved_dpop_thumbprint = jsonDict.get('dpop_thumbprint')
         else:
           creds = google.oauth2.credentials.Credentials.from_authorized_user_info(jsonDict)
         if 'id_token_jwt' not in jsonDict:
@@ -5271,6 +5266,8 @@ def writeClientCredentials(creds, filename):
     dpop_signer = getattr(creds, '_dpop_signer', None)
     if dpop_signer is not None:
       creds_data['dpop_thumbprint'] = dpop_signer.thumbprint
+    elif getattr(creds, '_saved_dpop_thumbprint', None):
+      creds_data['dpop_thumbprint'] = creds._saved_dpop_thumbprint
     dpop_nonce = getattr(creds, 'dpop_nonce', None) or getattr(creds, '_dpop_nonce', None)
     if dpop_nonce:
       creds_data['dpop_nonce'] = dpop_nonce
@@ -12084,6 +12081,137 @@ def doOAuthDelete():
     deleteFile(GC.Values[GC.OAUTH2_TXT], continueOnError=True)
     entityActionPerformed([entityType, entityName])
 
+def _formatRefreshError(err):
+  if hasattr(err, 'args') and err.args:
+    arg0 = err.args[0]
+    if isinstance(arg0, str):
+      return arg0
+    if isinstance(arg0, tuple) and len(arg0) > 0 and isinstance(arg0[0], str):
+      return arg0[0]
+  return str(err)
+
+
+def _doDPoPOAuthInfo(credentials):
+  if credentials is None:
+    return
+  saved_thumbprint = getattr(credentials, '_saved_dpop_thumbprint', None)
+  if not saved_thumbprint and GC.Values[GC.OAUTH2_TXT]:
+    try:
+      jsonData = readFile(GC.Values[GC.OAUTH2_TXT], continueOnError=True, displayError=False)
+      if jsonData:
+        saved_thumbprint = json.loads(jsonData).get('dpop_thumbprint')
+    except Exception:
+      pass
+
+  dpop_enabled = GC.Values[GC.DPOP]
+  printKeyValueList(['DPoP', 'Enabled' if dpop_enabled else 'Disabled'])
+  if dpop_enabled:
+    backend = GC.Values[GC.DPOP_BACKEND]
+    printKeyValueList(['DPoP Backend', backend])
+    if GC.Values[GC.DPOP_BACKEND_CONFIG]:
+      printKeyValueList(['DPoP Backend Config', GC.Values[GC.DPOP_BACKEND_CONFIG]])
+  printKeyValueList(['DPoP Token Bound', 'True' if saved_thumbprint else 'False'])
+  if saved_thumbprint:
+    printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
+
+  if not dpop_enabled:
+    return
+
+  refresh_token = getattr(credentials, 'refresh_token', None)
+  if not refresh_token:
+    printKeyValueList(['DPoP Refresh Tests', 'Skipped (no refresh token)'])
+    return
+
+  request = transportCreateRequest()
+  token_uri = getattr(credentials, 'token_uri', API.GOOGLE_OAUTH2_TOKEN_ENDPOINT)
+  client_id = credentials.client_id
+  client_secret = credentials.client_secret
+  scopes = getattr(credentials, 'scopes', None)
+
+  printKeyValueList(['DPoP Refresh Tests'])
+  Ind.Increment()
+
+  # Test 1: Refresh with DPoP using configured backend
+  with_dpop_ok = False
+  try:
+    signer = _getDPoPSigner()
+    dpop_creds = DPoPCredentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri=token_uri,
+        client_id=client_id,
+        client_secret=client_secret,
+        dpop_signer=signer,
+        scopes=scopes,
+    )
+    dpop_creds.refresh(request)
+    with_dpop_ok = True
+    printKeyValueList([f'With DPoP ({backend})', 'Success'])
+  except (Exception, SystemExit) as e:
+    err_str = _formatRefreshError(e)
+    if backend == 'ephemeral':
+      printKeyValueList([f'With DPoP ({backend})', f'Failed as expected for ephemeral backend ({err_str})'])
+    else:
+      printKeyValueList([f'With DPoP ({backend})', f'Failed ({err_str})'])
+
+  # Test 2: Refresh with DPoP disabled (no DPoP proof attached)
+  without_dpop_rejected = False
+  try:
+    plain_creds = google.oauth2.credentials.Credentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri=token_uri,
+        client_id=client_id,
+        client_secret=client_secret,
+        scopes=scopes,
+    )
+    plain_creds.refresh(request)
+    printKeyValueList(['Without DPoP', 'Warning: Succeeded without DPoP (Token is not bound)'])
+  except Exception as e:
+    without_dpop_rejected = True
+    err_str = _formatRefreshError(e)
+    printKeyValueList(['Without DPoP', f'Rejected as expected ({err_str})'])
+
+  # Test 3: Refresh with ephemeral DPoP backend (fresh arbitrary key)
+  ephem_rejected = False
+  try:
+    from dpop_signer_ephemeral import EphemeralDPoPSigner
+    ephem_signer = EphemeralDPoPSigner()
+    ephem_creds = DPoPCredentials(
+        token=None,
+        refresh_token=refresh_token,
+        token_uri=token_uri,
+        client_id=client_id,
+        client_secret=client_secret,
+        dpop_signer=ephem_signer,
+        scopes=scopes,
+    )
+    ephem_creds.refresh(request)
+    printKeyValueList(['With Ephemeral Key', 'Warning: Succeeded with arbitrary key (Key not bound)'])
+  except ImportError:
+    printKeyValueList(['With Ephemeral Key', 'Skipped (dpop-signer-ephemeral not installed)'])
+    ephem_rejected = True
+  except Exception as e:
+    ephem_rejected = True
+    err_str = _formatRefreshError(e)
+    printKeyValueList(['With Ephemeral Key', f'Rejected as expected ({err_str})'])
+
+  Ind.Decrement()
+
+  if with_dpop_ok and without_dpop_rejected and ephem_rejected:
+    binding_status = 'Verified'
+  elif not without_dpop_rejected:
+    binding_status = 'Failed (Token is not bound to DPoP)'
+  elif not ephem_rejected:
+    binding_status = 'Failed (Server accepted arbitrary key)'
+  elif not with_dpop_ok:
+    binding_status = 'Failed (Configured signer refresh failed)'
+  else:
+    binding_status = 'Inconclusive'
+
+  printKeyValueList(['DPoP Key Binding', binding_status])
+
+
 # gam oauth|oauth2 info|verify [showsecret] [accesstoken <AccessToken> idtoken <IDToken>] [showdetails]
 def doOAuthInfo():
   credentials = access_token = id_token = None
@@ -12127,6 +12255,7 @@ def doOAuthInfo():
     printKeyValueList(['Google Workspace Admin', f'{token_info["email"]}'])
   if 'expires_in' in token_info:
     printKeyValueList(['Expires', ISOformatTimeStamp(arrow.now(GC.Values[GC.TIMEZONE]).shift(seconds=token_info['expires_in']))])
+  _doDPoPOAuthInfo(credentials)
   if showDetails:
     for k, v in sorted(token_info.items()):
       if k not in  ['email', 'expires_in', 'issued_to', 'scope']:

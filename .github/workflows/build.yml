@@ -294,13 +294,13 @@ jobs:
           # google-cloud-python monorepo has paths exceeding Windows 260-char limit
           git config --global core.longpaths true
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            "$PYTHON" -m pip install ..[yubikey,ecp,linux_tpm]
+            "$PYTHON" -m pip install ..[yubikey,ecp,linux_tpm,ephemeral]
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            "$PYTHON" -m pip install ..[yubikey,ecp,macos_secureenclave]
+            "$PYTHON" -m pip install ..[yubikey,ecp,macos_secureenclave,ephemeral]
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            "$PYTHON" -m pip install ..[yubikey,ecp,windows_tpm]
+            "$PYTHON" -m pip install ..[yubikey,ecp,windows_tpm,ephemeral]
           else
-            "$PYTHON" -m pip install ..[yubikey,ecp]
+            "$PYTHON" -m pip install ..[yubikey,ecp,ephemeral]
           fi
 
       - name: Install PyInstaller
