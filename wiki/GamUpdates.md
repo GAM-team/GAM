@@ -10,6 +10,13 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.52.01
+
+Updated `gam version update` to work on Windows. Added suboption `quiet` to `gam version update`
+that prints nothing when GAM is already current or was updated; failures are still printed and the return code is non-zero.
+
+Thanks to @gurugabe
+
 7.52.00
 
 Added option `update` to `gam version`.
