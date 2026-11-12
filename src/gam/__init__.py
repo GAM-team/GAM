@@ -139,11 +139,14 @@ class _DeferredSignerDPoPCredentials(DPoPCredentials):
   def _call_refresh_grant(self, request, token_uri, refresh_token,
                           client_id, client_secret, scopes=None,
                           rapt_token=None):
-    if self._dpop_signer is None and getattr(self, '_dpop_signer_factory', None) is None:
-      self._dpop_signer = _getDPoPSigner()
-    return super()._call_refresh_grant(
-        request, token_uri, refresh_token, client_id, client_secret,
-        scopes=scopes, rapt_token=rapt_token)
+    try:
+      if self._dpop_signer is None and getattr(self, '_dpop_signer_factory', None) is None:
+        self._dpop_signer = _getDPoPSigner()
+      return super()._call_refresh_grant(
+          request, token_uri, refresh_token, client_id, client_secret,
+          scopes=scopes, rapt_token=rapt_token)
+    except ValueError as e:
+      raise google.auth.exceptions.RefreshError(str(e))
 import modern_httplib2.auto
 import modern_httplib2 as httplib2
 
@@ -5044,45 +5047,55 @@ def doDPoPTest():
   printBlankLine()
   printLine('DPoP configuration is valid and working.')
 
-def _getDPoPSigner():
+class DPoPSignerError(Exception):
+  """Exception raised when a DPoP signer cannot be constructed."""
+  pass
+
+
+def _getDPoPSigner(exitOnError=True):
   """Constructs a DPoPSigner based on gam.cfg dpop_backend and dpop_backend_config."""
+  def _fail(rc, msg):
+    if exitOnError:
+      systemErrorExit(rc, msg)
+    raise DPoPSignerError(msg)
+
   backend = GC.Values[GC.DPOP_BACKEND]
   config = GC.Values[GC.DPOP_BACKEND_CONFIG]
   if backend == 'software':
     if not config:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP software backend requires dpop_backend_config set to the path of a PEM private key file')
+      _fail(USAGE_ERROR_RC, 'DPoP software backend requires dpop_backend_config set to the path of a PEM private key file')
     key_path = os.path.expanduser(config)
     if not os.path.isabs(key_path):
       key_path = os.path.expanduser(os.path.join(GC.Values[GC.CONFIG_DIR], key_path))
     if not os.path.isfile(key_path):
-      systemErrorExit(USAGE_ERROR_RC, f'DPoP software key file not found: {key_path}')
+      _fail(USAGE_ERROR_RC, f'DPoP software key file not found: {key_path}')
     key_data = readFile(key_path, mode='rb')
     if key_data is None:
-      systemErrorExit(USAGE_ERROR_RC, f'DPoP software key file could not be read: {key_path}')
+      _fail(USAGE_ERROR_RC, f'DPoP software key file could not be read: {key_path}')
     return SoftwareDPoPSigner.from_pem(key_data)
   elif backend == 'yubikey':
     try:
       from dpop_signer_yubikey import YubiKeyDPoPSigner, YubiKeyDPoPError
     except ImportError:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP yubikey backend requires the dpop-signer-yubikey package. Install with: pip install "gam7[yubikey]"')
+      _fail(USAGE_ERROR_RC, 'DPoP yubikey backend requires the dpop-signer-yubikey package. Install with: pip install "gam7[yubikey]"')
     parts = [p.strip() for p in config.split(',')] if config else []
     try:
       serial = int(parts[0]) if len(parts) > 0 and parts[0] else None
     except ValueError:
-      systemErrorExit(USAGE_ERROR_RC, f'DPoP yubikey dpop_backend_config: serial must be an integer, got: {parts[0]}')
+      _fail(USAGE_ERROR_RC, f'DPoP yubikey dpop_backend_config: serial must be an integer, got: {parts[0]}')
     slot = parts[1] if len(parts) > 1 and parts[1] else '9c'
     pin = parts[2] if len(parts) > 2 and parts[2] else None
     try:
       return YubiKeyDPoPSigner(serial=serial, slot=slot, pin=pin)
     except YubiKeyDPoPError as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey error: {e}')
     except Exception as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey unexpected error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP YubiKey unexpected error: {e}')
   elif backend == 'ecp':
     try:
       from dpop_signer_ecp import ECPDPoPSigner, ECPDPoPError
     except ImportError:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP ecp backend requires the dpop-signer-ecp package. Install with: pip install "gam7[ecp]"')
+      _fail(USAGE_ERROR_RC, 'DPoP ecp backend requires the dpop-signer-ecp package. Install with: pip install "gam7[ecp]"')
     ecp_config_path = config or None
     if ecp_config_path:
       ecp_config_path = os.path.expanduser(ecp_config_path)
@@ -5091,49 +5104,49 @@ def _getDPoPSigner():
     try:
       return ECPDPoPSigner(config_path=ecp_config_path)
     except ECPDPoPError as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP error: {e}')
     except Exception as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP unexpected error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP ECP unexpected error: {e}')
   elif backend == 'macos_secureenclave':
     try:
       from dpop_signer_macos_secureenclave import SecureEnclaveDPoPSigner, SecureEnclaveDPoPError
     except ImportError:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP macos_secureenclave backend requires the dpop-signer-macos-secureenclave package. Install with: pip install "gam7[macos_secureenclave]"')
+      _fail(USAGE_ERROR_RC, 'DPoP macos_secureenclave backend requires the dpop-signer-macos-secureenclave package. Install with: pip install "gam7[macos_secureenclave]"')
     parts = [p.strip() for p in config.split(',')] if config else []
     label = parts[0] if len(parts) > 0 and parts[0] else None
     application_tag = parts[1] if len(parts) > 1 and parts[1] else None
     if not label and not application_tag:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP macos_secureenclave backend requires dpop_backend_config set to: label[,application_tag]')
+      _fail(USAGE_ERROR_RC, 'DPoP macos_secureenclave backend requires dpop_backend_config set to: label[,application_tag]')
     try:
       return SecureEnclaveDPoPSigner(label=label, application_tag=application_tag)
     except SecureEnclaveDPoPError as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave error: {e}')
     except Exception as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave unexpected error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP macOS Secure Enclave unexpected error: {e}')
   elif backend == 'linux_tpm':
     try:
       from dpop_signer_linux_tpm import LinuxTPMDPoPSigner, LinuxTPMDPoPError
     except ImportError:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP linux_tpm backend requires the dpop-signer-linux-tpm package. Install with: pip install "gam7[linux_tpm]"')
+      _fail(USAGE_ERROR_RC, 'DPoP linux_tpm backend requires the dpop-signer-linux-tpm package. Install with: pip install "gam7[linux_tpm]"')
     parts = [p.strip() for p in config.split(',')] if config else []
     handle_str = parts[0] if len(parts) > 0 and parts[0] else None
     try:
       handle = int(handle_str, 0) if handle_str else 0x81000001
     except ValueError:
-      systemErrorExit(USAGE_ERROR_RC, f'DPoP linux_tpm dpop_backend_config: handle must be a hex integer, got: {handle_str}')
+      _fail(USAGE_ERROR_RC, f'DPoP linux_tpm dpop_backend_config: handle must be a hex integer, got: {handle_str}')
     tcti = parts[1] if len(parts) > 1 and parts[1] else None
     auth = parts[2] if len(parts) > 2 and parts[2] else None
     try:
       return LinuxTPMDPoPSigner(handle=handle, tcti=tcti, auth=auth)
     except LinuxTPMDPoPError as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM error: {e}')
     except Exception as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM unexpected error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Linux TPM unexpected error: {e}')
   elif backend == 'windows_tpm':
     try:
       from dpop_signer_windows_tpm import WindowsCNGDPoPSigner, WindowsCNGDPoPError
     except ImportError:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires the dpop-signer-windows-tpm package. Install with: pip install "gam7[windows_tpm]"')
+      _fail(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires the dpop-signer-windows-tpm package. Install with: pip install "gam7[windows_tpm]"')
     subject = None
     thumbprint = None
     if config:
@@ -5142,21 +5155,21 @@ def _getDPoPSigner():
       else:
         subject = config
     if not subject and not thumbprint:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires dpop_backend_config set to: subject_cn_substring or thumbprint:hex_string')
+      _fail(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires dpop_backend_config set to: subject_cn_substring or thumbprint:hex_string')
     try:
       return WindowsCNGDPoPSigner(subject=subject, thumbprint=thumbprint)
     except WindowsCNGDPoPError as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM error: {e}')
     except Exception as e:
-      systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM unexpected error: {e}')
+      _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP Windows CNG/TPM unexpected error: {e}')
   elif backend == 'ephemeral':
     try:
       from dpop_signer_ephemeral import EphemeralDPoPSigner
     except ImportError:
-      systemErrorExit(USAGE_ERROR_RC, 'DPoP ephemeral backend requires the dpop-signer-ephemeral package. Install with: pip install \"gam7[ephemeral]\"')
+      _fail(USAGE_ERROR_RC, 'DPoP ephemeral backend requires the dpop-signer-ephemeral package. Install with: pip install \"gam7[ephemeral]\"')
     return EphemeralDPoPSigner()
   else:
-    systemErrorExit(USAGE_ERROR_RC, f'Unknown DPoP backend: {backend}')
+    _fail(USAGE_ERROR_RC, f'Unknown DPoP backend: {backend}')
 
 def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   if not noDASA and GC.Values[GC.ENABLE_DASA]:
@@ -5200,14 +5213,17 @@ def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnl
           # chop off .apps.googleusercontent.com suffix as it's not needed and we need to keep things short for the Auth URL.
           jsonDict['client_id'] = re.sub(r'\.apps\.googleusercontent\.com$', '', jsonDict['client_id'])
         if GC.Values[GC.DPOP]:
-          # Use deferred signer factory — hardware is not touched until a token
-          # refresh is actually needed. This avoids Touch ID prompts,
-          # YubiKey access and TPM connections on every GAM command.
+          saved_thumbprint = jsonDict.get('dpop_thumbprint')
+          if GC.Values[GC.DPOP_BACKEND] == 'ephemeral':
+            # Testing with ephemeral backend: do not validate thumbprint client-side;
+            # send to Google so the token endpoint verifies and rejects the wrong key.
+            jsonDict.pop('dpop_thumbprint', None)
           creds = _DeferredSignerDPoPCredentials.from_authorized_user_info(
               jsonDict, dpop_signer=_getDPoPSigner)
-          creds._saved_dpop_thumbprint = jsonDict.get('dpop_thumbprint')
+          creds._saved_dpop_thumbprint = saved_thumbprint
         else:
           creds = google.oauth2.credentials.Credentials.from_authorized_user_info(jsonDict)
+          creds._saved_dpop_thumbprint = jsonDict.get('dpop_thumbprint')
         if 'id_token_jwt' not in jsonDict:
           creds.token = jsonDict['token']
           creds._id_token = jsonDict['id_token']
@@ -5259,15 +5275,14 @@ def writeClientCredentials(creds, filename):
     'token_expiry': creds.expiry.strftime(YYYYMMDDTHHMMSSZ_FORMAT),
     'token_uri': creds.token_uri,
     }
-  if GC.Values[GC.DPOP]:
-    # Get thumbprint from the signer already attached to the credentials
-    # (constructed during oauth create or during a deferred refresh).
-    # Avoids touching hardware again just to write the file.
+  saved_thumbprint = getattr(creds, '_saved_dpop_thumbprint', None)
+  if saved_thumbprint is not None:
+    creds_data['dpop_thumbprint'] = saved_thumbprint
+  elif getattr(creds, '_is_oauth_create', False) and GC.Values[GC.DPOP]:
     dpop_signer = getattr(creds, '_dpop_signer', None)
     if dpop_signer is not None:
       creds_data['dpop_thumbprint'] = dpop_signer.thumbprint
-    elif getattr(creds, '_saved_dpop_thumbprint', None):
-      creds_data['dpop_thumbprint'] = creds._saved_dpop_thumbprint
+  if GC.Values[GC.DPOP]:
     dpop_nonce = getattr(creds, 'dpop_nonce', None) or getattr(creds, '_dpop_nonce', None)
     if dpop_nonce:
       creds_data['dpop_nonce'] = dpop_nonce
@@ -11932,7 +11947,15 @@ class Credentials(google.oauth2.credentials.Credentials):
     if login_hint:
       flow_kwargs['login_hint'] = login_hint
     flow.run_dual(**flow_kwargs)
-    return cls.from_google_oauth2_credentials(flow.credentials, filename=filename)
+    creds = cls.from_google_oauth2_credentials(flow.credentials, filename=filename)
+    creds._is_oauth_create = True
+    if dpop_signer is not None:
+      creds._dpop_signer = dpop_signer
+      creds._saved_dpop_thumbprint = dpop_signer.thumbprint
+      dpop_nonce = getattr(flow.credentials, 'dpop_nonce', None) or getattr(flow.credentials, '_dpop_nonce', None)
+      if dpop_nonce:
+        creds.dpop_nonce = dpop_nonce
+    return creds
 
   def to_json(self, strip=None):
     """Creates a JSON representation of a Credentials.
@@ -12085,10 +12108,10 @@ def _formatRefreshError(err):
   if hasattr(err, 'args') and err.args:
     arg0 = err.args[0]
     if isinstance(arg0, str):
-      return arg0
+      return arg0.strip()
     if isinstance(arg0, tuple) and len(arg0) > 0 and isinstance(arg0[0], str):
-      return arg0[0]
-  return str(err)
+      return arg0[0].strip()
+  return str(err).strip()
 
 
 def _doDPoPOAuthInfo(credentials):
@@ -12138,7 +12161,7 @@ def _doDPoPOAuthInfo(credentials):
   # Test 1: Refresh with DPoP using configured backend
   with_dpop_ok = False
   try:
-    signer = _getDPoPSigner()
+    signer = _getDPoPSigner(exitOnError=False)
     dpop_creds = DPoPCredentials(
         token=None,
         refresh_token=refresh_token,
@@ -12209,7 +12232,10 @@ def _doDPoPOAuthInfo(credentials):
   elif not ephem_rejected:
     binding_status = 'Failed (Server accepted arbitrary key)'
   elif not with_dpop_ok:
-    binding_status = 'Failed (Configured signer refresh failed)'
+    if backend == 'ephemeral':
+      binding_status = 'Inconclusive (Configured backend is ephemeral)'
+    else:
+      binding_status = 'Failed (Configured signer refresh failed)'
   else:
     binding_status = 'Inconclusive'
 
@@ -12234,35 +12260,56 @@ def doOAuthInfo():
       unknownArgumentExit()
   exitIfNoOauth2Txt()
   if not access_token and not id_token:
-    credentials = getClientCredentials(noScopes=True)
+    _, credentials = getOauth2TxtCredentials(refreshOnly=True, noScopes=True)
     access_token = credentials.token
     printEntity([Ent.OAUTH2_TXT_FILE, GC.Values[GC.OAUTH2_TXT]])
-  oa2 = buildGAPIObject(API.OAUTH2)
+  oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
+  token_info = None
   try:
     token_info = callGAPI(oa2, 'tokeninfo',
                           throwReasons=[GAPI.INVALID],
                           access_token=access_token, id_token=id_token)
-  except GAPI.invalid as e:
-    entityActionFailedExit([Ent.OAUTH2_TXT_FILE, GC.Values[GC.OAUTH2_TXT]], str(e))
-  if 'issued_to' in token_info:
+  except Exception as e:
+    if not credentials:
+      entityActionFailedExit([Ent.OAUTH2_TXT_FILE, GC.Values[GC.OAUTH2_TXT]], str(e))
+  if token_info and 'issued_to' in token_info:
     printKeyValueList(['Client ID', token_info['issued_to']])
+  elif credentials is not None and getattr(credentials, 'client_id', None):
+    printKeyValueList(['Client ID', credentials.client_id])
   if credentials is not None and showSecret:
     printKeyValueList(['Secret', credentials.client_secret])
-  if 'scope' in token_info:
+  if token_info and 'scope' in token_info:
     scopes = token_info['scope'].split(' ')
     printKeyValueList(['Scopes', len(scopes)])
     Ind.Increment()
     for scope in sorted(scopes):
       printKeyValueList([scope])
     Ind.Decrement()
-  if 'email' in token_info:
+  elif credentials is not None and getattr(credentials, 'scopes', None):
+    scopes = sorted(credentials.scopes)
+    printKeyValueList(['Scopes', len(scopes)])
+    Ind.Increment()
+    for scope in scopes:
+      printKeyValueList([scope])
+    Ind.Decrement()
+  if token_info and 'email' in token_info:
     printKeyValueList(['Google Workspace Admin', f'{token_info["email"]}'])
-  if 'expires_in' in token_info:
+  elif GM.Globals[GM.DECODED_ID_TOKEN] and GM.Globals[GM.DECODED_ID_TOKEN].get('email'):
+    printKeyValueList(['Google Workspace Admin', GM.Globals[GM.DECODED_ID_TOKEN]['email']])
+  elif GC.Values[GC.ADMIN_EMAIL]:
+    printKeyValueList(['Google Workspace Admin', GC.Values[GC.ADMIN_EMAIL]])
+  if token_info and 'expires_in' in token_info:
     printKeyValueList(['Expires', ISOformatTimeStamp(arrow.now(GC.Values[GC.TIMEZONE]).shift(seconds=token_info['expires_in']))])
+  elif credentials is not None and getattr(credentials, 'expiry', None):
+    exp_arrow = arrow.get(credentials.expiry, tzinfo='UTC').to(GC.Values[GC.TIMEZONE])
+    if exp_arrow < arrow.now(GC.Values[GC.TIMEZONE]):
+      printKeyValueList(['Expires', f'{ISOformatTimeStamp(exp_arrow)} (Expired)'])
+    else:
+      printKeyValueList(['Expires', ISOformatTimeStamp(exp_arrow)])
   _doDPoPOAuthInfo(credentials)
-  if showDetails:
+  if showDetails and token_info:
     for k, v in sorted(token_info.items()):
-      if k not in  ['email', 'expires_in', 'issued_to', 'scope']:
+      if k not in ['email', 'expires_in', 'issued_to', 'scope']:
         printKeyValueList([k, v])
   printBlankLine()
 
