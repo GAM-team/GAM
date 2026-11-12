@@ -15185,7 +15185,8 @@ def doReport():
         try:
           feed = callGAPIpages(service, 'list', 'items',
                                pageMessage=pageMessage, maxItems=maxActivities,
-                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.AUTH_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
+                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT,
+                                             GAPI.AUTH_ERROR, GAPI.SERVICE_NOT_AVAILABLE, GAPI.PERMISSION_DENIED],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                applicationName=report, userKey=user, customerId=customerId,
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
@@ -15199,8 +15200,8 @@ def doReport():
           break
         except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
           systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-        except GAPI.authError:
-          accessErrorExit(None)
+        except (GAPI.authError, GAPI.permissionDenied) as e:
+          accessErrorExit(None, str(e))
         for activity in feed:
           events = activity.pop('events')
           actor = activity['actor'].get('email')
