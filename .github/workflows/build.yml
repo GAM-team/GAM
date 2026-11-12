@@ -421,15 +421,15 @@ jobs:
           echo "GAMVERSION=${GAMVERSION}" >> $GITHUB_ENV
 
       - name: Test DPoP software backend
-        if: matrix.goal == 'build'
         shell: bash
         run: |
+          mkdir -p "$GAMCFGDIR"
           openssl ecparam -genkey -name prime256v1 -noout -out "$GAMCFGDIR/dpop_software.pem"
           $gam config dpop true dpop_backend software dpop_backend_config dpop_software.pem save
           $gam check dpop
 
       - name: Setup software TPM
-        if: matrix.goal == 'build' && runner.os == 'Linux'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get -qq --yes install swtpm swtpm-tools tpm2-tools tpm2-abrmd libtss2-tcti-swtpm0 libtss2-tcti-tabrmd0
           mkdir -p /tmp/tpm-state
@@ -465,7 +465,7 @@ jobs:
           echo "tpm2_sign succeeded"
 
       - name: Test DPoP Linux TPM backend
-        if: matrix.goal == 'build' && runner.os == 'Linux'
+        if: runner.os == 'Linux'
         run: |
           $gam config dpop_backend linux_tpm dpop_backend_config "0x81000001,tabrmd:bus_type=session" save
           $gam check dpop
@@ -523,10 +523,79 @@ jobs:
           $gam config dpop_backend macos_secureenclave dpop_backend_config "gam-dpop-ci" save
           $gam check dpop
 
-      - name: Reset DPoP config
-        if: matrix.goal == 'build'
+      - name: Configure DPoP key for Live API tests
+        id: dpop-live
+        env:
+          DPOP_CI_KEY: ${{ secrets.DPOP_CI_KEY }}
         run: |
-          $gam config dpop false save
+          if [[ -z "$DPOP_CI_KEY" ]]; then
+            echo "DPOP_CI_KEY secret not set; disabling DPoP for Live API tests."
+            $gam config dpop false dpop_backend software dpop_backend_config "" save
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_key=true" >> "$GITHUB_OUTPUT"
+          mkdir -p "$GAMCFGDIR"
+          printf '%s\n' "$DPOP_CI_KEY" | tr -d '\r' > "$GAMCFGDIR/dpop_ci.pem"
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            chmod 600 "$GAMCFGDIR/dpop_ci.pem"
+            $gam config dpop true dpop_backend software dpop_backend_config dpop_ci.pem save
+            $gam check dpop
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            export TPM2TOOLS_TCTI="tabrmd:bus_type=session"
+            tpm2_createprimary -C o -g sha256 -G ecc -c /tmp/dpop_srk.ctx
+            tpm2_import -C /tmp/dpop_srk.ctx -G ecc:ecdsa-sha256 -g sha256 \
+              -i "$GAMCFGDIR/dpop_ci.pem" -u /tmp/dpop_imp.pub -r /tmp/dpop_imp.priv \
+              -a 'userwithauth|sign'
+            tpm2_load -C /tmp/dpop_srk.ctx -u /tmp/dpop_imp.pub -r /tmp/dpop_imp.priv -c /tmp/dpop_imp.ctx
+            tpm2_evictcontrol -C o -c /tmp/dpop_imp.ctx 0x81000002
+            echo "swtpm imported key sign test" | tpm2_sign -c 0x81000002 -g sha256 -o /dev/null
+            rm -f "$GAMCFGDIR/dpop_ci.pem" /tmp/dpop_srk.ctx /tmp/dpop_imp.pub /tmp/dpop_imp.priv /tmp/dpop_imp.ctx
+            $gam config dpop true dpop_backend linux_tpm dpop_backend_config "0x81000002,tabrmd:bus_type=session" save
+            $gam check dpop
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            PEM_DATA=$(cat "$GAMCFGDIR/dpop_ci.pem") "$PYTHON" - <<'EOF' > "$GAMCFGDIR/dpop_ci_secret.pfx"
+          import datetime, os, sys
+          from cryptography import x509
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.serialization import pkcs12
+          from cryptography.x509.oid import NameOID
+
+          key = serialization.load_pem_private_key(os.environ['PEM_DATA'].encode('utf-8'), password=None)
+          subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'GAM DPoP Secret Test')])
+          now = datetime.datetime.now(datetime.timezone.utc)
+          cert = (
+              x509.CertificateBuilder()
+              .subject_name(subject)
+              .issuer_name(subject)
+              .public_key(key.public_key())
+              .serial_number(x509.random_serial_number())
+              .not_valid_before(now - datetime.timedelta(days=1))
+              .not_valid_after(now + datetime.timedelta(days=365))
+              .sign(key, hashes.SHA256())
+          )
+          sys.stdout.buffer.write(pkcs12.serialize_key_and_certificates(
+              b'gam-dpop-secret', key, cert, None, serialization.BestAvailableEncryption(b'gam-dpop-ci')
+          ))
+          EOF
+            rm -f "$GAMCFGDIR/dpop_ci.pem"
+          fi
+
+      - name: Import DPoP secret key into Windows CNG store
+        if: runner.os == 'Windows' && steps.dpop-live.outputs.has_key == 'true'
+        shell: pwsh
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP ".gam\dpop_ci_secret.pfx"
+          $pw = ConvertTo-SecureString "gam-dpop-ci" -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\LocalMachine\My -Password $pw
+          Write-Host "Imported DPoP live secret certificate thumbprint: $($cert.Thumbprint)"
+          Remove-Item -Force $pfxPath
+
+      - name: Configure Windows DPoP secret backend
+        if: runner.os == 'Windows' && steps.dpop-live.outputs.has_key == 'true'
+        run: |
+          $gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Secret Test,local_machine" save
+          $gam check dpop
 
       - name: Setup Certum Code Signing
         id: certum
