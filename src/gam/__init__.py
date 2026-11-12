@@ -76896,9 +76896,9 @@ def printShowMessagesThreads(users, entityType):
                       except (GAPI.forbidden, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
                               GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
                               GAPI.fileNotFound, GAPI.unknownError, GAPI.internalError,
-                              GAPI.storageQuotaExceeded, GAPI.teamdrivesSharingRestrictionNotAllowed,
-                              GAPI.teamdrivefileLimitExceeded, GAPI.teamdriveHierarchyTooDeep,
-                              GAPI.uploadTooLarge, GAPI.teamdrivesShortcutFileNotSupported) as e:
+                              GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
+                              GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
+                              GAPI.uploadTooLarge, GAPI.teamDrivesShortcutFileNotSupported) as e:
                         entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
                                                                        Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], str(e), j, jcount)
                       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
