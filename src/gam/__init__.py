@@ -5265,12 +5265,20 @@ def _getAdminEmail():
   return _getValueFromOAuth('email')
 
 def writeClientCredentials(creds, filename):
+  scopes = creds.scopes or GM.Globals[GM.CREDENTIALS_SCOPES]
+  if not scopes and filename != '-' and os.path.isfile(filename):
+    try:
+      existing_data = readFile(filename, continueOnError=True, displayError=False)
+      if existing_data:
+        scopes = json.loads(existing_data).get('scopes', [])
+    except Exception:
+      pass
   creds_data = {
     'client_id': creds.client_id,
     'client_secret': creds.client_secret,
     'id_token': creds.id_token,
     'refresh_token': creds.refresh_token,
-    'scopes': sorted(creds.scopes or GM.Globals[GM.CREDENTIALS_SCOPES]),
+    'scopes': sorted(scopes),
     'token': creds.token,
     'token_expiry': creds.expiry.strftime(YYYYMMDDTHHMMSSZ_FORMAT),
     'token_uri': creds.token_uri,
@@ -12269,13 +12277,12 @@ def doOAuthInfo():
         saved_scopes = jsonDict.get('scopes', [])
       except Exception:
         pass
-    _, credentials = getOauth2TxtCredentials(refreshOnly=True, noScopes=True)
+    _, credentials = getOauth2TxtCredentials(refreshOnly=True, noScopes=False)
     if credentials:
       if credentials.expired:
         try:
           request = transportCreateRequest()
           credentials.refresh(request)
-          writeClientCredentials(credentials, GC.Values[GC.OAUTH2_TXT])
         except Exception:
           pass
       access_token = credentials.token
