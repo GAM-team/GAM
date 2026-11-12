@@ -12,7 +12,9 @@ Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my
 Time: 2026-11-11T07:51:00-08:00
 ```
 
-Print the current version of Gam with details and time offset information
+Print the current version of Gam with details and time offset information.
+By default, Gam checks the time offset to `admin.googleapis.com`, use `location <HostName>` to check
+the time offset to `<HostName>`.
 ```
 gam version timeoffset
 GAM 7.52.01 - https://github.com/GAM-team/GAM - pyinstaller
@@ -24,7 +26,9 @@ Config File: /Users/admin/GAMConfig/gam.cfg, Section: DEFAULT, customer_id: my_c
 Your system time differs from www.googleapis.com by less than 1 second
 ```
 
-Print the current version of Gam with extended details and SSL information
+Print the current version of Gam with extended details and SSL information.
+By default, Gam checks the time offset to `admin.googleapis.com`, use `location <HostName>` to check
+the time offset to `<HostName>`.
 ```
 gam version extended
 GAM 7.52.01 - https://github.com/GAM-team/GAM - pyinstaller
