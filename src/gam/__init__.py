@@ -12259,10 +12259,26 @@ def doOAuthInfo():
     else:
       unknownArgumentExit()
   exitIfNoOauth2Txt()
+  saved_scopes = []
   if not access_token and not id_token:
-    _, credentials = getOauth2TxtCredentials(refreshOnly=True, noScopes=True)
-    access_token = credentials.token
     printEntity([Ent.OAUTH2_TXT_FILE, GC.Values[GC.OAUTH2_TXT]])
+    jsonData = readFile(GC.Values[GC.OAUTH2_TXT], continueOnError=True, displayError=False)
+    if jsonData:
+      try:
+        jsonDict = json.loads(jsonData)
+        saved_scopes = jsonDict.get('scopes', [])
+      except Exception:
+        pass
+    _, credentials = getOauth2TxtCredentials(refreshOnly=True, noScopes=True)
+    if credentials:
+      if credentials.expired:
+        try:
+          request = transportCreateRequest()
+          credentials.refresh(request)
+          writeClientCredentials(credentials, GC.Values[GC.OAUTH2_TXT])
+        except Exception:
+          pass
+      access_token = credentials.token
   oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
   token_info = None
   try:
@@ -12278,15 +12294,12 @@ def doOAuthInfo():
     printKeyValueList(['Client ID', credentials.client_id])
   if credentials is not None and showSecret:
     printKeyValueList(['Secret', credentials.client_secret])
+  scopes = None
   if token_info and 'scope' in token_info:
-    scopes = token_info['scope'].split(' ')
-    printKeyValueList(['Scopes', len(scopes)])
-    Ind.Increment()
-    for scope in sorted(scopes):
-      printKeyValueList([scope])
-    Ind.Decrement()
-  elif credentials is not None and getattr(credentials, 'scopes', None):
-    scopes = sorted(credentials.scopes)
+    scopes = sorted(token_info['scope'].split(' '))
+  elif saved_scopes:
+    scopes = sorted(saved_scopes)
+  if scopes is not None:
     printKeyValueList(['Scopes', len(scopes)])
     Ind.Increment()
     for scope in scopes:
@@ -12306,11 +12319,11 @@ def doOAuthInfo():
       printKeyValueList(['Expires', f'{ISOformatTimeStamp(exp_arrow)} (Expired)'])
     else:
       printKeyValueList(['Expires', ISOformatTimeStamp(exp_arrow)])
-  _doDPoPOAuthInfo(credentials)
   if showDetails and token_info:
     for k, v in sorted(token_info.items()):
       if k not in ['email', 'expires_in', 'issued_to', 'scope']:
         printKeyValueList([k, v])
+  _doDPoPOAuthInfo(credentials)
   printBlankLine()
 
 # gam oauth|oauth2 update [<EmailAddress>]
