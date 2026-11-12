@@ -177,6 +177,12 @@ Or by certificate thumbprint (exact match):
 gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
+By default, GAM searches `Cert:\CurrentUser\My`. For SSH or scheduled task sessions where user DPAPI keys are unavailable, create the certificate in `Cert:\LocalMachine\My` (and grant Read permission on the private key to the user running GAM), then append `,local_machine`:
+
+```bash
+gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+```
+
 ---
 
 ### Linux — TPM 2.0 (Recommended for Linux Servers)
@@ -510,7 +516,7 @@ All DPoP settings are stored in `gam.cfg`:
 |---------|--------|---------|
 | `software` | Path to PEM private key file | `dpop_key.pem` |
 | `macos_secureenclave` | `label[,application_tag]` | `gam-dpop` |
-| `windows_tpm` | Subject CN substring, or `thumbprint:HEX` | `GAM DPoP Signing Key` |
+| `windows_tpm` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
 | `ephemeral` | *(none required)* | *(leave empty)* |

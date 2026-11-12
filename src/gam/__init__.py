@@ -5121,15 +5121,19 @@ def _getDPoPSigner(exitOnError=True):
       _fail(USAGE_ERROR_RC, f'DPoP linux_tpm dpop_backend_config: handle must be a hex integer, got: {handle_str}')
     kwargs = {'handle': handle, 'tcti': _part(1), 'auth': _part(2)}
   elif backend == 'windows_tpm':
+    target = _part(0)
+    store_location = _part(1)
     subject = thumbprint = None
-    if config:
-      if config.lower().startswith('thumbprint:'):
-        thumbprint = config[len('thumbprint:'):]
+    if target:
+      if target.lower().startswith('thumbprint:'):
+        thumbprint = target[len('thumbprint:'):]
       else:
-        subject = config
+        subject = target
     if not subject and not thumbprint:
-      _fail(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires dpop_backend_config set to: subject_cn_substring or thumbprint:hex_string')
+      _fail(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires dpop_backend_config set to: <subject_cn_substring|thumbprint:hex_string>[,store_location]')
     kwargs = {'subject': subject, 'thumbprint': thumbprint}
+    if store_location:
+      kwargs['store_location'] = store_location
   else:  # ephemeral
     kwargs = {}
 
@@ -5137,6 +5141,8 @@ def _getDPoPSigner(exitOnError=True):
   err_cls = getattr(mod, err_name) if err_name else ()
   try:
     return signer_cls(**kwargs)
+  except ValueError as e:
+    _fail(USAGE_ERROR_RC, f'DPoP {backend} dpop_backend_config: {e}')
   except err_cls as e:
     _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP {label} error: {e}')
   except Exception as e:

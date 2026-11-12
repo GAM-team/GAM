@@ -489,10 +489,27 @@ jobs:
           $inf | Out-File -Encoding ascii "$env:TEMP\dpop-ci.inf"
           certreq -new -f "$env:TEMP\dpop-ci.inf" "$env:TEMP\dpop-ci.cer"
 
+          $infMachine = @"
+          [Version]
+          Signature="`$Windows NT`$"
+          [NewRequest]
+          Subject = "CN=GAM DPoP CI Machine Test"
+          KeyAlgorithm = ECDSA_P256
+          ProviderName = "Microsoft Software Key Storage Provider"
+          ProviderType = 0
+          KeyUsage = 0x80
+          MachineKeySet = TRUE
+          RequestType = Cert
+          "@
+          $infMachine | Out-File -Encoding ascii "$env:TEMP\dpop-ci-machine.inf"
+          certreq -new -f "$env:TEMP\dpop-ci-machine.inf" "$env:TEMP\dpop-ci-machine.cer"
+
       - name: Test DPoP Windows CNG backend
         if: matrix.goal == 'build' && runner.os == 'Windows'
         run: |
           $gam config dpop_backend windows_tpm dpop_backend_config "GAM DPoP CI Test" save
+          $gam check dpop
+          $gam config dpop_backend_config "GAM DPoP CI Machine Test,local_machine" save
           $gam check dpop
 
       - name: Create Secure Enclave key

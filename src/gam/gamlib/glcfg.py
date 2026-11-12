@@ -172,7 +172,7 @@ DPOP_BACKEND = 'dpop_backend'
 # ecp: path to certificate_config.json
 # macos_secureenclave: label[,application_tag]
 # linux_tpm: handle[,tcti][,auth]
-# windows_tpm: subject or thumbprint:hex_string
+# windows_tpm: subject or thumbprint:hex_string[,current_user|local_machine]
 DPOP_BACKEND_CONFIG = 'dpop_backend_config'
 # Domain obtained from gam.cfg or oauth2.txt
 DOMAIN = 'domain'
