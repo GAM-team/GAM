@@ -14030,7 +14030,7 @@ def doReportUsageParameters():
   while True:
     try:
       result = callGAPI(service, 'get',
-                        throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST],
+                        throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                         date=tryDate, customerId=customerId, fields='warnings,usageReports(parameters(name))', **kwargs)
       fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate, dataRequiredServices)
       if fullData < 0:
@@ -14046,7 +14046,7 @@ def doReportUsageParameters():
     except GAPI.badRequest:
       printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
       return
-    except GAPI.invalid as e:
+    except (GAPI.invalid, GAPI.permissionDenied) as e:
       tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
       if not tryDate:
         break
@@ -14262,7 +14262,8 @@ def doReportUsage():
         try:
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 customerId=customerId, date=useDate,
                                 parameters=parameters, **kwarg)
@@ -14311,7 +14312,7 @@ def doReportUsage():
       break
     except GAPI.invalidInput as e:
       systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-    except GAPI.forbidden as e:
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
       accessErrorExit(None, str(e))
   if startUseDate:
     reportName = f'{report.capitalize()} Usage Report - {startUseDate}:{endUseDate}'
@@ -14954,7 +14955,8 @@ def doReport():
         try:
           if not userCustomerRange:
             result = callGAPI(service, 'get',
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               userKey=verifyUser, date=tryDate, customerId=customerId,
                               orgUnitID=orgUnitId, parameters=parameters,
                               fields='warnings,usageReports', maxResults=1)
@@ -14977,7 +14979,8 @@ def doReport():
           prevTryDate = tryDate
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 userKey=user, date=tryDate, customerId=customerId,
                                 orgUnitID=orgUnitId, filters=filters, parameters=parameters,
@@ -15008,7 +15011,7 @@ def doReport():
             printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
             exitUserLoop = True
           break
-        except GAPI.forbidden as e:
+        except (GAPI.forbidden, GAPI.permissionDenied) as e:
           accessErrorExit(None, str(e))
         startDateTime = startDateTime.shift(days=1)
       if exitUserLoop:
@@ -15066,7 +15069,8 @@ def doReport():
       try:
         if not userCustomerRange:
           result = callGAPI(service, 'get',
-                            throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             date=tryDate, customerId=customerId, parameters=parameters, fields='warnings,usageReports')
           fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                        dataRequiredServices, parameterServices)
@@ -15080,7 +15084,7 @@ def doReport():
             startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
             continue
         usage = callGAPIpages(service, 'get', 'usageReports',
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               date=tryDate, customerId=customerId, parameters=parameters)
         if not userCustomerRange or (startEndTime.startDateTime == startEndTime.endDateTime):
           status, lastDate = processCustomerUsage(usage, lastDate)
@@ -15099,7 +15103,7 @@ def doReport():
         continue
       except GAPI.invalidInput as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
         accessErrorExit(None, str(e))
       startDateTime = startDateTime.shift(days=1)
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
