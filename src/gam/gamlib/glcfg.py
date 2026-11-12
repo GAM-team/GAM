@@ -164,7 +164,7 @@ DEVELOPER_PREVIEW_API_KEY = 'developer_preview_api_key'
 DEVICE_MAX_RESULTS = 'device_max_results'
 # Enable DPoP (Demonstrating Proof-of-Possession) for OAuth tokens
 DPOP = 'dpop'
-# DPoP backend type: software, yubikey, ecp, macos_secureenclave, linux_tpm, windows_tpm
+# DPoP backend type: software, yubikey, ecp, macos_secureenclave, linux_tpm, windows_tpm, ephemeral
 DPOP_BACKEND = 'dpop_backend'
 # Backend-specific DPoP configuration
 # software: path to PEM key file
