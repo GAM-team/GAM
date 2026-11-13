@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.52.02'
+__version__ = '7.52.03'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -76896,9 +76896,9 @@ def printShowMessagesThreads(users, entityType):
                       except (GAPI.forbidden, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
                               GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
                               GAPI.fileNotFound, GAPI.unknownError, GAPI.internalError,
-                              GAPI.storageQuotaExceeded, GAPI.teamdrivesSharingRestrictionNotAllowed,
-                              GAPI.teamdrivefileLimitExceeded, GAPI.teamdriveHierarchyTooDeep,
-                              GAPI.uploadTooLarge, GAPI.teamdrivesShortcutFileNotSupported) as e:
+                              GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
+                              GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
+                              GAPI.uploadTooLarge, GAPI.teamDrivesShortcutFileNotSupported) as e:
                         entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
                                                                        Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], str(e), j, jcount)
                       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
