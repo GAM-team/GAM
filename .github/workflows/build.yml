@@ -668,8 +668,16 @@ jobs:
       - name: Configure user and service account auth
         id: configserviceaccount
         env:
-          oa2: ${{ secrets[format('GAM_GHA_{0}', steps.common-vars.outputs.jid)] }}
+          oa2_dpop: ${{ secrets[format('GAM_GHA_DPOP_{0}', steps.common-vars.outputs.jid)] }}
+          oa2_legacy: ${{ secrets[format('GAM_GHA_{0}', steps.common-vars.outputs.jid)] }}
         run: |
+          if [[ -n "$oa2_dpop" && "${{ steps.dpop-live.outputs.has_key }}" == "true" ]]; then
+            echo "Using GAM_GHA_DPOP_${JID} DPoP-bound OAuth credentials."
+            export oa2="$oa2_dpop"
+          else
+            echo "Using GAM_GHA_${JID} OAuth credentials."
+            export oa2="$oa2_legacy"
+          fi
           ../.github/actions/decrypt.sh "${GAMCFGDIR}"
           $gam create signjwtserviceaccount
 
