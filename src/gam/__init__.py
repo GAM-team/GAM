@@ -126,25 +126,19 @@ from google.oauth2.dpop_credentials import DPoPCredentials
 
 
 class _DeferredSignerDPoPCredentials(DPoPCredentials):
-  """DPoPCredentials that skips resource-request DPoP proof generation.
+  """DPoPCredentials subclass that integrates GAM signer loading and errors.
 
-  Google resource servers do not validate DPoP proofs on resource requests.
-  Skipping _after_refresh avoids triggering the signer factory on every API
-  request and avoids hardware signer latency (TPM, Secure Enclave, YubiKey).
+  Re-attaches _getDPoPSigner() when signer state was cleared by pickling, and
+  translates ValueError from signer/thumbprint validation into RefreshError
+  so GAM exits cleanly through handleOAuthTokenError instead of crashing.
   """
 
-  def _after_refresh(self, request, method, url, headers):
-    pass
-
-  def _call_refresh_grant(self, request, token_uri, refresh_token,
-                          client_id, client_secret, scopes=None,
-                          rapt_token=None):
+  def _call_refresh_grant(self, request, scopes=None):
     try:
-      if self._dpop_signer is None and getattr(self, '_dpop_signer_factory', None) is None:
-        self._dpop_signer = _getDPoPSigner()
-      return super()._call_refresh_grant(
-          request, token_uri, refresh_token, client_id, client_secret,
-          scopes=scopes, rapt_token=rapt_token)
+      with self._dpop_signer_lock:
+        if self._dpop_signer is None and self._dpop_signer_factory is None:
+          self._dpop_signer = _getDPoPSigner()
+      return super()._call_refresh_grant(request, scopes=scopes)
     except ValueError as e:
       raise google.auth.exceptions.RefreshError(str(e))
 import modern_httplib2.auto
@@ -11919,7 +11913,8 @@ class Credentials(google.oauth2.credentials.Credentials):
     flow.run_dual(**flow_kwargs)
     creds = cls.from_google_oauth2_credentials(flow.credentials, filename=filename)
     if dpop_signer is not None:
-      creds._saved_dpop_thumbprint = dpop_signer.thumbprint
+      resolved_signer = getattr(flow.credentials, 'dpop_signer', None) or dpop_signer
+      creds._saved_dpop_thumbprint = resolved_signer.thumbprint
       dpop_nonce = getattr(flow.credentials, 'dpop_nonce', None)
       if dpop_nonce:
         creds.dpop_nonce = dpop_nonce
