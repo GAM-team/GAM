@@ -121,6 +121,11 @@ gam config dpop true dpop_backend macos_secureenclave dpop_backend_config "gam-d
 > a 1-year validity. This does not matter — DPoP uses the raw private key,
 > not the certificate. The key remains usable regardless of certificate expiry.
 
+#### Permissions & Automation
+
+- **Per-user isolation:** Secure Enclave CryptoTokenKit identities are stored in the creating user's [Data Protection Keychain](https://support.apple.com/guide/security/keychain-data-protection-secb0694df1a/web) (see [Protecting Keys with the Secure Enclave](https://developer.apple.com/documentation/security/protecting-keys-with-the-secure-enclave)). Other local macOS users (and `root` `LaunchDaemon`s or `sudo` sessions under a different user) cannot access your key, and there is no system-wide shared store equivalent to Windows `local_machine`.
+- **SSH and scheduled tasks (`launchd`):** Standard `sc_auth` keys (without `-t bio`) work over **SSH** and in per-user **LaunchAgents** running as the user that created the key. Keys created with `-t bio` require physical Touch ID presence on each signing operation, so avoid `-t bio` for headless SSH or unattended jobs.
+
 ---
 
 ### Windows — CNG/TPM (Recommended for Windows with TPM)
@@ -131,15 +136,46 @@ On Windows, GAM uses [CNG (Cryptography Next Generation)](https://learn.microsof
 - Windows 10/11 or Windows Server 2019+
 - TPM 2.0 (for hardware-backed keys). Windows 11 requires a TPM 2.0 device.
 
+#### Choosing a Certificate Store Location (`current_user` vs `local_machine`)
+
+Before creating the key, decide which Windows certificate store to use:
+
+- **Current User (`Cert:\CurrentUser\My`, default):** Key is tied to your Windows user profile. Use this for interactive desktop/PowerShell sessions by a single user. **Note:** User keys are often inaccessible over SSH, in Windows Scheduled Tasks, or in background services because Windows DPAPI user credentials are not unlocked in those sessions.
+- **Local Machine (`Cert:\LocalMachine\My`):** Required if you plan to run GAM over **SSH**, in **Scheduled Tasks**, or in automated/headless sessions. Append `,local_machine` to `dpop_backend_config` when configuring GAM.
+
+> [!WARNING]
+> **Security trade-off for `local_machine` keys:** A `local_machine` private key is
+> stored at the machine level rather than isolated to a single user profile. Any
+> user who can log in to that Windows machine (with access to the key) can use it
+> to sign DPoP proofs — however, an attacker would **still also need read access
+> to your `oauth2.txt` file**. Lock down NTFS permissions on your GAM config
+> directory and `oauth2.txt` so only the intended user or service account can
+> read `oauth2.txt` (and grant private key Read permission only to that account if
+> running as a non-Administrator).
+
 #### Step 1: Generate a TPM-Backed Key
 
-Open **PowerShell as Administrator** and run:
+Using PowerShell's [`New-SelfSignedCertificate`](https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate?view=windowsserver2025-ps) and Windows [CNG Key Storage](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-and-retrieval), create a key in your chosen store:
+
+For **Current User** (`Cert:\CurrentUser\My`):
 
 ```powershell
 New-SelfSignedCertificate `
     -Subject "CN=GAM DPoP Signing Key" `
     -KeyAlgorithm ECDSA_nistP256 `
     -CertStoreLocation Cert:\CurrentUser\My `
+    -KeyExportPolicy NonExportable `
+    -Provider "Microsoft Platform Crypto Provider" `
+    -NotAfter (Get-Date).AddYears(30)
+```
+
+Or for **Local Machine** (`Cert:\LocalMachine\My`, for SSH / Scheduled Tasks — open **PowerShell as Administrator**):
+
+```powershell
+New-SelfSignedCertificate `
+    -Subject "CN=GAM DPoP Signing Key" `
+    -KeyAlgorithm ECDSA_nistP256 `
+    -CertStoreLocation Cert:\LocalMachine\My `
     -KeyExportPolicy NonExportable `
     -Provider "Microsoft Platform Crypto Provider" `
     -NotAfter (Get-Date).AddYears(30)
@@ -153,9 +189,11 @@ Key points:
 > [!TIP]
 > If your machine does not have a TPM, you can use `"Microsoft Software Key
 > Storage Provider"` instead. The key will be software-backed (not
-> hardware-backed) but still non-exportable and protected by Windows DPAPI.
+> hardware-backed) but still non-exportable and protected by Windows CNG.
 
 #### Step 2: Verify the Key
+
+For Current User:
 
 ```powershell
 Get-ChildItem Cert:\CurrentUser\My |
@@ -163,24 +201,34 @@ Get-ChildItem Cert:\CurrentUser\My |
     Format-List Subject, Thumbprint, NotAfter, HasPrivateKey
 ```
 
-#### Step 3: Configure GAM
+Or for Local Machine:
 
-Configure by subject name (substring match):
-
-```bash
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+```powershell
+Get-ChildItem Cert:\LocalMachine\My |
+    Where-Object Subject -eq "CN=GAM DPoP Signing Key" |
+    Format-List Subject, Thumbprint, NotAfter, HasPrivateKey
 ```
 
-Or by certificate thumbprint (exact match):
+#### Step 3: Configure GAM
+
+For **Current User** (`Cert:\CurrentUser\My`, default — `,current_user` is optional):
 
 ```bash
+# By subject name (substring match)
+gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+
+# Or by certificate thumbprint (exact match)
 gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
-By default, GAM searches `Cert:\CurrentUser\My`. For SSH or scheduled task sessions where user DPAPI keys are unavailable, create the certificate in `Cert:\LocalMachine\My` (and grant Read permission on the private key to the user running GAM), then append `,local_machine`:
+For **Local Machine** (`Cert:\LocalMachine\My`, for SSH / Scheduled Tasks), append `,local_machine`:
 
 ```bash
+# By subject name (substring match)
 gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+
+# Or by certificate thumbprint (exact match)
+gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5...,local_machine" save
 ```
 
 ---
@@ -243,14 +291,18 @@ Confirm the output shows `type: ecc`, `curve-id: NIST p256`, and `scheme: ecdsa`
 gam config dpop true dpop_backend linux_tpm dpop_backend_config "0x81000001" save
 ```
 
-#### Permissions
+#### Permissions & Automation
 
-Access to `/dev/tpmrm0` typically requires membership in the `tss` group:
+Access to `/dev/tpmrm0` (the Linux kernel's in-kernel [TPM 2.0 resource manager](https://docs.kernel.org/security/tpm/tpm-security.html)) typically requires membership in the `tss` group:
 
 ```bash
 sudo usermod -aG tss $USER
 # Log out and back in for the group change to take effect
 ```
+
+- **Shared TPM device:** Unlike macOS per-user keychains, persistent TPM handles are not isolated per OS user — any account that can open `/dev/tpmrm0` (`root` and members of `tss`) can use the handle to sign, though they would **still need read access to `oauth2.txt`**. Only add the account(s) running GAM to `tss`, and lock down your GAM config directory (`chmod 700 ~/.gam && chmod 600 ~/.gam/oauth2.txt ~/.gam/gam.cfg`).
+- **Optional key password (`auth`):** You can set a TPM key authorization value with `-p` during [`tpm2_create`](https://manpages.ubuntu.com/manpages/noble/man1/tpm2_create.1.html) and pass it as `handle[,tcti[,auth]]` in `dpop_backend_config` (which keeps the secret in `gam.cfg`).
+- **SSH, `cron`, and `systemd`:** `tss` group access works directly over **SSH** and in **`cron`** jobs. For [`systemd` services](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), ensure the unit includes `SupplementaryGroups=tss` (if running as a service user) and does **not** set `PrivateDevices=yes`, which hides `/dev/tpmrm0`.
 
 > [!TIP]
 > VMs running on VMware, Proxmox, etc can create vTPM (virtual TPM)
