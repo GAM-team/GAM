@@ -11,7 +11,7 @@
 ----
 The latest alpha DPoP build is at:
 
-[https://github.com/GAM-team/GAM/releases/tag/20261112.002510](https://github.com/GAM-team/GAM/releases/tag/20261113.220459)
+[https://github.com/GAM-team/GAM/releases/tag/20261113.220459](https://github.com/GAM-team/GAM/releases/tag/20261113.220459)
 ----
 
 ## What is DPoP?
@@ -44,7 +44,7 @@ With DPoP:          stolen oauth2.txt = worthless
                     (attacker also needs the private key)
 
 With hardware DPoP: stolen oauth2.txt = worthless
-                    (attacker must also *physically steal hardware)
+                    (attacker must also physically steal hardware)
 ```
 
 ### What DPoP Does and Does Not Protect
@@ -86,7 +86,7 @@ The [Apple Secure Enclave](https://support.apple.com/guide/security/the-secure-e
 
 **Requirements:**
 - macOS 15 (Sequoia) or later
-- Apple Silicon (M1/M2/M3/M4) Mac
+- Apple Silicon (M1 or newer) Mac
 
 #### Step 1: Create the Secure Enclave Key
 
@@ -96,7 +96,7 @@ sc_auth create-ctk-identity -l gam-dpop -k p-256-ne
 
 This creates a P-256 key in the Secure Enclave with the label `gam-dpop`. The `-k p-256-ne` flag means "P-256, non-exportable."
 
-To optionally require Touch ID for each signing operation (every `gam` command), add `-t bio`:
+To optionally require Touch ID when creating or refreshing tokens (roughly once an hour when the access token expires, or when running `gam check dpop` / `gam oauth info` — not on regular `gam` commands while the access token is valid), add `-t bio`:
 
 ```bash
 sc_auth create-ctk-identity -l gam-dpop -k p-256-ne -t bio
@@ -177,6 +177,12 @@ Or by certificate thumbprint (exact match):
 gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
+By default, GAM searches `Cert:\CurrentUser\My`. For SSH or scheduled task sessions where user DPAPI keys are unavailable, create the certificate in `Cert:\LocalMachine\My` (and grant Read permission on the private key to the user running GAM), then append `,local_machine`:
+
+```bash
+gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+```
+
 ---
 
 ### Linux — TPM 2.0 (Recommended for Linux Servers)
@@ -247,7 +253,7 @@ sudo usermod -aG tss $USER
 ```
 
 > [!TIP]
-> VMs running on VMWare, Proxmox, etc can create vTPM (virtual TPM)
+> VMs running on VMware, Proxmox, etc can create vTPM (virtual TPM)
 > devices for guest VMs. These vTPMs protect the private key even if
 > an attacker has root access to the guest VM but anyone with access
 > to the host VM server can access the vTPM private keys directly.
@@ -361,7 +367,7 @@ Signer created successfully.
 Signer Details
   Backend: macos_secureenclave
   Algorithm: ES256
-  Key ID: (auto)
+  Key ID: se:gam-dpop
   JWK Thumbprint: xK9m2q...
 
 Performing test signature...
@@ -382,7 +388,7 @@ If there's a problem, GAM will print a clear error and exit with a non-zero exit
 | `DPoP software backend requires dpop_backend_config set to the path of a PEM private key file` | No key file configured | Set `dpop_backend_config` to a PEM file path |
 | `DPoP software key file not found` | PEM file doesn't exist at the configured path | Check the path and generate the key |
 | `DPoP macOS Secure Enclave error` | Key not found in Secure Enclave | Run `sc_auth list-ctk-identities` to check |
-| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check with `Get-ChildItem Cert:\CurrentUser\My` |
+| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
 | `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions and `tpm2_readpublic -c 0x81000001` |
 | `DPoP YubiKey error` | YubiKey not plugged in or wrong PIN | Plug in YubiKey and verify PIN |
 
@@ -411,66 +417,47 @@ This opens a browser for Google authentication. The resulting refresh token in `
 
 ## Confirming DPoP Is Working
 
-After creating DPoP-bound credentials, verify the binding is enforced with these three tests:
+### Recommended: Run `gam oauth info`
 
-### Test 1: Normal Refresh (Should Succeed)
-
-With DPoP enabled and your key available, a normal token refresh should work:
+After creating DPoP-bound credentials, run `gam oauth info`:
 
 ```bash
-gam oauth refresh
+gam oauth info
 ```
 
-Expected: Succeeds and prints the token info.
+Alongside your `Client ID`, `Scopes`, `Google Workspace Admin`, and `Expires` fields, GAM displays your DPoP configuration and runs three live refresh checks against Google's token endpoint without altering `gam.cfg`:
 
-### Test 2: Refresh Without DPoP (Should Fail)
-
-Temporarily disable DPoP and try to refresh. The server should reject the request because the token expects a DPoP proof:
-
-```bash
-gam config dpop false save
-gam oauth refresh
+```
+...
+DPoP: Enabled (macos_secureenclave)
+DPoP Backend Config: gam-dpop
+DPoP Token Thumbprint: xK9m2q...
+DPoP Refresh Tests
+  With DPoP (macos_secureenclave): Success
+  Without DPoP: Rejected as expected (invalid_request: DPoP proof required.)
+  With Wrong Key: Rejected as expected (invalid_dpop_proof: Bad Request)
+DPoP Key Binding: Verified
 ```
 
-Expected: **Fails** with an error from Google's token endpoint. This confirms the token is bound — it can't be used without DPoP.
+What each line confirms:
 
-```bash
-# Re-enable DPoP
-gam config dpop true save
-```
+| Field / Test | What It Verifies |
+|--------------|------------------|
+| `DPoP Token Thumbprint` | `oauth2.txt` records the JWK thumbprint of the bound key (`Not bound` if created before enabling DPoP). |
+| `With DPoP (<backend>)` | Your configured signer can refresh the token. |
+| `Without DPoP` | Google rejects a plain bearer refresh of this token (`invalid_request: DPoP proof required.`). |
+| `With Wrong Key` | Google rejects a refresh signed with a throwaway ephemeral key (`invalid_dpop_proof`). |
+| `DPoP Key Binding` | `Verified` when all three checks pass; otherwise explains whether the token is unbound or your signer failed. |
 
-### Test 3: Refresh With Wrong Key (Should Fail)
+If `dpop` is `false` in `gam.cfg` while `oauth2.txt` contains a `dpop_thumbprint`, `gam oauth info` also prints a warning (`Disabled in gam.cfg (Warning: token in oauth2.txt requires DPoP)`).
 
-Create a temporary software key and try to use it instead of your real key. The server should reject the proof because the thumbprint doesn't match:
+### Optional: Manual Refresh Tests
 
-```bash
-# Generate a throwaway key
-openssl ecparam -genkey -name prime256v1 -noout -out /tmp/fake_dpop_key.pem
+You can also confirm enforcement directly with `gam oauth refresh`:
 
-# Point GAM at the fake key
-gam config dpop_backend software dpop_backend_config /tmp/fake_dpop_key.pem save
-gam oauth refresh
-```
-
-Expected: **Fails** because the DPoP proof is signed with a different key than the one the token was bound to.
-
-```bash
-# Restore your real configuration
-gam config dpop_backend macos_secureenclave dpop_backend_config "gam-dpop" save
-
-# Clean up
-rm /tmp/fake_dpop_key.pem
-```
-
-### Summary
-
-| Test | DPoP Enabled | Key | Expected Result |
-|------|-------------|-----|-----------------|
-| Normal refresh | Yes | Correct key | Success |
-| Without DPoP | No | N/A | **Fail** — token requires DPoP proof |
-| Wrong key | Yes | Different key | **Fail** — thumbprint mismatch |
-
-If all three tests produce the expected results, your DPoP setup is working correctly and your credentials are hardware-bound.
+- **Normal refresh:** With `dpop = true` and your configured key available, `gam oauth refresh` succeeds.
+- **Without DPoP:** Temporarily run `gam config dpop false save` then `gam oauth refresh`. Google's token endpoint rejects the refresh (`DPoP proof required`). Re-enable afterward with `gam config dpop true save`.
+- **Wrong key:** GAM validates the configured signer's JWK thumbprint against `dpop_thumbprint` in `oauth2.txt` locally before calling Google, so pointing `dpop_backend_config` at a different PEM key fails immediately in GAM. To test Google's server-side wrong-key rejection directly, use `gam oauth info` (which uses the `ephemeral` backend for the `With Wrong Key` check).
 
 ---
 
@@ -490,7 +477,7 @@ All DPoP settings are stored in `gam.cfg`:
 |---------|--------|---------|
 | `software` | Path to PEM private key file | `dpop_key.pem` |
 | `macos_secureenclave` | `label[,application_tag]` | `gam-dpop` |
-| `windows_tpm` | Subject CN substring, or `thumbprint:HEX` | `GAM DPoP Signing Key` |
+| `windows_tpm` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
 
