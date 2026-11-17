@@ -64698,7 +64698,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
                throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_UPDATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
                removeExpiration=removeExpiration,
                **deleteUpdateKwargs,
-               fileId=newFileId, permissionId=permissionId, body=permission['updates'], supportsAllDrives=True)
+               fileId=newFileId, permissionId=permissionId, body=permission['updates'], fields='', supportsAllDrives=True)
       if copyMoveOptions['showPermissionMessages']:
         entityActionPerformed(kvList, k, kcount)
     except (GAPI.notFound, GAPI.permissionNotFound,
@@ -69057,6 +69057,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
     if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
       _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
     if csvPF:
+      permission.pop('teamDrivePermissionDetails', None)
       baserow = {'Owner': user, 'id': fileId}
       if showTitles:
         baserow['name'] = fileName
@@ -69245,6 +69246,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
     if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
       _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
     if csvPF:
+      permission.pop('teamDrivePermissionDetails', None)
       baserow = {'Owner': user, 'id': fileId}
       if showTitles:
         baserow['name'] = fileName
@@ -69807,10 +69809,9 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
                               useDomainAdminAccess=useDomainAdminAccess,
                               fileId=fileId, permissionId=permissionId, fields='*', supportsAllDrives=True)
         if not FJQC.formatJSON:
-          jcount = len(permission)
-          entityPerformActionNumItems([entityType, fileName], jcount, Ent.PERMITTEE)
+          entityPerformActionNumItems([entityType, fileName], 1, Ent.PERMITTEE)
           Ind.Increment()
-          _showDriveFilePermission(permission, printKeys, timeObjects, j, jcount)
+          _showDriveFilePermission(permission, printKeys, timeObjects)
           Ind.Decrement()
         else:
           _showDriveFilePermissionJSON(user, fileId, fileName, None, permission, timeObjects)
