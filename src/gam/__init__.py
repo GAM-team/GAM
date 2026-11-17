@@ -9508,7 +9508,7 @@ class CSVPrintFile():
             if not self.todrive['fileId'] or not self.todrive['retaintitle']:
               body['name'] = title
             kwargs = {}
-            if mimeType == 'text/csv' or (not self.todrive['cellnumberformat'] and not not self.todrive['cellwrap']):
+            if mimeType == 'text/csv' or (not self.todrive['cellnumberformat'] and not self.todrive['cellwrap']):
               kwargs['media_body'] = googleapiclient.http.MediaIoBaseUpload(io.BytesIO(csvFile.getvalue().encode()), mimetype='text/csv', resumable=True)
               self.todrive['noPaste'] = True
             try:
