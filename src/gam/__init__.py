@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.52.03'
+__version__ = '7.52.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -9547,7 +9547,7 @@ class CSVPrintFile():
                              fileId=spreadsheetId, sendNotificationEmail=False, body=share, fields='', supportsAllDrives=True)
                     entityActionPerformed([Ent.USER, user, Ent.SPREADSHEET, title,
                                            Ent.TARGET_USER, share['emailAddress'], Ent.ROLE, share['role']])
-                  except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+                  except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                           GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                           GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
                           GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -64634,7 +64634,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
         if copyMoveOptions['showPermissionMessages']:
           entityActionPerformed(kvList, k, kcount)
         break
-      except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+      except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
               GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -65790,7 +65790,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
           if copyMoveOptions['showPermissionMessages']:
             entityActionPerformed(kvList, k, kcount)
           break
-        except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+        except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                 GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                 GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
                 GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -69179,7 +69179,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
         fileName = fileId
         entityType = Ent.DRIVE_FILE_OR_FOLDER_ID
         if showTitles or updateSheetProtectedRanges:
-          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, combineTitleId=not csvPF)
+          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, not csvPF, useDomainAdminAccess)
           if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
             if not sheet:
               _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
@@ -69207,7 +69207,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
                                   useDomainAdminAccess=useDomainAdminAccess,
                                   fileId=fileId, permissionId=tempPermId, fields='*', supportsAllDrives=True)
             _showResult(permission, False)
-      except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+      except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.permissionNotFound, GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
               GAPI.expirationDateNotAllowedForSharedDriveMembers, GAPI.expirationDatesMustBeInTheFuture,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
@@ -69328,7 +69328,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
         fileName = fileId
         entityType = Ent.DRIVE_FILE_OR_FOLDER_ID
         if showTitles or updateSheetProtectedRanges:
-          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, combineTitleId=not csvPF)
+          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, not csvPF, useDomainAdminAccess)
           if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
             if not sheet:
               _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
@@ -69443,7 +69443,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
                  fileId=ri[RI_ENTITY], sendNotificationEmail=sendNotificationEmail, emailMessage=emailMessage,
                  body=_makePermissionBody(ri[RI_ITEM]), fields='', supportsAllDrives=True)
         entityActionPerformed([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMITTEE, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
-      except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+      except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
               GAPI.expirationDateNotAllowedForSharedDriveMembers, GAPI.expirationDatesMustBeInTheFuture,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
@@ -69603,7 +69603,7 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
         fileName = fileId
         entityType = Ent.DRIVE_FILE_OR_FOLDER_ID
         if showTitles or updateSheetProtectedRanges:
-          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId)
+          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, useDomainAdminAccess=useDomainAdminAccess)
           if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
             permission = callGAPI(drive.permissions(), 'get',
                                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.PERMISSION_NOT_FOUND, GAPI.INSUFFICIENT_ADMINISTRATOR_PRIVILEGES],
