@@ -11,7 +11,7 @@
 ----
 The latest alpha DPoP build is at:
 
-[https://github.com/GAM-team/GAM/releases/tag/20261108.214153](https://github.com/GAM-team/GAM/releases/tag/20261108.214153)
+[https://github.com/GAM-team/GAM/releases/tag/20261113.220459](https://github.com/GAM-team/GAM/releases/tag/20261113.220459)
 ----
 
 ## What is DPoP?
@@ -44,7 +44,7 @@ With DPoP:          stolen oauth2.txt = worthless
                     (attacker also needs the private key)
 
 With hardware DPoP: stolen oauth2.txt = worthless
-                    (attacker must also *physically steal hardware)
+                    (attacker must also physically steal hardware)
 ```
 
 ### What DPoP Does and Does Not Protect
@@ -86,7 +86,14 @@ The [Apple Secure Enclave](https://support.apple.com/guide/security/the-secure-e
 
 **Requirements:**
 - macOS 15 (Sequoia) or later
-- Apple Silicon (M1/M2/M3/M4) Mac
+- Apple Silicon (M1 or newer) Mac
+
+#### Permissions & Automation
+
+Decide which macOS account and authentication mode you need before creating the key:
+
+- **Per-user isolation:** Secure Enclave CryptoTokenKit identities are stored in the creating user's [Data Protection Keychain](https://support.apple.com/guide/security/keychain-data-protection-secb0694df1a/web) (see [Protecting Keys with the Secure Enclave](https://developer.apple.com/documentation/security/protecting-keys-with-the-secure-enclave)). Create the key while logged in as the same macOS user that will run GAM — other local macOS users (and `root` `LaunchDaemon`s or `sudo` sessions under a different user) cannot access your key, and there is no system-wide shared store equivalent to Windows `local_machine`.
+- **SSH and scheduled tasks (`launchd`):** Standard `sc_auth` keys (without `-t bio`) work over **SSH** and in per-user **LaunchAgents** running as the user that created the key. Keys created with `-t bio` require physical Touch ID presence on each signing operation, so avoid `-t bio` if you plan to run GAM over headless SSH or in unattended jobs.
 
 #### Step 1: Create the Secure Enclave Key
 
@@ -96,7 +103,7 @@ sc_auth create-ctk-identity -l gam-dpop -k p-256-ne
 
 This creates a P-256 key in the Secure Enclave with the label `gam-dpop`. The `-k p-256-ne` flag means "P-256, non-exportable."
 
-To optionally require Touch ID for each signing operation (every `gam` command), add `-t bio`:
+To optionally require Touch ID when creating or refreshing tokens (roughly once an hour when the access token expires, or when running `gam check dpop` / `gam oauth info` — not on regular `gam` commands while the access token is valid), add `-t bio`:
 
 ```bash
 sc_auth create-ctk-identity -l gam-dpop -k p-256-ne -t bio
@@ -131,15 +138,46 @@ On Windows, GAM uses [CNG (Cryptography Next Generation)](https://learn.microsof
 - Windows 10/11 or Windows Server 2019+
 - TPM 2.0 (for hardware-backed keys). Windows 11 requires a TPM 2.0 device.
 
+#### Choosing a Certificate Store Location (`current_user` vs `local_machine`)
+
+Before creating the key, decide which Windows certificate store to use:
+
+- **Current User (`Cert:\CurrentUser\My`, default):** Key is tied to your Windows user profile. Use this for interactive desktop/PowerShell sessions by a single user. **Note:** User keys are often inaccessible over SSH, in Windows Scheduled Tasks, or in background services because Windows DPAPI user credentials are not unlocked in those sessions.
+- **Local Machine (`Cert:\LocalMachine\My`):** Required if you plan to run GAM over **SSH**, in **Scheduled Tasks**, or in automated/headless sessions. Append `,local_machine` to `dpop_backend_config` when configuring GAM.
+
+> [!WARNING]
+> **Security trade-off for `local_machine` keys:** A `local_machine` private key is
+> stored at the machine level rather than isolated to a single user profile. Any
+> user who can log in to that Windows machine (with access to the key) can use it
+> to sign DPoP proofs — however, an attacker would **still also need read access
+> to your `oauth2.txt` file**. Lock down NTFS permissions on your GAM config
+> directory and `oauth2.txt` so only the intended user or service account can
+> read `oauth2.txt` (and grant private key Read permission only to that account if
+> running as a non-Administrator).
+
 #### Step 1: Generate a TPM-Backed Key
 
-Open **PowerShell as Administrator** and run:
+Using PowerShell's [`New-SelfSignedCertificate`](https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate?view=windowsserver2025-ps) and Windows [CNG Key Storage](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-and-retrieval), create a key in your chosen store:
+
+For **Current User** (`Cert:\CurrentUser\My`):
 
 ```powershell
 New-SelfSignedCertificate `
     -Subject "CN=GAM DPoP Signing Key" `
     -KeyAlgorithm ECDSA_nistP256 `
     -CertStoreLocation Cert:\CurrentUser\My `
+    -KeyExportPolicy NonExportable `
+    -Provider "Microsoft Platform Crypto Provider" `
+    -NotAfter (Get-Date).AddYears(30)
+```
+
+Or for **Local Machine** (`Cert:\LocalMachine\My`, for SSH / Scheduled Tasks — open **PowerShell as Administrator**):
+
+```powershell
+New-SelfSignedCertificate `
+    -Subject "CN=GAM DPoP Signing Key" `
+    -KeyAlgorithm ECDSA_nistP256 `
+    -CertStoreLocation Cert:\LocalMachine\My `
     -KeyExportPolicy NonExportable `
     -Provider "Microsoft Platform Crypto Provider" `
     -NotAfter (Get-Date).AddYears(30)
@@ -153,9 +191,11 @@ Key points:
 > [!TIP]
 > If your machine does not have a TPM, you can use `"Microsoft Software Key
 > Storage Provider"` instead. The key will be software-backed (not
-> hardware-backed) but still non-exportable and protected by Windows DPAPI.
+> hardware-backed) but still non-exportable and protected by Windows CNG.
 
 #### Step 2: Verify the Key
+
+For Current User:
 
 ```powershell
 Get-ChildItem Cert:\CurrentUser\My |
@@ -163,24 +203,34 @@ Get-ChildItem Cert:\CurrentUser\My |
     Format-List Subject, Thumbprint, NotAfter, HasPrivateKey
 ```
 
-#### Step 3: Configure GAM
+Or for Local Machine:
 
-Configure by subject name (substring match):
-
-```bash
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+```powershell
+Get-ChildItem Cert:\LocalMachine\My |
+    Where-Object Subject -eq "CN=GAM DPoP Signing Key" |
+    Format-List Subject, Thumbprint, NotAfter, HasPrivateKey
 ```
 
-Or by certificate thumbprint (exact match):
+#### Step 3: Configure GAM
+
+For **Current User** (`Cert:\CurrentUser\My`, default — `,current_user` is optional):
 
 ```bash
+# By subject name (substring match)
+gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+
+# Or by certificate thumbprint (exact match)
 gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
-By default, GAM searches `Cert:\CurrentUser\My`. For SSH or scheduled task sessions where user DPAPI keys are unavailable, create the certificate in `Cert:\LocalMachine\My` (and grant Read permission on the private key to the user running GAM), then append `,local_machine`:
+For **Local Machine** (`Cert:\LocalMachine\My`, for SSH / Scheduled Tasks), append `,local_machine`:
 
 ```bash
+# By subject name (substring match)
 gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+
+# Or by certificate thumbprint (exact match)
+gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5...,local_machine" save
 ```
 
 ---
@@ -192,6 +242,27 @@ On Linux, GAM uses `tpm2-pytss` to sign directly with a persistent key in the TP
 **Requirements:**
 - Linux with TPM 2.0 (most modern servers and laptops)
 - `tpm2-tools` and `libtss2-dev` system packages
+
+#### Permissions & Automation
+
+Grant TPM device permissions and review key isolation before creating your key:
+
+- **Device group access (`/dev/tpmrm0`):** Access to the Linux kernel's in-kernel [TPM 2.0 resource manager](https://docs.kernel.org/security/tpm/tpm-security.html) typically requires membership in the `tss` group (do this first so `tpm2-tools` commands in the steps below can run without `sudo` once you re-login):
+
+  ```bash
+  sudo usermod -aG tss $USER
+  # Log out and back in for the group change to take effect
+  ```
+
+- **Shared TPM device:** Unlike macOS per-user keychains, persistent TPM handles are not isolated per OS user — any account that can open `/dev/tpmrm0` (`root` and members of `tss`) can use the handle to sign, though they would **still need read access to `oauth2.txt`**. Only add the account(s) running GAM to `tss`, and lock down your GAM config directory (`chmod 700 ~/.gam && chmod 600 ~/.gam/oauth2.txt ~/.gam/gam.cfg`).
+- **Optional key password (`auth`):** If you want an extra authorization value on the key itself, add `-p <password>` during [`tpm2_create`](https://manpages.ubuntu.com/manpages/noble/man1/tpm2_create.1.html) in Step 2 and pass it as `handle[,tcti[,auth]]` in `dpop_backend_config` (which keeps the secret in `gam.cfg`).
+- **SSH, `cron`, and `systemd`:** `tss` group access works directly over **SSH** and in **`cron`** jobs. For [`systemd` services](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), ensure the unit includes `SupplementaryGroups=tss` (if running as a service user) and does **not** set `PrivateDevices=yes`, which hides `/dev/tpmrm0`.
+
+> [!TIP]
+> VMs running on VMware, Proxmox, etc can create vTPM (virtual TPM)
+> devices for guest VMs. These vTPMs protect the private key even if
+> an attacker has root access to the guest VM but anyone with access
+> to the host VM server can access the vTPM private keys directly.
 
 #### Step 1: Install System Packages
 
@@ -242,21 +313,6 @@ Confirm the output shows `type: ecc`, `curve-id: NIST p256`, and `scheme: ecdsa`
 ```bash
 gam config dpop true dpop_backend linux_tpm dpop_backend_config "0x81000001" save
 ```
-
-#### Permissions
-
-Access to `/dev/tpmrm0` typically requires membership in the `tss` group:
-
-```bash
-sudo usermod -aG tss $USER
-# Log out and back in for the group change to take effect
-```
-
-> [!TIP]
-> VMs running on VMWare, Proxmox, etc can create vTPM (virtual TPM)
-> devices for guest VMs. These vTPMs protect the private key even if
-> an attacker has root access to the guest VM but anyone with access
-> to the host VM server can access the vTPM private keys directly.
 
 ---
 
@@ -367,7 +423,7 @@ Signer created successfully.
 Signer Details
   Backend: macos_secureenclave
   Algorithm: ES256
-  Key ID: (auto)
+  Key ID: se:gam-dpop
   JWK Thumbprint: xK9m2q...
 
 Performing test signature...
@@ -388,7 +444,7 @@ If there's a problem, GAM will print a clear error and exit with a non-zero exit
 | `DPoP software backend requires dpop_backend_config set to the path of a PEM private key file` | No key file configured | Set `dpop_backend_config` to a PEM file path |
 | `DPoP software key file not found` | PEM file doesn't exist at the configured path | Check the path and generate the key |
 | `DPoP macOS Secure Enclave error` | Key not found in Secure Enclave | Run `sc_auth list-ctk-identities` to check |
-| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check with `Get-ChildItem Cert:\CurrentUser\My` |
+| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
 | `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions and `tpm2_readpublic -c 0x81000001` |
 | `DPoP YubiKey error` | YubiKey not plugged in or wrong PIN | Plug in YubiKey and verify PIN |
 
@@ -417,66 +473,47 @@ This opens a browser for Google authentication. The resulting refresh token in `
 
 ## Confirming DPoP Is Working
 
-After creating DPoP-bound credentials, verify the binding is enforced with these three tests:
+### Recommended: Run `gam oauth info`
 
-### Test 1: Normal Refresh (Should Succeed)
-
-With DPoP enabled and your key available, a normal token refresh should work:
+After creating DPoP-bound credentials, run `gam oauth info`:
 
 ```bash
-gam oauth refresh
+gam oauth info
 ```
 
-Expected: Succeeds and prints the token info.
+Alongside your `Client ID`, `Scopes`, `Google Workspace Admin`, and `Expires` fields, GAM displays your DPoP configuration and runs three live refresh checks against Google's token endpoint without altering `gam.cfg`:
 
-### Test 2: Refresh Without DPoP (Should Fail)
-
-Temporarily disable DPoP and try to refresh. The server should reject the request because the token expects a DPoP proof:
-
-```bash
-gam config dpop false save
-gam oauth refresh
+```
+...
+DPoP: Enabled (macos_secureenclave)
+DPoP Backend Config: gam-dpop
+DPoP Token Thumbprint: xK9m2q...
+DPoP Refresh Tests
+  With DPoP (macos_secureenclave): Success
+  Without DPoP: Rejected as expected (invalid_request: DPoP proof required.)
+  With Wrong Key: Rejected as expected (invalid_dpop_proof: Bad Request)
+DPoP Key Binding: Verified
 ```
 
-Expected: **Fails** with an error from Google's token endpoint. This confirms the token is bound — it can't be used without DPoP.
+What each line confirms:
 
-```bash
-# Re-enable DPoP
-gam config dpop true save
-```
+| Field / Test | What It Verifies |
+|--------------|------------------|
+| `DPoP Token Thumbprint` | `oauth2.txt` records the JWK thumbprint of the bound key (`Not bound` if created before enabling DPoP). |
+| `With DPoP (<backend>)` | Your configured signer can refresh the token. |
+| `Without DPoP` | Google rejects a plain bearer refresh of this token (`invalid_request: DPoP proof required.`). |
+| `With Wrong Key` | Google rejects a refresh signed with a throwaway ephemeral key (`invalid_dpop_proof`). |
+| `DPoP Key Binding` | `Verified` when all three checks pass; otherwise explains whether the token is unbound or your signer failed. |
 
-### Test 3: Refresh With Wrong Key (Should Fail)
+If `dpop` is `false` in `gam.cfg` while `oauth2.txt` contains a `dpop_thumbprint`, `gam oauth info` also prints a warning (`Disabled in gam.cfg (Warning: token in oauth2.txt requires DPoP)`).
 
-Create a temporary software key and try to use it instead of your real key. The server should reject the proof because the thumbprint doesn't match:
+### Optional: Manual Refresh Tests
 
-```bash
-# Generate a throwaway key
-openssl ecparam -genkey -name prime256v1 -noout -out /tmp/fake_dpop_key.pem
+You can also confirm enforcement directly with `gam oauth refresh`:
 
-# Point GAM at the fake key
-gam config dpop_backend software dpop_backend_config /tmp/fake_dpop_key.pem save
-gam oauth refresh
-```
-
-Expected: **Fails** because the DPoP proof is signed with a different key than the one the token was bound to.
-
-```bash
-# Restore your real configuration
-gam config dpop_backend macos_secureenclave dpop_backend_config "gam-dpop" save
-
-# Clean up
-rm /tmp/fake_dpop_key.pem
-```
-
-### Summary
-
-| Test | DPoP Enabled | Key | Expected Result |
-|------|-------------|-----|-----------------|
-| Normal refresh | Yes | Correct key | Success |
-| Without DPoP | No | N/A | **Fail** — token requires DPoP proof |
-| Wrong key | Yes | Different key | **Fail** — thumbprint mismatch |
-
-If all three tests produce the expected results, your DPoP setup is working correctly and your credentials are hardware-bound.
+- **Normal refresh:** With `dpop = true` and your configured key available, `gam oauth refresh` succeeds.
+- **Without DPoP:** Temporarily run `gam config dpop false save` then `gam oauth refresh`. Google's token endpoint rejects the refresh (`DPoP proof required`). Re-enable afterward with `gam config dpop true save`.
+- **Wrong key:** GAM validates the configured signer's JWK thumbprint against `dpop_thumbprint` in `oauth2.txt` locally before calling Google, so pointing `dpop_backend_config` at a different PEM key fails immediately in GAM. To test Google's server-side wrong-key rejection directly, use `gam oauth info` (which uses the `ephemeral` backend for the `With Wrong Key` check).
 
 ---
 

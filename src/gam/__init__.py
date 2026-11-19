@@ -5046,7 +5046,7 @@ _DPOP_PLUGIN_BACKENDS = {
   'macos_secureenclave': ('dpop_signer_macos_secureenclave', 'dpop-signer-macos-secureenclave', 'SecureEnclaveDPoPSigner', 'SecureEnclaveDPoPError', 'macOS Secure Enclave'),
   'linux_tpm': ('dpop_signer_linux_tpm', 'dpop-signer-linux-tpm', 'LinuxTPMDPoPSigner', 'LinuxTPMDPoPError', 'Linux TPM'),
   'windows_tpm': ('dpop_signer_windows_tpm', 'dpop-signer-windows-tpm', 'WindowsCNGDPoPSigner', 'WindowsCNGDPoPError', 'Windows CNG/TPM'),
-  'ephemeral': ('dpop_signer_ephemeral', 'dpop-signer-ephemeral', 'EphemeralDPoPSigner', None, 'ephemeral'),
+  'ephemeral': ('dpop_signer_ephemeral', 'dpop-signer-ephemeral', 'EphemeralDPoPSigner', 'EphemeralDPoPError', 'ephemeral'),
 }
 
 def _resolveDPoPConfigPath(path):
