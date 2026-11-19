@@ -226,11 +226,6 @@ tpm2_evictcontrol -C o -c key.ctx 0x81000001
 rm primary.ctx key.ctx key.pub key.priv
 ```
 
-> [!IMPORTANT]
-> Use `-G ecc:ecdsa-sha256` (not just `-G ecc256`) so the signing scheme is
-> baked into the key. This ensures compatibility with all versions of the
-> signer.
-
 #### Step 3: Verify the Key
 
 ```bash
