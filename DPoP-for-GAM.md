@@ -60,7 +60,7 @@ GAM supports multiple DPoP signer backends. Choose based on your operating syste
 | [`windows_certstore`](#windows--certificate-store--tpm-recommended-for-windows-with-tpm) | Windows | Windows Cert Store (TPM via CNG) | Yes (with TPM) | Windows admins with TPM |
 | [`linux_tpm`](#linux--tpm-20-recommended-for-linux-servers) | Linux | TPM 2.0 | Yes | Linux servers with TPM |
 | [`yubikey`](#yubikey--piv-cross-platform) | Any | YubiKey PIV | Yes | Cross-platform, portable key |
-| `pkcs11` | Any | PKCS#11 token (`tpm2-pkcs11`, HSM, smart card) | Yes (with HSM/TPM/smart card) | HSMs, PKCS#11 smart cards, `tpm2-pkcs11` |
+| `pkcs11` | Any | PKCS#11 token (HSM, smart card) | Yes (with HSM/smart card) | Hardware security modules (HSMs), PKCS#11 smart cards |
 | [`software`](#software-key-testing-only) | Any | PEM file on disk | No | Testing or low-security environments |
 
 > [!IMPORTANT]
@@ -517,7 +517,7 @@ All DPoP settings are stored in `gam.cfg`:
 | `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
-| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=tpm2;object=dpop?module-path=/usr/lib/libtpm2_pkcs11.so` |
+| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=hsm-slot;object=dpop-key?module-path=/path/to/libpkcs11.so` |
 | `ephemeral` | *(none required)* | *(leave empty)* |
 
 ---

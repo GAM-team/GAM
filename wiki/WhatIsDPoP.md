@@ -63,7 +63,7 @@ GAM supports multiple DPoP signer backends where the private key can be stored. 
 | [`windows_certstore`](#windows--certificate-store--tpm-recommended-for-windows-with-tpm) | Windows | Windows Cert Store (TPM via CNG) | Yes (with TPM) | Windows admins with TPM |
 | [`linux_tpm`](#linux--tpm-20-recommended-for-linux-servers) | Linux | TPM 2.0 | Yes | Linux servers with TPM |
 | [`yubikey`](#yubikey--piv-cross-platform) | Any | YubiKey PIV | Yes | Cross-platform, portable key |
-| [`pkcs11`](#pkcs11--hsm--smart-card--tpm2-pkcs11-cross-platform) | Any | PKCS#11 token (`tpm2-pkcs11`, HSM, smart card) | Yes (with HSM/TPM/smart card) | HSMs, PKCS#11 smart cards, `tpm2-pkcs11` |
+| [`pkcs11`](#pkcs11--hsm--smart-card-cross-platform) | Any | PKCS#11 token (HSM, smart card) | Yes (with HSM/smart card) | Hardware security modules (HSMs), PKCS#11 smart cards |
 | [`software`](#software-key-testing-only) | Any | PEM file on disk | No | Testing or low-security environments |
 
 > [!IMPORTANT]
@@ -378,9 +378,9 @@ gam config dpop_backend_config ",9a,mypin" save
 
 ---
 
-### PKCS#11 — HSM / Smart Card / `tpm2-pkcs11` (Cross-Platform)
+### PKCS#11 — HSM / Smart Card (Cross-Platform)
 
-The `pkcs11` backend works with any PKCS#11 (Cryptoki) library across Linux, macOS, and Windows — including `tpm2-pkcs11`, OpenSC smart cards, YubiKey `libykcs11`, network/cloud HSMs, and SoftHSM2 (for testing). Supports `ES256` (P-256), `ES384` (P-384), and `RS256` (RSA).
+The `pkcs11` backend works with PKCS#11 (Cryptoki) modules across Linux, macOS, and Windows — such as network/cloud HSMs, OpenSC smart cards, and SoftHSM2 (for testing). Supports `ES256` (P-256), `ES384` (P-384), and `RS256` (RSA).
 
 Configuration uses an [RFC 7512](https://www.rfc-editor.org/rfc/rfc7512) `pkcs11:` URI as `dpop_backend_config`:
 
@@ -390,9 +390,9 @@ Configuration uses an [RFC 7512](https://www.rfc-editor.org/rfc/rfc7512) `pkcs11
 #### Configure GAM
 
 ```bash
-# Example with tpm2-pkcs11 and a separate PIN file
+# Example with an HSM / PKCS#11 module and a separate PIN file
 gam config dpop true dpop_backend pkcs11 \
-    dpop_backend_config "pkcs11:token=tpm2;object=dpop;id=%01?module-path=/usr/lib/x86_64-linux-gnu/pkcs11/libtpm2_pkcs11.so&pin-source=file:/home/$USER/.gam/pkcs11-pin.txt" save
+    dpop_backend_config "pkcs11:token=hsm-slot;object=dpop-key;id=%01?module-path=/path/to/libpkcs11.so&pin-source=file:/home/$USER/.gam/pkcs11-pin.txt" save
 
 # Example with OpenSC / smart card module-name
 gam config dpop true dpop_backend pkcs11 \
@@ -565,7 +565,7 @@ All DPoP settings are stored in `gam.cfg`:
 | `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
-| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=tpm2;object=dpop?module-path=/usr/lib/libtpm2_pkcs11.so` |
+| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=hsm-slot;object=dpop-key?module-path=/path/to/libpkcs11.so` |
 
 ---
 
