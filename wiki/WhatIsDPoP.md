@@ -11,7 +11,7 @@
 ----
 The latest alpha DPoP build is at:
 
-[https://github.com/GAM-team/GAM/releases/tag/20261113.220459](https://github.com/GAM-team/GAM/releases/tag/20261113.220459)
+https://github.com/GAM-team/GAM/releases/tag/20261113.220459
 ----
 
 ## What is DPoP?
