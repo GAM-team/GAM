@@ -157,6 +157,7 @@
 <DrivePermissionsFieldName> ::=
         additionalroles|
         allowfilediscovery|
+        basicpermissions|
         deleted|
         displayname|name
         domain|
@@ -167,11 +168,33 @@
         permissiondetails|
         photolink|
         role|
-        teamdrivepermissiondetails|
         type|
         withlink
 <DrivePermissionsFieldNameList> ::= "<DrivePermissionsFieldName>(,<DrivePermissionsFieldName>)*"
 
+```
+`basicpermissions` is equivalent to:
+```
+allowFileDiscovery,
+deleted,
+domain,
+emailAddress,
+expirationTime,
+id,
+role,
+type
+```
+In particular, this omits these fields:
+```
+displayName,
+permissionDetails,
+photoLink,
+```
+This allows you to select the essential permission fields without enumerating them. Of course,
+you can specify `permissions` to get all of the fields, enumerate the specific fields you want or
+specify `basicpermissions` and additional permission fields, e.g., `displayName`.
+
+```
 <QuerySharedDrive> ::= <String> See: https://developers.google.com/workspace/drive/api/guides/search-shareddrives
 <SharedDriveACLRole> ::=
         manager|organizer|owner|
@@ -657,22 +680,33 @@ gam [<UserTypeEntity>] add drivefileacl <SharedDriveEntityAdmin>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         [expires|expiration <Time>] [sendemail] [emailmessage <String>]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
         [adminaccess|asadmin]
 gam [<UserTypeEntity>] update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
-        [adminaccess|asadmin]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
+        [adminaccess|asadmin]
 gam [<UserTypeEntity>] delete drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         [showtitles]
         [adminaccess|asadmin]
 ```
+By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
+option; this requires an additional API call per file.
+
 By default, when an ACL is added|updated, GAM outputs details of the ACL as indented keywords and values.
 * `nodetails` - Suppress the details output.
 * `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]` - Output the details in CSV format.
 
-By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
-option; this requires an additional API call per file.
+The displayed ACL details default to the following fields:
+```
+id, role, type, emailAddress, domain, permissionDetails,
+expirationTime, photoLink, allowFileDiscovery, deleted,
+pendingOwner, view
+```
+
+Use `fields <DrivePermissionsFieldNameList>` to select a specific set of fields to display.
 
 ### Process multiple ACLs.
 ```
@@ -739,7 +773,9 @@ These commands are used to display the ACLs on Shared Drives themselves, not the
 ## Display Shared Drive access for specific Shared Drives
 ```
 gam [<UserTypeEntity>] info drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
-        [showtitles] [formatjson]
+        [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
+        [showtitles]
+        [formatjson]
         [adminaccess|asadmin]
 gam [<UserTypeEntity>] show drivefileacls <SharedDriveEntityAdmin>
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
@@ -772,6 +808,16 @@ When `oneitemperrow` is specified, each ACL is output on a separate row/line wit
 
 Add additional columns of data from the command line to the output
 * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+
+
+The displayed ACL details default to the following fields:
+```
+id, role, type, emailAddress, domain, permissionDetails,
+expirationTime, photoLink, allowFileDiscovery, deleted,
+pendingOwner, view
+```
+
+Use `fields <DrivePermissionsFieldNameList>` to select a specific set of fields to display.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
@@ -833,6 +879,15 @@ By default, all ACLS are displayed; use the following options to select a subset
 * `user|group <EmailAddress> [checkgroups]` - Display ACLs for the specified `<EmailAddress>` only; if there is no ACL for `<EmailAddress>` and `checkgroups` is specified, display any ACLs for groups that have `<EmailAddress>` as a member.
 * `role|roles <SharedDriveACLRoleList>` - Display ACLs for the specified roles only.
 * `<PermissionMatch>* [<PermissionMatchAction>]` - Use permission matching to display a subset of the ACLs for each Shared Drive; this only applies when `pmselect` is not specified
+
+The displayed ACL details default to the following fields:
+```
+id, role, type, emailAddress, domain, permissionDetails,
+expirationTime, photoLink, allowFileDiscovery, deleted,
+pendingOwner, view
+```
+
+Use `fields <DrivePermissionsFieldNameList>` to select a specific set of fields to display.
 
 With `print shareddriveacls` or `show shareddrivecls formatjson`, the ACLs selected for display are all output on one row/line as a repeating item with the matching Shared Drive id.
 When `oneitemperrow` is specified, each ACL is output on a separate row/line with the matching Shared Drive id and name. This simplifies processing the CSV file with subsequent Gam commands.

@@ -61,6 +61,7 @@
         expirationdate|
         expirationtime|
         id|
+        inheritedPermissionsDisabled|
         name|
         pendingowner|
         permissiondetails|
@@ -74,25 +75,24 @@
 ```
 `basicpermissions` is equivalent to:
 ```
-permissions.allowFileDiscovery,
-permissions.deleted,
-permissions.domain,
-permissions.emailAddress,
-permissions.expirationTime,
-permissions.id,
-permissions.role,
-permissions.type
+allowFileDiscovery,
+deleted,
+domain,
+emailAddress,
+expirationTime,
+id,
+role,
+type
 ```
 In particular, this omits these fields:
 ```
-permissions.displayName,
-permissions.permissionDetails,
-permissions.photoLink,
-permissions.teamDrivePermissionDetails
+displayName,
+permissionDetails,
+photoLink,
 ```
 This allows you to select the essential permission fields without enumerating them. Of course,
 you can specify `permissions` to get all of the fields, enumerate the specific fields you want or
-specify `basicpermissions` and additional permission fields, e.g., `permissions.displayName`.
+specify `basicpermissions` and additional permission fields, e.g., `displayName`.
 
 ```
 <DriveOrderByFieldName> ::=
@@ -161,9 +161,11 @@ specify `basicpermissions` and additional permission fields, e.g., `permissions.
 ```
 gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>) (role <DriveFileACLRole>)
-        [withlink|(allowfilediscovery|discoverable [<Boolean>])] [expiration <Time>]
+        [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         (mappermissionsdomain <DomainName1> <DomainName2>)*
         [movetonewownersroot [<Boolean>]]
+        [expiration <Time>]
+        [fields <DrivePermissionsFieldNameList>]
         [sendemail] [emailmessage <String>]
         [updatesheetprotectedranges [<Boolean>]]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
@@ -216,11 +218,21 @@ By default, when an ACL is created, GAM outputs details of the ACL as indented k
 * `nodetails` - Suppress the details output.
 * `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]` - Output the details in CSV format.
 
+The displayed ACL details default to the following fields:
+```
+id, role, type, emailAddress, domain, permissionDetails,
+expirationTime, photoLink, allowFileDiscovery, deleted,
+pendingOwner, view
+```
+
+Use `fields <DrivePermissionsFieldNameList>` to select a specific set of fields to display.
+
 ### Update
 ```
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expiration <Time>] [removeexpiration [<Boolean>]]
         [updatesheetprotectedranges [<Boolean>]]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 ```
 There is no change of parents when a new user is updated to be a file's owner.
@@ -244,6 +256,15 @@ option; this requires an additional API call per file.
 By default, when an ACL is updated, GAM outputs details of the ACL as indented keywords and values.
 * `nodetails` - Suppress the details output.
 * `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]` - Output the details in CSV format.
+
+The displayed ACL details default to the following fields:
+```
+id, role, type, emailAddress, domain, permissionDetails,
+expirationTime, photoLink, allowFileDiscovery, deleted,
+pendingOwner, view
+```
+
+Use `fields <DrivePermissionsFieldNameList>` to select a specific set of fields to display.
 
 ### Delete
 ```
@@ -308,7 +329,9 @@ When deleting permissions from JSON data, permissions with role `owner` true are
 ## Display file permissions/sharing
 ```
 gam <UserTypeEntity> info drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
-        [showtitles] [formatjson]
+        [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
+        [showtitles]
+        [formatjson]
 gam <UserTypeEntity> show drivefileacls <DriveFileEntity>
         (role|roles <DriveFileACLRoleList>)*
         <PermissionMatch>* [<PermissionMatchAction>] [pmselect]
@@ -343,6 +366,15 @@ When `oneitemperrow` is specified, each ACL is output on a separate row/line wit
 
 Add additional columns of data from the command line to the output
 * `addcsvdata <FieldName> <String>` - Add additional columns of data from the command line to the output
+
+The displayed ACL details default to the following fields:
+```
+id, role, type, emailAddress, domain, permissionDetails,
+expirationTime, photoLink, allowFileDiscovery, deleted,
+pendingOwner, view
+```
+
+Use `fields <DrivePermissionsFieldNameList>` to select a specific set of fields to display.
 
 By default, Gam displays the information as columns of fields; the following option causes the output to be in JSON format,
 * `formatjson` - Display the fields in JSON format.
