@@ -10,6 +10,30 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.52.04
+
+Updated `gam [<UserTypeEntity>] create drivefileacl <DriveFileEntity>` to handle the error:
+```
+ERROR: 409: conflict - Conflict
+```
+
+7.52.03
+
+Fixed bug in `gam user <User> show messages|threads ... uploadattachments` where a trap
+occurred when certain API errors occurred when trying to save an attachment to a Shared Drive.
+
+Thanks to @SelmanBoray
+
+7.52.02
+
+Added option `path <Path>` to `gam version update` that updates the version of GAM in `<Path>`.
+* `<path>` must contain a version of GAM.
+
+Added option `install <Path> [quiet]` to `gam version` that installs the latest version of GAM in `<Path>`.
+* `<Path>` must be a new or empty folder or contain a version of GAM.
+
+Thanks to @gurugabe
+
 7.52.01
 
 Updated `gam version update` to work on Windows. Added suboption `quiet` to `gam version update`

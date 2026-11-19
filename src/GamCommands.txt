@@ -1391,7 +1391,11 @@ gam comment <String>*
 
 # Version and Help
 
-gam version [check|checkrc|simple|extended|(update [quiet])] [timeoffset] [location <HostName>]
+gam version
+        [check|checkrc|simple|extended|
+         (update [path <Path>] [quiet])|
+         (install <Path> [quiet])]
+        [timeoffset] [location <HostName>]
 gam help
 
 # Bulk Processing
@@ -8272,7 +8276,7 @@ gam <UserTypeEntity> print thread|threads [todrive <ToDriveAttribute>*]
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_print all|<Number>] [includespamtrash])|(ids <ThreadIDEntity>)
-	[max_messages_per_thread all|<Number>]
+        [max_messages_per_thread all|<Number>]
         [labelmatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly] [delimiter <Character>]
@@ -8286,7 +8290,7 @@ gam <UserTypeEntity> show thread|threads
         (((query <QueryGmail> [querytime<String> <Date>]*) (matchlabel <LabelName>) [or|and])*
          [labelids <LabelIDList>]
          [quick|notquick] [max_to_show all|<Number>] [includespamtrash])|(ids <ThreadIDEntity>)
-	[max_messages_per_thread all|<Number>]
+        [max_messages_per_thread all|<Number>]
         [labelmatchpattern <REMatchPattern>]
         [headers all|<SMTPHeaderList>] [dateheaderformat iso|rfc2822|<String>] [dateheaderconverttimezone [<Boolean>]]
         [showlabels] [useronly]
@@ -9064,7 +9068,7 @@ gam <UserTypeEntity> info|show sheet <DriveFileEntity>
         [includegriddata [<Boolean>]]
         [excludetablesinbandedranges [<Boolean>]]
         [commentsviewmode included|omitted]
-	[shownames]
+        [shownames]
         [formatjson]
 gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [fields <SpreadsheetFieldList>] [sheetsfields <SpreadsheetSheetsFieldList>]
@@ -9072,7 +9076,7 @@ gam <UserTypeEntity> print sheet <DriveFileEntity> [todrive <ToDriveAttribute>*]
         [includegriddata [<Boolean>]]
         [excludetablesinbandedranges [<Boolean>]]
         [commentsviewmode included|omitted]
-	[shownames]
+        [shownames]
         [formatjson [quotechar <Character>]]
 
 See: https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values#ValueRange

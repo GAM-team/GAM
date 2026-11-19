@@ -42,6 +42,8 @@ gam <UserTypeEntity> create|add guardian|guardianinvite|inviteguardian <Guardian
 gam create guardian|guardianinvite|inviteguardian <EmailAddress> <StudentItem>
 ```
 ## Delete guardian invitations
+Guardian invitations with state `PENDING` are updated to have state `COMPLETE`.
+
 ### Selected students, new style
 ```
 gam <UserTypeEnfity> cancel guardianinvitation|guardianinvitations <GuardianInvitationIDEntity>
@@ -90,7 +92,7 @@ gam <UserTypeEntity> delete guardian|guardians <GuardianEntity> [accepted|invita
 gam <UserTypeEntity> clear guardian|guardians [accepted|invitations|all]
 ```
 * `accepted` - Delete accepted invitations
-* `invitations` - Delete pending invitations
+* `invitations` - Guardian invitations with state `PENDING` are updated to have state `COMPLETE`
 * `all` - Delete accepted and pending invitations
 
 ### Selected students, old style

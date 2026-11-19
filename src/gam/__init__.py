@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.52.01'
+__version__ = '7.52.04'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -4539,8 +4539,10 @@ def transportCreateRequest(httpObj=None):
 
 # Windows: a running gam.exe can be renamed but its lib folder can not (its DLLs are loaded),
 # so on Windows the verified new version is swapped in by this PowerShell helper after GAM exits.
-# Renames use [System.IO.File]::Move / [System.IO.Directory]::Move (all or nothing, like os.rename);
-# Move-Item is NOT used: when a folder can not be renamed it moves the files one by one.
+# It must work in PowerShell's Constrained Language Mode (AppLocker / WDAC, common on managed PCs):
+# only cmdlets, core types and programs - no .NET calls or New-Object. Renames use cmd's move,
+# which is all or nothing like os.rename (Move-Item, when a folder can not be renamed, moves the files
+# one by one); the paths reach cmd in environment variables, so % ^ & in a folder name are not parsed.
 # The values are put in with str.replace (PowerShell uses braces), single quotes doubled.
 GAM_UPDATE_WINDOWS_SCRIPT = r'''
 $ErrorActionPreference = 'Stop'
@@ -4552,32 +4554,37 @@ $version = '@@VERSION@@'
 $quiet = @@QUIET@@
 $newPath = Join-Path -Path $tempPath -ChildPath 'gam7'
 $backupPath = Join-Path -Path $tempPath -ChildPath 'backup'
-function Say([string]$text) { [Console]::Out.WriteLine($text) }
 function Rename-Entry([string]$from, [string]$to) {
-  if (Test-Path -LiteralPath $from -PathType Container) {
-    [System.IO.Directory]::Move($from, $to)
-  } else {
-    [System.IO.File]::Move($from, $to)
+  if (Test-Path -LiteralPath $to) {
+    throw "$to already exists"
+  }
+  $env:GAMUPDATE_FROM = $from
+  $env:GAMUPDATE_TO = $to
+  $ErrorActionPreference = 'Continue'
+  $result = (& cmd.exe /d /c move /y '"%GAMUPDATE_FROM%"' '"%GAMUPDATE_TO%"' 2>&1 | Out-String).Trim()
+  $rc = $LASTEXITCODE
+  $ErrorActionPreference = 'Stop'
+  if ($rc -ne 0) {
+    throw "Could not move $from to ${to}: $result"
   }
 }
 # Wait, at most 5 minutes, for the GAM that started the update to exit
-$deadline = (Get-Date).AddMinutes(5)
-while ((Get-Process -Id $gamPid -ErrorAction SilentlyContinue) -and ((Get-Date) -lt $deadline)) {
+for ($wait = 0; ($wait -lt 1200) -and (Get-Process -Id $gamPid -ErrorAction SilentlyContinue); $wait++) {
   Start-Sleep -Milliseconds 250
 }
 # Like the installer, replace lib even if the new version does not have one; files not in the release, e.g., oauth2.txt, are not touched
 $entries = @(@(Get-ChildItem -LiteralPath $newPath -Force | ForEach-Object { $_.Name }) + @('lib') | Sort-Object -Unique)
-$installed = New-Object -TypeName System.Collections.Generic.List[string]
-$backedUp = New-Object -TypeName System.Collections.Generic.List[string]
+$installed = @()
+$backedUp = @()
 function Restore-Previous {
-  for ($i = $installed.Count - 1; $i -ge 0; $i--) {
-    Rename-Entry (Join-Path -Path $gamPath -ChildPath $installed[$i]) (Join-Path -Path $newPath -ChildPath $installed[$i])
+  for ($i = $script:installed.Count - 1; $i -ge 0; $i--) {
+    Rename-Entry (Join-Path -Path $gamPath -ChildPath $script:installed[$i]) (Join-Path -Path $newPath -ChildPath $script:installed[$i])
   }
-  for ($i = $backedUp.Count - 1; $i -ge 0; $i--) {
-    Rename-Entry (Join-Path -Path $backupPath -ChildPath $backedUp[$i]) (Join-Path -Path $gamPath -ChildPath $backedUp[$i])
+  for ($i = $script:backedUp.Count - 1; $i -ge 0; $i--) {
+    Rename-Entry (Join-Path -Path $backupPath -ChildPath $script:backedUp[$i]) (Join-Path -Path $gamPath -ChildPath $script:backedUp[$i])
   }
-  $installed.Clear()
-  $backedUp.Clear()
+  $script:installed = @()
+  $script:backedUp = @()
 }
 $failure = ''
 # Another GAM may still be running from this folder (its lib can not be renamed); try for about a minute
@@ -4590,11 +4597,11 @@ for ($try = 1; $try -le 20; $try++) {
       $new = Join-Path -Path $newPath -ChildPath $entry
       if (Test-Path -LiteralPath $current) {
         Rename-Entry $current (Join-Path -Path $backupPath -ChildPath $entry)
-        $backedUp.Add($entry)
+        $backedUp += $entry
       }
       if (Test-Path -LiteralPath $new) {
         Rename-Entry $new $current
-        $installed.Add($entry)
+        $installed += $entry
       }
     }
 # Run the installed version once; anything but the expected version puts the previous one back
@@ -4616,7 +4623,7 @@ for ($try = 1; $try -le 20; $try++) {
   try {
     Restore-Previous
   } catch {
-    Say ('GAM update could not restore the previous version; its files are in {0}, move them back to {1}' -f $backupPath, $gamPath)
+    Write-Output ('GAM update could not restore the previous version; its files are in {0}, move them back to {1}' -f $backupPath, $gamPath)
     exit 1
   }
   if ($failure -like 'Downloaded GAM did not run*') {
@@ -4626,20 +4633,38 @@ for ($try = 1; $try -le 20; $try++) {
 }
 if ($failure) {
   Remove-Item -LiteralPath $tempPath -Recurse -Force -ErrorAction SilentlyContinue
-  Say "GAM update failed, GAM not updated: $failure"
+  Write-Output "GAM update failed, GAM not updated: $failure"
   if ($failure -notlike 'Downloaded GAM did not run*') {
-    Say 'If another GAM was running from this folder, wait for it to finish and run gam version update again'
+    Write-Output 'If another GAM was running from this folder, wait for it to finish and run gam version update again'
   }
   exit 1
 }
 Remove-Item -LiteralPath $tempPath -Recurse -Force -ErrorAction SilentlyContinue
 if (-not $quiet) {
-  Say "GAM updated to version ${version}: $gamPath"
+  Write-Output "GAM updated to version ${version}: $gamPath"
 }
 exit 0
 '''
 
-def doGAMCheckForUpdates(forceCheck, quiet=False):
+def _getGAMVersionAt(gamPath):
+# The version of the GAM in gamPath; '' when there is no GAM there or it does not run
+  if os.path.normcase(os.path.realpath(gamPath)) == os.path.normcase(os.path.realpath(GM.Globals[GM.GAM_PATH])):
+    return __version__
+  gamExe = os.path.join(gamPath, 'gam.exe' if sys.platform.startswith('win') else 'gam')
+  if not os.path.isfile(gamExe):
+    return ''
+  env = os.environ.copy()
+  env.pop('STATICX_PROG_PATH', None)
+  env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+  try:
+    result = subprocess.run([gamExe, 'version', 'simple'], capture_output=True, text=True, timeout=300, env=env, check=False)
+  except (OSError, subprocess.SubprocessError):
+    return ''
+  version = result.stdout.strip()
+  return version if re.match(r'^[0-9]+\.[0-9]+\.[0-9]+$', version) else ''
+
+def doGAMCheckForUpdates(forceCheck, quiet=False, currentVersion=None, always=False):
+# currentVersion: the version to compare with (default: this GAM); always: return the release data even when it is not newer
   def _gamLatestVersionNotAvailable():
     if forceCheck:
       systemErrorExit(NETWORK_ERROR_RC, Msg.GAM_LATEST_VERSION_NOT_AVAILABLE)
@@ -4658,18 +4683,18 @@ def doGAMCheckForUpdates(forceCheck, quiet=False):
     if not isinstance(release_data, dict) or 'tag_name' not in release_data:
       _gamLatestVersionNotAvailable()
       return
-    current_version = __version__
+    current_version = __version__ if currentVersion is None else currentVersion
     latest_version = release_data['name'].replace('GAM ', '')
     if not quiet:
       printKeyValueList(['Version Check', None])
       Ind.Increment()
-      printKeyValueList(['Current', current_version])
+      printKeyValueList(['Current', current_version or 'None'])
       printKeyValueList([' Latest', latest_version])
       Ind.Decrement()
     if forceCheck < 0:
       setSysExitRC(1 if _versionTuple(latest_version) > _versionTuple(current_version) else 0)
       return None
-    return release_data if _versionTuple(latest_version) > _versionTuple(current_version) else None
+    return release_data if always or _versionTuple(latest_version) > _versionTuple(current_version) else None
   except (httplib2.HttpLib2Error, httplib2.ServerNotFoundError,
           google.auth.exceptions.TransportError,
           RuntimeError, ConnectionError, OSError) as e:
@@ -4718,6 +4743,19 @@ def _extractGAMUpdateZip(content, tempPath):
         raise ValueError(f'Unexpected file in the GAM zip: {name}')
     zf.extractall(tempPath)
 
+def _renameGAMUpdateEntry(source, target):
+# Windows: files that were just run (the new GAM's test run) can stay locked for a moment, e.g., while they are
+# scanned for viruses; retry for up to 30 seconds. A GAM still running from the folder keeps its lib locked.
+  tries = 60 if sys.platform.startswith('win') else 1
+  for i in range(1, tries+1):
+    try:
+      os.rename(source, target)
+      return
+    except PermissionError:
+      if i == tries:
+        raise
+      time.sleep(0.5)
+
 def _startGAMUpdateWindows(gamPath, tempPath, latest_version, quiet=False):
 # The helper inherits this console, so its result is shown after GAM exits
   script = GAM_UPDATE_WINDOWS_SCRIPT.replace('@@QUIET@@', '$true' if quiet else '$false')
@@ -4730,13 +4768,21 @@ def _startGAMUpdateWindows(gamPath, tempPath, latest_version, quiet=False):
                    stdin=subprocess.DEVNULL, close_fds=False,
                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
-def doGAMUpdate(release_data, quiet=False):
-# Only release executables update themselves; every other installation is updated by whatever installed it
-  if GM.Globals[GM.GAM_TYPE] == 'homebrew':
-    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_HOMEBREW)
-  if GM.Globals[GM.GAM_TYPE] not in {'staticx', 'pyinstaller'}:
-    systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_PYTHON_SOURCE)
+def doGAMUpdate(release_data, quiet=False, targetPath=None, install=False):
+# targetPath: the folder to update/install (default: this GAM's folder); install: put the latest GAM there,
+# into a new or empty folder or over a GAM of any version
+  ownPath = os.path.realpath(GM.Globals[GM.GAM_PATH])
+  gamPath = os.path.realpath(targetPath) if targetPath else ownPath
+  ownFolder = os.path.normcase(gamPath) == os.path.normcase(ownPath)
+# Only release executables update themselves; every other installation is updated by whatever installed it.
+# Any GAM can put a release into another folder.
+  if ownFolder:
+    if GM.Globals[GM.GAM_TYPE] == 'homebrew':
+      systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_HOMEBREW)
+    if GM.Globals[GM.GAM_TYPE] not in {'staticx', 'pyinstaller'}:
+      systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NOT_SUPPORTED_PYTHON_SOURCE)
   onWindows = sys.platform.startswith('win')
+  gamExeName = 'gam.exe' if onWindows else 'gam'
   if not release_data:
     if not quiet:
       printKeyValueList([Msg.GAM_IS_ALREADY_THE_LATEST_VERSION])
@@ -4745,8 +4791,17 @@ def doGAMUpdate(release_data, quiet=False):
   asset = _getGAMUpdateAsset(release_data.get('assets', []))
   if not asset:
     systemErrorExit(SYSTEM_ERROR_RC, Msg.GAM_UPDATE_NO_RELEASE_FOR_THIS_SYSTEM.format(latest_version, GAM_RELEASES))
-  gamPath = os.path.realpath(GM.Globals[GM.GAM_PATH])
-  if not os.access(gamPath, os.W_OK):
+# install: a new folder is made (after the download is verified); a folder with files in it must already hold a GAM
+# (nothing is spread into, e.g., a home folder)
+  createdFolder = needFolder = False
+  if install:
+    if os.path.lexists(gamPath) and not os.path.isdir(gamPath):
+      systemErrorExit(USAGE_ERROR_RC, Msg.GAM_INSTALL_PATH_IS_A_FILE.format(gamPath))
+    needFolder = not os.path.isdir(gamPath)
+    if not needFolder and os.listdir(gamPath) and not os.path.isfile(os.path.join(gamPath, gamExeName)):
+      systemErrorExit(USAGE_ERROR_RC, Msg.GAM_INSTALL_FOLDER_NOT_EMPTY.format(gamPath))
+  freshInstall = not os.path.isfile(os.path.join(gamPath, gamExeName))
+  if not needFolder and not os.access(gamPath, os.W_OK):
     systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_NO_WRITE_ACCESS.format(gamPath))
   if not quiet:
     printKeyValueList([Msg.DOWNLOADING, asset['browser_download_url']])
@@ -4765,8 +4820,13 @@ def doGAMUpdate(release_data, quiet=False):
     systemErrorExit(DATA_ERROR_RC, Msg.GAM_UPDATE_CHECKSUM_MISMATCH.format(asset['name']))
 # Extract into the installation folder so that renames stay on the same file system
   try:
+    if needFolder:
+      os.makedirs(gamPath)
+      createdFolder = True
     tempPath = mkdtemp(prefix='.gamupdate-', dir=gamPath)
   except OSError as e:
+    if createdFolder:
+      os.rmdir(gamPath)
     systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_FAILED.format(str(e)))
   newPath = os.path.join(tempPath, 'gam7')
   backupPath = os.path.join(tempPath, 'backup')
@@ -4782,11 +4842,12 @@ def doGAMUpdate(release_data, quiet=False):
     env = os.environ.copy()
     env.pop('STATICX_PROG_PATH', None)
     env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
-    newGam = os.path.join(newPath, 'gam.exe' if onWindows else 'gam')
+    newGam = os.path.join(newPath, gamExeName)
     result = subprocess.run([newGam, 'version', 'simple'], capture_output=True, text=True, timeout=300, env=env, check=False)
     if result.stdout.strip() != latest_version:
       raise ValueError(Msg.GAM_UPDATE_VERIFICATION_FAILED.format(latest_version, result.returncode, (result.stdout+result.stderr).strip()))
-    if onWindows:
+# Windows: only this GAM's own folder is in use (its lib can not be renamed until it exits); another folder is updated now
+    if onWindows and ownFolder:
       _startGAMUpdateWindows(gamPath, tempPath, latest_version, quiet)
       if not quiet:
         printKeyValueList([Msg.GAM_UPDATE_FINISHING_ON_WINDOWS.format(latest_version), gamPath])
@@ -4795,29 +4856,40 @@ def doGAMUpdate(release_data, quiet=False):
 # Like the installer, replace lib even if the new version does not have one; files not in the release, e.g., oauth2.txt, are not touched
     for entry in sorted(set(os.listdir(newPath)) | {'lib'}):
       if os.path.lexists(os.path.join(gamPath, entry)):
-        os.rename(os.path.join(gamPath, entry), os.path.join(backupPath, entry))
+        _renameGAMUpdateEntry(os.path.join(gamPath, entry), os.path.join(backupPath, entry))
         backedUp.append(entry)
       if os.path.lexists(os.path.join(newPath, entry)):
-        os.rename(os.path.join(newPath, entry), os.path.join(gamPath, entry))
+        _renameGAMUpdateEntry(os.path.join(newPath, entry), os.path.join(gamPath, entry))
         installed.append(entry)
+# Run the installed version once; anything but the new version puts the previous one back
+    result = subprocess.run([os.path.join(gamPath, gamExeName), 'version', 'simple'], capture_output=True, text=True, timeout=300, env=env, check=False)
+    if result.stdout.strip() != latest_version:
+      raise ValueError(Msg.GAM_UPDATE_VERIFICATION_FAILED.format(latest_version, result.returncode, (result.stdout+result.stderr).strip()))
   except (OSError, ValueError, tarfile.TarError, zipfile.BadZipFile, subprocess.SubprocessError, KeyboardInterrupt) as e:
     try:
       for entry in reversed(installed):
-        os.rename(os.path.join(gamPath, entry), os.path.join(newPath, entry))
+        _renameGAMUpdateEntry(os.path.join(gamPath, entry), os.path.join(newPath, entry))
       for entry in reversed(backedUp):
-        os.rename(os.path.join(backupPath, entry), os.path.join(gamPath, entry))
+        _renameGAMUpdateEntry(os.path.join(backupPath, entry), os.path.join(gamPath, entry))
       shutil.rmtree(tempPath, ignore_errors=True)
+      if createdFolder:
+        os.rmdir(gamPath)
     except OSError:
       stderrErrorMsg(Msg.GAM_UPDATE_ROLLBACK_FAILED.format(backupPath, gamPath))
     systemErrorExit(FILE_ERROR_RC, Msg.GAM_UPDATE_FAILED.format(str(e) or type(e).__name__))
   shutil.rmtree(tempPath, ignore_errors=True)
   if not quiet:
-    printKeyValueList([Msg.GAM_UPDATED_TO_VERSION.format(latest_version), gamPath])
+    printKeyValueList([(Msg.GAM_INSTALLED_VERSION if freshInstall else Msg.GAM_UPDATED_TO_VERSION).format(latest_version), gamPath])
 
-# gam version [check|checkrc|simple|extended|(update [quiet])] [timeoffset] [location <HostName>]
+# gam version
+#	[check|checkrc|simple|extended|
+#	 (update [path <Path>] [quiet])|
+#	 (install <Path> [quiet])]
+#	[timeoffset] [location <HostName>]
 def doVersion(checkForArgs=True):
   forceCheck = 0
-  extended = noOffsetError = timeOffset = simple = update = quiet = False
+  extended = noOffsetError = timeOffset = simple = update = install = quiet = False
+  targetPath = None
   testLocation = GOOGLE_TIMECHECK_LOCATION
   if checkForArgs:
     while Cmd.ArgumentsRemaining():
@@ -4829,6 +4901,12 @@ def doVersion(checkForArgs=True):
       elif myarg == 'update':
         forceCheck = 1
         update = True
+      elif myarg == 'install':
+        forceCheck = 1
+        update = install = True
+        targetPath = os.path.abspath(os.path.expanduser(getString(Cmd.OB_FILE_PATH)))
+      elif myarg == 'path':
+        targetPath = os.path.abspath(os.path.expanduser(getString(Cmd.OB_FILE_PATH)))
       elif myarg == 'quiet':
         quiet = True
       elif myarg == 'simple':
@@ -4843,6 +4921,8 @@ def doVersion(checkForArgs=True):
         testLocation = getString(Cmd.OB_HOST_NAME)
       else:
         unknownArgumentExit()
+  if install:
+    forceCheck = 1
   if simple:
     writeStdout(__version__)
     return
@@ -4866,9 +4946,15 @@ def doVersion(checkForArgs=True):
         systemErrorExit(NETWORK_ERROR_RC, Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
       stderrWarningMsg(Msg.PLEASE_CORRECT_YOUR_SYSTEM_TIME)
   if forceCheck:
-    release_data = doGAMCheckForUpdates(forceCheck, quiet)
+# path: check/update the GAM in another folder; install: put the latest GAM in a folder, whatever is there
+    currentVersion = None
+    if targetPath is not None:
+      currentVersion = _getGAMVersionAt(targetPath)
+      if not currentVersion and not install:
+        systemErrorExit(USAGE_ERROR_RC, Msg.GAM_UPDATE_NO_GAM_IN_FOLDER.format(targetPath))
+    release_data = doGAMCheckForUpdates(forceCheck, quiet, currentVersion, install)
     if update:
-      doGAMUpdate(release_data, quiet)
+      doGAMUpdate(release_data, quiet, targetPath, install)
       return
   if extended:
     printKeyValueList([ssl.OPENSSL_VERSION])
@@ -9625,7 +9711,7 @@ class CSVPrintFile():
             if not self.todrive['fileId'] or not self.todrive['retaintitle']:
               body['name'] = title
             kwargs = {}
-            if mimeType == 'text/csv' or (not self.todrive['cellnumberformat'] and not not self.todrive['cellwrap']):
+            if mimeType == 'text/csv' or (not self.todrive['cellnumberformat'] and not self.todrive['cellwrap']):
               kwargs['media_body'] = googleapiclient.http.MediaIoBaseUpload(io.BytesIO(csvFile.getvalue().encode()), mimetype='text/csv', resumable=True)
               self.todrive['noPaste'] = True
             try:
@@ -9664,7 +9750,7 @@ class CSVPrintFile():
                              fileId=spreadsheetId, sendNotificationEmail=False, body=share, fields='', supportsAllDrives=True)
                     entityActionPerformed([Ent.USER, user, Ent.SPREADSHEET, title,
                                            Ent.TARGET_USER, share['emailAddress'], Ent.ROLE, share['role']])
-                  except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+                  except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                           GAPI.insufficientFilePermissions, GAPI.insufficientParentPermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                           GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
                           GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -14310,7 +14396,7 @@ def doReportUsageParameters():
   while True:
     try:
       result = callGAPI(service, 'get',
-                        throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST],
+                        throwReasons=[GAPI.INVALID, GAPI.BAD_REQUEST, GAPI.PERMISSION_DENIED],
                         date=tryDate, customerId=customerId, fields='warnings,usageReports(parameters(name))', **kwargs)
       fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate, dataRequiredServices)
       if fullData < 0:
@@ -14326,7 +14412,7 @@ def doReportUsageParameters():
     except GAPI.badRequest:
       printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
       return
-    except GAPI.invalid as e:
+    except (GAPI.invalid, GAPI.permissionDenied) as e:
       tryDate = _adjustTryDate(str(e), 0, -1, tryDate)
       if not tryDate:
         break
@@ -14542,7 +14628,8 @@ def doReportUsage():
         try:
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 customerId=customerId, date=useDate,
                                 parameters=parameters, **kwarg)
@@ -14591,7 +14678,7 @@ def doReportUsage():
       break
     except GAPI.invalidInput as e:
       systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-    except GAPI.forbidden as e:
+    except (GAPI.forbidden, GAPI.permissionDenied) as e:
       accessErrorExit(None, str(e))
   if startUseDate:
     reportName = f'{report.capitalize()} Usage Report - {startUseDate}:{endUseDate}'
@@ -15234,7 +15321,8 @@ def doReport():
         try:
           if not userCustomerRange:
             result = callGAPI(service, 'get',
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                            GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               userKey=verifyUser, date=tryDate, customerId=customerId,
                               orgUnitID=orgUnitId, parameters=parameters,
                               fields='warnings,usageReports', maxResults=1)
@@ -15257,7 +15345,8 @@ def doReport():
           prevTryDate = tryDate
           usage = callGAPIpages(service, 'get', 'usageReports',
                                 pageMessage=pageMessage,
-                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                                throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                              GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                                 retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                 userKey=user, date=tryDate, customerId=customerId,
                                 orgUnitID=orgUnitId, filters=filters, parameters=parameters,
@@ -15288,7 +15377,7 @@ def doReport():
             printErrorMessage(BAD_REQUEST_RC, Msg.BAD_REQUEST)
             exitUserLoop = True
           break
-        except GAPI.forbidden as e:
+        except (GAPI.forbidden, GAPI.permissionDenied) as e:
           accessErrorExit(None, str(e))
         startDateTime = startDateTime.shift(days=1)
       if exitUserLoop:
@@ -15346,7 +15435,8 @@ def doReport():
       try:
         if not userCustomerRange:
           result = callGAPI(service, 'get',
-                            throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST, GAPI.FORBIDDEN],
+                            throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.BAD_REQUEST,
+                                          GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                             date=tryDate, customerId=customerId, parameters=parameters, fields='warnings,usageReports')
           fullData, tryDate, usageReports = _checkDataRequiredServices(result, tryDate,
                                                                        dataRequiredServices, parameterServices)
@@ -15360,7 +15450,7 @@ def doReport():
             startDateTime = endDateTime = arrow.Arrow.strptime(tryDate, YYYYMMDD_FORMAT)
             continue
         usage = callGAPIpages(service, 'get', 'usageReports',
-                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.FORBIDDEN],
+                              throwReasons=[GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.FORBIDDEN, GAPI.PERMISSION_DENIED],
                               date=tryDate, customerId=customerId, parameters=parameters)
         if not userCustomerRange or (startEndTime.startDateTime == startEndTime.endDateTime):
           status, lastDate = processCustomerUsage(usage, lastDate)
@@ -15379,7 +15469,7 @@ def doReport():
         continue
       except GAPI.invalidInput as e:
         systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-      except GAPI.forbidden as e:
+      except (GAPI.forbidden, GAPI.permissionDenied) as e:
         accessErrorExit(None, str(e))
       startDateTime = startDateTime.shift(days=1)
     csvPF.writeCSVfile(f'Customer Report - {tryDate}')
@@ -15461,7 +15551,8 @@ def doReport():
         try:
           feed = callGAPIpages(service, 'list', 'items',
                                pageMessage=pageMessage, maxItems=maxActivities,
-                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT, GAPI.AUTH_ERROR, GAPI.SERVICE_NOT_AVAILABLE],
+                               throwReasons=[GAPI.BAD_REQUEST, GAPI.INVALID, GAPI.INVALID_INPUT,
+                                             GAPI.AUTH_ERROR, GAPI.SERVICE_NOT_AVAILABLE, GAPI.PERMISSION_DENIED],
                                retryReasons=GAPI.SERVICE_NOT_AVAILABLE_RETRY_REASONS,
                                applicationName=report, userKey=user, customerId=customerId,
                                actorIpAddress=actorIpAddress, orgUnitID=orgUnitId,
@@ -15475,8 +15566,8 @@ def doReport():
           break
         except (GAPI.invalid, GAPI.invalidInput, GAPI.serviceNotAvailable) as e:
           systemErrorExit(GOOGLE_API_ERROR_RC, str(e))
-        except GAPI.authError:
-          accessErrorExit(None)
+        except (GAPI.authError, GAPI.permissionDenied) as e:
+          accessErrorExit(None, str(e))
         for activity in feed:
           events = activity.pop('events')
           actor = activity['actor'].get('email')
@@ -64909,7 +65000,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
         if copyMoveOptions['showPermissionMessages']:
           entityActionPerformed(kvList, k, kcount)
         break
-      except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+      except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
               GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
               GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -64973,7 +65064,7 @@ def _copyPermissions(drive, user, i, count, j, jcount,
                throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_UPDATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
                removeExpiration=removeExpiration,
                **deleteUpdateKwargs,
-               fileId=newFileId, permissionId=permissionId, body=permission['updates'], supportsAllDrives=True)
+               fileId=newFileId, permissionId=permissionId, body=permission['updates'], fields='', supportsAllDrives=True)
       if copyMoveOptions['showPermissionMessages']:
         entityActionPerformed(kvList, k, kcount)
     except (GAPI.notFound, GAPI.permissionNotFound,
@@ -66065,7 +66156,7 @@ def _updateMoveFilePermissions(drive, user, i, count,
           if copyMoveOptions['showPermissionMessages']:
             entityActionPerformed(kvList, k, kcount)
           break
-        except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+        except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
                 GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
                 GAPI.teamDriveDomainUsersOnlyRestriction, GAPI.teamDriveTeamMembersOnlyRestriction,
                 GAPI.targetUserRoleLimitedByLicenseRestriction, GAPI.insufficientAdministratorPrivileges, GAPI.sharingRateLimitExceeded,
@@ -69332,6 +69423,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
     if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
       _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
     if csvPF:
+      permission.pop('teamDrivePermissionDetails', None)
       baserow = {'Owner': user, 'id': fileId}
       if showTitles:
         baserow['name'] = fileName
@@ -69454,7 +69546,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
         fileName = fileId
         entityType = Ent.DRIVE_FILE_OR_FOLDER_ID
         if showTitles or updateSheetProtectedRanges:
-          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, combineTitleId=not csvPF)
+          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, not csvPF, useDomainAdminAccess)
           if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
             if not sheet:
               _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
@@ -69482,7 +69574,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
                                   useDomainAdminAccess=useDomainAdminAccess,
                                   fileId=fileId, permissionId=tempPermId, fields='*', supportsAllDrives=True)
             _showResult(permission, False)
-      except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+      except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.permissionNotFound, GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
               GAPI.expirationDateNotAllowedForSharedDriveMembers, GAPI.expirationDatesMustBeInTheFuture,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
@@ -69520,6 +69612,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
     if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
       _updateSheetProtectedRangesACLchange(sheet, user, i, count, j, jcount, fileId, fileName, True, permission)
     if csvPF:
+      permission.pop('teamDrivePermissionDetails', None)
       baserow = {'Owner': user, 'id': fileId}
       if showTitles:
         baserow['name'] = fileName
@@ -69603,7 +69696,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
         fileName = fileId
         entityType = Ent.DRIVE_FILE_OR_FOLDER_ID
         if showTitles or updateSheetProtectedRanges:
-          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, combineTitleId=not csvPF)
+          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, not csvPF, useDomainAdminAccess)
           if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
             if not sheet:
               _, sheet = buildGAPIServiceObject(API.SHEETS, user, i, count)
@@ -69718,7 +69811,7 @@ def createDriveFilePermissions(users, useDomainAdminAccess=False):
                  fileId=ri[RI_ENTITY], sendNotificationEmail=sendNotificationEmail, emailMessage=emailMessage,
                  body=_makePermissionBody(ri[RI_ITEM]), fields='', supportsAllDrives=True)
         entityActionPerformed([Ent.DRIVE_FILE_OR_FOLDER_ID, ri[RI_ENTITY], Ent.PERMITTEE, ri[RI_ITEM]], int(ri[RI_J]), int(ri[RI_JCOUNT]))
-      except (GAPI.badRequest, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
+      except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
               GAPI.expirationDateNotAllowedForSharedDriveMembers, GAPI.expirationDatesMustBeInTheFuture,
               GAPI.insufficientFilePermissions, GAPI.unknownError, GAPI.ownershipChangeAcrossDomainNotPermitted,
@@ -69878,7 +69971,7 @@ def deleteDriveFileACLs(users, useDomainAdminAccess=False):
         fileName = fileId
         entityType = Ent.DRIVE_FILE_OR_FOLDER_ID
         if showTitles or updateSheetProtectedRanges:
-          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId)
+          fileName, entityType, mimeType = _getDriveFileNameFromId(drive, fileId, useDomainAdminAccess=useDomainAdminAccess)
           if updateSheetProtectedRanges and mimeType == MIMETYPE_GA_SPREADSHEET:
             permission = callGAPI(drive.permissions(), 'get',
                                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.PERMISSION_NOT_FOUND, GAPI.INSUFFICIENT_ADMINISTRATOR_PRIVILEGES],
@@ -70082,10 +70175,9 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
                               useDomainAdminAccess=useDomainAdminAccess,
                               fileId=fileId, permissionId=permissionId, fields='*', supportsAllDrives=True)
         if not FJQC.formatJSON:
-          jcount = len(permission)
-          entityPerformActionNumItems([entityType, fileName], jcount, Ent.PERMITTEE)
+          entityPerformActionNumItems([entityType, fileName], 1, Ent.PERMITTEE)
           Ind.Increment()
-          _showDriveFilePermission(permission, printKeys, timeObjects, j, jcount)
+          _showDriveFilePermission(permission, printKeys, timeObjects)
           Ind.Decrement()
         else:
           _showDriveFilePermissionJSON(user, fileId, fileName, None, permission, timeObjects)
@@ -77171,9 +77263,9 @@ def printShowMessagesThreads(users, entityType):
                       except (GAPI.forbidden, GAPI.insufficientPermissions, GAPI.insufficientParentPermissions,
                               GAPI.invalid, GAPI.badRequest, GAPI.cannotAddParent,
                               GAPI.fileNotFound, GAPI.unknownError, GAPI.internalError,
-                              GAPI.storageQuotaExceeded, GAPI.teamdrivesSharingRestrictionNotAllowed,
-                              GAPI.teamdrivefileLimitExceeded, GAPI.teamdriveHierarchyTooDeep,
-                              GAPI.uploadTooLarge, GAPI.teamdrivesShortcutFileNotSupported) as e:
+                              GAPI.storageQuotaExceeded, GAPI.teamDrivesSharingRestrictionNotAllowed,
+                              GAPI.teamDriveFileLimitExceeded, GAPI.teamDriveHierarchyTooDeep,
+                              GAPI.uploadTooLarge, GAPI.teamDrivesShortcutFileNotSupported) as e:
                         entityModifierItemValueListActionFailedWarning([Ent.DRIVE_FILE, None],
                                                                        Act.MODIFIER_WITH_CONTENT_FROM, [Ent.ATTACHMENT, filename], str(e), j, jcount)
                       except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:

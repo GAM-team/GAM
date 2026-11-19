@@ -657,18 +657,19 @@ gam [<UserTypeEntity>] add drivefileacl <SharedDriveEntityAdmin>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         [expires|expiration <Time>] [sendemail] [emailmessage <String>]
-        [showtitles] [nodetails]
+        [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
         [adminaccess|asadmin]
 gam [<UserTypeEntity>] update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
         [adminaccess|asadmin]
-        [showtitles] [nodetails]
+        [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam [<UserTypeEntity>] delete drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         [showtitles]
         [adminaccess|asadmin]
 ```
-By default, when an ACL is added/updated, GAM outputs details of the ACL. The `nodetails` option
-suppresses this output.
+By default, when an ACL is added|updated, GAM outputs details of the ACL as indented keywords and values.
+* `nodetails` - Suppress the details output.
+* `csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]]` - Output the details in CSV format.
 
 By default, the file ID is displayed in the output; to see the file name, use the `showtitles`
 option; this requires an additional API call per file.
