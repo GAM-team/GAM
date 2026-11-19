@@ -11,7 +11,7 @@
 ----
 The latest alpha DPoP build is at:
 
-https://github.com/GAM-team/GAM/releases/tag/20261119.145840
+[https://github.com/GAM-team/GAM/releases/tag/20261113.220459](https://github.com/GAM-team/GAM/releases/tag/20261113.220459)
 ----
 
 ## What is DPoP?
@@ -60,9 +60,10 @@ GAM supports multiple DPoP signer backends where the private key can be stored. 
 | Backend | Platform | Key Storage | Hardware-Backed | Best For |
 |---------|----------|-------------|-----------------|----------|
 | [`macos_secureenclave`](#macos--secure-enclave-recommended-for-apple-silicon-macs) | macOS (Apple Silicon) | Secure Enclave | Yes | Mac admins with Apple Silicon |
-| [`windows_tpm`](#windows--cngtpm-recommended-for-windows-with-tpm) | Windows | TPM via CNG | Yes (with TPM) | Windows admins with TPM |
+| [`windows_certstore`](#windows--certificate-store--tpm-recommended-for-windows-with-tpm) | Windows | Windows Cert Store (TPM via CNG) | Yes (with TPM) | Windows admins with TPM |
 | [`linux_tpm`](#linux--tpm-20-recommended-for-linux-servers) | Linux | TPM 2.0 | Yes | Linux servers with TPM |
 | [`yubikey`](#yubikey--piv-cross-platform) | Any | YubiKey PIV | Yes | Cross-platform, portable key |
+| [`pkcs11`](#pkcs11--hsm--smart-card-cross-platform) | Any | PKCS#11 token (HSM, smart card) | Yes (with HSM/smart card) | Hardware security modules (HSMs), PKCS#11 smart cards |
 | [`software`](#software-key-testing-only) | Any | PEM file on disk | No | Testing or low-security environments |
 
 > [!IMPORTANT]
@@ -87,6 +88,13 @@ The [Apple Secure Enclave](https://support.apple.com/guide/security/the-secure-e
 **Requirements:**
 - macOS 15 (Sequoia) or later
 - Apple Silicon (M1 or newer) Mac
+
+#### Permissions & Automation
+
+Decide which macOS account and authentication mode you need before creating the key:
+
+- **Per-user isolation:** Secure Enclave CryptoTokenKit identities are stored in the creating user's [Data Protection Keychain](https://support.apple.com/guide/security/keychain-data-protection-secb0694df1a/web) (see [Protecting Keys with the Secure Enclave](https://developer.apple.com/documentation/security/protecting-keys-with-the-secure-enclave)). Create the key while logged in as the same macOS user that will run GAM — other local macOS users (and `root` `LaunchDaemon`s or `sudo` sessions under a different user) cannot access your key, and there is no system-wide shared store equivalent to Windows `local_machine`.
+- **SSH and scheduled tasks (`launchd`):** Standard `sc_auth` keys (without `-t bio`) work over **SSH** and in per-user **LaunchAgents** running as the user that created the key. Keys created with `-t bio` require physical Touch ID presence on each signing operation, so avoid `-t bio` if you plan to run GAM over headless SSH or in unattended jobs.
 
 #### Step 1: Create the Secure Enclave Key
 
@@ -121,20 +129,15 @@ gam config dpop true dpop_backend macos_secureenclave dpop_backend_config "gam-d
 > a 1-year validity. This does not matter — DPoP uses the raw private key,
 > not the certificate. The key remains usable regardless of certificate expiry.
 
-#### Permissions & Automation
-
-- **Per-user isolation:** Secure Enclave CryptoTokenKit identities are stored in the creating user's [Data Protection Keychain](https://support.apple.com/guide/security/keychain-data-protection-secb0694df1a/web) (see [Protecting Keys with the Secure Enclave](https://developer.apple.com/documentation/security/protecting-keys-with-the-secure-enclave)). Other local macOS users (and `root` `LaunchDaemon`s or `sudo` sessions under a different user) cannot access your key, and there is no system-wide shared store equivalent to Windows `local_machine`.
-- **SSH and scheduled tasks (`launchd`):** Standard `sc_auth` keys (without `-t bio`) work over **SSH** and in per-user **LaunchAgents** running as the user that created the key. Keys created with `-t bio` require physical Touch ID presence on each signing operation, so avoid `-t bio` for headless SSH or unattended jobs.
-
 ---
 
-### Windows — CNG/TPM (Recommended for Windows with TPM)
+### Windows — Certificate Store / TPM (Recommended for Windows with TPM)
 
-On Windows, GAM uses [CNG (Cryptography Next Generation)](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal) to access keys in the Windows certificate store. When a TPM is present and the correct provider is used, the private key is stored in the TPM.
+On Windows, GAM uses the `windows_certstore` backend ([CNG / CryptoAPI](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal)) to sign with a certificate's private key in the Windows certificate store. Create the key using `"Microsoft Platform Crypto Provider"` so Windows stores the private key inside the hardware **TPM 2.0** chip where it cannot be extracted.
 
 **Requirements:**
 - Windows 10/11 or Windows Server 2019+
-- TPM 2.0 (for hardware-backed keys). Windows 11 requires a TPM 2.0 device.
+- TPM 2.0 (`"Microsoft Platform Crypto Provider"`). Windows 11 requires a TPM 2.0 device.
 
 #### Choosing a Certificate Store Location (`current_user` vs `local_machine`)
 
@@ -182,14 +185,18 @@ New-SelfSignedCertificate `
 ```
 
 Key points:
-- `"Microsoft Platform Crypto Provider"` routes the key to the TPM.
+- `"Microsoft Platform Crypto Provider"` routes the private key to the hardware TPM.
 - `-KeyExportPolicy NonExportable` prevents extraction.
 - The 30-year validity prevents certificate expiry from being an issue.
 
-> [!TIP]
-> If your machine does not have a TPM, you can use `"Microsoft Software Key
-> Storage Provider"` instead. The key will be software-backed (not
-> hardware-backed) but still non-exportable and protected by Windows CNG.
+> [!WARNING]
+> **Fallback without TPM is not secure:** If a machine has no TPM and you need
+> a fallback for testing, `"Microsoft Software Key Storage Provider"` stores the
+> private key in **software on disk (not in a hardware TPM)**. The Software Key
+> Storage Provider is **not secure** for production use — an attacker with local
+> admin or sufficient machine access could potentially extract or misuse it. For
+> production security, always use `"Microsoft Platform Crypto Provider"` (TPM 2.0)
+> or a dedicated hardware token.
 
 #### Step 2: Verify the Key
 
@@ -215,20 +222,20 @@ For **Current User** (`Cert:\CurrentUser\My`, default — `,current_user` is opt
 
 ```bash
 # By subject name (substring match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Signing Key" save
 
 # Or by certificate thumbprint (exact match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
 For **Local Machine** (`Cert:\LocalMachine\My`, for SSH / Scheduled Tasks), append `,local_machine`:
 
 ```bash
 # By subject name (substring match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Signing Key,local_machine" save
 
 # Or by certificate thumbprint (exact match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5...,local_machine" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "thumbprint:A1B2C3D4E5...,local_machine" save
 ```
 
 ---
@@ -240,6 +247,27 @@ On Linux, GAM uses `tpm2-pytss` to sign directly with a persistent key in the TP
 **Requirements:**
 - Linux with TPM 2.0 (most modern servers and laptops)
 - `tpm2-tools` and `libtss2-dev` system packages
+
+#### Permissions & Automation
+
+Grant TPM device permissions and review key isolation before creating your key:
+
+- **Device group access (`/dev/tpmrm0`):** Access to the Linux kernel's in-kernel [TPM 2.0 resource manager](https://docs.kernel.org/security/tpm/tpm-security.html) typically requires membership in the `tss` group (do this first so `tpm2-tools` commands in the steps below can run without `sudo` once you re-login):
+
+  ```bash
+  sudo usermod -aG tss $USER
+  # Log out and back in for the group change to take effect
+  ```
+
+- **Shared TPM device:** Unlike macOS per-user keychains, persistent TPM handles are not isolated per OS user — any account that can open `/dev/tpmrm0` (`root` and members of `tss`) can use the handle to sign, though they would **still need read access to `oauth2.txt`**. Only add the account(s) running GAM to `tss`, and lock down your GAM config directory (`chmod 700 ~/.gam && chmod 600 ~/.gam/oauth2.txt ~/.gam/gam.cfg`).
+- **Optional key password (`auth`):** If you want an extra authorization value on the key itself, add `-p <password>` during [`tpm2_create`](https://manpages.ubuntu.com/manpages/noble/man1/tpm2_create.1.html) in Step 2 and pass it as `handle[,tcti[,auth]]` in `dpop_backend_config` (which keeps the secret in `gam.cfg`).
+- **SSH, `cron`, and `systemd`:** `tss` group access works directly over **SSH** and in **`cron`** jobs. For [`systemd` services](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), ensure the unit includes `SupplementaryGroups=tss` (if running as a service user) and does **not** set `PrivateDevices=yes`, which hides `/dev/tpmrm0`.
+
+> [!TIP]
+> VMs running on VMware, Proxmox, etc can create vTPM (virtual TPM)
+> devices for guest VMs. These vTPMs protect the private key even if
+> an attacker has root access to the guest VM but anyone with access
+> to the host VM server can access the vTPM private keys directly.
 
 #### Step 1: Install System Packages
 
@@ -272,11 +300,6 @@ tpm2_evictcontrol -C o -c key.ctx 0x81000001
 rm primary.ctx key.ctx key.pub key.priv
 ```
 
-> [!IMPORTANT]
-> Use `-G ecc:ecdsa-sha256` (not just `-G ecc256`) so the signing scheme is
-> baked into the key. This ensures compatibility with all versions of the
-> signer.
-
 #### Step 3: Verify the Key
 
 ```bash
@@ -290,25 +313,6 @@ Confirm the output shows `type: ecc`, `curve-id: NIST p256`, and `scheme: ecdsa`
 ```bash
 gam config dpop true dpop_backend linux_tpm dpop_backend_config "0x81000001" save
 ```
-
-#### Permissions & Automation
-
-Access to `/dev/tpmrm0` (the Linux kernel's in-kernel [TPM 2.0 resource manager](https://docs.kernel.org/security/tpm/tpm-security.html)) typically requires membership in the `tss` group:
-
-```bash
-sudo usermod -aG tss $USER
-# Log out and back in for the group change to take effect
-```
-
-- **Shared TPM device:** Unlike macOS per-user keychains, persistent TPM handles are not isolated per OS user — any account that can open `/dev/tpmrm0` (`root` and members of `tss`) can use the handle to sign, though they would **still need read access to `oauth2.txt`**. Only add the account(s) running GAM to `tss`, and lock down your GAM config directory (`chmod 700 ~/.gam && chmod 600 ~/.gam/oauth2.txt ~/.gam/gam.cfg`).
-- **Optional key password (`auth`):** You can set a TPM key authorization value with `-p` during [`tpm2_create`](https://manpages.ubuntu.com/manpages/noble/man1/tpm2_create.1.html) and pass it as `handle[,tcti[,auth]]` in `dpop_backend_config` (which keeps the secret in `gam.cfg`).
-- **SSH, `cron`, and `systemd`:** `tss` group access works directly over **SSH** and in **`cron`** jobs. For [`systemd` services](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html), ensure the unit includes `SupplementaryGroups=tss` (if running as a service user) and does **not** set `PrivateDevices=yes`, which hides `/dev/tpmrm0`.
-
-> [!TIP]
-> VMs running on VMware, Proxmox, etc can create vTPM (virtual TPM)
-> devices for guest VMs. These vTPMs protect the private key even if
-> an attacker has root access to the guest VM but anyone with access
-> to the host VM server can access the vTPM private keys directly.
 
 ---
 
@@ -371,6 +375,34 @@ gam config dpop_backend_config ",9a,mypin" save
 > Change the default PIV PIN: `ykman piv access change-pin`
 > Even if the Yubikey is lost the attacker would need the PIN
 > which is stored in the GAM config making the theft harder.
+
+---
+
+### PKCS#11 — HSM / Smart Card (Cross-Platform)
+
+The `pkcs11` backend works with PKCS#11 (Cryptoki) modules across Linux, macOS, and Windows — such as network/cloud HSMs, OpenSC smart cards, and SoftHSM2 (for testing). Supports `ES256` (P-256), `ES384` (P-384), and `RS256` (RSA).
+
+Configuration uses an [RFC 7512](https://www.rfc-editor.org/rfc/rfc7512) `pkcs11:` URI as `dpop_backend_config`:
+
+- **Path attributes (`;`):** `token=`, `object=` (key label), `id=` (percent-encoded `CKA_ID` bytes such as `%01`), `slot-id=`, `serial=`
+- **Query attributes (`&`):** `module-path=` (full path to `.so`/`.dylib`/`.dll`), `module-name=` (resolved via `p11-kit`), `pin-source=` (`file:/path/to/pin`), `pin-value=`
+
+#### Configure GAM
+
+```bash
+# Example with an HSM / PKCS#11 module and a separate PIN file
+gam config dpop true dpop_backend pkcs11 \
+    dpop_backend_config "pkcs11:token=hsm-slot;object=dpop-key;id=%01?module-path=/path/to/libpkcs11.so&pin-source=file:/home/$USER/.gam/pkcs11-pin.txt" save
+
+# Example with OpenSC / smart card module-name
+gam config dpop true dpop_backend pkcs11 \
+    dpop_backend_config "pkcs11:token=MyToken;object=dpop-key?module-name=opensc-pkcs11&pin-value=123456" save
+```
+
+> [!TIP]
+> Prefer `pin-source=file:/path/to/pin` (`chmod 600`) over embedding
+> `pin-value=` directly in `gam.cfg`, or configure your PKCS#11 module via the
+> `PKCS11_MODULE` environment variable if omitting `module-path=`/`module-name=`.
 
 ---
 
@@ -440,8 +472,9 @@ If there's a problem, GAM will print a clear error and exit with a non-zero exit
 | `DPoP software backend requires dpop_backend_config set to the path of a PEM private key file` | No key file configured | Set `dpop_backend_config` to a PEM file path |
 | `DPoP software key file not found` | PEM file doesn't exist at the configured path | Check the path and generate the key |
 | `DPoP macOS Secure Enclave error` | Key not found in Secure Enclave | Run `sc_auth list-ctk-identities` to check |
-| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
+| `DPoP Windows Certificate Store error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
 | `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions and `tpm2_readpublic -c 0x81000001` |
+| `DPoP PKCS#11 error` | PKCS#11 module, token, PIN, or key object invalid | Check `module-path=`, token/object/id attributes, and PIN (`pkcs11-tool`) |
 | `DPoP YubiKey error` | YubiKey not plugged in or wrong PIN | Plug in YubiKey and verify PIN |
 
 ### Step 2: Create DPoP-Bound OAuth Credentials
@@ -520,7 +553,7 @@ All DPoP settings are stored in `gam.cfg`:
 | Setting | Values | Default | Description |
 |---------|--------|---------|-------------|
 | `dpop` | `true` / `false` | `false` | Enable or disable DPoP |
-| `dpop_backend` | `software`, `macos_secureenclave`, `windows_tpm`, `linux_tpm`, `yubikey`, `ecp` | `software` | Which signer backend to use |
+| `dpop_backend` | `software`, `macos_secureenclave`, `windows_certstore`, `linux_tpm`, `yubikey`, `pkcs11`, `ecp` | `software` | Which signer backend to use |
 | `dpop_backend_config` | *(varies by backend)* | *(empty)* | Backend-specific configuration |
 
 ### `dpop_backend_config` Format by Backend
@@ -529,9 +562,10 @@ All DPoP settings are stored in `gam.cfg`:
 |---------|--------|---------|
 | `software` | Path to PEM private key file | `dpop_key.pem` |
 | `macos_secureenclave` | `label[,application_tag]` | `gam-dpop` |
-| `windows_tpm` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
+| `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
+| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=hsm-slot;object=dpop-key?module-path=/path/to/libpkcs11.so` |
 
 ---
 
