@@ -1,3 +1,13 @@
+7.52.05
+
+Added option `fields <DrivePermissionsFieldNameList>` to the following commands to provide
+more control over what ACL fields are displayed.
+```
+gam [<UserTypeEntity>] create|add drivefileacl <SharedDriveEntityAdmin>
+gam [<UserTypeEntity>] update drivefileacl <SharedDriveEntityAdmin>
+gam [<UserTypeEntity>] info drivefileacl <SharedDriveEntityAdmin>
+```
+
 7.52.04
 
 Updated `gam [<UserTypeEntity>] create drivefileacl <DriveFileEntity>` to handle the error:

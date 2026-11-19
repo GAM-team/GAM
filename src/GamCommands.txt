@@ -5263,14 +5263,18 @@ gam create|add drivefileacl <SharedDriveEntityAdmin>
         anyone|(user <UserItem>)|(group <GroupItem>)|(domain <DomainName>)
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         (mappermissionsdomain <DomainName> <DomainName>)*
-        [expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
+        [expiration <Time>]
+        [fields <DrivePermissionsFieldNameList>]
+        [sendemail|sendnotification] [emailmessage <String>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam delete drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         [showtitles]
 gam info drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
+        [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [showtitles]
         [formatjson]
 gam show drivefileacls <SharedDriveEntityAdmin>
@@ -5303,7 +5307,9 @@ gam <UserTypeEntity> create|add drivefileacl <SharedDriveEntityAdmin>
         (role <DriveFileACLRole>) [withlink|(allowfilediscovery|discoverable [<Boolean>])]
         (mappermissionsdomain <DomainName> <DomainName>)*
         [movetonewownersroot [<Boolean>]]
-        [expiration <Time>] [sendemail|sendnotification] [emailmessage <String>]
+        [expiration <Time>]
+        [sendemail|sendnotification] [emailmessage <String>]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
         adminaccess
 gam <UserTypeEntity> update drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
@@ -5313,6 +5319,7 @@ gam <UserTypeEntity> update drivefileacl <SharedDriveEntityAdmin> <DriveFilePerm
 gam <UserTypeEntity> delete drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail>
         [showtitles] adminaccess
 gam <UserTypeEntity> info drivefileacl <SharedDriveEntityAdmin> <DriveFilePermissionIDorEmail> adminaccess
+        [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [showtitles]
         [formatjson]
 gam <UserTypeEntity> show drivefileacls <SharedDriveEntityAdmin> adminaccess
@@ -7296,6 +7303,7 @@ gam <UserTypeEntity> check drivefileshortcut <DriveFileEntity>
         expirationdate|
         expirationtime|
         id|
+        inheritedPermissionsDisabled|
         name|
         pendingowner|
         permissiondetails|
@@ -7312,15 +7320,18 @@ gam <UserTypeEntity> create|add drivefileacl <DriveFileEntity> [adminaccess|asad
         [moveToNewOwnersRoot [<Boolean>]]
         [sendemail|sendnotification] [emailmessage <String>]
         [updatesheetprotectedranges [<Boolean>]]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         (role <DriveFileACLRole>) [expires|expiration <Time>] [removeexpiration [<Boolean>]]
         [updatesheetprotectedranges [<Boolean>]]
+        [fields <DrivePermissionsFieldNameList>]
         [showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 gam <UserTypeEntity> delete drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
         [updatesheetprotectedranges [<Boolean>]]
         [showtitles]
 gam <UserTypeEntity> info drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
+        [<DrivePermissionsFieldName>*|(fields <DrivePermissionsFieldNameList>)]
         [showtitles]
         [formatjson]
 gam <UserTypeEntity> show drivefileacls <DriveFileEntity>
