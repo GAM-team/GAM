@@ -474,7 +474,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get -qq --yes install softhsm2 opensc
-          SOFTHSM_LIB=$(find /usr/lib /usr/lib64 -name "libsofthsm2.so" 2>/dev/null | head -n 1)
+          SOFTHSM_LIB=$(find /usr/lib -name "libsofthsm2.so" -print -quit)
           mkdir -p /tmp/softhsm-tokens
           printf "directories.tokendir = /tmp/softhsm-tokens\nobjectstore.backend = file\n" > /tmp/softhsm2.conf
           export SOFTHSM2_CONF=/tmp/softhsm2.conf
