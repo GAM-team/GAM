@@ -294,13 +294,13 @@ jobs:
           # google-cloud-python monorepo has paths exceeding Windows 260-char limit
           git config --global core.longpaths true
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            "$PYTHON" -m pip install ..[yubikey,ecp,linux_tpm,ephemeral]
+            "$PYTHON" -m pip install ..[yubikey,ecp,linux_tpm,pkcs11,ephemeral]
           elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            "$PYTHON" -m pip install ..[yubikey,ecp,macos_secureenclave,ephemeral]
+            "$PYTHON" -m pip install ..[yubikey,ecp,macos_secureenclave,pkcs11,ephemeral]
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            "$PYTHON" -m pip install ..[yubikey,ecp,windows_tpm,ephemeral]
+            "$PYTHON" -m pip install ..[yubikey,ecp,windows_certstore,pkcs11,ephemeral]
           else
-            "$PYTHON" -m pip install ..[yubikey,ecp,ephemeral]
+            "$PYTHON" -m pip install ..[yubikey,ecp,pkcs11,ephemeral]
           fi
 
       - name: Install PyInstaller
@@ -470,6 +470,21 @@ jobs:
           $gam config dpop_backend linux_tpm dpop_backend_config "0x81000001,tabrmd:bus_type=session" save
           $gam check dpop
 
+      - name: Test DPoP PKCS#11 backend
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get -qq --yes install softhsm2 opensc
+          SOFTHSM_LIB=$(find /usr/lib /usr/lib64 -name "libsofthsm2.so" 2>/dev/null | head -n 1)
+          mkdir -p /tmp/softhsm-tokens
+          printf "directories.tokendir = /tmp/softhsm-tokens\nobjectstore.backend = file\n" > /tmp/softhsm2.conf
+          export SOFTHSM2_CONF=/tmp/softhsm2.conf
+          softhsm2-util --init-token --free --label dpop-ci --so-pin 123456 --pin 1234
+          pkcs11-tool --module "$SOFTHSM_LIB" --login --pin 1234 \
+            --keypairgen --key-type EC:prime256v1 --label dpop-ec --id 01
+          $gam config dpop true dpop_backend pkcs11 dpop_backend_config "pkcs11:token=dpop-ci;object=dpop-ec?module-path=${SOFTHSM_LIB}&pin-value=1234" save
+          $gam check dpop
+          rm -rf /tmp/softhsm-tokens /tmp/softhsm2.conf
+
       - name: Create CNG test certificate
         if: matrix.goal == 'build' && runner.os == 'Windows'
         shell: pwsh
@@ -504,10 +519,10 @@ jobs:
           $infMachine | Out-File -Encoding ascii "$env:TEMP\dpop-ci-machine.inf"
           certreq -new -f "$env:TEMP\dpop-ci-machine.inf" "$env:TEMP\dpop-ci-machine.cer"
 
-      - name: Test DPoP Windows CNG backend
+      - name: Test DPoP Windows Certificate Store backend
         if: matrix.goal == 'build' && runner.os == 'Windows'
         run: |
-          $gam config dpop_backend windows_tpm dpop_backend_config "GAM DPoP CI Test" save
+          $gam config dpop_backend windows_certstore dpop_backend_config "GAM DPoP CI Test" save
           $gam check dpop
           $gam config dpop_backend_config "GAM DPoP CI Machine Test,local_machine" save
           $gam check dpop
@@ -594,7 +609,7 @@ jobs:
       - name: Configure Windows DPoP secret backend
         if: runner.os == 'Windows' && steps.dpop-live.outputs.has_key == 'true'
         run: |
-          $gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Secret Test,local_machine" save
+          $gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Secret Test,local_machine" save
           $gam check dpop
 
       - name: Setup Certum Code Signing

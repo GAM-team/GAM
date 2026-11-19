@@ -164,7 +164,7 @@ DEVELOPER_PREVIEW_API_KEY = 'developer_preview_api_key'
 DEVICE_MAX_RESULTS = 'device_max_results'
 # Enable DPoP (Demonstrating Proof-of-Possession) for OAuth tokens
 DPOP = 'dpop'
-# DPoP backend type: software, yubikey, ecp, macos_secureenclave, linux_tpm, windows_tpm, ephemeral
+# DPoP backend type: software, yubikey, ecp, macos_secureenclave, linux_tpm, windows_certstore, pkcs11, ephemeral
 DPOP_BACKEND = 'dpop_backend'
 # Backend-specific DPoP configuration
 # software: path to PEM key file
@@ -172,7 +172,8 @@ DPOP_BACKEND = 'dpop_backend'
 # ecp: path to certificate_config.json
 # macos_secureenclave: label[,application_tag]
 # linux_tpm: handle[,tcti][,auth]
-# windows_tpm: subject or thumbprint:hex_string[,current_user|local_machine]
+# windows_certstore: subject or thumbprint:hex_string[,current_user|local_machine]
+# pkcs11: RFC 7512 pkcs11: URI (e.g. pkcs11:token=...;object=...?module-path=...&pin-value=...)
 DPOP_BACKEND_CONFIG = 'dpop_backend_config'
 # Domain obtained from gam.cfg or oauth2.txt
 DOMAIN = 'domain'
@@ -599,7 +600,7 @@ VAR_INFO = {
   DEVICE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   DOMAIN: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GA_DOMAIN', VAR_LIMITS: (0, None)},
   DPOP: {VAR_TYPE: TYPE_BOOLEAN},
-  DPOP_BACKEND: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'software': 'software', 'yubikey': 'yubikey', 'ecp': 'ecp', 'macos_secureenclave': 'macos_secureenclave', 'linux_tpm': 'linux_tpm', 'windows_tpm': 'windows_tpm', 'ephemeral': 'ephemeral'}},
+  DPOP_BACKEND: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'software': 'software', 'yubikey': 'yubikey', 'ecp': 'ecp', 'macos_secureenclave': 'macos_secureenclave', 'linux_tpm': 'linux_tpm', 'pkcs11': 'pkcs11', 'windows_certstore': 'windows_certstore', 'windows_tpm': 'windows_certstore', 'ephemeral': 'ephemeral'}},
   DPOP_BACKEND_CONFIG: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   DRIVE_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMDRIVEDIR'},
   DRIVE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},

@@ -56,8 +56,11 @@ macos_secureenclave = [
 linux_tpm = [
     "dpop-signer-linux-tpm @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=linux-tpm",
 ]
-windows_tpm = [
-    "dpop-signer-windows-tpm @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=windows-tpm",
+windows_certstore = [
+    "dpop-signer-windows-certstore @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=windows-certstore",
+]
+pkcs11 = [
+    "dpop-signer-pkcs11 @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=pkcs11",
 ]
 ephemeral = [
     "dpop-signer-ephemeral @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=ephemeral",

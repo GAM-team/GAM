@@ -37,13 +37,14 @@ hiddenimports = [
      'google.auth.dpop',
      'dpop_signer_yubikey',
      'dpop_signer_ecp',
+     'dpop_signer_pkcs11',
      'dpop_signer_ephemeral',
      ]
 
 if platform == 'darwin':
     hiddenimports += ['dpop_signer_macos_secureenclave']
 elif platform == 'win32':
-    hiddenimports += ['dpop_signer_windows_tpm']
+    hiddenimports += ['dpop_signer_windows_certstore']
 elif platform == 'linux':
     hiddenimports += ['dpop_signer_linux_tpm']
 

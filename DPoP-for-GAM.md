@@ -57,9 +57,10 @@ GAM supports multiple DPoP signer backends. Choose based on your operating syste
 | Backend | Platform | Key Storage | Hardware-Backed | Best For |
 |---------|----------|-------------|-----------------|----------|
 | [`macos_secureenclave`](#macos--secure-enclave-recommended-for-apple-silicon-macs) | macOS (Apple Silicon) | Secure Enclave | Yes | Mac admins with Apple Silicon |
-| [`windows_tpm`](#windows--cngtpm-recommended-for-windows-with-tpm) | Windows | TPM via CNG | Yes (with TPM) | Windows admins with TPM |
+| [`windows_certstore`](#windows--certificate-store--tpm-recommended-for-windows-with-tpm) | Windows | Windows Cert Store (TPM via CNG) | Yes (with TPM) | Windows admins with TPM |
 | [`linux_tpm`](#linux--tpm-20-recommended-for-linux-servers) | Linux | TPM 2.0 | Yes | Linux servers with TPM |
 | [`yubikey`](#yubikey--piv-cross-platform) | Any | YubiKey PIV | Yes | Cross-platform, portable key |
+| `pkcs11` | Any | PKCS#11 token (`tpm2-pkcs11`, HSM, smart card) | Yes (with HSM/TPM/smart card) | HSMs, PKCS#11 smart cards, `tpm2-pkcs11` |
 | [`software`](#software-key-testing-only) | Any | PEM file on disk | No | Testing or low-security environments |
 
 > [!IMPORTANT]
@@ -120,13 +121,13 @@ gam config dpop true dpop_backend macos_secureenclave dpop_backend_config "gam-d
 
 ---
 
-### Windows — CNG/TPM (Recommended for Windows with TPM)
+### Windows — Certificate Store / TPM (Recommended for Windows with TPM)
 
-On Windows, GAM uses CNG (Cryptography Next Generation) to access keys in the Windows certificate store. When a TPM is present and the correct provider is used, the private key is stored in the TPM.
+On Windows, GAM uses the `windows_certstore` backend ([CNG / CryptoAPI](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal)) to access keys in the Windows certificate store. Always create the key with `"Microsoft Platform Crypto Provider"` so Windows stores the private key in the hardware TPM.
 
 **Requirements:**
 - Windows 10/11 or Windows Server 2019+
-- TPM 2.0 (for hardware-backed keys)
+- TPM 2.0 (`"Microsoft Platform Crypto Provider"`)
 
 #### Step 1: Generate a TPM-Backed Key
 
@@ -147,13 +148,14 @@ Key points:
 - `-KeyExportPolicy NonExportable` prevents extraction.
 - The 30-year validity prevents certificate expiry from being an issue.
 
-> [!TIP]
-> If your machine does not have a TPM, you can use `"Microsoft Software Key
-> Storage Provider"` instead. The key will be software-backed (not
-> hardware-backed) but still non-exportable and protected by Windows DPAPI.
+> [!WARNING]
+> **Fallback without TPM is not hardware-safe:** If a machine has no TPM and
+> you must test anyway, `"Microsoft Software Key Storage Provider"` can be used
+> as a fallback. That key is stored in **software on disk (not hardware-backed)**
+> and is **not safe** for production security.
 >
 > [!NOTE]
-> When using `"Microsoft Software Key Storage Provider"` with `Cert:\CurrentUser\My`, the private key is protected by the user's DPAPI master key. In OpenSSH sessions using public key authentication or scheduled tasks without a stored password, Windows creates a Network logon token (Logon Type 3) that does not unlock user DPAPI. This causes `CryptAcquireCertificatePrivateKey` to fail with error `-2146893802` (`0x80090016` / `NTE_BAD_KEYSET`) unless the user is concurrently logged in at the local console. For unattended or SSH workflows on Windows, use a hardware TPM (`"Microsoft Platform Crypto Provider"`), store the certificate in the machine store (`Cert:\LocalMachine\My`), or use password-based authentication.
+> When using `"Microsoft Software Key Storage Provider"` with `Cert:\CurrentUser\My`, the private key is protected by the user's DPAPI master key. In OpenSSH sessions using public key authentication or scheduled tasks without a stored password, Windows creates a Network logon token (Logon Type 3) that does not unlock user DPAPI. This causes `CryptAcquireCertificatePrivateKey` to fail with error `-2146893802` (`0x80090016` / `NTE_BAD_KEYSET`) unless the user is concurrently logged in at the local console. For unattended or SSH workflows on Windows, use a hardware TPM (`"Microsoft Platform Crypto Provider"`), or `Cert:\LocalMachine\My` (`,local_machine`).
 
 #### Step 2: Verify the Key
 
@@ -168,19 +170,19 @@ Get-ChildItem Cert:\CurrentUser\My |
 Configure by subject name (substring match):
 
 ```bash
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Signing Key" save
 ```
 
 Or by certificate thumbprint (exact match):
 
 ```bash
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
 By default, GAM searches `Cert:\CurrentUser\My`. For SSH or scheduled task sessions where user DPAPI keys are unavailable, create the certificate in `Cert:\LocalMachine\My` (and grant Read permission on the private key to the user running GAM), then append `,local_machine`:
 
 ```bash
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Signing Key,local_machine" save
 ```
 
 ---
@@ -399,8 +401,9 @@ If there's a problem, GAM will print a clear error and exit with a non-zero exit
 | `DPoP software backend requires dpop_backend_config set to the path of a PEM private key file` | No key file configured | Set `dpop_backend_config` to a PEM file path |
 | `DPoP software key file not found` | PEM file doesn't exist at the configured path | Check the path and generate the key |
 | `DPoP macOS Secure Enclave error` | Key not found in Secure Enclave | Run `sc_auth list-ctk-identities` to check |
-| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check with `Get-ChildItem Cert:\CurrentUser\My` |
+| `DPoP Windows Certificate Store error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
 | `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions and `tpm2_readpublic -c 0x81000001` |
+| `DPoP PKCS#11 error` | PKCS#11 module, token, PIN, or key object invalid | Check `module-path=`, token/object/id attributes, and PIN |
 | `DPoP YubiKey error` | YubiKey not plugged in or wrong PIN | Plug in YubiKey and verify PIN |
 
 ### Step 2: Create DPoP-Bound OAuth Credentials
@@ -507,7 +510,7 @@ All DPoP settings are stored in `gam.cfg`:
 | Setting | Values | Default | Description |
 |---------|--------|---------|-------------|
 | `dpop` | `true` / `false` | `false` | Enable or disable DPoP |
-| `dpop_backend` | `software`, `macos_secureenclave`, `windows_tpm`, `linux_tpm`, `yubikey`, `ecp`, `ephemeral` | `software` | Which signer backend to use |
+| `dpop_backend` | `software`, `macos_secureenclave`, `windows_certstore`, `linux_tpm`, `yubikey`, `pkcs11`, `ecp`, `ephemeral` | `software` | Which signer backend to use |
 | `dpop_backend_config` | *(varies by backend)* | *(empty)* | Backend-specific configuration |
 
 ### `dpop_backend_config` Format by Backend
@@ -516,9 +519,10 @@ All DPoP settings are stored in `gam.cfg`:
 |---------|--------|---------|
 | `software` | Path to PEM private key file | `dpop_key.pem` |
 | `macos_secureenclave` | `label[,application_tag]` | `gam-dpop` |
-| `windows_tpm` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
+| `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
+| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=tpm2;object=dpop?module-path=/usr/lib/libtpm2_pkcs11.so` |
 | `ephemeral` | *(none required)* | *(leave empty)* |
 
 ---

@@ -5131,7 +5131,8 @@ _DPOP_PLUGIN_BACKENDS = {
   'ecp': ('dpop_signer_ecp', 'dpop-signer-ecp', 'ECPDPoPSigner', 'ECPDPoPError', 'ECP'),
   'macos_secureenclave': ('dpop_signer_macos_secureenclave', 'dpop-signer-macos-secureenclave', 'SecureEnclaveDPoPSigner', 'SecureEnclaveDPoPError', 'macOS Secure Enclave'),
   'linux_tpm': ('dpop_signer_linux_tpm', 'dpop-signer-linux-tpm', 'LinuxTPMDPoPSigner', 'LinuxTPMDPoPError', 'Linux TPM'),
-  'windows_tpm': ('dpop_signer_windows_tpm', 'dpop-signer-windows-tpm', 'WindowsCNGDPoPSigner', 'WindowsCNGDPoPError', 'Windows CNG/TPM'),
+  'windows_certstore': ('dpop_signer_windows_certstore', 'dpop-signer-windows-certstore', 'WindowsCertStoreDPoPSigner', 'WindowsCertStoreDPoPError', 'Windows Certificate Store'),
+  'pkcs11': ('dpop_signer_pkcs11', 'dpop-signer-pkcs11', 'PKCS11DPoPSigner', 'PKCS11DPoPError', 'PKCS#11'),
   'ephemeral': ('dpop_signer_ephemeral', 'dpop-signer-ephemeral', 'EphemeralDPoPSigner', 'EphemeralDPoPError', 'ephemeral'),
 }
 
@@ -5200,7 +5201,7 @@ def _getDPoPSigner(exitOnError=True):
     except ValueError:
       _fail(USAGE_ERROR_RC, f'DPoP linux_tpm dpop_backend_config: handle must be a hex integer, got: {handle_str}')
     kwargs = {'handle': handle, 'tcti': _part(1), 'auth': _part(2)}
-  elif backend == 'windows_tpm':
+  elif backend == 'windows_certstore':
     target = _part(0)
     store_location = _part(1)
     subject = thumbprint = None
@@ -5210,10 +5211,14 @@ def _getDPoPSigner(exitOnError=True):
       else:
         subject = target
     if not subject and not thumbprint:
-      _fail(USAGE_ERROR_RC, 'DPoP windows_tpm backend requires dpop_backend_config set to: <subject_cn_substring|thumbprint:hex_string>[,store_location]')
+      _fail(USAGE_ERROR_RC, 'DPoP windows_certstore backend requires dpop_backend_config set to: <subject_cn_substring|thumbprint:hex_string>[,store_location]')
     kwargs = {'subject': subject, 'thumbprint': thumbprint}
     if store_location:
       kwargs['store_location'] = store_location
+  elif backend == 'pkcs11':
+    if not config:
+      _fail(USAGE_ERROR_RC, 'DPoP pkcs11 backend requires dpop_backend_config set to an RFC 7512 pkcs11: URI')
+    kwargs = {'uri': config}
   else:  # ephemeral
     kwargs = {}
 

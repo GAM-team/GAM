@@ -60,9 +60,10 @@ GAM supports multiple DPoP signer backends where the private key can be stored. 
 | Backend | Platform | Key Storage | Hardware-Backed | Best For |
 |---------|----------|-------------|-----------------|----------|
 | [`macos_secureenclave`](#macos--secure-enclave-recommended-for-apple-silicon-macs) | macOS (Apple Silicon) | Secure Enclave | Yes | Mac admins with Apple Silicon |
-| [`windows_tpm`](#windows--cngtpm-recommended-for-windows-with-tpm) | Windows | TPM via CNG | Yes (with TPM) | Windows admins with TPM |
+| [`windows_certstore`](#windows--certificate-store--tpm-recommended-for-windows-with-tpm) | Windows | Windows Cert Store (TPM via CNG) | Yes (with TPM) | Windows admins with TPM |
 | [`linux_tpm`](#linux--tpm-20-recommended-for-linux-servers) | Linux | TPM 2.0 | Yes | Linux servers with TPM |
 | [`yubikey`](#yubikey--piv-cross-platform) | Any | YubiKey PIV | Yes | Cross-platform, portable key |
+| [`pkcs11`](#pkcs11--hsm--smart-card--tpm2-pkcs11-cross-platform) | Any | PKCS#11 token (`tpm2-pkcs11`, HSM, smart card) | Yes (with HSM/TPM/smart card) | HSMs, PKCS#11 smart cards, `tpm2-pkcs11` |
 | [`software`](#software-key-testing-only) | Any | PEM file on disk | No | Testing or low-security environments |
 
 > [!IMPORTANT]
@@ -130,13 +131,13 @@ gam config dpop true dpop_backend macos_secureenclave dpop_backend_config "gam-d
 
 ---
 
-### Windows — CNG/TPM (Recommended for Windows with TPM)
+### Windows — Certificate Store / TPM (Recommended for Windows with TPM)
 
-On Windows, GAM uses [CNG (Cryptography Next Generation)](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal) to access keys in the Windows certificate store. When a TPM is present and the correct provider is used, the private key is stored in the TPM.
+On Windows, GAM uses the `windows_certstore` backend ([CNG / CryptoAPI](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-portal)) to sign with a certificate's private key in the Windows certificate store. Create the key using `"Microsoft Platform Crypto Provider"` so Windows stores the private key inside the hardware **TPM 2.0** chip where it cannot be extracted.
 
 **Requirements:**
 - Windows 10/11 or Windows Server 2019+
-- TPM 2.0 (for hardware-backed keys). Windows 11 requires a TPM 2.0 device.
+- TPM 2.0 (`"Microsoft Platform Crypto Provider"`). Windows 11 requires a TPM 2.0 device.
 
 #### Choosing a Certificate Store Location (`current_user` vs `local_machine`)
 
@@ -184,14 +185,17 @@ New-SelfSignedCertificate `
 ```
 
 Key points:
-- `"Microsoft Platform Crypto Provider"` routes the key to the TPM.
+- `"Microsoft Platform Crypto Provider"` routes the private key to the hardware TPM.
 - `-KeyExportPolicy NonExportable` prevents extraction.
 - The 30-year validity prevents certificate expiry from being an issue.
 
-> [!TIP]
-> If your machine does not have a TPM, you can use `"Microsoft Software Key
-> Storage Provider"` instead. The key will be software-backed (not
-> hardware-backed) but still non-exportable and protected by Windows CNG.
+> [!WARNING]
+> **Fallback without TPM is not hardware-safe:** If a machine has no TPM and
+> you must test anyway, `"Microsoft Software Key Storage Provider"` can be used
+> as a fallback. That key is stored in **software on disk (not hardware-backed)**
+> and is **not safe** for production security — an attacker with sufficient
+> machine access is not stopped by a hardware TPM boundary. Use a hardware TPM
+> key (`"Microsoft Platform Crypto Provider"`) or a hardware token for production.
 
 #### Step 2: Verify the Key
 
@@ -217,20 +221,20 @@ For **Current User** (`Cert:\CurrentUser\My`, default — `,current_user` is opt
 
 ```bash
 # By subject name (substring match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Signing Key" save
 
 # Or by certificate thumbprint (exact match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5..." save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "thumbprint:A1B2C3D4E5..." save
 ```
 
 For **Local Machine** (`Cert:\LocalMachine\My`, for SSH / Scheduled Tasks), append `,local_machine`:
 
 ```bash
 # By subject name (substring match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "GAM DPoP Signing Key,local_machine" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "GAM DPoP Signing Key,local_machine" save
 
 # Or by certificate thumbprint (exact match)
-gam config dpop true dpop_backend windows_tpm dpop_backend_config "thumbprint:A1B2C3D4E5...,local_machine" save
+gam config dpop true dpop_backend windows_certstore dpop_backend_config "thumbprint:A1B2C3D4E5...,local_machine" save
 ```
 
 ---
@@ -378,6 +382,34 @@ gam config dpop_backend_config ",9a,mypin" save
 
 ---
 
+### PKCS#11 — HSM / Smart Card / `tpm2-pkcs11` (Cross-Platform)
+
+The `pkcs11` backend works with any PKCS#11 (Cryptoki) library across Linux, macOS, and Windows — including `tpm2-pkcs11`, OpenSC smart cards, YubiKey `libykcs11`, network/cloud HSMs, and SoftHSM2 (for testing). Supports `ES256` (P-256), `ES384` (P-384), and `RS256` (RSA).
+
+Configuration uses an [RFC 7512](https://www.rfc-editor.org/rfc/rfc7512) `pkcs11:` URI as `dpop_backend_config`:
+
+- **Path attributes (`;`):** `token=`, `object=` (key label), `id=` (percent-encoded `CKA_ID` bytes such as `%01`), `slot-id=`, `serial=`
+- **Query attributes (`&`):** `module-path=` (full path to `.so`/`.dylib`/`.dll`), `module-name=` (resolved via `p11-kit`), `pin-source=` (`file:/path/to/pin`), `pin-value=`
+
+#### Configure GAM
+
+```bash
+# Example with tpm2-pkcs11 and a separate PIN file
+gam config dpop true dpop_backend pkcs11 \
+    dpop_backend_config "pkcs11:token=tpm2;object=dpop;id=%01?module-path=/usr/lib/x86_64-linux-gnu/pkcs11/libtpm2_pkcs11.so&pin-source=file:/home/$USER/.gam/pkcs11-pin.txt" save
+
+# Example with OpenSC / smart card module-name
+gam config dpop true dpop_backend pkcs11 \
+    dpop_backend_config "pkcs11:token=MyToken;object=dpop-key?module-name=opensc-pkcs11&pin-value=123456" save
+```
+
+> [!TIP]
+> Prefer `pin-source=file:/path/to/pin` (`chmod 600`) over embedding
+> `pin-value=` directly in `gam.cfg`, or configure your PKCS#11 module via the
+> `PKCS11_MODULE` environment variable if omitting `module-path=`/`module-name=`.
+
+---
+
 ### Software Key (Testing Only)
 
 The software backend uses a PEM private key file on disk. This provides token binding but **not** hardware protection — an attacker who can read the filesystem can copy the key.
@@ -444,8 +476,9 @@ If there's a problem, GAM will print a clear error and exit with a non-zero exit
 | `DPoP software backend requires dpop_backend_config set to the path of a PEM private key file` | No key file configured | Set `dpop_backend_config` to a PEM file path |
 | `DPoP software key file not found` | PEM file doesn't exist at the configured path | Check the path and generate the key |
 | `DPoP macOS Secure Enclave error` | Key not found in Secure Enclave | Run `sc_auth list-ctk-identities` to check |
-| `DPoP Windows CNG/TPM error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
+| `DPoP Windows Certificate Store error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
 | `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions and `tpm2_readpublic -c 0x81000001` |
+| `DPoP PKCS#11 error` | PKCS#11 module, token, PIN, or key object invalid | Check `module-path=`, token/object/id attributes, and PIN (`pkcs11-tool`) |
 | `DPoP YubiKey error` | YubiKey not plugged in or wrong PIN | Plug in YubiKey and verify PIN |
 
 ### Step 2: Create DPoP-Bound OAuth Credentials
@@ -524,7 +557,7 @@ All DPoP settings are stored in `gam.cfg`:
 | Setting | Values | Default | Description |
 |---------|--------|---------|-------------|
 | `dpop` | `true` / `false` | `false` | Enable or disable DPoP |
-| `dpop_backend` | `software`, `macos_secureenclave`, `windows_tpm`, `linux_tpm`, `yubikey`, `ecp` | `software` | Which signer backend to use |
+| `dpop_backend` | `software`, `macos_secureenclave`, `windows_certstore`, `linux_tpm`, `yubikey`, `pkcs11`, `ecp` | `software` | Which signer backend to use |
 | `dpop_backend_config` | *(varies by backend)* | *(empty)* | Backend-specific configuration |
 
 ### `dpop_backend_config` Format by Backend
@@ -533,9 +566,10 @@ All DPoP settings are stored in `gam.cfg`:
 |---------|--------|---------|
 | `software` | Path to PEM private key file | `dpop_key.pem` |
 | `macos_secureenclave` | `label[,application_tag]` | `gam-dpop` |
-| `windows_tpm` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
+| `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `GAM DPoP Signing Key` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000001` |
 | `yubikey` | `serial,slot,pin` | `,,123456` |
+| `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=tpm2;object=dpop?module-path=/usr/lib/libtpm2_pkcs11.so` |
 
 ---
 
