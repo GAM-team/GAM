@@ -190,12 +190,13 @@ Key points:
 - The 30-year validity prevents certificate expiry from being an issue.
 
 > [!WARNING]
-> **Fallback without TPM is not hardware-safe:** If a machine has no TPM and
-> you must test anyway, `"Microsoft Software Key Storage Provider"` can be used
-> as a fallback. That key is stored in **software on disk (not hardware-backed)**
-> and is **not safe** for production security — an attacker with sufficient
-> machine access is not stopped by a hardware TPM boundary. Use a hardware TPM
-> key (`"Microsoft Platform Crypto Provider"`) or a hardware token for production.
+> **Fallback without TPM is not secure:** If a machine has no TPM and you need
+> a fallback for testing, `"Microsoft Software Key Storage Provider"` stores the
+> private key in **software on disk (not in a hardware TPM)**. The Software Key
+> Storage Provider is **not secure** for production use — an attacker with local
+> admin or sufficient machine access could potentially extract or misuse it. For
+> production security, always use `"Microsoft Platform Crypto Provider"` (TPM 2.0)
+> or a dedicated hardware token.
 
 #### Step 2: Verify the Key
 
