@@ -515,7 +515,11 @@ def supportsColoredText():
     ANSI escape characters.
   """
   global _WIN_VT_SUPPORTED
+  if os.environ.get('NO_COLOR'):
+    return False
   if not sys.platform.startswith('win'):
+    return True
+  if os.environ.get('CI') or os.environ.get('GITHUB_ACTIONS') or os.environ.get('FORCE_COLOR'):
     return True
   if _WIN_VT_SUPPORTED is not None:
     return _WIN_VT_SUPPORTED
@@ -5353,6 +5357,42 @@ def _inspectMacOSSecKeyToken(signer):
     pass
   return ('hardware', 'macOS Secure Enclave')
 
+def _inspectLinuxTPM(signer):
+  """Determine whether a LinuxTPMDPoPSigner uses a software TPM emulator or hardware TPM."""
+  tcti = getattr(signer, '_tcti', None) or ''
+  lower_tcti = tcti.lower()
+  if 'swtpm' in lower_tcti or 'mssim' in lower_tcti:
+    return ('software', f'Software TPM ({tcti})')
+  try:
+    from tpm2_pytss import ESAPI, TPM2_CAP, TPM2_PT
+    ectx = signer._get_esapi() if hasattr(signer, '_get_esapi') else ESAPI(tcti=getattr(signer, '_tcti', None))
+    try:
+      _, cap_data = ectx.get_capability(TPM2_CAP.TPM_PROPERTIES, TPM2_PT.MANUFACTURER, 5)
+    finally:
+      ectx.close()
+    props = {}
+    for p in getattr(cap_data.data, 'tpmProperties', []):
+      raw = int(p.value).to_bytes(4, 'big')
+      props[int(p.property)] = raw.rstrip(b'\x00').decode('ascii', errors='replace').strip()
+    manuf = props.get(int(TPM2_PT.MANUFACTURER), '')
+    vendor = ' '.join(
+      props.get(int(pt), '') for pt in (
+        TPM2_PT.VENDOR_STRING_1, TPM2_PT.VENDOR_STRING_2,
+        TPM2_PT.VENDOR_STRING_3, TPM2_PT.VENDOR_STRING_4)
+      if props.get(int(pt), ''))
+    vendor_lower = vendor.lower()
+    is_sw_vendor = (
+      any(tok in vendor_lower for tok in ('swtpm', 'simulator', 'emulator', 'virtual'))
+      or 'sw' in vendor_lower.split())
+    if manuf.upper() == 'IBM' or is_sw_vendor:
+      detail = f'{manuf} {vendor}'.strip() or 'emulator'
+      return ('software', f'Software TPM ({detail})')
+    if manuf:
+      return ('hardware', f'TPM 2.0 ({manuf})')
+  except Exception:
+    pass
+  return ('hardware', 'TPM 2.0')
+
 def _getDPoPSignerBackingInfo(backend, signer):
   """Classify a configured DPoP signer as ('hardware'|'software'|'unknown', detail)."""
   if backend == 'software':
@@ -5366,10 +5406,7 @@ def _getDPoPSignerBackingInfo(backend, signer):
   if backend == 'macos_secureenclave':
     return _inspectMacOSSecKeyToken(signer)
   if backend == 'linux_tpm':
-    tcti = (getattr(signer, '_tcti', None) or '').lower()
-    if 'swtpm' in tcti:
-      return ('software', f'Software TPM simulator ({tcti})')
-    return ('hardware', 'TPM 2.0')
+    return _inspectLinuxTPM(signer)
   if backend == 'pkcs11':
     token = getattr(signer, '_token', None)
     mod_path = getattr(signer, '_module_path', '') or ''
@@ -12320,10 +12357,15 @@ def _formatRefreshError(err):
   return str(err).strip()
 
 
-def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=False):
+def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=True):
   if credentials is None:
     return
-  testPass, testFail, testWarn, _ = _getCheckStatusLabels(useColor)
+  if useColor:
+    statusOk = createGreenText('OK')
+    statusErr = createRedText('ERROR')
+    statusWarn = createYellowText('WARN')
+  else:
+    statusOk, statusErr, statusWarn = ('OK', 'ERROR', 'WARN')
   saved_thumbprint = getattr(credentials, '_saved_dpop_thumbprint', None)
 
   dpop_enabled = GC.Values[GC.DPOP]
@@ -12333,14 +12375,14 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=False):
       printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
       printLine('DPoP Status:')
       Ind.Increment()
-      _printCheckStatus('dpop=false in gam.cfg, but oauth2.txt is bound to DPoP', testFail)
+      _printCheckStatus('dpop=false in gam.cfg, but oauth2.txt is bound to DPoP', statusErr)
       Ind.Decrement()
       printLine('Fix: Run "gam config dpop true save" with your DPoP backend configured, or "gam oauth revoke" and "gam oauth create" for an unbound token.')
     else:
       printKeyValueList(['DPoP', 'Disabled'])
       printLine('DPoP Status:')
       Ind.Increment()
-      _printCheckStatus('DPoP disabled (refresh token in oauth2.txt is bearer-only)', testWarn)
+      _printCheckStatus('DPoP disabled (oauth2.txt refresh token is bearer-only)', statusWarn)
       Ind.Decrement()
       printLine('Recommendation: Enable DPoP with a hardware key ("gam config dpop true ...") and run "gam oauth create" to bind oauth2.txt.')
     return
@@ -12372,29 +12414,29 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=False):
 
   # Check 1: Signer initialization & hardware vs software key backing
   if signer is None:
-    _printCheckStatus(f'Signer Initialization ({backend})', testFail)
+    _printCheckStatus(f'Signer Initialization ({backend})', statusErr)
     if signer_err:
       printLine(f'Error: {signer_err}')
   elif backing_kind == 'hardware':
-    _printCheckStatus(f'Key Storage (Hardware: {backing_detail})', testPass)
+    _printCheckStatus(f'Key Storage (Hardware: {backing_detail})', statusOk)
   elif backing_kind == 'software':
-    _printCheckStatus(f'Key Storage (Software: {backing_detail})', testWarn)
+    _printCheckStatus(f'Key Storage (Software: {backing_detail})', statusWarn)
   else:
-    _printCheckStatus(f'Key Storage ({backing_detail} - hardware unverified)', testWarn)
+    _printCheckStatus(f'Key Storage ({backing_detail} - hardware unverified)', statusWarn)
 
   # Check 2: oauth2.txt thumbprint binding metadata
   if not saved_thumbprint:
-    _printCheckStatus('Credential Binding (no dpop_thumbprint in oauth2.txt)', testFail)
+    _printCheckStatus('Credential Binding (no dpop_thumbprint in oauth2.txt)', statusErr)
   elif signer is None:
-    _printCheckStatus('Credential Binding (dpop_thumbprint present in oauth2.txt)', testPass)
+    _printCheckStatus('Credential Binding (dpop_thumbprint present in oauth2.txt)', statusOk)
   elif thumbprint_matches:
-    _printCheckStatus('Credential Binding (signer matches oauth2.txt thumbprint)', testPass)
+    _printCheckStatus('Credential Binding (signer matches oauth2.txt thumbprint)', statusOk)
   else:
-    _printCheckStatus('Credential Binding (signer thumbprint mismatch)', testFail)
+    _printCheckStatus('Credential Binding (signer thumbprint mismatch)', statusErr)
 
   refresh_token = getattr(credentials, 'refresh_token', None)
   if not refresh_token:
-    _printCheckStatus('DPoP Refresh Tests (no refresh token in oauth2.txt)', testWarn)
+    _printCheckStatus('DPoP Refresh Tests (no refresh token in oauth2.txt)', statusWarn)
     Ind.Decrement()
     return
 
@@ -12423,18 +12465,18 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=False):
   dpop_refresh_err = None
   if already_dpop_refreshed:
     with_dpop_ok = True
-    _printCheckStatus(f'Refresh With DPoP ({backend})', testPass)
+    _printCheckStatus(f'Refresh With DPoP ({backend})', statusOk)
   elif signer is None:
-    _printCheckStatus(f'Refresh With DPoP ({backend} signer unavailable)', testFail)
+    _printCheckStatus(f'Refresh With DPoP ({backend} signer unavailable)', statusErr)
   else:
     try:
       _try_refresh(signer)
       with_dpop_ok = True
-      _printCheckStatus(f'Refresh With DPoP ({backend})', testPass)
+      _printCheckStatus(f'Refresh With DPoP ({backend})', statusOk)
     except Exception as e:
       dpop_refresh_err = _formatRefreshError(e)
       label = f'Refresh With DPoP ({backend} ephemeral expected fail)' if backend == 'ephemeral' else f'Refresh With DPoP ({backend})'
-      _printCheckStatus(label, testFail)
+      _printCheckStatus(label, statusErr)
       if dpop_refresh_err:
         printLine(f'Error: {dpop_refresh_err}')
 
@@ -12442,36 +12484,36 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=False):
   without_dpop_rejected = False
   try:
     _try_refresh()
-    _printCheckStatus('Reject Refresh Without DPoP (accepted bearer refresh!)', testFail)
+    _printCheckStatus('Reject Refresh Without DPoP (accepted bearer refresh!)', statusErr)
   except Exception as e:
     without_dpop_rejected = True
-    _printCheckStatus('Reject Refresh Without DPoP', testPass)
+    _printCheckStatus('Reject Refresh Without DPoP', statusOk)
 
   # Check 5: Refresh with ephemeral DPoP backend (wrong key)
   ephem_rejected = False
   try:
     from dpop_signer_ephemeral import EphemeralDPoPSigner
     _try_refresh(EphemeralDPoPSigner())
-    _printCheckStatus('Reject Refresh With Wrong Key (accepted wrong key!)', testFail)
+    _printCheckStatus('Reject Refresh With Wrong Key (accepted wrong key!)', statusErr)
   except ImportError:
-    _printCheckStatus('Reject Refresh With Wrong Key (ephemeral pkg missing)', testWarn)
+    _printCheckStatus('Reject Refresh With Wrong Key (ephemeral pkg missing)', statusWarn)
     ephem_rejected = True
   except Exception:
     ephem_rejected = True
-    _printCheckStatus('Reject Refresh With Wrong Key', testPass)
+    _printCheckStatus('Reject Refresh With Wrong Key', statusOk)
 
   Ind.Decrement()
 
   all_bound = thumbprint_matches and with_dpop_ok and without_dpop_rejected and ephem_rejected
   if all_bound:
     if backing_kind == 'software':
-      _printCheckStatus(f'DPoP Key Binding: Verified (Software key - {backing_detail})', testWarn)
+      _printCheckStatus(f'DPoP Key Binding (software key - {backing_detail})', statusWarn)
       printLine('WARNING: Software keys are not hardware-protected and can be extracted from this machine. For production use, switch to a hardware key (TPM, Secure Enclave, YubiKey, or HSM) and re-bind with "gam oauth revoke" + "gam oauth create".')
     else:
-      _printCheckStatus('DPoP Key Binding: Verified', testPass)
+      _printCheckStatus('DPoP Key Binding', statusOk)
     return
 
-  _printCheckStatus('DPoP Key Binding: Failed', testFail)
+  _printCheckStatus('DPoP Key Binding', statusErr)
   if signer is None:
     printLine('Fix: Check your DPoP backend configuration with "gam check dpop".')
   elif saved_thumbprint and not thumbprint_matches:
@@ -12500,7 +12542,7 @@ def doOAuthInfo():
       forceColor = True
     else:
       unknownArgumentExit()
-  useColor = forceColor or sys.stdout.isatty()
+  useColor = forceColor or supportsColoredText()
   exitIfNoOauth2Txt()
   saved_scopes = []
   already_dpop_refreshed = False
