@@ -148,6 +148,30 @@ Key points:
 - `-KeyExportPolicy NonExportable` prevents extraction.
 - The 30-year validity prevents certificate expiry from being an issue.
 
+If `New-SelfSignedCertificate` fails with `0x80090017 NTE_PROV_TYPE_NOT_DEF` (seen on some AMD fTPM / Windows 11 systems), use `certreq -new` with `ProviderType = 0` instead (set `MachineKeySet = TRUE` in an elevated PowerShell for `Cert:\LocalMachine\My`):
+
+```powershell
+@"
+[Version]
+Signature="`$Windows NT`$"
+
+[NewRequest]
+Subject = "CN=GAM DPoP Signing Key"
+KeyAlgorithm = ECDSA_P256
+KeyLength = 256
+HashAlgorithm = sha256
+ProviderName = "Microsoft Platform Crypto Provider"
+ProviderType = 0
+Exportable = FALSE
+MachineKeySet = FALSE
+RequestType = Cert
+ValidityPeriod = Years
+ValidityPeriodUnits = 30
+"@ | Out-File -Encoding ascii "$env:TEMP\dpop-ec.inf"
+certreq -new "$env:TEMP\dpop-ec.inf" "$env:TEMP\dpop-ec.cer"
+Remove-Item "$env:TEMP\dpop-ec.inf", "$env:TEMP\dpop-ec.cer"
+```
+
 > [!WARNING]
 > **Fallback without TPM is not hardware-safe:** If a machine has no TPM and
 > you must test anyway, `"Microsoft Software Key Storage Provider"` can be used
@@ -353,43 +377,30 @@ gam config dpop_backend ephemeral oauth refresh
 
 ## Testing DPoP Before OAuth
 
-Always verify your DPoP configuration is working before creating OAuth credentials. The `gam check dpop` command constructs a signer from your configuration, performs a test signature, and verifies everything works end-to-end — without touching any Google APIs.
+Always verify your DPoP configuration is working before creating OAuth credentials. The `gam check dpop` command constructs a signer, checks whether key storage is hardware-backed, tests signing, and cryptographically verifies an RFC 9449 DPoP proof locally — without contacting Google or modifying `oauth2.txt`.
 
-### Step 1: Test Your Configuration
+### Step 1: Test Local Signing
 
 ```bash
 gam check dpop
 ```
 
-Successful output looks like:
+Successful output with a hardware key looks like:
 
-```
-DPoP Configuration
-  dpop: True
-  dpop_backend: macos_secureenclave
-  dpop_backend_config: gam-dpop
-
-Constructing DPoP signer...
-Signer created successfully.
-
-Signer Details
-  Backend: macos_secureenclave
-  Algorithm: ES256
-  Key ID: (auto)
-  JWK Thumbprint: xK9m2q...
-
-Performing test signature...
-Signature succeeded.
-
-Signature Details
-  Signature length: 64 bytes
-  Signature (base64url): m3Fz0x...
-  Signing time: 12.3 ms
-
-DPoP configuration is valid and working.
+```text
+DPoP: Enabled (macos_secureenclave)
+DPoP Backend Config: gam-dpop
+Local DPoP Checks:
+  Signer Initialization (macos_secureenclave)                               OK
+  Key Storage (Hardware: Secure Enclave)                                    OK
+  Public JWK & Thumbprint (ES256, o-QZ2IXB6M6whv6s...)                      OK
+  Local Test Signature (64 bytes, 10.9 ms)                                  OK
+  DPoP Proof & Signature Verification (ES256)                               OK
+DPoP Local Signing                                                          OK
+Note: Tests local DPoP signing only; OAuth token binding and server enforcement checks run in "gam oauth info".
 ```
 
-If there's a problem, GAM will print a clear error and exit with a non-zero exit code. Common issues:
+Software-backed keys (`software`, `ephemeral`, `Microsoft Software Key Storage Provider`, non-token Keychain, `swtpm`, or `SoftHSM`) print `WARN` on `Key Storage` and `DPoP Local Signing` so you can switch to hardware before binding OAuth credentials. If there's an error, GAM prints `ERROR` and exits with a non-zero exit code. Common issues:
 
 | Error | Cause | Fix |
 |-------|-------|-----|
@@ -432,14 +443,14 @@ After creating DPoP-bound credentials, you can verify the binding is enforced au
 gam oauth info
 ```
 
-This command automatically tests all three conditions against Google's token endpoint:
-1. **With DPoP**: Refreshes with your configured key (must succeed).
-2. **Without DPoP**: Refreshes without a DPoP proof (Google must reject with "DPoP proof required").
-3. **With Wrong Key**: Refreshes with an ephemeral key (Google must reject with "invalid_dpop_proof").
+This command automatically checks hardware key backing, compares your signer's thumbprint with `oauth2.txt`, and tests all three conditions against Google's token endpoint:
+1. **Refresh With DPoP**: Refreshes with your configured key (must succeed).
+2. **Reject Refresh Without DPoP**: Refreshes without a DPoP proof (Google must reject).
+3. **Reject Refresh With Wrong Key**: Refreshes with an ephemeral key (Google must reject).
 
 Successful output looks like:
 
-```
+```text
 Client OAuth2 File: ~/.gam/oauth2.txt
 Client ID: 308119881613-...apps.googleusercontent.com
 Google Workspace Admin: admin@example.com
@@ -447,11 +458,13 @@ Expires: 2026-11-12T18:00:00+00:00
 DPoP: Enabled (macos_secureenclave)
 DPoP Backend Config: gam-dpop
 DPoP Token Thumbprint: o-QZ2IXB6M6whv6sisQh8oexK6TXMS3xjIPUawxuHrA
-DPoP Refresh Tests
-  With DPoP (macos_secureenclave): Success
-  Without DPoP: Rejected as expected (invalid_request: DPoP proof required.)
-  With Wrong Key: Rejected as expected (invalid_dpop_proof: Bad Request)
-DPoP Key Binding: Verified
+DPoP Checks:
+  Key Storage (Hardware: Secure Enclave)                                    OK
+  Credential Binding (signer matches oauth2.txt thumbprint)                 OK
+  Refresh With DPoP (macos_secureenclave)                                   OK
+  Reject Refresh Without DPoP                                               OK
+  Reject Refresh With Wrong Key                                             OK
+DPoP Key Binding                                                            OK
 ```
 
 You can also test the conditions manually:
