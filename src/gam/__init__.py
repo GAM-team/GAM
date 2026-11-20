@@ -5106,54 +5106,195 @@ def handleOAuthTokenError(e, softErrors, displayError=False, i=0, count=0):
   stderrErrorMsg(f'Authentication Token Error - {errMsg}')
   APIAccessDeniedExit()
 
-def doDPoPTest():
-  """Test the configured DPoP backend by constructing a signer and performing a test signature."""
+def _getDPoPStatusLabels(useColor=True):
+  """Return (ok_label, error_label, warn_label) for DPoP diagnostic checks."""
+  if useColor:
+    return (createGreenText('OK'), createRedText('ERROR'), createYellowText('WARN'))
+  return ('OK', 'ERROR', 'WARN')
+
+def _printDPoPKeyStorageCheck(backend, signer, statusOk, statusWarn):
+  """Print the Key Storage OK/WARN line and return (backing_kind, backing_detail)."""
+  backing_kind, backing_detail = _getDPoPSignerBackingInfo(backend, signer)
+  if backing_kind == 'hardware':
+    _printCheckStatus(f'Key Storage (Hardware: {backing_detail})', statusOk)
+  elif backing_kind == 'software':
+    _printCheckStatus(f'Key Storage (Software: {backing_detail})', statusWarn)
+  else:
+    _printCheckStatus(f'Key Storage ({backing_detail} - hardware unverified)', statusWarn)
+  return (backing_kind, backing_detail)
+
+def _b64urlDecode(val):
+  """Decode an unpadded base64url ASCII string to bytes."""
+  return base64.urlsafe_b64decode((val + '=' * (-len(val) % 4)).encode('ascii'))
+
+def _jwkToPublicKey(jwk):
+  """Build a cryptography public key object from a public JWK dict."""
+  kty = jwk.get('kty')
+  if kty == 'EC':
+    from cryptography.hazmat.primitives.asymmetric import ec
+    curves = {'P-256': ec.SECP256R1(), 'P-384': ec.SECP384R1(), 'P-521': ec.SECP521R1()}
+    curve = curves.get(jwk.get('crv'))
+    if curve is None:
+      raise ValueError(f'Unsupported EC curve: {jwk.get("crv")}')
+    x = int.from_bytes(_b64urlDecode(jwk['x']), 'big')
+    y = int.from_bytes(_b64urlDecode(jwk['y']), 'big')
+    return ec.EllipticCurvePublicNumbers(x, y, curve).public_key()
+  if kty == 'RSA':
+    n = int.from_bytes(_b64urlDecode(jwk['n']), 'big')
+    e = int.from_bytes(_b64urlDecode(jwk['e']), 'big')
+    return rsa.RSAPublicNumbers(e, n).public_key()
+  raise ValueError(f'Unsupported JWK key type: {kty}')
+
+def _verifyDPoPJWKSignature(jwk, alg, signing_input, signature):
+  """Verify a raw JWS signature against a public JWK dict."""
+  from cryptography.hazmat.primitives.asymmetric import ec, padding, utils
+  hash_algs = {'256': hashes.SHA256(), '384': hashes.SHA384(), '512': hashes.SHA512()}
+  if not isinstance(alg, str) or len(alg) < 5 or alg[2:] not in hash_algs:
+    raise ValueError(f'Unsupported DPoP algorithm: {alg}')
+  hash_alg = hash_algs[alg[2:]]
+  pub_key = _jwkToPublicKey(jwk)
+  if alg.startswith('ES'):
+    if not signature or len(signature) % 2 != 0:
+      raise ValueError(f'Invalid raw ECDSA signature length: {len(signature)}')
+    half = len(signature) // 2
+    der_sig = utils.encode_dss_signature(
+      int.from_bytes(signature[:half], 'big'),
+      int.from_bytes(signature[half:], 'big'))
+    pub_key.verify(der_sig, signing_input, ec.ECDSA(hash_alg))
+  elif alg.startswith('RS'):
+    pub_key.verify(signature, signing_input, padding.PKCS1v15(), hash_alg)
+  elif alg.startswith('PS'):
+    pub_key.verify(
+      signature, signing_input,
+      padding.PSS(mgf=padding.MGF1(hash_alg), salt_length=hash_alg.digest_size),
+      hash_alg)
+  else:
+    raise ValueError(f'Unsupported DPoP algorithm: {alg}')
+
+# gam check dpop [usecolor]
+def doDPoPTest(useColor=None):
+  """Test local DPoP signing with the configured backend and report OK/WARN/ERROR status."""
+  forceColor = False
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'usecolor':
+      forceColor = True
+    else:
+      unknownArgumentExit()
+  if useColor is None:
+    useColor = forceColor or supportsColoredText()
+  statusOk, statusErr, statusWarn = _getDPoPStatusLabels(useColor)
+
   backend = GC.Values[GC.DPOP_BACKEND]
   config = GC.Values[GC.DPOP_BACKEND_CONFIG]
   dpop_enabled = GC.Values[GC.DPOP]
-  printLine('')
-  printKeyValueList(['DPoP Configuration'])
-  Ind.Increment()
-  printKeyValueList(['dpop', dpop_enabled])
-  printKeyValueList(['dpop_backend', backend])
-  printKeyValueList(['dpop_backend_config', config or '(not set)'])
-  Ind.Decrement()
-  printBlankLine()
+  scope_note = 'Note: Tests local DPoP signing only; OAuth token binding and server enforcement checks run in "gam oauth info".'
+
   if not dpop_enabled:
-    printLine('DPoP is not enabled. Set "dpop = true" in gam.cfg to enable.')
+    printKeyValueList(['DPoP', 'Disabled'])
+    printKeyValueList(['DPoP Backend', backend])
+    if config:
+      printKeyValueList(['DPoP Backend Config', config])
+    printLine('Local DPoP Checks:')
+    Ind.Increment()
+    _printCheckStatus('DPoP disabled in gam.cfg', statusWarn)
+    Ind.Decrement()
+    printLine('Recommendation: Set "dpop = true" in gam.cfg to enable DPoP.')
+    printLine(scope_note)
     return
-  printLine('Constructing DPoP signer...')
-  signer = _getDPoPSigner()
-  printLine('Signer created successfully.')
-  printBlankLine()
-  printKeyValueList(['Signer Details'])
+
+  printKeyValueList(['DPoP', f'Enabled ({backend})'])
+  printKeyValueList(['DPoP Backend Config', config or '(not set)'])
+
+  signer = None
+  signer_err = None
+  try:
+    signer = _getDPoPSigner(exitOnError=False)
+  except Exception as e:
+    signer_err = _formatRefreshError(e)
+
+  printLine('Local DPoP Checks:')
   Ind.Increment()
-  printKeyValueList(['Backend', backend])
-  printKeyValueList(['Algorithm', signer.algorithm])
-  printKeyValueList(['Key ID', signer.key_id or '(auto)'])
-  printKeyValueList(['JWK Thumbprint', signer.thumbprint])
-  Ind.Decrement()
-  printBlankLine()
-  # Perform a test signature
+
+  if signer is None:
+    _printCheckStatus(f'Signer Initialization ({backend})', statusErr)
+    if signer_err:
+      printLine(f'Error: {signer_err}')
+    Ind.Decrement()
+    _printCheckStatus('DPoP Local Signing', statusErr)
+    printLine('Fix: Check your dpop_backend and dpop_backend_config settings in gam.cfg.')
+    printLine(scope_note)
+    setSysExitRC(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC)
+    return
+
+  _printCheckStatus(f'Signer Initialization ({backend})', statusOk)
+  backing_kind, backing_detail = _printDPoPKeyStorageCheck(backend, signer, statusOk, statusWarn)
+
+  jwk_ok = False
+  jwk = None
+  alg = getattr(signer, 'algorithm', None)
+  thumbprint = None
+  try:
+    jwk = signer.public_jwk
+    thumbprint = signer.thumbprint
+    leaked = [f for f in ('d', 'p', 'q', 'dp', 'dq', 'qi') if f in jwk]
+    if leaked:
+      raise ValueError(f'public_jwk contains private fields: {", ".join(leaked)}')
+    _jwkToPublicKey(jwk)
+    jwk_ok = bool(thumbprint)
+    _printCheckStatus(f'Public JWK & Thumbprint ({alg}, {thumbprint[:16]}...)', statusOk)
+  except Exception as e:
+    _printCheckStatus('Public JWK & Thumbprint', statusErr)
+    printLine(f'Error: {e}')
+
+  sign_ok = False
+  elapsed_ms = 0.0
+  signature = b''
   test_data = f'GAM DPoP test signature at {time.time()}'.encode('utf-8')
-  printLine('Performing test signature...')
   try:
     start_time = time.monotonic()
     signature = signer.sign(test_data)
     elapsed_ms = (time.monotonic() - start_time) * 1000
+    if jwk_ok:
+      _verifyDPoPJWKSignature(jwk, alg, test_data, signature)
+    sign_ok = bool(signature)
+    _printCheckStatus(f'Local Test Signature ({len(signature)} bytes, {elapsed_ms:.1f} ms)', statusOk)
   except Exception as e:
-    systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'Signature failed: {e}')
-  sig_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode('ascii')
-  printLine('Signature succeeded.')
-  printBlankLine()
-  printKeyValueList(['Signature Details'])
-  Ind.Increment()
-  printKeyValueList(['Signature length', f'{len(signature)} bytes'])
-  printKeyValueList(['Signature (base64url)', sig_b64[:48] + '...' if len(sig_b64) > 48 else sig_b64])
-  printKeyValueList(['Signing time', f'{elapsed_ms:.1f} ms'])
+    _printCheckStatus('Local Test Signature', statusErr)
+    printLine(f'Error: {e}')
+
+  proof_ok = False
+  try:
+    proof = signer.create_proof('POST', API.GOOGLE_OAUTH2_TOKEN_ENDPOINT)
+    parts = proof.split('.')
+    if len(parts) != 3:
+      raise ValueError(f'Expected 3 JWT segments, got {len(parts)}')
+    hdr = json.loads(_b64urlDecode(parts[0]).decode('utf-8'))
+    pay = json.loads(_b64urlDecode(parts[1]).decode('utf-8'))
+    if hdr.get('typ') != 'dpop+jwt' or hdr.get('alg') != alg or hdr.get('jwk') != dict(jwk):
+      raise ValueError('DPoP proof header fields do not match signer')
+    if pay.get('htm') != 'POST' or pay.get('htu') != API.GOOGLE_OAUTH2_TOKEN_ENDPOINT or not pay.get('jti') or not pay.get('iat'):
+      raise ValueError('DPoP proof payload missing required claims')
+    _verifyDPoPJWKSignature(jwk, alg, f'{parts[0]}.{parts[1]}'.encode('ascii'), _b64urlDecode(parts[2]))
+    proof_ok = True
+    _printCheckStatus(f'DPoP Proof & Signature Verification ({alg})', statusOk)
+  except Exception as e:
+    _printCheckStatus('DPoP Proof & Signature Verification', statusErr)
+    printLine(f'Error: {e}')
+
   Ind.Decrement()
-  printBlankLine()
-  printLine('DPoP configuration is valid and working.')
+
+  if jwk_ok and sign_ok and proof_ok:
+    if backing_kind == 'software':
+      _printCheckStatus(f'DPoP Local Signing (software key - {backing_detail})', statusWarn)
+      printLine('WARNING: Software keys are not hardware-protected and can be extracted from this machine. For production use, switch to a hardware key (TPM, Secure Enclave, YubiKey, or HSM).')
+    else:
+      _printCheckStatus('DPoP Local Signing', statusOk)
+  else:
+    _printCheckStatus('DPoP Local Signing', statusErr)
+    printLine('Fix: Check your dpop_backend and dpop_backend_config settings in gam.cfg.')
+    setSysExitRC(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC)
+  printLine(scope_note)
 
 class DPoPSignerError(Exception):
   """Exception raised when a DPoP signer cannot be constructed."""
@@ -12377,12 +12518,7 @@ def _formatRefreshError(err):
 def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=True):
   if credentials is None:
     return
-  if useColor:
-    statusOk = createGreenText('OK')
-    statusErr = createRedText('ERROR')
-    statusWarn = createYellowText('WARN')
-  else:
-    statusOk, statusErr, statusWarn = ('OK', 'ERROR', 'WARN')
+  statusOk, statusErr, statusWarn = _getDPoPStatusLabels(useColor)
   saved_thumbprint = getattr(credentials, '_saved_dpop_thumbprint', None)
 
   dpop_enabled = GC.Values[GC.DPOP]
@@ -12423,7 +12559,7 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=True):
     except Exception as e:
       signer_err = _formatRefreshError(e)
 
-  backing_kind, backing_detail = _getDPoPSignerBackingInfo(backend, signer) if signer is not None else ('unknown', backend)
+  backing_kind, backing_detail = ('unknown', backend)
   thumbprint_matches = bool(saved_thumbprint) and signer is not None and signer.thumbprint == saved_thumbprint
 
   printLine('DPoP Checks:')
@@ -12434,12 +12570,8 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=True):
     _printCheckStatus(f'Signer Initialization ({backend})', statusErr)
     if signer_err:
       printLine(f'Error: {signer_err}')
-  elif backing_kind == 'hardware':
-    _printCheckStatus(f'Key Storage (Hardware: {backing_detail})', statusOk)
-  elif backing_kind == 'software':
-    _printCheckStatus(f'Key Storage (Software: {backing_detail})', statusWarn)
   else:
-    _printCheckStatus(f'Key Storage ({backing_detail} - hardware unverified)', statusWarn)
+    backing_kind, backing_detail = _printDPoPKeyStorageCheck(backend, signer, statusOk, statusWarn)
 
   # Check 2: oauth2.txt thumbprint binding metadata
   if not saved_thumbprint:

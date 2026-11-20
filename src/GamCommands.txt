@@ -1386,6 +1386,9 @@ gam [<Select>] [<SelectFInputFilter>] [<SelectOutputilter>] [<Config>] [<Redirec
 # Check connection to Google
 gam checkconnection
 
+# Check local DPoP signing configuration
+gam check dpop [usecolor]
+
 # Comment
 gam comment <String>*
 
