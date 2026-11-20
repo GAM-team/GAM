@@ -505,6 +505,8 @@ def printWarningMessage(sysRC, message):
   setSysExitRC(sysRC)
   writeStderr(f'\n{Ind.Spaces()}{WARNING_PREFIX}{message}\n')
 
+_WIN_VT_SUPPORTED = None
+
 def supportsColoredText():
   """Determines if the current terminal environment supports colored text.
 
@@ -512,10 +514,25 @@ def supportsColoredText():
     Bool, True if the current terminal environment supports colored text via
     ANSI escape characters.
   """
-  # Make a rudimentary check for Windows. Though Windows does seem to support
-  # colorization with VT100 emulation, it is disabled by default. Therefore,
-  # we'll simply disable it in GAM on Windows for now.
-  return not sys.platform.startswith('win')
+  global _WIN_VT_SUPPORTED
+  if not sys.platform.startswith('win'):
+    return True
+  if _WIN_VT_SUPPORTED is not None:
+    return _WIN_VT_SUPPORTED
+  supported = bool(os.environ.get('WT_SESSION') or os.environ.get('ANSICON'))
+  try:
+    import ctypes
+    import ctypes.wintypes as wintypes
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+    mode = wintypes.DWORD()
+    if handle and handle != -1 and kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+      if kernel32.SetConsoleMode(handle, mode.value | 0x0004):  # ENABLE_VIRTUAL_TERMINAL_PROCESSING
+        supported = True
+  except Exception:
+    pass
+  _WIN_VT_SUPPORTED = supported
+  return supported
 
 def createColoredText(text, color):
   """Uses ANSI escape characters to create colored text in supported terminals.
@@ -547,6 +564,19 @@ def createGreenText(text):
 def createYellowText(text):
   """Uses ANSI encoding to create yellow text if supported."""
   return createColoredText(text, '\u001b[33m')
+
+def _getCheckStatusLabels(useColor):
+  """Return (pass_label, fail_label, warn_label, deprecated_label), colorized when enabled."""
+  if useColor:
+    return (createGreenText('PASS'),
+            createRedText('FAIL'),
+            createYellowText('WARN'),
+            createRedText('DEPRECATED'))
+  return ('PASS', 'FAIL', 'WARN', 'DEPRECATED')
+
+def _printCheckStatus(description, result):
+  """Print an aligned check description and PASS/FAIL/WARN result."""
+  writeStdout(f'{Ind.Spaces()+description:75} {result}\n')
 
 def executeBatch(dbatch):
   dbatch.execute()
@@ -5232,6 +5262,128 @@ def _getDPoPSigner(exitOnError=True):
     _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP {label} error: {e}')
   except Exception as e:
     _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP {label} unexpected error: {e}')
+
+def _inspectWindowsCNGKey(signer):
+  """Determine whether a WindowsCertStoreDPoPSigner key is hardware- or software-backed via ncrypt."""
+  h_key = getattr(signer, '_h_key', None)
+  if not sys.platform.startswith('win') or not h_key:
+    return ('unknown', 'Windows Certificate Store')
+  try:
+    import ctypes
+    import ctypes.wintypes as wintypes
+    ncrypt = ctypes.WinDLL('ncrypt')
+    ncrypt.NCryptGetProperty.argtypes = [
+      ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_void_p,
+      wintypes.DWORD, ctypes.POINTER(wintypes.DWORD), wintypes.DWORD,
+    ]
+    ncrypt.NCryptGetProperty.restype = ctypes.c_long
+    ncrypt.NCryptFreeObject.argtypes = [ctypes.c_void_p]
+    ncrypt.NCryptFreeObject.restype = ctypes.c_long
+
+    h_prov = ctypes.c_void_p()
+    cb_result = wintypes.DWORD(0)
+    status = ncrypt.NCryptGetProperty(
+      h_key, 'Provider Handle', ctypes.byref(h_prov),
+      ctypes.sizeof(h_prov), ctypes.byref(cb_result), 0)
+    if status != 0 or not h_prov.value:
+      return ('unknown', 'Windows Certificate Store')
+    try:
+      impl_type = wintypes.DWORD(0)
+      impl_ok = ncrypt.NCryptGetProperty(
+        h_prov, 'Impl Type', ctypes.byref(impl_type),
+        ctypes.sizeof(impl_type), ctypes.byref(cb_result), 0) == 0
+
+      prov_name = None
+      name_len = wintypes.DWORD(0)
+      if ncrypt.NCryptGetProperty(h_prov, 'Name', None, 0, ctypes.byref(name_len), 0) == 0 and name_len.value > 0:
+        buf = ctypes.create_string_buffer(name_len.value)
+        if ncrypt.NCryptGetProperty(h_prov, 'Name', buf, name_len.value, ctypes.byref(name_len), 0) == 0:
+          prov_name = bytes(buf[:name_len.value]).decode('utf-16-le', errors='replace').rstrip('\x00')
+
+      if impl_ok:
+        if impl_type.value & (0x00000001 | 0x00000008):  # HARDWARE | REMOVABLE
+          return ('hardware', prov_name or 'TPM / hardware KSP')
+        if impl_type.value & 0x00000002:  # SOFTWARE
+          return ('software', prov_name or 'Microsoft Software Key Storage Provider')
+      if prov_name:
+        lower = prov_name.lower()
+        if 'software' in lower:
+          return ('software', prov_name)
+        if any(tok in lower for tok in ('platform', 'pluton', 'smart card')):
+          return ('hardware', prov_name)
+        return ('unknown', prov_name)
+    finally:
+      ncrypt.NCryptFreeObject(h_prov)
+  except Exception:
+    pass
+  return ('unknown', 'Windows Certificate Store')
+
+def _inspectMacOSSecKeyToken(signer):
+  """Determine whether a macOS SecureEnclaveDPoPSigner key lives in a hardware CTK token."""
+  key_ref = getattr(signer, '_private_key_ref', None)
+  if sys.platform != 'darwin' or not key_ref:
+    return ('hardware', 'macOS Secure Enclave')
+  try:
+    import ctypes
+    from dpop_signer_macos_secureenclave import _CF, _Sec
+    _Sec.SecKeyCopyAttributes.argtypes = [ctypes.c_void_p]
+    _Sec.SecKeyCopyAttributes.restype = ctypes.c_void_p
+    _CF.CFDictionaryGetValue.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    _CF.CFDictionaryGetValue.restype = ctypes.c_void_p
+    _CF.CFStringGetCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_long, ctypes.c_uint32]
+    _CF.CFStringGetCString.restype = ctypes.c_bool
+    _CF.CFGetTypeID.argtypes = [ctypes.c_void_p]
+    _CF.CFGetTypeID.restype = ctypes.c_ulong
+    _CF.CFStringGetTypeID.restype = ctypes.c_ulong
+
+    attrs = _Sec.SecKeyCopyAttributes(key_ref)
+    if attrs:
+      try:
+        token_key = ctypes.c_void_p.in_dll(_Sec, 'kSecAttrTokenID')
+        token_val = _CF.CFDictionaryGetValue(attrs, token_key)
+        if token_val and _CF.CFGetTypeID(token_val) == _CF.CFStringGetTypeID():
+          buf = ctypes.create_string_buffer(256)
+          if _CF.CFStringGetCString(token_val, buf, 256, 0x08000100):
+            token_id = buf.value.decode('utf-8', errors='replace')
+            return ('hardware', 'Secure Enclave' if ('setoken' in token_id or 'ctkcard' in token_id) else token_id)
+        return ('software', 'macOS Keychain (non-token key)')
+      finally:
+        _CF.CFRelease(attrs)
+  except Exception:
+    pass
+  return ('hardware', 'macOS Secure Enclave')
+
+def _getDPoPSignerBackingInfo(backend, signer):
+  """Classify a configured DPoP signer as ('hardware'|'software'|'unknown', detail)."""
+  if backend == 'software':
+    return ('software', 'PEM file on disk')
+  if backend == 'ephemeral':
+    return ('software', 'in-memory ephemeral key')
+  if backend == 'yubikey':
+    return ('hardware', 'YubiKey PIV')
+  if backend == 'windows_certstore':
+    return _inspectWindowsCNGKey(signer)
+  if backend == 'macos_secureenclave':
+    return _inspectMacOSSecKeyToken(signer)
+  if backend == 'linux_tpm':
+    tcti = (getattr(signer, '_tcti', None) or '').lower()
+    if 'swtpm' in tcti:
+      return ('software', f'Software TPM simulator ({tcti})')
+    return ('hardware', 'TPM 2.0')
+  if backend == 'pkcs11':
+    token = getattr(signer, '_token', None)
+    mod_path = getattr(signer, '_module_path', '') or ''
+    def _norm(val):
+      if isinstance(val, bytes):
+        return val.decode('utf-8', errors='replace').strip()
+      return str(val).strip() if val else ''
+    label = _norm(getattr(token, 'label', None))
+    mfg = _norm(getattr(token, 'manufacturer_id', None))
+    model = _norm(getattr(token, 'model', None))
+    if 'softhsm' in f'{mfg} {model} {mod_path}'.lower():
+      return ('software', f'SoftHSM ({label or model or "software token"})')
+    return ('hardware', f'PKCS#11 ({label or mfg or "token"})')
+  return ('unknown', 'Enterprise Certificate Proxy' if backend == 'ecp' else backend)
 
 def getOauth2TxtCredentials(exitOnError=True, api=None, noDASA=False, refreshOnly=False, noScopes=False):
   if not noDASA and GC.Values[GC.ENABLE_DASA]:
@@ -12168,32 +12320,82 @@ def _formatRefreshError(err):
   return str(err).strip()
 
 
-def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False):
+def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False, useColor=False):
   if credentials is None:
     return
+  testPass, testFail, testWarn, _ = _getCheckStatusLabels(useColor)
   saved_thumbprint = getattr(credentials, '_saved_dpop_thumbprint', None)
 
   dpop_enabled = GC.Values[GC.DPOP]
-  if dpop_enabled:
-    backend = GC.Values[GC.DPOP_BACKEND]
-    printKeyValueList(['DPoP', f'Enabled ({backend})'])
-    if GC.Values[GC.DPOP_BACKEND_CONFIG]:
-      printKeyValueList(['DPoP Backend Config', GC.Values[GC.DPOP_BACKEND_CONFIG]])
+  if not dpop_enabled:
     if saved_thumbprint:
+      printKeyValueList(['DPoP', 'Disabled in gam.cfg'])
       printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
-    else:
-      printKeyValueList(['DPoP Token', 'Not bound (run "gam oauth create" to bind)'])
-  else:
-    if saved_thumbprint:
-      printKeyValueList(['DPoP', 'Disabled in gam.cfg (Warning: token in oauth2.txt requires DPoP)'])
-      printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
+      printLine('DPoP Status:')
+      Ind.Increment()
+      _printCheckStatus('dpop=false in gam.cfg, but oauth2.txt is bound to DPoP', testFail)
+      Ind.Decrement()
+      printLine('Fix: Run "gam config dpop true save" with your DPoP backend configured, or "gam oauth revoke" and "gam oauth create" for an unbound token.')
     else:
       printKeyValueList(['DPoP', 'Disabled'])
+      printLine('DPoP Status:')
+      Ind.Increment()
+      _printCheckStatus('DPoP disabled (refresh token in oauth2.txt is bearer-only)', testWarn)
+      Ind.Decrement()
+      printLine('Recommendation: Enable DPoP with a hardware key ("gam config dpop true ...") and run "gam oauth create" to bind oauth2.txt.')
     return
+
+  backend = GC.Values[GC.DPOP_BACKEND]
+  printKeyValueList(['DPoP', f'Enabled ({backend})'])
+  if GC.Values[GC.DPOP_BACKEND_CONFIG]:
+    printKeyValueList(['DPoP Backend Config', GC.Values[GC.DPOP_BACKEND_CONFIG]])
+  if saved_thumbprint:
+    printKeyValueList(['DPoP Token Thumbprint', saved_thumbprint])
+  else:
+    printKeyValueList(['DPoP Token', 'Not bound'])
+
+  signer = None
+  signer_err = None
+  if already_dpop_refreshed and getattr(credentials, '_dpop_signer', None) is not None:
+    signer = credentials._dpop_signer
+  else:
+    try:
+      signer = _getDPoPSigner(exitOnError=False)
+    except Exception as e:
+      signer_err = _formatRefreshError(e)
+
+  backing_kind, backing_detail = _getDPoPSignerBackingInfo(backend, signer) if signer is not None else ('unknown', backend)
+  thumbprint_matches = bool(saved_thumbprint) and signer is not None and signer.thumbprint == saved_thumbprint
+
+  printLine('DPoP Checks:')
+  Ind.Increment()
+
+  # Check 1: Signer initialization & hardware vs software key backing
+  if signer is None:
+    _printCheckStatus(f'Signer Initialization ({backend})', testFail)
+    if signer_err:
+      printLine(f'Error: {signer_err}')
+  elif backing_kind == 'hardware':
+    _printCheckStatus(f'Key Storage (Hardware: {backing_detail})', testPass)
+  elif backing_kind == 'software':
+    _printCheckStatus(f'Key Storage (Software: {backing_detail})', testWarn)
+  else:
+    _printCheckStatus(f'Key Storage ({backing_detail} - hardware unverified)', testWarn)
+
+  # Check 2: oauth2.txt thumbprint binding metadata
+  if not saved_thumbprint:
+    _printCheckStatus('Credential Binding (no dpop_thumbprint in oauth2.txt)', testFail)
+  elif signer is None:
+    _printCheckStatus('Credential Binding (dpop_thumbprint present in oauth2.txt)', testPass)
+  elif thumbprint_matches:
+    _printCheckStatus('Credential Binding (signer matches oauth2.txt thumbprint)', testPass)
+  else:
+    _printCheckStatus('Credential Binding (signer thumbprint mismatch)', testFail)
 
   refresh_token = getattr(credentials, 'refresh_token', None)
   if not refresh_token:
-    printKeyValueList(['DPoP Refresh Tests', 'Skipped (no refresh token)'])
+    _printCheckStatus('DPoP Refresh Tests (no refresh token in oauth2.txt)', testWarn)
+    Ind.Decrement()
     return
 
   request = transportCreateRequest()
@@ -12202,8 +12404,8 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False):
   client_secret = credentials.client_secret
   scopes = getattr(credentials, 'scopes', None)
 
-  def _try_refresh(signer=None):
-    cls = DPoPCredentials if signer is not None else google.oauth2.credentials.Credentials
+  def _try_refresh(test_signer=None):
+    cls = DPoPCredentials if test_signer is not None else google.oauth2.credentials.Credentials
     kwargs = dict(
         token=None,
         refresh_token=refresh_token,
@@ -12212,75 +12414,78 @@ def _doDPoPOAuthInfo(credentials, already_dpop_refreshed=False):
         client_secret=client_secret,
         scopes=scopes,
     )
-    if signer is not None:
-      kwargs['dpop_signer'] = signer
+    if test_signer is not None:
+      kwargs['dpop_signer'] = test_signer
     cls(**kwargs).refresh(request)
 
-  printKeyValueList(['DPoP Refresh Tests'])
-  Ind.Increment()
-
-  # Test 1: Refresh with DPoP using configured backend
+  # Check 3: Refresh with DPoP using configured backend
   with_dpop_ok = False
+  dpop_refresh_err = None
   if already_dpop_refreshed:
     with_dpop_ok = True
-    printKeyValueList([f'With DPoP ({backend})', 'Success'])
+    _printCheckStatus(f'Refresh With DPoP ({backend})', testPass)
+  elif signer is None:
+    _printCheckStatus(f'Refresh With DPoP ({backend} signer unavailable)', testFail)
   else:
     try:
-      _try_refresh(_getDPoPSigner(exitOnError=False))
+      _try_refresh(signer)
       with_dpop_ok = True
-      printKeyValueList([f'With DPoP ({backend})', 'Success'])
+      _printCheckStatus(f'Refresh With DPoP ({backend})', testPass)
     except Exception as e:
-      err_str = _formatRefreshError(e)
-      if backend == 'ephemeral':
-        printKeyValueList([f'With DPoP ({backend})', f'Failed as expected for ephemeral backend ({err_str})'])
-      else:
-        printKeyValueList([f'With DPoP ({backend})', f'Failed ({err_str})'])
+      dpop_refresh_err = _formatRefreshError(e)
+      label = f'Refresh With DPoP ({backend} ephemeral expected fail)' if backend == 'ephemeral' else f'Refresh With DPoP ({backend})'
+      _printCheckStatus(label, testFail)
+      if dpop_refresh_err:
+        printLine(f'Error: {dpop_refresh_err}')
 
-  # Test 2: Refresh with DPoP disabled (no DPoP proof attached)
+  # Check 4: Refresh with DPoP disabled (no DPoP proof attached)
   without_dpop_rejected = False
   try:
     _try_refresh()
-    printKeyValueList(['Without DPoP', 'Warning: Succeeded without DPoP (Token is not bound)'])
+    _printCheckStatus('Reject Refresh Without DPoP (accepted bearer refresh!)', testFail)
   except Exception as e:
     without_dpop_rejected = True
-    printKeyValueList(['Without DPoP', f'Rejected as expected ({_formatRefreshError(e)})'])
+    _printCheckStatus('Reject Refresh Without DPoP', testPass)
 
-  # Test 3: Refresh with ephemeral DPoP backend (fresh arbitrary key)
+  # Check 5: Refresh with ephemeral DPoP backend (wrong key)
   ephem_rejected = False
   try:
     from dpop_signer_ephemeral import EphemeralDPoPSigner
     _try_refresh(EphemeralDPoPSigner())
-    printKeyValueList(['With Wrong Key', 'Warning: Succeeded with wrong key (Key not bound)'])
+    _printCheckStatus('Reject Refresh With Wrong Key (accepted wrong key!)', testFail)
   except ImportError:
-    printKeyValueList(['With Wrong Key', 'Skipped (dpop-signer-ephemeral not installed)'])
+    _printCheckStatus('Reject Refresh With Wrong Key (ephemeral pkg missing)', testWarn)
     ephem_rejected = True
-  except Exception as e:
+  except Exception:
     ephem_rejected = True
-    printKeyValueList(['With Wrong Key', f'Rejected as expected ({_formatRefreshError(e)})'])
+    _printCheckStatus('Reject Refresh With Wrong Key', testPass)
 
   Ind.Decrement()
 
-  if with_dpop_ok and without_dpop_rejected and ephem_rejected:
-    binding_status = 'Verified'
-  elif not without_dpop_rejected:
-    binding_status = 'Failed (Token is not bound to DPoP)'
-  elif not ephem_rejected:
-    binding_status = 'Failed (Server accepted arbitrary key)'
-  elif not with_dpop_ok:
-    if backend == 'ephemeral':
-      binding_status = 'Inconclusive (Configured backend is ephemeral)'
+  all_bound = thumbprint_matches and with_dpop_ok and without_dpop_rejected and ephem_rejected
+  if all_bound:
+    if backing_kind == 'software':
+      _printCheckStatus(f'DPoP Key Binding: Verified (Software key - {backing_detail})', testWarn)
+      printLine('WARNING: Software keys are not hardware-protected and can be extracted from this machine. For production use, switch to a hardware key (TPM, Secure Enclave, YubiKey, or HSM) and re-bind with "gam oauth revoke" + "gam oauth create".')
     else:
-      binding_status = 'Failed (Configured signer refresh failed)'
-  else:
-    binding_status = 'Inconclusive'
+      _printCheckStatus('DPoP Key Binding: Verified', testPass)
+    return
 
-  printKeyValueList(['DPoP Key Binding', binding_status])
+  _printCheckStatus('DPoP Key Binding: Failed', testFail)
+  if signer is None:
+    printLine('Fix: Check your DPoP backend configuration with "gam check dpop".')
+  elif saved_thumbprint and not thumbprint_matches:
+    printLine(f'Fix: Signer thumbprint ({signer.thumbprint}) does not match oauth2.txt ({saved_thumbprint}). Restore the original key or run "gam oauth revoke" and "gam oauth create".')
+  elif not saved_thumbprint or not without_dpop_rejected or not ephem_rejected:
+    printLine('Fix: Token in oauth2.txt is not DPoP-bound. Run "gam oauth revoke" then "gam oauth create" to bind a new token.')
+  elif not with_dpop_ok:
+    printLine('Fix: Configured signer failed token refresh. Run "gam check dpop" to test signing or re-authorize with "gam oauth create".')
 
 
-# gam oauth|oauth2 info|verify [showsecret] [accesstoken <AccessToken> idtoken <IDToken>] [showdetails]
+# gam oauth|oauth2 info|verify [showsecret] [accesstoken <AccessToken> idtoken <IDToken>] [showdetails] [usecolor]
 def doOAuthInfo():
   credentials = access_token = id_token = None
-  showDetails = showSecret = False
+  showDetails = showSecret = forceColor = False
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'accesstoken':
@@ -12291,8 +12496,11 @@ def doOAuthInfo():
       showDetails = True
     elif myarg == 'showsecret':
       showSecret = True
+    elif myarg == 'usecolor':
+      forceColor = True
     else:
       unknownArgumentExit()
+  useColor = forceColor or sys.stdout.isatty()
   exitIfNoOauth2Txt()
   saved_scopes = []
   already_dpop_refreshed = False
@@ -12353,7 +12561,7 @@ def doOAuthInfo():
     for k, v in sorted(token_info.items()):
       if k not in ['email', 'expires_in', 'issued_to', 'scope']:
         printKeyValueList([k, v])
-  _doDPoPOAuthInfo(credentials, already_dpop_refreshed=already_dpop_refreshed)
+  _doDPoPOAuthInfo(credentials, already_dpop_refreshed=already_dpop_refreshed, useColor=useColor)
   printBlankLine()
 
 # gam oauth|oauth2 update [<EmailAddress>]
@@ -13359,8 +13567,7 @@ def checkServiceAccount(users):
   def printMessage(message):
     writeStdout(Ind.Spaces()+message+'\n')
 
-  def printPassFail(description, result):
-    writeStdout(Ind.Spaces()+f'{description:73} {result}'+'\n')
+  printPassFail = _printCheckStatus
 
   def authorizeScopes(message):
     long_url = ('https://admin.google.com/ac/owl/domainwidedelegation'
@@ -13394,16 +13601,7 @@ def checkServiceAccount(users):
       useColor = True
     else:
       unknownArgumentExit()
-  if useColor:
-    testPass = createGreenText('PASS')
-    testFail = createRedText('FAIL')
-    testWarn = createYellowText('WARN')
-    testDeprecated = createRedText('DEPRECATED')
-  else:
-    testPass = 'PASS'
-    testFail = 'FAIL'
-    testWarn = 'WARN'
-    testDeprecated = 'DEPRECATED'
+  testPass, testFail, testWarn, testDeprecated = _getCheckStatusLabels(useColor)
 #  if Act.Get() == Act.CHECK and GM.Globals[GM.SVCACCT_SCOPES_DEFINED]:
   if Act.Get() == Act.CHECK:
     if not checkScopesSet:

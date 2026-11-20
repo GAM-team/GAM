@@ -1545,7 +1545,7 @@ gam oauth|oauth2 update [admin <EmailAddress>]
 gam oauth|oauth2 delete|revoke
 gam oauth|oauth2 export [<FileName>]
 gam oauth|oauth2 refresh
-gam oauth|oauth2 info|verify [showsecret] [accesstoken <AccessToken> idtoken <IDToken>] [showdetails]
+gam oauth|oauth2 info|verify [showsecret] [accesstoken <AccessToken> idtoken <IDToken>] [showdetails] [usecolor]
 
 gam <UserTypeEntity> check serviceaccount (scope|scopes <APIScopeURLList>)*
 gam <UserTypeEntity> update serviceaccount (scope|scopes <APIScopeURLList>)*
