@@ -5364,22 +5364,39 @@ def _inspectLinuxTPM(signer):
   if 'swtpm' in lower_tcti or 'mssim' in lower_tcti:
     return ('software', f'Software TPM ({tcti})')
   try:
-    from tpm2_pytss import ESAPI, TPM2_CAP, TPM2_PT
+    from tpm2_pytss import ESAPI
+    try:
+      from tpm2_pytss.constants import TPM2_CAP, TPM2_PT
+    except ImportError:
+      try:
+        from tpm2_pytss import TPM2_CAP, TPM2_PT
+      except ImportError:
+        TPM2_CAP = TPM2_PT = None
+    cap_props = getattr(TPM2_CAP, 'TPM_PROPERTIES', 0x00000006)
+    pt_manuf = getattr(TPM2_PT, 'MANUFACTURER', 0x00000105)
+    vendor_pts = (
+      getattr(TPM2_PT, 'VENDOR_STRING_1', 0x00000106),
+      getattr(TPM2_PT, 'VENDOR_STRING_2', 0x00000107),
+      getattr(TPM2_PT, 'VENDOR_STRING_3', 0x00000108),
+      getattr(TPM2_PT, 'VENDOR_STRING_4', 0x00000109),
+    )
     ectx = signer._get_esapi() if hasattr(signer, '_get_esapi') else ESAPI(tcti=getattr(signer, '_tcti', None))
     try:
-      _, cap_data = ectx.get_capability(TPM2_CAP.TPM_PROPERTIES, TPM2_PT.MANUFACTURER, 5)
+      get_cap = getattr(ectx, 'get_capability', None) or ectx.GetCapability
+      _, cap_data = get_cap(cap_props, pt_manuf, 5)
     finally:
       ectx.close()
+    tpm_props = getattr(cap_data.data, 'tpmProperties', None)
+    if hasattr(tpm_props, 'tpmProperty') and hasattr(tpm_props, 'count'):
+      items = [tpm_props.tpmProperty[i] for i in range(int(tpm_props.count))]
+    else:
+      items = tpm_props or []
     props = {}
-    for p in getattr(cap_data.data, 'tpmProperties', []):
+    for p in items:
       raw = int(p.value).to_bytes(4, 'big')
       props[int(p.property)] = raw.rstrip(b'\x00').decode('ascii', errors='replace').strip()
-    manuf = props.get(int(TPM2_PT.MANUFACTURER), '')
-    vendor = ' '.join(
-      props.get(int(pt), '') for pt in (
-        TPM2_PT.VENDOR_STRING_1, TPM2_PT.VENDOR_STRING_2,
-        TPM2_PT.VENDOR_STRING_3, TPM2_PT.VENDOR_STRING_4)
-      if props.get(int(pt), ''))
+    manuf = props.get(int(pt_manuf), '')
+    vendor = ' '.join(props.get(int(pt), '') for pt in vendor_pts if props.get(int(pt), ''))
     vendor_lower = vendor.lower()
     is_sw_vendor = (
       any(tok in vendor_lower for tok in ('swtpm', 'simulator', 'emulator', 'virtual'))
