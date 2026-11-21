@@ -10018,6 +10018,7 @@ def _getServerTLSUsed(location):
       response, _ = httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
       sock = httpObj.connections[conn].sock
       cipher_name, tls_ver, _ = sock.cipher()
+      tls_ver = sock.version() or tls_ver
       proto = getattr(response, 'http_version', None)
       if not proto:
         ver_map = {20: 'HTTP/2', 11: 'HTTP/1.1', 10: 'HTTP/1.0', 9: 'HTTP/0.9'}
