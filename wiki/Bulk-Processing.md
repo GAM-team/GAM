@@ -18,8 +18,10 @@ The variables `num_threads`, `num_tbatch_threads` and `auto_batch_min` in `gam.c
 * [Command data from Google Docs/Sheets/Storage](Command-Data-From-Google-Docs-Sheets-Storage)
 `gdoc <UserGoogleDoc>` and `gsheet <UserGoogleSheet>`
 
+```
 <DateTimeFormat> ::= <String>
         See: https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes
+```
 
 ## Batch files
 There are two types of batch processing, one that uses processes and one that uses threads. Using processes is higher performance but `gam csv` commands are not supported.

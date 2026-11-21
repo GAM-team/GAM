@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.52.04'
+__version__ = '7.52.05'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -10573,6 +10573,7 @@ def _getServerTLSUsed(location):
       response, _ = httpObj.request(url, headers={'user-agent': GAM_USER_AGENT})
       sock = httpObj.connections[conn].sock
       cipher_name, tls_ver, _ = sock.cipher()
+      tls_ver = sock.version() or tls_ver
       proto = getattr(response, 'http_version', None)
       if not proto:
         ver_map = {20: 'HTTP/2', 11: 'HTTP/1.1', 10: 'HTTP/1.0', 9: 'HTTP/0.9'}
@@ -54754,6 +54755,8 @@ def inviteGuardians(users):
     Ind.Decrement()
 
 def _cancelGuardianInvitation(croom, studentId, invitationId, i=0, count=0, j=0, jcount=0):
+  if invitationId.startswith('id:') or invitationId.startswith('uid:'):
+    invitationId = invitationId.split(':', 1)[1]
   try:
     result = callGAPI(croom.userProfiles().guardianInvitations(), 'patch',
                       throwReasons=[GAPI.NOT_FOUND, GAPI.FAILED_PRECONDITION,
@@ -59975,12 +59978,6 @@ def _mapDriveInfo(f_file, parentsSubFields, showParentsIdsAsList):
     if emailAddress:
       _, permission['domain'] = splitEmailAddress(emailAddress)
 
-DRIVEFILE_BASIC_PERMISSION_FIELDS = [
-  'displayName', 'id', 'emailAddress', 'domain', 'role', 'type',
-  'allowFileDiscovery', 'expirationTime', 'deleted', 'inheritedPermissionsDisabled',
-  'permissionDetails' #permissionDetails must be last
-  ]
-
 DRIVE_FIELDS_CHOICE_MAP = {
   'alternatelink': 'webViewLink',
   'appdatacontents': 'spaces',
@@ -60171,6 +60168,12 @@ DRIVE_PARENTS_SUBFIELDS_CHOICE_MAP = {
   'id': 'id',
   'isroot': 'isRoot',
   }
+
+DRIVEFILE_BASIC_PERMISSION_FIELDS = [
+  'displayName', 'id', 'emailAddress', 'domain', 'role', 'type',
+  'allowFileDiscovery', 'expirationTime', 'deleted', 'inheritedPermissionsDisabled',
+  'permissionDetails' #permissionDetails must be last
+  ]
 
 DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP = {
   'additionalroles': 'role',
@@ -69723,24 +69726,41 @@ def emptyDriveTrash(users):
     except (GAPI.serviceNotAvailable, GAPI.authError, GAPI.domainPolicy) as e:
       userDriveServiceNotEnabledWarning(user, str(e), i, count)
 
-def _getDriveFileACLPrintKeysTimeObjects():
-  printKeys = ['id', 'role', 'type', 'emailAddress', 'domain', 'permissionDetails',
-               'expirationTime', 'photoLink', 'allowFileDiscovery', 'deleted',
-               'pendingOwner', 'view']
-  timeObjects = {'expirationTime'}
-  return (printKeys, timeObjects)
+DRIVEFILE_ACL_TIMEOBJECTS = ['expirationTime']
+
+def _getDriveFileACLPrintKeys():
+  return ['id', 'role', 'type', 'emailAddress', 'domain', 'permissionDetails',
+          'expirationTime', 'photoLink', 'allowFileDiscovery', 'deleted',
+          'pendingOwner', 'view']
 
 # DriveFileACL commands utilities
-def _showDriveFilePermissionJSON(user, fileId, fileName, createdTime, permission, timeObjects):
+def getDriveFilePermissionsFields(myarg, fieldsList):
+  if myarg in DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP:
+    fieldsList.append(DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP[myarg])
+  elif myarg == 'basicpermissions':
+    fieldsList.extend(DRIVEFILE_BASIC_PERMISSION_FIELDS[:-1])
+  elif myarg == 'fields':
+    for field in _getFieldsList():
+      if field in DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP:
+        fieldsList.append(DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP[field])
+      elif field == 'basicpermissions':
+        fieldsList.extend(DRIVEFILE_BASIC_PERMISSION_FIELDS[:-1])
+      else:
+        invalidChoiceExit(field, DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP, True)
+  else:
+    return False
+  return True
+
+def _showDriveFilePermissionJSON(user, fileId, fileName, createdTime, permission):
   _mapDrivePermissionNames(permission)
   row = {'Owner': user, 'id': fileId, 'permission': permission}
   if createdTime is not None:
     row['createdTime'] = createdTime
   if fileId != fileName:
     row['name'] = fileName
-  printLine(json.dumps(cleanJSON(row, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True))
+  printLine(json.dumps(cleanJSON(row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS), ensure_ascii=False, sort_keys=True))
 
-def _showDriveFilePermissionsJSON(user, fileId, fileName, createdTime, permissions, timeObjects):
+def _showDriveFilePermissionsJSON(user, fileId, fileName, createdTime, permissions):
   for permission in permissions:
     _mapDrivePermissionNames(permission)
   row = {'Owner': user, 'id': fileId, 'permissions': permissions}
@@ -69748,9 +69768,9 @@ def _showDriveFilePermissionsJSON(user, fileId, fileName, createdTime, permissio
     row['createdTime'] = createdTime
   if fileId != fileName:
     row['name'] = fileName
-  printLine(json.dumps(cleanJSON(row, timeObjects=timeObjects), ensure_ascii=False, sort_keys=True))
+  printLine(json.dumps(cleanJSON(row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS), ensure_ascii=False, sort_keys=True))
 
-def _showDriveFilePermission(permission, printKeys, timeObjects, i=0, count=0):
+def _showDriveFilePermission(permission, printKeys, i=0, count=0):
   if permission.get('displayName'):
     name = permission['displayName']
   elif 'id' in permission:
@@ -69783,20 +69803,20 @@ def _showDriveFilePermission(permission, printKeys, timeObjects, i=0, count=0):
           printKeyValueList(['additionalRoles', ','.join(detail['additionalRoles'])])
         Ind.Decrement()
       Ind.Decrement()
-    elif key not in timeObjects:
+    elif key not in DRIVEFILE_ACL_TIMEOBJECTS:
       printKeyValueList([key, value])
     else:
       printKeyValueList([key, formatLocalTime(value)])
   Ind.Decrement()
 
-def _showDriveFilePermissions(entityType, fileName, permissions, printKeys, timeObjects, j, jcount):
+def _showDriveFilePermissions(entityType, fileName, permissions, printKeys, j, jcount):
   kcount = len(permissions)
   entityPerformActionNumItems([entityType, fileName], kcount, Ent.PERMITTEE, j, jcount)
   Ind.Increment()
   k = 0
   for permission in permissions:
     k += 1
-    _showDriveFilePermission(permission, printKeys, timeObjects, k, kcount)
+    _showDriveFilePermission(permission, printKeys, k, kcount)
   Ind.Decrement()
 
 def _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess):
@@ -69810,6 +69830,7 @@ def _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess):
 #	(mappermissionsdomain <DomainName> <DomainName>)*
 #	[moveToNewOwnersRoot [<Boolean>]]
 #	[updatesheetprotectedranges  [<Boolean>]]
+#	[fields <DrivePermissionsFieldNameList>]
 #	[sendemail|sendnotification] [emailmessage <String>]
 #	[showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 def createDriveFileACL(users, useDomainAdminAccess=False):
@@ -69823,19 +69844,19 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
         baserow['name'] = fileName
       row = baserow.copy()
       _mapDrivePermissionNames(permission)
-      flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
+      flattenJSON({'permission': permission}, flattened=row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         row = baserow.copy()
-        row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
+        row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS),
                                  ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
     else:
       if showAction:
         entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
       if showDetails:
-        _showDriveFilePermission(permission, printKeys, timeObjects)
+        _showDriveFilePermission(permission, fieldsList)
 
   moveToNewOwnersRoot = False
   sendNotificationEmail = showTitles = _transferOwnership = updateSheetProtectedRanges = False
@@ -69855,6 +69876,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
   else:
     permissionId = 'anyone'
   mapPermissionsDomains = {}
+  fieldsList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'withlink':
@@ -69889,6 +69911,8 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
       updateSheetProtectedRanges = getBoolean()
     elif myarg == 'nodetails':
       showDetails = False
+    elif getDriveFilePermissionsFields(myarg, fieldsList):
+      pass
     elif myarg == 'csv':
       csvPF = CSVPrintFile(['Owner', 'id'], 'sortall')
       FJQC.SetCsvPF(csvPF)
@@ -69916,7 +69940,9 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
   _validateACLOwnerType(roleLocation, body)
   _validateACLAttributes('allowfilediscovery/withlink', withLinkLocation, body, 'allowFileDiscovery', ['anyone', 'domain'])
   _validateACLAttributes('expiration', expirationLocation, body, 'expirationTime', ['user', 'group'])
-  printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
+  if not fieldsList:
+    fieldsList = _getDriveFileACLPrintKeys()
+  fields = getFieldsFromFieldsList(fieldsList)
   if csvPF:
     if showTitles:
       csvPF.AddTitles('name')
@@ -69953,7 +69979,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
                                 moveToNewOwnersRoot=moveToNewOwnersRoot,
                                 useDomainAdminAccess=useDomainAdminAccess,
                                 fileId=fileId, sendNotificationEmail=sendNotificationEmail, emailMessage=emailMessage,
-                                transferOwnership=_transferOwnership, body=body, fields='*', supportsAllDrives=True)
+                                transferOwnership=_transferOwnership, body=body, fields=fields, supportsAllDrives=True)
           _showResult(permission, True)
         except GAPI.invalidSharingRequest  as e:
           errMsg = str(e)
@@ -69966,7 +69992,7 @@ def createDriveFileACL(users, useDomainAdminAccess=False):
             permission = callGAPI(drive.permissions(), 'get',
                                   throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.PERMISSION_NOT_FOUND, GAPI.INSUFFICIENT_ADMINISTRATOR_PRIVILEGES],
                                   useDomainAdminAccess=useDomainAdminAccess,
-                                  fileId=fileId, permissionId=tempPermId, fields='*', supportsAllDrives=True)
+                                  fileId=fileId, permissionId=tempPermId, fields=fields, supportsAllDrives=True)
             _showResult(permission, False)
       except (GAPI.badRequest, GAPI.conflict, GAPI.invalid, GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError,
               GAPI.permissionNotFound, GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
@@ -70000,6 +70026,7 @@ def doCreateDriveFileACL():
 # gam [<UserTypeEntity>] update drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail> [asadmin]
 #	(role <DriveFileACLRole>) [expiration <Time>] [removeexpiration [<Boolean>]]
 #	[updatesheetprotectedranges [<Boolean>]]
+#	[fields <DrivePermissionsFieldNameList>]
 #	[showtitles] [nodetails|(csv [todrive <ToDriveAttribute>*] [formatjson [quotechar <Character>]])]
 def updateDriveFileACLs(users, useDomainAdminAccess=False):
   def _showResult(permission, showAction):
@@ -70012,19 +70039,19 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
         baserow['name'] = fileName
       row = baserow.copy()
       _mapDrivePermissionNames(permission)
-      flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
+      flattenJSON({'permission': permission}, flattened=row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS)
       if not FJQC.formatJSON:
         csvPF.WriteRowTitles(row)
       elif csvPF.CheckRowTitles(row):
         row = baserow.copy()
-        row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
+        row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS),
                                  ensure_ascii=False, sort_keys=True)
         csvPF.WriteRowNoFilter(row)
     else:
       if showAction:
         entityActionPerformed([Ent.USER, user, entityType, fileName, Ent.PERMISSION_ID, permissionId], j, jcount)
       if showDetails:
-        _showDriveFilePermission(permission, printKeys, timeObjects)
+        _showDriveFilePermission(permission, fieldsList)
 
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
@@ -70033,6 +70060,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
   csvPF = None
   FJQC = FormatJSONQuoteChar(csvPF)
   body = {}
+  fieldsList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'role':
@@ -70047,6 +70075,8 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
       updateSheetProtectedRanges = getBoolean()
     elif myarg == 'nodetails':
       showDetails = False
+    elif getDriveFilePermissionsFields(myarg, fieldsList):
+      pass
     elif myarg == 'csv':
       csvPF = CSVPrintFile(['Owner', 'id'], 'sortall')
       FJQC.SetCsvPF(csvPF)
@@ -70062,7 +70092,9 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
   if 'role' not in body:
     missingArgumentExit(f'role {formatChoiceList(DRIVEFILE_ACL_ROLES_MAP)}')
-  printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
+  if not fieldsList:
+    fieldsList = _getDriveFileACLPrintKeys()
+  fields = getFieldsFromFieldsList(fieldsList)
   if csvPF and showTitles:
     csvPF.AddTitles('name')
     csvPF.SetSortAllTitles()
@@ -70101,7 +70133,7 @@ def updateDriveFileACLs(users, useDomainAdminAccess=False):
                               throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+GAPI.DRIVE3_UPDATE_ACL_THROW_REASONS+[GAPI.FILE_NEVER_WRITABLE],
                               useDomainAdminAccess=useDomainAdminAccess,
                               fileId=fileId, permissionId=permissionId, removeExpiration=removeExpiration,
-                              transferOwnership=body.get('role', '') == 'owner', body=body, fields='*', supportsAllDrives=True)
+                              transferOwnership=body.get('role', '') == 'owner', body=body, fields=fields, supportsAllDrives=True)
         _showResult(permission, True)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.cannotSetExpiration, GAPI.cannotSetExpirationOnAnyoneOrDomain,
@@ -70526,23 +70558,31 @@ def deletePermissions(users, useDomainAdminAccess=False):
 def doDeletePermissions():
   deletePermissions([_getAdminEmail()], True)
 
-# gam [<UserTypeEntity>] info drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail> [asadmin]
-#	[showtitles] [formatjson]
+# gam [<UserTypeEntity>] info drivefileacl <DriveFileEntity> <DriveFilePermissionIDorEmail>
+#	[fields <DrivePermissionsFieldNameList>]
+#	[showtitles]
+#	[formatjson]
+#	[asadmin]
 def infoDriveFileACLs(users, useDomainAdminAccess=False):
   fileIdEntity = getDriveFileEntity()
   isEmail, permissionId = getPermissionId()
   showTitles = False
   FJQC = FormatJSONQuoteChar()
+  fieldsList = []
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'showtitles':
       showTitles = getBoolean()
+    elif getDriveFilePermissionsFields(myarg, fieldsList):
+      pass
     elif myarg in ADMIN_ACCESS_OPTIONS:
       useDomainAdminAccess = True
     else:
       FJQC.GetFormatJSON(myarg)
   _checkFileIdEntityDomainAccess(fileIdEntity, useDomainAdminAccess)
-  printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
+  if not fieldsList:
+    fieldsList = _getDriveFileACLPrintKeys()
+  fields = getFieldsFromFieldsList(fieldsList)
   i, count, users = getEntityArgument(users)
   for user in users:
     i += 1
@@ -70567,14 +70607,14 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
         permission = callGAPI(drive.permissions(), 'get',
                               throwReasons=GAPI.DRIVE_ACCESS_THROW_REASONS+[GAPI.BAD_REQUEST, GAPI.PERMISSION_NOT_FOUND, GAPI.INSUFFICIENT_ADMINISTRATOR_PRIVILEGES],
                               useDomainAdminAccess=useDomainAdminAccess,
-                              fileId=fileId, permissionId=permissionId, fields='*', supportsAllDrives=True)
+                              fileId=fileId, permissionId=permissionId, fields=fields, supportsAllDrives=True)
         if not FJQC.formatJSON:
           entityPerformActionNumItems([entityType, fileName], 1, Ent.PERMITTEE)
           Ind.Increment()
-          _showDriveFilePermission(permission, printKeys, timeObjects)
+          _showDriveFilePermission(permission, fieldsList)
           Ind.Decrement()
         else:
-          _showDriveFilePermissionJSON(user, fileId, fileName, None, permission, timeObjects)
+          _showDriveFilePermissionJSON(user, fileId, fileName, None, permission)
       except (GAPI.fileNotFound, GAPI.forbidden, GAPI.internalError, GAPI.insufficientFilePermissions, GAPI.unknownError,
               GAPI.badRequest, GAPI.insufficientAdministratorPrivileges) as e:
         entityActionFailedWarning([Ent.USER, user, entityType, fileName], str(e), j, jcount)
@@ -70587,23 +70627,6 @@ def infoDriveFileACLs(users, useDomainAdminAccess=False):
 
 def doInfoDriveFileACLs():
   infoDriveFileACLs([_getAdminEmail()], True)
-
-def getDriveFilePermissionsFields(myarg, fieldsList):
-  if myarg in DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP:
-    fieldsList.append(DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP[myarg])
-  elif myarg == 'basicpermissions':
-    fieldsList.extend(DRIVEFILE_BASIC_PERMISSION_FIELDS[:-1])
-  elif myarg == 'fields':
-    for field in _getFieldsList():
-      if field in DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP:
-        fieldsList.append(DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP[field])
-      elif field == 'basicpermissions':
-        fieldsList.extend(DRIVEFILE_BASIC_PERMISSION_FIELDS[:-1])
-      else:
-        invalidChoiceExit(field, DRIVE_PERMISSIONS_SUBFIELDS_CHOICE_MAP, True)
-  else:
-    return False
-  return True
 
 # gam [<UserTypeEntity>] print drivefileacls <DriveFileEntity> [todrive <ToDriveAttribute>*]
 #	(role|roles <DriveFileACLRoleList>)*
@@ -70625,14 +70648,14 @@ def getDriveFilePermissionsFields(myarg, fieldsList):
 def printShowDriveFileACLs(users, useDomainAdminAccess=False):
   def _printPermissionRow(baserow, permission):
     row = baserow.copy()
-    flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
+    flattenJSON({'permission': permission}, flattened=row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       row = baserow.copy()
       if addCSVData and includeCSVDataInJSON:
         permission.update(addCSVData)
-      row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
+      row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
 
@@ -70695,7 +70718,7 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
       fieldsList.append('role')
   includePermissionsForView = _finalizeIncludePermissionsForView(includePermissionsForView)
   fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
-  printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
+  printKeys = _getDriveFileACLPrintKeys()
   if addCSVData:
     csvPF.AddTitles(sorted(addCSVData.keys()))
     csvPF.AddJSONTitles(sorted(addCSVData.keys()))
@@ -70752,13 +70775,13 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
         permissions = matchingPermissions
       if not csvPF:
         if not FJQC.formatJSON:
-          _showDriveFilePermissions(entityType, fileName, permissions, printKeys, timeObjects, j, jcount)
+          _showDriveFilePermissions(entityType, fileName, permissions, printKeys, j, jcount)
         else:
           if oneItemPerRow:
             for permission in permissions:
-              _showDriveFilePermissionJSON(user, fileId, fileName, None, permission, timeObjects)
+              _showDriveFilePermissionJSON(user, fileId, fileName, None, permission)
           else:
-            _showDriveFilePermissionsJSON(user, fileId, fileName, None, permissions, timeObjects)
+            _showDriveFilePermissionsJSON(user, fileId, fileName, None, permissions)
       else:
         baserow = {'Owner': user, 'id': fileId}
         if showTitles or addTitle:
@@ -70779,13 +70802,13 @@ def printShowDriveFileACLs(users, useDomainAdminAccess=False):
           row = baserow.copy()
           for permission in permissions:
             _mapDrivePermissionNames(permission)
-          flattenJSON({'permissions': permissions}, flattened=row, timeObjects=timeObjects)
+          flattenJSON({'permissions': permissions}, flattened=row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS)
           if not FJQC.formatJSON:
             csvPF.WriteRowTitles(row)
           elif csvPF.CheckRowTitles(row):
             if addCSVData and includeCSVDataInJSON:
               permission.update(addCSVData)
-            baserow['JSON'] = json.dumps(cleanJSON({'permissions': permissions}, timeObjects=timeObjects),
+            baserow['JSON'] = json.dumps(cleanJSON({'permissions': permissions}, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS),
                                          ensure_ascii=False, sort_keys=True)
             csvPF.WriteRowNoFilter(baserow)
     Ind.Decrement()
@@ -72377,12 +72400,12 @@ SHOW_NO_PERMISSIONS_DRIVES_CHOICE_MAP = {
 def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
   def _printPermissionRow(baserow, permission):
     row = baserow.copy()
-    flattenJSON({'permission': permission}, flattened=row, timeObjects=timeObjects)
+    flattenJSON({'permission': permission}, flattened=row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS)
     if not FJQC.formatJSON:
       csvPF.WriteRowTitles(row)
     elif csvPF.CheckRowTitles(row):
       row = baserow.copy()
-      row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=timeObjects),
+      row['JSON'] = json.dumps(cleanJSON({'permission': permission}, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS),
                                ensure_ascii=False, sort_keys=True)
       csvPF.WriteRowNoFilter(row)
 
@@ -72450,7 +72473,7 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
     if roles:
       fieldsList.append('role')
   fields = getItemFieldsFromFieldsList('permissions', fieldsList, True)
-  printKeys, timeObjects = _getDriveFileACLPrintKeysTimeObjects()
+  printKeys = _getDriveFileACLPrintKeys()
   if checkGroups:
     if emailAddress:
       cd = buildGAPIObject(API.DIRECTORY)
@@ -72574,13 +72597,13 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
         j += 1
         if not FJQC.formatJSON:
           _showDriveFilePermissions(Ent.SHAREDDRIVE, f'{shareddrive["name"]} ({shareddrive["id"]}) - {shareddrive["createdTime"]}',
-                                    shareddrive['permissions'], printKeys, timeObjects, j, jcount)
+                                    shareddrive['permissions'], printKeys, j, jcount)
         else:
           if oneItemPerRow and shareddrive['permissions']:
             for permission in shareddrive['permissions']:
-              _showDriveFilePermissionJSON(user, shareddrive['id'], shareddrive['name'], shareddrive['createdTime'], permission, timeObjects)
+              _showDriveFilePermissionJSON(user, shareddrive['id'], shareddrive['name'], shareddrive['createdTime'], permission)
           else:
-            _showDriveFilePermissionsJSON(user, shareddrive['id'], shareddrive['name'], shareddrive['createdTime'], shareddrive['permissions'], timeObjects)
+            _showDriveFilePermissionsJSON(user, shareddrive['id'], shareddrive['name'], shareddrive['createdTime'], shareddrive['permissions'])
       Ind.Decrement()
     elif matchFeed:
       if oneItemPerRow:
@@ -72613,11 +72636,11 @@ def printShowSharedDriveACLs(users, useDomainAdminAccess=False):
           if shareddrive['permissions']:
             for permission in shareddrive['permissions']:
               _mapDrivePermissionNames(permission)
-            flattenJSON({'permissions': shareddrive['permissions']}, flattened=row, timeObjects=timeObjects)
+            flattenJSON({'permissions': shareddrive['permissions']}, flattened=row, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS)
             if not FJQC.formatJSON:
               csvPF.WriteRowTitles(row)
             elif csvPF.CheckRowTitles(row):
-              baserow['JSON'] = json.dumps(cleanJSON({'permissions': shareddrive['permissions']}, timeObjects=timeObjects),
+              baserow['JSON'] = json.dumps(cleanJSON({'permissions': shareddrive['permissions']}, timeObjects=DRIVEFILE_ACL_TIMEOBJECTS),
                                            ensure_ascii=False, sort_keys=True)
               csvPF.WriteRowNoFilter(baserow)
           else:
@@ -72930,7 +72953,7 @@ def printShowDataStudioAssets(users):
       csvPF.WriteRowNoFilter({'User': user, 'title': asset['title'],
                               'JSON': json.dumps(cleanJSON(asset, timeObjects=DATASTUDIO_ASSETS_TIME_OBJECTS), ensure_ascii=False, sort_keys=True)})
 
-  def _showAsset(asset):
+  def _showAsset(asset, j, jcount):
     if stripCRsFromTitle:
       asset['title'] = _stripControlCharsFromName(asset['title'])
     if FJQC.formatJSON:
@@ -72981,7 +73004,7 @@ def printShowDataStudioAssets(users):
         if assetIdEntity:
           asset = _getDataStudioAssetByID(ds, user, i, count, asset['name'])
         if asset:
-          _showAsset(asset)
+          _showAsset(asset, j, jcount)
       Ind.Decrement()
     elif assets:
       for asset in assets:

@@ -10,6 +10,16 @@ Add the `-s` option to the end of the above commands to suppress creating the `g
 
 See [Downloads-Installs-GAM7](https://github.com/GAM-team/GAM/wiki/Downloads-Installs) for Windows or other options, including manual installation
 
+7.52.05
+
+Added option `fields <DrivePermissionsFieldNameList>` to the following commands to provide
+more control over what ACL fields are displayed.
+```
+gam [<UserTypeEntity>] create|add drivefileacl <SharedDriveEntityAdmin>
+gam [<UserTypeEntity>] update drivefileacl <SharedDriveEntityAdmin>
+gam [<UserTypeEntity>] info drivefileacl <SharedDriveEntityAdmin>
+```
+
 7.52.04
 
 Updated `gam [<UserTypeEntity>] create drivefileacl <DriveFileEntity>` to handle the error:
