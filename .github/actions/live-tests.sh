@@ -325,7 +325,7 @@ if filter_stale_csv ./buildings.csv; then
   run_gam csv ./buildings.csv gam delete building ~buildingId
 fi
 
-run_gam config csv_output_row_filter "displayName:regex:^El Goog gha_test_${JID}_" redirect csv ./ssoprofiles.csv print inboundssoprofiles
+run_gam config csv_output_row_filter "displayName:regex:^El\\ Goog\\ gha_test_${JID}_" redirect csv ./ssoprofiles.csv print inboundssoprofiles
 if filter_stale_csv ./ssoprofiles.csv; then
   run_gam csv ./ssoprofiles.csv gam delete inboundssoprofile "id:~~name~~"
 fi
