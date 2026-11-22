@@ -379,9 +379,11 @@ run_gam info group "${newgroup}"
 
 # Delegated Admin Role & Contact Delegation tests using pre-provisioned regular fixture users
 if [[ "${has_fixture_users}" == "true" ]]; then
-  run_gam -r 2 select nodasa create admin "${reg_user1}" _GROUPS_EDITOR_ROLE org_unit "${newou}"
+  run_gam -r 2 select nodasa create admin "${reg_user1}" _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
   run_gam select nodasa config csv_output_row_filter "assignedToUser:regex:${reg_user1}" redirect csv ./admins.csv print admins
-  run_gam select nodasa csv ./admins.csv gam delete admin "~roleAssignmentId"
+  if [[ -f ./admins.csv && $(wc -l < ./admins.csv) -gt 1 ]]; then
+    run_gam select nodasa csv ./admins.csv gam delete admin "~roleAssignmentId"
+  fi
 
   run_gam select nodasa user "${reg_user1}" add contactdelegate "${reg_user2}"
   run_gam select nodasa user "${reg_user1}" print contactdelegates
