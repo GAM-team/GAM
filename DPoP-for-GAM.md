@@ -235,6 +235,18 @@ sudo dnf install tpm2-tss-devel tpm2-tools
 #### Step 2: Create and Persist a Signing Key
 
 ```bash
+# Find the first unused persistent handle (0x81000001..0x810000ff)
+USED_HANDLES=$(tpm2_getcap handles-persistent)
+TPM_HANDLE=""
+for i in $(seq 1 255); do
+  H=$(printf "0x810000%02x" "$i")
+  if ! printf '%s\n' "$USED_HANDLES" | grep -Fqiw "$H"; then
+    TPM_HANDLE="$H"
+    break
+  fi
+done
+echo "Using free handle: $TPM_HANDLE"
+
 # Create a primary ECC key under the owner hierarchy
 tpm2_createprimary -C o -g sha256 -G ecc256 -c primary.ctx
 
@@ -243,10 +255,9 @@ tpm2_create -C primary.ctx -g sha256 -G ecc:ecdsa-sha256 \
     -u key.pub -r key.priv \
     -a "fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign"
 
-# Load and persist at the first free persistent handle (-), saving the handle
+# Load and persist at $TPM_HANDLE
 tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
-TPM_HANDLE=$(tpm2_evictcontrol -C o -c key.ctx - | awk '/persistent-handle:/{print $2}')
-echo "Persisted key at: $TPM_HANDLE"
+tpm2_evictcontrol -C o -c key.ctx "$TPM_HANDLE"
 
 # Clean up temporary files
 rm -f primary.ctx key.ctx key.pub key.priv

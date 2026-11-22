@@ -249,9 +249,9 @@ On Linux, GAM uses `tpm2-pytss` to sign directly with a persistent key inside th
 - **TPM 2.0 resource manager device (`/dev/tpmrm0`):** Verify with `ls -l /dev/tpmrm0`. If absent, enable TPM 2.0 / Intel PTT / AMD fTPM in BIOS/UEFI. TPM 1.2 hardware (`/dev/tpm0` only, no `/dev/tpmrm0`) is not supported — use a [YubiKey](#yubikey--piv-cross-platform) or [PKCS#11](#pkcs11--hsm--smart-card-cross-platform) token instead.
 - **`tss` group access & services:** Add your GAM user to `tss` (`sudo usermod -aG tss $USER`) and log out/in (verify with `id`). Works over **SSH** and in **`cron`**. For `systemd` services, configure `SupplementaryGroups=tss` and do **not** enable `PrivateDevices=yes`.
 - **Shared TPM handles & file permissions:** Any local user in `tss` (or `root`) can use persistent handles in `/dev/tpmrm0`, though they still need read access to `oauth2.txt`. Restrict `~/.gam` (`chmod 700 ~/.gam && chmod 600 ~/.gam/oauth2.txt ~/.gam/gam.cfg`).
-- **Pre-existing TPM keys on real hardware (important):** Production laptops/servers often already have persistent keys at `0x81000001`, `0x81000002`, etc. (created by UEFI, Windows dual-boot/BitLocker, LUKS/`systemd-cryptenroll`, or `clevis`). Passing `-` to `tpm2_evictcontrol` automatically allocates the **first free handle** so you never overwrite or collide with existing system keys.
+- **Pre-existing TPM keys on real hardware (important):** Production laptops/servers often already have persistent keys at `0x81000001`, `0x81000002`, etc. (created by UEFI, Windows dual-boot/BitLocker, LUKS/`systemd-cryptenroll`, or `clevis`). The commands below inspect `tpm2_getcap handles-persistent` and pick the first unused handle automatically so you never collide with existing system keys.
 - **Common real-world TPM provisioning errors:**
-  - `0x14c` (`NV Index or persistent object already defined`): The handle you picked is already taken — use `-` (below) to pick a free handle, or inspect existing handles with `tpm2_getcap handles-persistent` and `tpm2_readpublic -c <handle>` (**never** evict `restricted|decrypt` Storage Root Keys used for disk encryption).
+  - `0x14c` (`NV Index or persistent object already defined`): The handle you picked is already taken — use the `tpm2_getcap handles-persistent` lookup below to pick a free handle, or inspect existing handles with `tpm2_readpublic -c <handle>` (**never** evict `restricted|decrypt` Storage Root Keys used for disk encryption).
   - `TPM_RC_NV_SPACE` / `TPM_RC_OBJECT_MEMORY`: The TPM's persistent NVRAM slots are full (typically 3–7 slots on hardware TPMs). Inspect with `tpm2_getcap handles-persistent` and `tpm2_readpublic -c <handle>` to see if stale test keys (`0x810000xx`) can be freed (`tpm2_evictcontrol -C o -c <stale_handle>`).
   - Owner authorization failure (`TPM_RC_BAD_AUTH`) on dual-boot machines: Windows or another OS set an owner hierarchy password. You can supply `-P <owner_auth>` if known, or only run `tpm2_clear` if you are sure no BitLocker/LUKS keys reside in the TPM (**`tpm2_clear` permanently destroys all TPM-sealed keys**).
   - Dictionary-attack lockout (`TPM_RC_LOCKOUT`): Wait for the lockout cooldown or reset if authorized (`tpm2_dictionarylockout -c`).
@@ -276,11 +276,20 @@ ls -l /dev/tpmrm0
 sudo usermod -aG tss "$USER"
 ```
 
-Create an ECDSA P-256 signing key and persist it cleanly at the **first free persistent handle** using `-`:
+Create an ECDSA P-256 signing key and persist it at the first unused handle found by `tpm2_getcap handles-persistent`:
 
 ```bash
-# Optional: see what persistent handles are already used on your TPM
-tpm2_getcap handles-persistent
+# Find the first unused persistent handle (0x81000001..0x810000ff)
+USED_HANDLES=$(tpm2_getcap handles-persistent)
+TPM_HANDLE=""
+for i in $(seq 1 255); do
+  H=$(printf "0x810000%02x" "$i")
+  if ! printf '%s\n' "$USED_HANDLES" | grep -Fqiw "$H"; then
+    TPM_HANDLE="$H"
+    break
+  fi
+done
+echo "Using free handle: $TPM_HANDLE"
 
 # Create a primary ECC key under the owner hierarchy
 tpm2_createprimary -C o -g sha256 -G ecc256 -c primary.ctx
@@ -291,10 +300,9 @@ tpm2_create -C primary.ctx -g sha256 -G ecc:ecdsa-sha256 \
     -u key.pub -r key.priv \
     -a "fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign"
 
-# Load and persist at the next available persistent handle (-), storing it in TPM_HANDLE
+# Load and persist at $TPM_HANDLE
 tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
-TPM_HANDLE=$(tpm2_evictcontrol -C o -c key.ctx - | awk '/persistent-handle:/{print $2}')
-echo "Persisted key at: $TPM_HANDLE"
+tpm2_evictcontrol -C o -c key.ctx "$TPM_HANDLE"
 
 # Clean up temporary blobs
 rm -f primary.ctx key.ctx key.pub key.priv
