@@ -11,6 +11,10 @@ on:
     - cron: '37 22 * * *'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') && github.event_name != 'schedule' }}
+
 permissions:
   contents: read
   id-token: write
@@ -484,7 +488,18 @@ jobs:
           oa2: ${{ secrets[format('GAM_GHA_{0}', steps.common-vars.outputs.jid)] }}
         run: |
           ../.github/actions/decrypt.sh "${GAMCFGDIR}"
-          $gam create signjwtserviceaccount
+          for attempt in 1 2 3; do
+            if $gam create signjwtserviceaccount; then
+              break
+            fi
+            if [[ "${attempt}" -eq 3 ]]; then
+              echo "::error::Failed to create SignJWT service account after 3 attempts" >&2
+              exit 1
+            fi
+            sleep_s=$(( attempt * 4 + (RANDOM % 5) + 1 ))
+            echo "::warning::create signjwtserviceaccount failed (attempt ${attempt}/3); retrying in ${sleep_s}s..." >&2
+            sleep "${sleep_s}"
+          done
 
       - name: Attest gam executable was generated from this Action
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
@@ -589,256 +604,7 @@ jobs:
       - name: Live API tests
         if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
-          run_gam() {
-            local allowed_codes="0"
-            if [[ "$1" == "-a" ]]; then
-              allowed_codes="$2"
-              shift 2 
-            fi
-            echo "::group::Executing: gam $*"
-            local exit_code=0
-            $gam "$@" || exit_code=$?
-            echo "::endgroup::"
-            allowed_codes="${allowed_codes//,/ }"
-            local passed=false
-            for code in $allowed_codes; do
-              if [ "$exit_code" -eq "$code" ]; then
-                passed=true
-                break
-              fi
-            done
-            if [ "$passed" = true ]; then
-              echo "| \`gam $*\` | 🟢 Pass | $exit_code |" >> $GITHUB_STEP_SUMMARY
-              return 0 # Mask the allowed non-zero exit code so GHA continues
-            else
-               echo "| \`gam $*\` | 🔴 Fail | $exit_code |" >> $GITHUB_STEP_SUMMARY
-               exit $exit_code # Hard fail the step for unapproved errors
-            fi
-          }
-
-          export gam_user="gam-gha-${JID}@pdl.jaylee.us"
-          echo "gam_user=${gam_user}" >> $GITHUB_ENV
-          run_gam config customer_id "C03uzfv2s" save
-          run_gam config domain "pdl.jaylee.us" save
-          run_gam config admin_email "${gam_user}" save
-          run_gam config enable_dasa false save
-          run_gam oauth info
-          run_gam oauth refresh
-          run_gam config enable_dasa true save 
-          run_gam checkconn
-          run_gam user "$gam_user" check serviceaccount
-          run_gam info domain
-          run_gam info user
-          export tstamp=$($PYTHON -c "import time; print(time.time_ns())")
-          export newbase="gha_test_${JID}_${tstamp}"
-          export newuser="${newbase}@pdl.jaylee.us"
-          export newgroup="${newbase}-group@pdl.jaylee.us"
-          export newalias="${newbase}-alias@pdl.jaylee.us"
-          export newbuilding="${newbase}-building"
-          export newresource="${newbase}-resource"
-          export newou="aaaGithub Actions/${newbase}"
-
-          echo "### GAM Execution Report" >> $GITHUB_STEP_SUMMARY
-          echo "| Command | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :---: |" >> $GITHUB_STEP_SUMMARY
-
-          # cleanup old runs
-          run_gam config enable_dasa false save
-          run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vh.csv print vaultholds
-          run_gam -a "0 55" csv ./vh.csv gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~" 
-          run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-open.csv print vaultmatters matterstate OPEN
-          run_gam csv ./vm-open.csv gam update vaultmatter "id:~~matterId~~" action close
-          run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-closed.csv print vaultmatters matterstate CLOSED
-          run_gam csv ./vm-closed.csv gam update vaultmatter "id:~~matterId~~" action delete
-          run_gam config enable_dasa true save
-          run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./features.csv print features
-          run_gam csv ./features.csv gam delete feature ~name
-          run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./sd.csv user $gam_user print shareddrives asadmin
-          run_gam csv ./sd.csv gam user $gam_user delete shareddrive ~id nukefromorbit
-          run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
-          run_gam csv ./users.csv gam delete user ~primaryEmail
-          run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./ous.csv print ous fromparent "aaaGithub Actions"
-          run_gam csv ./ous.csv gam delete ou ~orgUnitId
-          run_gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" redirect csv ./cigroups.csv print cigroups
-          run_gam csv ./cigroups.csv gam delete cigroup ~email
-          run_gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" redirect csv ./resources.csv print resources
-          run_gam csv ./resources.csv gam delete resource ~resourceId
-          run_gam config csv_output_row_filter "buildingId:regex:^gha_test_${JID}_" redirect csv ./buildings.csv print buildings
-          run_gam csv ./buildings.csv gam delete building ~buildingId
-          run_gam config csv_output_row_filter "displayName:regex:^El\ Goog\ gha_test_${JID}_" redirect csv ./ssoprofiles.csv print inboundssoprofiles
-          run_gam csv ./ssoprofiles.csv gam delete inboundssoprofile "id:~~name~~"
-
-          echo "Creating OrgUnit ${newou}"
-          run_gam create ou "${newou}"
-          export GAM_THREADS=5
-          # echo email > sample.csv;
-           # for i in {1..10}; do
-            # echo "${newbase}-bulkuser-$i" >> sample.csv;
-          # done
-          driveid=$($gam user $gam_user add shareddrive "${newbase}" returnidonly)
-          echo "Created shared drive ${driveid}"
-          run_gam create user $newuser firstname GHA lastname $JID displayname "Github Actions ${JID}" password uniquerandom recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid $JID languages en+,en-GB- ou "$newou"
-          run_gam user $newuser update photo https://dummyimage.com/98x98/000/fff.jpg
-          run_gam user $newuser get photo
-          run_gam user $newuser delete photo
-          run_gam create alias $newalias user $newuser
-          run_gam create group $newgroup name "GHA $JID group" description "This is a description" isarchived true
-          run_gam user $gam_user sendemail recipient dev-null@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
-          run_gam user $newuser add license workspaceenterpriseplus
-          run_gam update user $newuser ou root # GAM synonym for / root OU 
-          run_gam update user $newuser ou "$newou"
-          run_gam config enable_dasa false save
-          # don't expose policy output
-          run_gam show policies > policies.csv
-          run_gam print privileges
-          run_gam config enable_dasa true save
-          run_gam update cigroup $newgroup security memberrestriction 'member.type == 1 || member.customer_id == groupCustomerId()'
-          run_gam info cigroup $newgroup
-          run_gam update group $newgroup add owner $gam_user
-          run_gam update group $newgroup add member $newuser
-          run_gam config enable_dasa false save
-          # 9/17/24 temp disable due to Google API sluggishness to see new users for admin commands
-          # run_gam create admin $newuser _GROUPS_EDITOR_ROLE CUSTOMER # condition nonsecuritygroup
-          # 9/13/25 temp disable due to hangs
-          # run_gam create admin $newgroup _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
-          # run_gam config csv_output_row_filter "assignedToUser:regex:${newuser}" print admins | run_gam csv - gam delete admin "~roleAssignmentId"
-          # run_gam config csv_output_row_filter "assignedToGroup:regex:${newgroup}" print admins | run_gam csv - gam delete admin "~roleAssignmentId"
-          run_gam config enable_dasa false save
-          # run_gam csv sample.csv gam create user ~~email~~ firstname "GHA Bulk" lastname ~~email~~ gha.jid $JID ou "${newou}"
-          # run_gam csv sample.csv gam update user ~~email~~ recoveryphone 12125121110 recoveryemail jay0lee@gmail.com password random displayname "GitHub Actions Bulk ${JID}"
-          # run_gam csv sample.csv gam update user ~~email~~ recoveryphone "" recoveryemail ""
-          run_gam config enable_dasa false save
-          # run_gam csv sample.csv gam user ~email add license workspaceenterpriseplus
-          # run_gam user $newuser add contactdelegate "${newbase}-bulkuser-1"
-          # run_gam user $newuser print contactdelegates
-          run_gam config enable_dasa true save
-          # run_gam csv sample.csv gam user $gam_user sendemail recipient ~~email~~@pdl.jaylee.us subject "test message $newbase" message "GHA test message"
-          # run_gam csv sample.csv gam update group $newgroup add member ~email
-          run_gam info group $newgroup
-          run_gam info cigroup $newgroup membertree
-          # confirm mailbox is provisoned before continuing
-          run_gam user $newuser waitformailbox retries 50
-          run_gam user $newuser imap on
-          run_gam user $newuser show imap
-          run_gam user $newuser show delegates
-          export biohazard=$(echo -e '\xe2\x98\xa3')
-          run_gam user $newuser label "$biohazard unicode biohazard $biohazard"
-          run_gam user $newuser show labels
-          run_gam user $newuser show labels > labels.txt
-          run_gam user $gam_user importemail subject "GHA import $newbase" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED
-          run_gam user $gam_user insertemail subject "GHA insert $newbase" file gam.py labels INBOX,UNREAD # yep body is gam code
-          run_gam user $gam_user sendemail recipient admin@pdl.jaylee.us subject "GHA send $gam_user $newbase" file gam.py
-          run_gam user $gam_user draftemail subject "GHA draft $newbase" message "Draft message test"
-          # run_gam csvfile sample.csv:email waitformailbox retries 20
-          # run_gam user $newuser delegate to "${newbase}-bulkuser-1" || if [ $? != 50 ]; then exit $?; fi # expect a 50 return code (delegation failed)
-          run_gam -a "0 60" users "$gam_user" delete messages query in:anywhere maxtodelete 99999 doit
-          # run_gam -a "0 60" users "$gam_user $newbase-bulkuser-1 $newbase-bulkuser-2 $newbase-bulkuser-3" delete messages query in:anywhere maxtodelete 99999 doit
-          # run_gam -a "0 60" users "$newbase-bulkuser-4 $newbase-bulkuser-5 $newbase-bulkuser-6" trash messages query in:anywhere maxtotrash 99999 doit
-          # run_gam -a "0 60"  users "$newbase-bulkuser-7 $newbase-bulkuser-8 $newbase-bulkuser-9" modify messages query in:anywhere maxtomodify 99999 addlabel IMPORTANT addlabel STARRED doit
-          run_gam user $newuser delete label --ALL_LABELS--
-          run_gam config csv_output_row_filter "name:regex:gha-test-${JID}" redirect csv ./features.csv print features
-          run_gam csv ./features.csv gam delete feature ~name
-          run_gam create feature name VC-$newbase
-          run_gam create feature name Whiteboard-$newbase
-          run_gam create building "My Building - $newbase" id $newbuilding floors 1,2,3,4,5,6,7,8,9,10,11,12,14,15 description "No 13th floor here..."
-          run_gam create resource $newresource "Resource Calendar $tstamp" capacity 25 features Whiteboard-$newbase,VC-$newbase building $newbuilding floor 15 type Room
-          run_gam info resource $newresource
-          run_gam user $newuser add drivefile drivefilename "TPS Reports" mimetype gfolder
-          run_gam user $newuser show filelist
-          run_gam redirect csv ./cal-acl.csv calendar $gam_user printacl
-          run_gam csv ./cal-acl.csv gam calendar $gam_user delete ~id # clear ACLs
-          run_gam calendar $gam_user add read domain
-          run_gam calendar $gam_user add freebusy default
-          run_gam calendar $gam_user add editor $newuser
-          run_gam calendar $gam_user showacl
-          run_gam redirect csv ./cal-acl.csv calendar $gam_user printacl
-          run_gam csv ./cal-acl.csv gam calendar $gam_user delete ~id
-          run_gam calendar $gam_user addevent summary "GHA test event" start +1h end +2h attendee $newgroup hangoutsmeet guestscanmodify true sendupdates all
-          run_gam calendar $gam_user printevents after -0d
-          run_gam config enable_dasa false save
-          matterid=uid:$($gam create vaultmatter name "GHA matter $newbase" description "test matter" returnidonly)
-          run_gam create vaulthold matter "$matterid" name "GHA hold ${newbase}" corpus mail ou "$newou"
-          run_gam print vaultmatters matterstate open
-          run_gam print vaultholds matter $matterid
-          run_gam print vaultcount matter $matterid corpus mail everyone todrive tdnobrowser
-          run_gam create vaultexport matter $matterid name "GHA export $newbase" corpus mail ou "$newou"
-          run_gam redirect csv ./exports.csv print exports matter $matterid
-          run_gam csv ./exports.csv gam info export $matterid id:~~id~~
-          run_gam config enable_dasa true save
-          # run_gam csv sample.csv gam user ~email add calendar id:$newresource
-          run_gam delete resource $newresource
-          run_gam delete feature Whiteboard-$newbase
-          run_gam delete feature VC-$newbase
-          run_gam delete building $newbuilding
-          run_gam delete group $newgroup
-          run_gam config enable_dasa false save
-          echo start
-          run_gam user $newuser delete license workspaceenterpriseplus
-          echo finish
-          run_gam config enable_dasa true save
-          run_gam -a "0 20" whatis $newuser
-          run_gam user $gam_user show tokens
-          run_gam config enable_dasa false save
-          download_dir="${RUNNER_TEMP}/TEMP_DELETE_ME"
-          mkdir -v "$download_dir"
-          run_gam redirect csv ./exports.csv print exports matter $matterid
-          run_gam csv ./exports.csv gam download export $matterid id:~~id~~ targetfolder "$download_dir"
-          rm -rvf "$download_dir"
-          run_gam delete hold "GHA hold $newbase" matter $matterid
-          run_gam update matter $matterid action close
-          run_gam update matter $matterid action delete
-          # shakes off vault hold on user so we can delete
-          run_gam redirect csv ./users.csv print users query "email:${newuser}" orgunitpath
-          run_gam csv ./users.csv gam update user ~primaryEmail ou ~orgUnitPath
-          run_gam user $newuser show holds || if [ $? != 55 ]; then exit $?; fi # expect a 55 return code
-          export sn="$JID$JID$JID$JID-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
-          run_gam create device serialnumber $sn devicetype android
-          run_gam config enable_dasa true save
-          run_gam redirect csv ./users.csv print users query "gha.jid=$JID"
-          run_gam csv ./users.csv gam update  user ~primaryEmail ou root
-          run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
-          run_gam print mobile
-          run_gam print devices clientstates
-          run_gam print browsers
-          run_gam print cros allfields orderby serialnumber
-          run_gam show crostelemetry storagepercentonly
-          run_gam report usageparameters customer
-          run_gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
-          run_gam report customer todrive tdnobrowser
-          #run_gam report users fields accounts:is_less_secure_apps_access_allowed,gmail:last_imap_time,gmail:last_pop_time filters "accounts:last_login_time>2025-01-01T00:00:00.000Z" todrive tdnobrowser
-          run_gam report users todrive tdnobrowser
-          run_gam report admin start -3d todrive tdnobrowser
-          run_gam redirect csv ./devices.csv print devices nopersonaldevices nodeviceusers filter "serial:$JID$JID$JID$JID-"
-          run_gam csv ./devices.csv gam delete device id ~name
-          run_gam config enable_dasa false save
-          run_gam print userinvitations
-          run_gam redirect csv ./invitations.csv print userinvitations
-          run_gam csv ./invitations.csv gam send userinvitation ~name
-          run_gam config enable_dasa false save
-          run_gam create caalevel "zzz_${newbase}" basic condition ipsubnetworks 1.1.1.1/32,2.2.2.2/32 endcondition
-          run_gam print caalevels
-          run_gam delete caalevel "zzz_${newbase}"
-          run_gam user $gam_user add drivefile localfile gam.py parentid "${driveid}"
-          run_gam user $gam_user update shareddrive "${driveid}" ou "${newou}"
-          run_gam user $gam_user show shareddrives asadmin
-          run_gam user $gam_user update shareddrive "${driveid}" ou "aaaGithub Actions" # so we can delete our OU...
-          run_gam user $gam_user delete shareddrive "${driveid}" nukefromorbit
-          ssoprofile=$(run_gam config debug_level 1 create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only)
-          if [ ${ssoprofile} != 'inProgress' ]; then
-            run_gam create inboundssocredential profile "id:${ssoprofile}" generate_key
-            #run_gam create inboundssoassignment profile "id:${ssoprofile}" orgunit "${newou}" mode SAML_SSO
-            #run_gam delete inboundssoassignment "orgunit:${newou}"
-            run_gam delete inboundssoprofile "id:${ssoprofile}"
-          fi
-          echo "printer model count:"
-          run_gam print printermodels | wc -l
-          run_gam print printers
-          printerid=$($gam create printer displayname "${newbase}" uri ipp://localhost:631 driverless description "made by ${gam_user}" ou "${newou}" returnIdOnly)
-          run_gam info printer "$printerid"
-          run_gam delete printer "$printerid"
-          run_gam print ous showitemcountonly
-          run_gam check ou "${newou}" devices shareddrives subous users
-          run_gam -a "0 50" delete ou "${newou}"
+          bash ../.github/actions/live-tests.sh
 
   publish:
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
