@@ -239,7 +239,7 @@ cleanup_current_run() {
     $gam delete printer "${cleanup_printerid}" >/dev/null 2>&1
   fi
   if [[ -n "${cleanup_ssoprofile}" && "${cleanup_ssoprofile}" != "inProgress" ]]; then
-    $gam delete inboundssoprofile "id:${cleanup_ssoprofile}" >/dev/null 2>&1
+    $gam select nodasa delete inboundssoprofile "id:${cleanup_ssoprofile}" >/dev/null 2>&1
   fi
   if [[ -n "${cleanup_driveid}" ]]; then
     $gam user "${gam_user}" update shareddrive "${cleanup_driveid}" ou "aaaGithub Actions" >/dev/null 2>&1
@@ -494,7 +494,7 @@ run_gam csv ./this-user.csv gam update user ~primaryEmail ou ~orgUnitPath
 run_gam -a "0 55" -r 3 select nodasa user "${newuser}" show holds
 
 export sn="${JID}${JID}${JID}${JID}-$(openssl rand -base64 32 | sed 's/[^a-zA-Z0-9]//g')"
-run_gam -r 2 create device serialnumber "${sn}" devicetype android
+run_gam -r 2 select nodasa create device serialnumber "${sn}" devicetype android
 cleanup_devicesn="${sn}"
 
 run_gam update user "${newuser}" ou root
@@ -543,12 +543,12 @@ run_gam -r 2 user "${gam_user}" update shareddrive "${driveid}" ou "aaaGithub Ac
 run_gam -r 2 user "${gam_user}" delete shareddrive "${driveid}" nukefromorbit
 cleanup_driveid=""
 
-# Inbound SAML SSO Profile & Credential lifecycle (fixed clean stdout capture)
-ssoprofile=$(run_gam -r 2 create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only | tr -d '\r')
+# Inbound SAML SSO Profile & Credential lifecycle (requires client OAuth / nodasa)
+ssoprofile=$(run_gam -r 2 select nodasa create inboundssoprofile name "El Goog ${newbase}" loginurl https://www.google.com logouturl https://www.google.com changepasswordurl https://www.google.com entityid ElGoog return_name_only | tr -d '\r')
 cleanup_ssoprofile="${ssoprofile}"
 if [[ -n "${ssoprofile}" && "${ssoprofile}" != "inProgress" ]]; then
-  run_gam -r 2 create inboundssocredential profile "id:${ssoprofile}" generate_key
-  run_gam -r 2 delete inboundssoprofile "id:${ssoprofile}"
+  run_gam -r 2 select nodasa create inboundssocredential profile "id:${ssoprofile}" generate_key
+  run_gam -r 2 select nodasa delete inboundssoprofile "id:${ssoprofile}"
   cleanup_ssoprofile=""
 fi
 
