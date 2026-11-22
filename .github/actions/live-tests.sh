@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # GAM GitHub Actions Live API Test Suite
 # Runs across all build and test matrix jobs with 20-way concurrency hardening,
-# age-gated (>2h) startup cleanup, EXIT trap teardown, and regular fixture users.
+# age-gated (>2h) startup cleanup, EXIT trap teardown, in-process `gam loop`
+# read-only sweeps, and regular fixture users.
 
 set -eo pipefail
 
@@ -80,6 +81,31 @@ run_gam() {
     echo "| \`gam $*\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
     exit "${exit_code}"
   done
+}
+
+# Execute an in-process `gam ... loop <csv> showcmds true gam ...` sweep and
+# verify that BOTH the outer process AND every individual looped command exited 0.
+run_gam_loop() {
+  local label="$1"
+  shift
+  local loop_err="./loop-${label}.stderr"
+  local exit_code=0
+
+  echo "::group::Executing in-process loop (${label}): gam $*" >&2
+  $gam "$@" 2>"${loop_err}" || exit_code=$?
+  cat "${loop_err}" >&2 || true
+  echo "::endgroup::" >&2
+
+  if [[ "${exit_code}" -ne 0 ]] || grep -Eq ',End,[^0],' "${loop_err}"; then
+    echo "::error::In-process loop (${label}) had non-zero command exit (outer=${exit_code}):" >&2
+    grep -E ',End,[^0],' "${loop_err}" >&2 || true
+    echo "| \`gam loop (${label})\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
+    exit "${exit_code:-1}"
+  fi
+
+  local row_count
+  row_count=$(grep -c ',End,0,' "${loop_err}" || true)
+  echo "| \`gam loop (${label}: ${row_count} commands)\` | 🟢 Pass | 0 |" >> "${GITHUB_STEP_SUMMARY}"
 }
 
 # Filter a GAM CSV file in-place to retain ONLY stale test resources older than
@@ -166,7 +192,9 @@ if ! grep -q '^\[nodasa\]' "${GAMCFGDIR}/gam.cfg" 2>/dev/null; then
   printf '\n[nodasa]\nenable_dasa = false\n' >> "${GAMCFGDIR}/gam.cfg"
 fi
 
-# Verify client OAuth & DwD service account auth
+# Verify bundled library versions (OpenSSL, cryptography, lxml, passlib, chardet, etc.),
+# client OAuth, and DwD service account auth.
+run_gam version extended
 run_gam -r 2 select nodasa oauth info
 run_gam -r 2 select nodasa oauth refresh
 run_gam -r 2 checkconn
@@ -191,6 +219,7 @@ else
 fi
 
 epoch_sec=$("${PYTHON}" -c "import time; print(int(time.time()))" | tr -d '\r')
+alert_since=$("${PYTHON}" -c "from datetime import datetime, timezone, timedelta; print((datetime.now(timezone.utc) - timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ'))" | tr -d '\r')
 run_tag="${GITHUB_RUN_ID:-local}_${GITHUB_RUN_ATTEMPT:-1}"
 export newbase="gha_test_${JID}_${epoch_sec}_${run_tag}"
 export newuser="${newbase}@pdl.jaylee.us"
@@ -200,18 +229,32 @@ export newalias="${newbase}-alias@pdl.jaylee.us"
 export newbuilding="${newbase}-building"
 export newresource="${newbase}-resource"
 export newou="aaaGithub Actions/${newbase}"
+export newschema="gha_test_${JID}_${epoch_sec}"
 
 # Track current-run ephemeral resources for best-effort EXIT trap cleanup if a step fails mid-run.
 cleanup_ou=""
 cleanup_user=""
 cleanup_group=""
 cleanup_cigroup=""
+cleanup_schema=""
 cleanup_building=""
 cleanup_resource=""
 cleanup_feat1=""
 cleanup_feat2=""
 cleanup_driveid=""
 cleanup_folderid=""
+cleanup_docid=""
+cleanup_copyid=""
+cleanup_sheetid=""
+cleanup_formid=""
+cleanup_tasklistid=""
+cleanup_noteid=""
+cleanup_contactid=""
+cleanup_cgid=""
+cleanup_chatspace=""
+cleanup_filterid=""
+cleanup_vacation=""
+cleanup_seccal=""
 cleanup_matterid=""
 cleanup_holdname=""
 cleanup_ssoprofile=""
@@ -243,16 +286,25 @@ cleanup_current_run() {
     $gam user "${gam_user}" update shareddrive "${cleanup_driveid}" ou "aaaGithub Actions" >/dev/null 2>&1
     $gam user "${gam_user}" delete shareddrive "${cleanup_driveid}" nukefromorbit >/dev/null 2>&1
   fi
-  if [[ -n "${cleanup_folderid}" ]]; then
-    $gam user "${reg_user1}" delete drivefile "id:${cleanup_folderid}" purge >/dev/null 2>&1
-  fi
-  if [[ -n "${cleanup_label}" ]]; then
-    $gam user "${reg_user1}" delete label "${cleanup_label}" >/dev/null 2>&1
-  fi
+  for fid in "${cleanup_folderid}" "${cleanup_copyid}" "${cleanup_docid}" "${cleanup_sheetid}" "${cleanup_formid}"; do
+    if [[ -n "${fid}" ]]; then
+      $gam user "${reg_user1}" delete drivefile "id:${fid}" purge >/dev/null 2>&1
+    fi
+  done
+  [[ -n "${cleanup_tasklistid}" ]] && $gam user "${reg_user1}" delete tasklist "${cleanup_tasklistid}" >/dev/null 2>&1
+  [[ -n "${cleanup_noteid}" ]] && $gam user "${reg_user1}" delete note "${cleanup_noteid}" >/dev/null 2>&1
+  [[ -n "${cleanup_contactid}" ]] && $gam user "${reg_user1}" delete contacts "${cleanup_contactid}" >/dev/null 2>&1
+  [[ -n "${cleanup_cgid}" ]] && $gam user "${reg_user1}" delete contactgroups "${cleanup_cgid}" >/dev/null 2>&1
+  [[ -n "${cleanup_chatspace}" ]] && $gam user "${reg_user1}" delete chatspace "${cleanup_chatspace}" >/dev/null 2>&1
+  [[ -n "${cleanup_filterid}" ]] && $gam user "${reg_user1}" delete filter "${cleanup_filterid}" >/dev/null 2>&1
+  [[ -n "${cleanup_vacation}" ]] && $gam user "${reg_user1}" vacation false >/dev/null 2>&1
+  [[ -n "${cleanup_seccal}" ]] && $gam user "${reg_user1}" remove calendar "${cleanup_seccal}" >/dev/null 2>&1
+  [[ -n "${cleanup_label}" ]] && $gam user "${reg_user1}" delete label "${cleanup_label}" >/dev/null 2>&1
   if [[ -n "${cleanup_devicesn}" ]]; then
     $gam redirect csv ./trap-devices.csv print devices nopersonaldevices nodeviceusers filter "serial:${cleanup_devicesn}" >/dev/null 2>&1
     $gam csv ./trap-devices.csv gam delete device id ~name >/dev/null 2>&1
   fi
+  [[ -n "${cleanup_schema}" ]] && $gam select nodasa delete schema "${cleanup_schema}" >/dev/null 2>&1
   [[ -n "${cleanup_resource}" ]] && $gam delete resource "${cleanup_resource}" >/dev/null 2>&1
   [[ -n "${cleanup_feat1}" ]] && $gam delete feature "${cleanup_feat1}" >/dev/null 2>&1
   [[ -n "${cleanup_feat2}" ]] && $gam delete feature "${cleanup_feat2}" >/dev/null 2>&1
@@ -286,6 +338,11 @@ fi
 run_gam select nodasa config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-closed.csv print vaultmatters matterstate CLOSED
 if filter_stale_csv ./vm-closed.csv; then
   run_gam select nodasa csv ./vm-closed.csv gam update vaultmatter "id:~~matterId~~" action delete
+fi
+
+run_gam select nodasa config csv_output_row_filter "schemaName:regex:^gha_test_${JID}_" redirect csv ./schemas.csv print schemas
+if filter_stale_csv ./schemas.csv; then
+  run_gam -a "0 50" select nodasa csv ./schemas.csv gam delete schema ~schemaName
 fi
 
 run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./features.csv print features
@@ -334,14 +391,94 @@ if filter_stale_csv ./stale-devices.csv; then
 fi
 
 # ==============================================================================
-# Live API Test Execution
+# In-Process `gam loop` Read-Only API Sweeps & Batch/ThreadBatch/CSVTest Modes
+# ==============================================================================
+cat > ./loop-admin.csv <<EOF
+verb,obj
+info,customer
+print,domains
+print,domainaliases
+print,schemas
+show,transferapps
+print,datatransfers
+show,alertsettings
+print,chromeversions
+print,chromeprofiles
+print,chromedevicecounts
+print,chromeneedsattn
+print,chromeaues
+print,classificationlabels
+EOF
+run_gam_loop "admin-ro" select nodasa redirect stdout ./loop-admin.out loop ./loop-admin.csv showcmds true gam ~verb ~obj
+
+run_gam select nodasa redirect csv ./roles.csv print roles nosystemroles
+run_gam select nodasa info adminrole _HELP_DESK_ADMIN_ROLE
+run_gam select nodasa redirect csv ./chromehistory.csv print chromehistory platforms
+run_gam select nodasa redirect csv ./courses.csv print courses teacher "${reg_user1}"
+run_gam redirect csv ./alerts.csv print alerts filter "createTime >= '${alert_since}'"
+
+cat > ./loop-user.csv <<EOF
+u,verb,obj
+${reg_user1},print,analyticaccounts
+${reg_user1},print,analyticaccountsummaries
+${reg_user1},print,lookerstudioassets
+${reg_user1},print,classificationlabels
+${reg_user1},print,othercontacts
+${reg_user1},print,peopleprofile
+${reg_user1},show,gmailprofile
+${reg_user1},show,pop
+${reg_user1},show,language
+${reg_user1},show,vacation
+${reg_user1},show,signature
+${reg_user1},show,forward
+${reg_user1},print,sendas
+${reg_user1},print,filters
+${reg_user1},print,forwardingaddresses
+${reg_user1},print,calsettings
+${reg_user1},print,calendars
+${reg_user1},show,drivesettings
+${reg_user1},print,notes
+${reg_user1},print,tasklists
+${reg_user1},print,tasks
+EOF
+run_gam_loop "user-ro" redirect stdout ./loop-user.out loop ./loop-user.csv showcmds true gam user ~u ~verb ~obj
+
+run_gam redirect csv ./driveactivity.csv user "${reg_user1}" print driveactivity maxactivities 5
+run_gam -a "0 60" redirect csv ./meetconf.csv user "${reg_user1}" print meetconferences
+
+# Exercise batch (subprocess), tbatch (free-threaded / threadpool), and csvtest execution engines
+cat > ./smoke.bat <<EOF
+gam info domain
+gam info user ${reg_user1} quick
+EOF
+run_gam batch ./smoke.bat
+run_gam tbatch ./smoke.bat
+printf 'email\n%s\n' "${reg_user1}" > ./smoke-u.csv
+run_gam csvtest ./smoke-u.csv gam info user ~email
+
+# ==============================================================================
+# Live API CRUD Test Execution
 # ==============================================================================
 
 echo "Creating OrgUnit ${newou}" >&2
 run_gam create ou "${newou}"
 cleanup_ou="${newou}"
 
-# Directory User CRUD, Photo, Alias, License, and OU move tests on ephemeral $newuser
+# Chrome Policy CRUD scoped strictly to ephemeral $newou
+run_gam -r 2 select nodasa update chromepolicy chrome.users.QrCodeGeneratorEnabled qrCodeGeneratorEnabled false ou "${newou}"
+run_gam select nodasa info chromeschema chrome.users.QrCodeGeneratorEnabled
+run_gam select nodasa redirect csv ./chromepolicies.csv print chromepolicies ou "${newou}" namespace chrome.users
+run_gam -r 2 select nodasa delete chromepolicy chrome.users.QrCodeGeneratorEnabled ou "${newou}"
+
+# Directory Custom Schema CRUD
+run_gam -r 2 select nodasa create schema "${newschema}" field badge type string endfield
+cleanup_schema="${newschema}"
+run_gam select nodasa info schema "${newschema}"
+run_gam -r 2 select nodasa update schema "${newschema}" displayname "GHA Schema ${JID}" field dept type string endfield
+run_gam -r 2 select nodasa delete schema "${newschema}"
+cleanup_schema=""
+
+# Directory User CRUD, Photo, Alias, Suspension, Security, License, and OU move tests on ephemeral $newuser
 run_gam create user "${newuser}" firstname GHA lastname "${JID}" displayname "Github Actions ${JID}" password uniquerandom recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid "${JID}" languages en+,en-GB- ou "${newou}"
 cleanup_user="${newuser}"
 
@@ -350,9 +487,21 @@ run_gam user "${newuser}" get photo
 run_gam user "${newuser}" delete photo
 run_gam create alias "${newalias}" user "${newuser}"
 
+run_gam suspend user "${newuser}"
+run_gam -a "26" check suspended "${newuser}"
+run_gam unsuspend user "${newuser}"
+run_gam -a "25" check suspended "${newuser}"
+
+run_gam select nodasa user "${newuser}" update backupcodes
+run_gam select nodasa user "${newuser}" print backupcodes
+run_gam select nodasa user "${newuser}" delete backupcodes
+run_gam select nodasa user "${newuser}" print asps
+run_gam select nodasa user "${newuser}" signout
+
 # Separate Directory Group vs. Cloud Identity Group to avoid cross-API replication races
 run_gam create group "${newgroup}" name "GHA ${JID} group" description "This is a description" isarchived true
 cleanup_group="${newgroup}"
+run_gam -r 2 update group "${newgroup}" whocanpostmessage all_members_can_post
 
 run_gam create cigroup "${newcigroup}" name "GHA ${JID} CI group" description "Cloud Identity group test"
 cleanup_cigroup="${newcigroup}"
@@ -378,7 +527,7 @@ run_gam info group "${newgroup}"
 # Delegated Admin Role & Contact Delegation tests using pre-provisioned regular fixture users
 if [[ "${has_fixture_users}" == "true" ]]; then
   run_gam -r 2 select nodasa create admin "${reg_user1}" _HELP_DESK_ADMIN_ROLE org_unit "${newou}"
-  run_gam select nodasa config csv_output_row_filter "assignedToUser:regex:${reg_user1}" redirect csv ./admins.csv print admins
+  run_gam select nodasa redirect csv ./admins.csv print admins user "${reg_user1}"
   if [[ -f ./admins.csv && $(wc -l < ./admins.csv) -gt 1 ]]; then
     run_gam select nodasa csv ./admins.csv gam delete admin "~roleAssignmentId"
   fi
@@ -388,7 +537,7 @@ if [[ "${has_fixture_users}" == "true" ]]; then
   run_gam select nodasa user "${reg_user1}" delete contactdelegate "${reg_user2}"
 fi
 
-# Mailbox & Gmail operations on pre-licensed $reg_user1 (instant; zero license propagation wait)
+# Mailbox, Gmail Settings & Groups Migration operations on pre-licensed $reg_user1
 run_gam user "${reg_user1}" waitformailbox retries 5
 run_gam user "${reg_user1}" imap on
 run_gam user "${reg_user1}" show imap
@@ -401,10 +550,27 @@ cleanup_label="${test_label}"
 run_gam user "${reg_user1}" show labels
 run_gam redirect stdout ./labels.txt user "${reg_user1}" show labels
 
+filt_out=$(run_gam user "${reg_user1}" filter from "noreply-${newbase}@example.com" label STARRED | tr -d '\r')
+filt_id=$(echo "${filt_out}" | sed -n 's/.*Filter: \([^, ]*\).*/\1/p' | head -n 1)
+[[ -n "${filt_id}" ]] || { echo "::error::Failed to parse Gmail filter ID from: ${filt_out}" >&2; exit 1; }
+cleanup_filterid="${filt_id}"
+run_gam user "${reg_user1}" info filters "${filt_id}"
+run_gam user "${reg_user1}" delete filter "${filt_id}"
+cleanup_filterid=""
+
+run_gam user "${reg_user1}" signature "GHA Test Signature ${newbase}"
+cleanup_vacation="true"
+run_gam user "${reg_user1}" vacation true subject "OOO ${newbase}" message "Automated GHA test"
+run_gam user "${reg_user1}" vacation false
+cleanup_vacation=""
+
 run_gam user "${reg_user1}" importemail subject "GHA import ${newbase}" message "This is a test import" labels IMPORTANT,UNREAD,INBOX,STARRED
 run_gam user "${reg_user1}" insertemail subject "GHA insert ${newbase}" file gam.py labels INBOX,UNREAD
 run_gam user "${reg_user1}" sendemail recipient admin@pdl.jaylee.us subject "GHA send ${reg_user1} ${newbase}" file gam.py
 run_gam user "${reg_user1}" draftemail subject "GHA draft ${newbase}" message "Draft message test"
+
+# Archive the imported message into $newgroup via Groups Migration API before deleting messages
+run_gam -r 2 select nodasa user "${reg_user1}" archive messages "${newgroup}" query "subject:\"GHA import ${newbase}\"" max_to_archive 5 doit
 
 # Delete messages matching this run's unique $newbase (plus any >2d leftovers) so concurrent runs never collide
 run_gam -a "0 60" users "${reg_user1}" delete messages query "(subject:\"${newbase}\" OR older_than:2d) in:anywhere" maxtodelete 99999 doit
@@ -422,14 +588,106 @@ run_gam -r 2 create resource "${newresource}" "Resource Calendar ${epoch_sec}" c
 cleanup_resource="${newresource}"
 run_gam -r 2 info resource "${newresource}"
 
-# Drive file operations on pre-licensed $reg_user1
+# Drive v3, Docs, Sheets, and Forms lifecycles on pre-licensed $reg_user1
 folder_id=$(run_gam user "${reg_user1}" add drivefile drivefilename "TPS Reports ${newbase}" mimetype gfolder returnidonly | tr -d '\r')
 cleanup_folderid="${folder_id}"
 run_gam user "${reg_user1}" show filelist query "'me' in owners" maxfiles 10
 run_gam user "${reg_user1}" delete drivefile "id:${folder_id}" purge
 cleanup_folderid=""
 
-# Calendar ACL & Event operations (skipping owner role on delete to avoid self-ACL error)
+doc_id=$(run_gam user "${reg_user1}" create drivefile drivefilename "GHA Doc ${newbase}" mimetype gdoc returnidonly | tr -d '\r')
+cleanup_docid="${doc_id}"
+run_gam user "${reg_user1}" update document "id:${doc_id}" json '{"requests":[{"insertText":{"location":{"index":1},"text":"Hello from GAM Phase 2 CI\n"}}]}'
+doc_dl_dir="${RUNNER_TEMP}/DOC_DL_${newbase}"
+mkdir -p "${doc_dl_dir}"
+run_gam user "${reg_user1}" get document "id:${doc_id}" targetfolder "${doc_dl_dir}" overwrite true
+rm -rf "${doc_dl_dir}"
+copy_id=$(run_gam user "${reg_user1}" copy drivefile "id:${doc_id}" newfilename "GHA Copy ${newbase}" returnidonly | tr -d '\r')
+cleanup_copyid="${copy_id}"
+acl_target="${reg_user2}"
+if [[ "${acl_target}" == "${reg_user1}" ]]; then
+  acl_target="${gam_user}"
+fi
+run_gam user "${reg_user1}" create drivefileacl "id:${doc_id}" user "${acl_target}" role reader nodetails
+run_gam user "${reg_user1}" print drivefileacls "id:${doc_id}"
+run_gam user "${reg_user1}" delete drivefileacl "id:${doc_id}" "${acl_target}"
+run_gam user "${reg_user1}" print filerevisions "id:${doc_id}"
+run_gam user "${reg_user1}" trash drivefile "id:${copy_id}"
+run_gam user "${reg_user1}" untrash drivefile "id:${copy_id}"
+run_gam user "${reg_user1}" delete drivefile "id:${copy_id}" purge
+cleanup_copyid=""
+run_gam user "${reg_user1}" delete drivefile "id:${doc_id}" purge
+cleanup_docid=""
+
+sheet_id=$(run_gam user "${reg_user1}" create sheet json "{\"properties\":{\"title\":\"GHA Sheet ${newbase}\"}}" returnidonly | tr -d '\r')
+cleanup_sheetid="${sheet_id}"
+run_gam user "${reg_user1}" info sheet "${sheet_id}"
+run_gam user "${reg_user1}" append sheetrange "${sheet_id}" json '{"range":"Sheet1!A1:B2","values":[["ColA","ColB"],["1","2"]]}'
+run_gam user "${reg_user1}" print sheetrange "${sheet_id}" range "Sheet1!A1:B2"
+run_gam user "${reg_user1}" clear sheetrange "${sheet_id}" range "Sheet1!A1:B2"
+run_gam user "${reg_user1}" delete drivefile "id:${sheet_id}" purge
+cleanup_sheetid=""
+
+form_id=$(run_gam user "${reg_user1}" create form title "GHA Form ${newbase}" returnidonly | tr -d '\r')
+cleanup_formid="${form_id}"
+run_gam user "${reg_user1}" update form "${form_id}" description "Automated GAM CI form test"
+run_gam user "${reg_user1}" print forms "${form_id}"
+run_gam user "${reg_user1}" print formresponses "${form_id}"
+run_gam user "${reg_user1}" delete drivefile "id:${form_id}" purge
+cleanup_formid=""
+
+# Tasks, Keep, People Contacts, Chat, and Meet v2 lifecycles on $reg_user1
+tl_id=$(run_gam user "${reg_user1}" create tasklist title "GHA Tasks ${newbase}" returnidonly | tr -d '\r')
+cleanup_tasklistid="${tl_id}"
+task_id=$(run_gam user "${reg_user1}" create task "${tl_id}" title "Task ${newbase}" notes "CI task note" returnidonly | tr -d '\r')
+run_gam user "${reg_user1}" update task "${tl_id}:${task_id}" status completed
+run_gam user "${reg_user1}" info task "${tl_id}:${task_id}"
+run_gam user "${reg_user1}" delete task "${tl_id}:${task_id}"
+run_gam user "${reg_user1}" delete tasklist "${tl_id}"
+cleanup_tasklistid=""
+
+note_out=$(run_gam user "${reg_user1}" create note title "GHA Note ${newbase}" text "Hello from GAM CI" nodetails | tr -d '\r')
+note_id=$(echo "${note_out}" | sed -n 's/.*Note: \(notes\/[^, ]*\).*/\1/p' | head -n 1)
+[[ -n "${note_id}" ]] || { echo "::error::Failed to parse Keep note ID from: ${note_out}" >&2; exit 1; }
+cleanup_noteid="${note_id}"
+run_gam user "${reg_user1}" info note "${note_id}"
+run_gam user "${reg_user1}" delete note "${note_id}"
+cleanup_noteid=""
+
+cg_out=$(run_gam user "${reg_user1}" create contactgroup name "GHA_CG_${newbase}" | tr -d '\r')
+cg_id=$(echo "${cg_out}" | sed -n 's/.*Contact Group: \(contactGroups\/[^, ]*\).*/\1/p' | head -n 1)
+[[ -n "${cg_id}" ]] || { echo "::error::Failed to parse Contact Group ID from: ${cg_out}" >&2; exit 1; }
+cleanup_cgid="${cg_id}"
+contact_out=$(run_gam user "${reg_user1}" create contact givenname GHA familyname "${JID}" email work "${newbase}@example.com" primary | tr -d '\r')
+contact_id=$(echo "${contact_out}" | sed -n 's/.*Contact: \(people\/[^, ]*\).*/\1/p' | head -n 1)
+[[ -n "${contact_id}" ]] || { echo "::error::Failed to parse People Contact ID from: ${contact_out}" >&2; exit 1; }
+cleanup_contactid="${contact_id}"
+run_gam user "${reg_user1}" info contacts "${contact_id}"
+run_gam user "${reg_user1}" update contacts "${contact_id}" note "Updated by GAM CI"
+run_gam user "${reg_user1}" delete contacts "${contact_id}"
+cleanup_contactid=""
+run_gam user "${reg_user1}" delete contactgroups "${cg_id}"
+cleanup_cgid=""
+
+cs_out=$(run_gam user "${reg_user1}" create chatspace displayname "GHA_${JID}_${epoch_sec}" | tr -d '\r')
+cs_name=$(echo "${cs_out}" | grep -Eo 'spaces/[A-Za-z0-9_-]+' | head -n 1)
+[[ -n "${cs_name}" ]] || { echo "::error::Failed to parse Chat Space name from: ${cs_out}" >&2; exit 1; }
+cleanup_chatspace="${cs_name}"
+cm_out=$(run_gam user "${reg_user1}" create chatmessage "${cs_name}" text "Hello Chat ${newbase}" | tr -d '\r')
+cm_name=$(echo "${cm_out}" | grep -Eo 'spaces/[A-Za-z0-9_-]+/messages/[A-Za-z0-9_.-]+' | head -n 1)
+[[ -n "${cm_name}" ]] || { echo "::error::Failed to parse Chat Message name from: ${cm_out}" >&2; exit 1; }
+run_gam user "${reg_user1}" update chatmessage name "${cm_name}" text "Updated Chat ${newbase}"
+run_gam user "${reg_user1}" info chatmessage name "${cm_name}"
+run_gam user "${reg_user1}" delete chatmessage name "${cm_name}"
+run_gam user "${reg_user1}" delete chatspace "${cs_name}"
+cleanup_chatspace=""
+
+meet_space=$(run_gam user "${reg_user1}" create meetspace returnidonly | tr -d '\r')
+[[ -n "${meet_space}" ]] || { echo "::error::Failed to create Meet space" >&2; exit 1; }
+run_gam user "${reg_user1}" info meetspace "${meet_space}"
+run_gam user "${reg_user1}" update meetspace "${meet_space}" accesstype open
+
+# Calendar ACL, Primary Event & Secondary Calendar operations
 run_gam redirect csv ./cal-acl.csv calendar "${reg_user1}" printacl
 run_gam csv ./cal-acl.csv skipfield role "^owner$" gam calendar "${reg_user1}" delete ~id
 run_gam calendar "${reg_user1}" add read domain
@@ -440,6 +698,14 @@ run_gam redirect csv ./cal-acl.csv calendar "${reg_user1}" printacl
 run_gam csv ./cal-acl.csv skipfield role "^owner$" gam calendar "${reg_user1}" delete ~id
 run_gam calendar "${reg_user1}" addevent summary "GHA test event ${newbase}" start +1h end +2h attendee "${newgroup}" hangoutsmeet guestscanmodify true sendupdates all
 run_gam calendar "${reg_user1}" printevents after -0d
+
+seccal_out=$(run_gam user "${reg_user1}" create calendar summary "GHA SecCal ${newbase}" | tr -d '\r')
+seccal_id=$(echo "${seccal_out}" | grep -Eo '[a-z0-9_]+@group\.calendar\.google\.com' | head -n 1)
+[[ -n "${seccal_id}" ]] || { echo "::error::Failed to parse secondary calendar ID from: ${seccal_out}" >&2; exit 1; }
+cleanup_seccal="${seccal_id}"
+run_gam user "${reg_user1}" modify calendar "${seccal_id}" description "Updated secondary calendar ${newbase}"
+run_gam user "${reg_user1}" remove calendar "${seccal_id}"
+cleanup_seccal=""
 
 # Google Vault Matter, Hold, Count & Export lifecycle
 raw_matter_id=$(run_gam select nodasa create vaultmatter name "GHA matter ${newbase}" description "test matter" returnidonly | tr -d '\r')
@@ -499,9 +765,9 @@ run_gam update user "${newuser}" ou root
 run_gam -a "0 50" -r 2 delete user "${newuser}"
 cleanup_user=""
 
-# Device, Browser, CrOS & Reports checks (1x todrive test + local CSVs for remaining reports)
+# Device, Browser, CrOS & Reports checks (scoped to avoid domain-wide bloat + 1x todrive test)
 run_gam print mobile
-run_gam print devices clientstates
+run_gam print devices nopersonaldevices clientstates filter "serial:${sn}"
 run_gam print browsers
 run_gam print cros allfields orderby serialnumber
 run_gam show crostelemetry storagepercentonly
@@ -509,7 +775,7 @@ run_gam report usageparameters customer
 run_gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day_logins
 run_gam -r 3 report customer todrive tdnobrowser
 run_gam redirect csv ./report-users.csv report users
-run_gam redirect csv ./report-admin.csv report admin start -3d
+run_gam redirect csv ./report-admin.csv report admin user "${gam_user}" start -1h
 
 run_gam redirect csv ./devices.csv print devices nopersonaldevices nodeviceusers filter "serial:${sn}"
 run_gam csv ./devices.csv gam delete device id ~name
