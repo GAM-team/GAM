@@ -5,8 +5,6 @@
 
 set -eo pipefail
 
-export MSYS_NO_PATHCONV=1
-export MSYS2_ARG_CONV_EXCL="*"
 export GAM_THREADS="${GAM_THREADS:-5}"
 
 echo "### GAM Execution Report" >> "${GITHUB_STEP_SUMMARY}"
@@ -512,12 +510,6 @@ run_gam report usage customer parameters gmail:num_emails_sent,accounts:num_1day
 run_gam -r 3 report customer todrive tdnobrowser
 run_gam redirect csv ./report-users.csv report users
 run_gam redirect csv ./report-admin.csv report admin start -3d
-
-# Clean up any todrive Google Sheets older than 1 day on $gam_user so Drive stays clean
-run_gam redirect csv ./old-td.csv user "${gam_user}" print filelist query "mimeType='application/vnd.google-apps.spreadsheet' and modifiedTime < '#querytimecutoff#' and 'me' in owners" querytimecutoff -1d
-if [[ $(wc -l < ./old-td.csv) -gt 1 ]]; then
-  run_gam csv ./old-td.csv gam user "${gam_user}" delete drivefile ~id purge
-fi
 
 run_gam redirect csv ./devices.csv print devices nopersonaldevices nodeviceusers filter "serial:${sn}"
 run_gam csv ./devices.csv gam delete device id ~name
