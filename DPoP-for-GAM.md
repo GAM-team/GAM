@@ -8,7 +8,8 @@
 > Do not enable DPoP on production GAM installations. Use a separate test
 > environment with non-critical credentials.
 >
-> The latest alpha DPoP build is at:
+> The latest alpha DPoP build (Alpha 8) is at:
+> [https://github.com/GAM-team/GAM/releases/tag/20261121.024548](https://github.com/GAM-team/GAM/releases/tag/20261121.024548)
 
 ## What is DPoP?
 
@@ -242,26 +243,27 @@ tpm2_create -C primary.ctx -g sha256 -G ecc:ecdsa-sha256 \
     -u key.pub -r key.priv \
     -a "fixedtpm|fixedparent|sensitivedataorigin|userwithauth|sign"
 
-# Load and persist the key at handle 0x81000001
+# Load and persist at the first free persistent handle (-), saving the handle
 tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
-tpm2_evictcontrol -C o -c key.ctx 0x81000001
+TPM_HANDLE=$(tpm2_evictcontrol -C o -c key.ctx - | awk '/persistent-handle:/{print $2}')
+echo "Persisted key at: $TPM_HANDLE"
 
 # Clean up temporary files
-rm primary.ctx key.ctx key.pub key.priv
+rm -f primary.ctx key.ctx key.pub key.priv
 ```
 
 #### Step 3: Verify the Key
 
 ```bash
-tpm2_readpublic -c 0x81000001
+tpm2_readpublic -c "$TPM_HANDLE"
 ```
 
-Confirm the output shows `type: ecc`, `curve-id: NIST p256`, and `scheme: ecdsa`.
+Confirm the output shows `type: ecc`, `curve-id: NIST p256`, and `scheme: ecdsa` (if switching shells, list handles with `tpm2_getcap handles-persistent`).
 
 #### Step 4: Configure GAM
 
 ```bash
-gam config dpop true dpop_backend linux_tpm dpop_backend_config "0x81000001" save
+gam config dpop true dpop_backend linux_tpm dpop_backend_config "$TPM_HANDLE" save
 ```
 
 #### Permissions
@@ -408,7 +410,7 @@ Software-backed keys (`software`, `ephemeral`, `Microsoft Software Key Storage P
 | `DPoP software key file not found` | PEM file doesn't exist at the configured path | Check the path and generate the key |
 | `DPoP macOS Secure Enclave error` | Key not found in Secure Enclave | Run `sc_auth list-ctk-identities` to check |
 | `DPoP Windows Certificate Store error` | Certificate not found in Windows cert store | Check `Cert:\CurrentUser\My` (or `Cert:\LocalMachine\My` if using `,local_machine`) |
-| `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions and `tpm2_readpublic -c 0x81000001` |
+| `DPoP Linux TPM error` | Can't connect to TPM or key not found | Check `/dev/tpmrm0` permissions, `tpm2_getcap handles-persistent`, and `tpm2_readpublic -c <handle>` |
 | `DPoP PKCS#11 error` | PKCS#11 module, token, PIN, or key object invalid | Check `module-path=`, token/object/id attributes, and PIN |
 | `DPoP YubiKey error` | YubiKey not plugged in or wrong PIN | Plug in YubiKey and verify PIN |
 
