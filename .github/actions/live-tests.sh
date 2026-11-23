@@ -7,6 +7,9 @@
 set -eo pipefail
 
 export GAM_THREADS="${GAM_THREADS:-5}"
+# Skip google-auth GCE metadata server probes (169.254.169.254), which time out
+# for ~4-5s on every SignJWT call on Apple-hosted macOS GitHub runners.
+export NO_GCE_CHECK="true"
 
 echo "### GAM Execution Report" >> "${GITHUB_STEP_SUMMARY}"
 echo "| Command | Status | Exit Code |" >> "${GITHUB_STEP_SUMMARY}"
@@ -115,16 +118,18 @@ run_gam_loop() {
 filter_stale_csv() {
   local csv_file="$1"
   local stale_seconds="${2:-7200}"
+  local max_age_seconds="${3:-0}"
   if [[ ! -f "${csv_file}" ]]; then
     return 1
   fi
-  "${PYTHON}" - "${csv_file}" "${JID}" "${stale_seconds}" <<'PYEOF'
+  "${PYTHON}" - "${csv_file}" "${JID}" "${stale_seconds}" "${max_age_seconds}" <<'PYEOF'
 import csv
 import re
 import sys
 import time
 
-csv_path, jid, stale_sec = sys.argv[1], sys.argv[2], int(sys.argv[3])
+csv_path, jid = sys.argv[1], sys.argv[2]
+stale_sec, max_age_sec = int(sys.argv[3]), int(sys.argv[4])
 now = int(time.time())
 pat = re.compile(rf"gha[_-]test[_-]{re.escape(jid)}[_-](\d+)")
 
@@ -145,7 +150,8 @@ for row in body:
             ts //= 10**9
         elif ts > 10**12:     # milliseconds
             ts //= 10**3
-        if (now - ts) >= stale_sec:
+        age = now - ts
+        if age >= stale_sec and (max_age_sec <= 0 or age <= max_age_sec):
             kept.append(row)
     else:
         # Rows matched by query "gha.jid=$JID" without timestamp in primaryEmail
@@ -355,11 +361,13 @@ fi
 
 run_gam redirect csv ./users.csv print users query "gha.jid=${JID}" fields primaryEmail,creationTime
 if filter_stale_csv ./users.csv; then
+  run_gam -a "0 50" csv ./users.csv gam update user ~primaryEmail ou root
   run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
 fi
 
+# Skip legacy >48h OUs that are permanently blocked by ghost/soft-deleted objects
 run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./ous.csv print ous fromparent "aaaGithub Actions"
-if filter_stale_csv ./ous.csv; then
+if filter_stale_csv ./ous.csv 7200 172800; then
   run_gam -a "0 50" csv ./ous.csv gam delete ou ~orgUnitId
 fi
 
@@ -686,6 +694,12 @@ if [[ -n "${seccal_id}" ]]; then
 fi
 
 # Google Vault Matter, Hold, Count & Export lifecycle
+# Paced slightly by JID so 20 parallel runners don't spike `Export Writes per minute`.
+vault_jitter=$(( (JID % 10) * 3 + (RANDOM % 3) ))
+if [[ "${vault_jitter}" -gt 0 ]]; then
+  echo "Pacing Vault burst by ${vault_jitter}s for JID=${JID}..." >&2
+  sleep "${vault_jitter}"
+fi
 raw_matter_id=$(run_gam select nodasa create vaultmatter name "GHA matter ${newbase}" description "test matter" returnidonly | tr -d '\r')
 matterid="uid:${raw_matter_id}"
 cleanup_matterid="${matterid}"
