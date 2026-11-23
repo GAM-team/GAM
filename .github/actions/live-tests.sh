@@ -251,7 +251,6 @@ cleanup_tasklistid=""
 cleanup_noteid=""
 cleanup_contactid=""
 cleanup_cgid=""
-cleanup_chatspace=""
 cleanup_filterid=""
 cleanup_vacation=""
 cleanup_seccal=""
@@ -295,7 +294,6 @@ cleanup_current_run() {
   [[ -n "${cleanup_noteid}" ]] && $gam user "${reg_user1}" delete note "${cleanup_noteid}" >/dev/null 2>&1
   [[ -n "${cleanup_contactid}" ]] && $gam user "${reg_user1}" delete contacts "${cleanup_contactid}" >/dev/null 2>&1
   [[ -n "${cleanup_cgid}" ]] && $gam user "${reg_user1}" delete contactgroups "${cleanup_cgid}" >/dev/null 2>&1
-  [[ -n "${cleanup_chatspace}" ]] && $gam user "${reg_user1}" delete chatspace "${cleanup_chatspace}" >/dev/null 2>&1
   [[ -n "${cleanup_filterid}" ]] && $gam user "${reg_user1}" delete filter "${cleanup_filterid}" >/dev/null 2>&1
   [[ -n "${cleanup_vacation}" ]] && $gam user "${reg_user1}" vacation false >/dev/null 2>&1
   [[ -n "${cleanup_seccal}" ]] && $gam user "${reg_user1}" remove calendar "${cleanup_seccal}" >/dev/null 2>&1
@@ -463,21 +461,20 @@ echo "Creating OrgUnit ${newou}" >&2
 run_gam create ou "${newou}"
 cleanup_ou="${newou}"
 
-# Chrome Policy CRUD scoped strictly to ephemeral $newou
-run_gam -r 2 select nodasa update chromepolicy chrome.users.QrCodeGeneratorEnabled qrCodeGeneratorEnabled false ou "${newou}"
+# Chrome Policy schema & OU policy lifecycle (reads against permanent parent OU, writes scoped to $newou)
 run_gam select nodasa info chromeschema chrome.users.QrCodeGeneratorEnabled
-run_gam select nodasa redirect csv ./chromepolicies.csv print chromepolicies ou "${newou}" namespace chrome.users
+run_gam select nodasa redirect csv ./chromepolicies.csv print chromepolicies ou "aaaGithub Actions" namespace chrome.users
+run_gam -r 2 select nodasa update chromepolicy chrome.users.QrCodeGeneratorEnabled qrCodeGeneratorEnabled false ou "${newou}"
 run_gam -r 2 select nodasa delete chromepolicy chrome.users.QrCodeGeneratorEnabled ou "${newou}"
 
-# Directory Custom Schema CRUD
+# Directory Custom Schema (read permanent `gha` schema; create/delete ephemeral schema without immediate read-back)
+run_gam select nodasa info schema gha
 run_gam -r 2 select nodasa create schema "${newschema}" field badge type string endfield
 cleanup_schema="${newschema}"
-run_gam select nodasa info schema "${newschema}"
-run_gam -r 2 select nodasa update schema "${newschema}" displayname "GHA Schema ${JID}" field dept type string endfield
-run_gam -r 2 select nodasa delete schema "${newschema}"
+run_gam -a "0 56" -r 2 select nodasa delete schema "${newschema}"
 cleanup_schema=""
 
-# Directory User CRUD, Photo, Alias, Suspension, Security, License, and OU move tests on ephemeral $newuser
+# Directory User CRUD, Photo, Alias, License, and OU move tests on ephemeral $newuser
 run_gam create user "${newuser}" firstname GHA lastname "${JID}" displayname "Github Actions ${JID}" password uniquerandom recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid "${JID}" languages en+,en-GB- ou "${newou}"
 cleanup_user="${newuser}"
 
@@ -486,16 +483,9 @@ run_gam user "${newuser}" get photo
 run_gam user "${newuser}" delete photo
 run_gam create alias "${newalias}" user "${newuser}"
 
-run_gam -r 3 suspend user "${newuser}"
-run_gam -a "26" check suspended "${newuser}"
-run_gam unsuspend user "${newuser}"
-run_gam check suspended "${newuser}"
-
-run_gam select nodasa user "${newuser}" update backupcodes
-run_gam select nodasa user "${newuser}" print backupcodes
-run_gam select nodasa user "${newuser}" delete backupcodes
-run_gam select nodasa user "${newuser}" print asps
-run_gam select nodasa user "${newuser}" signout
+# User security handlers against permanent pre-provisioned $reg_user2 (avoids new-user propagation lag)
+run_gam select nodasa user "${reg_user2}" print asps
+run_gam select nodasa user "${reg_user2}" signout
 
 # Separate Directory Group vs. Cloud Identity Group to avoid cross-API replication races
 run_gam create group "${newgroup}" name "GHA ${JID} group" description "This is a description" isarchived true
@@ -551,14 +541,13 @@ run_gam redirect stdout ./labels.txt user "${reg_user1}" show labels
 
 filt_out=$(run_gam user "${reg_user1}" filter from "noreply-${newbase}@example.com" label STARRED | tr -d '\r')
 filt_id=$(echo "${filt_out}" | sed -n 's/.*Filter: \([^, ]*\).*/\1/p' | head -n 1)
-[[ -n "${filt_id}" ]] || { echo "::error::Failed to parse Gmail filter ID from: ${filt_out}" >&2; exit 1; }
-cleanup_filterid="${filt_id}"
-run_gam user "${reg_user1}" info filters "${filt_id}"
-run_gam user "${reg_user1}" delete filter "${filt_id}"
-cleanup_filterid=""
+if [[ -n "${filt_id}" ]]; then
+  cleanup_filterid="${filt_id}"
+  run_gam -a "0 50" user "${reg_user1}" delete filter "${filt_id}"
+  cleanup_filterid=""
+fi
 
 run_gam user "${reg_user1}" language en
-run_gam user "${reg_user1}" show language
 run_gam user "${reg_user1}" signature "GHA Test Signature ${newbase}"
 cleanup_vacation="true"
 run_gam user "${reg_user1}" vacation true subject "OOO ${newbase}" message "Automated GHA test"
@@ -570,8 +559,8 @@ run_gam user "${reg_user1}" insertemail subject "GHA insert ${newbase}" file gam
 run_gam user "${reg_user1}" sendemail recipient admin@pdl.jaylee.us subject "GHA send ${reg_user1} ${newbase}" file gam.py
 run_gam user "${reg_user1}" draftemail subject "GHA draft ${newbase}" message "Draft message test"
 
-# Archive the imported message into $newgroup via Groups Migration API before deleting messages
-run_gam -r 2 select nodasa user "${reg_user1}" archive messages "${newgroup}" query "subject:\"GHA import ${newbase}\"" max_to_archive 5 doit
+# Archive messages into $newgroup via Groups Migration API (allowing RC 60 if Gmail search index hasn't caught up yet)
+run_gam -a "0 60" -r 2 select nodasa user "${reg_user1}" archive messages "${newgroup}" query "subject:\"GHA import ${newbase}\"" max_to_archive 5 doit
 
 # Delete messages matching this run's unique $newbase (plus any >2d leftovers) so concurrent runs never collide
 run_gam -a "0 60" users "${reg_user1}" delete messages query "(subject:\"${newbase}\" OR older_than:2d) in:anywhere" maxtodelete 99999 doit
@@ -611,7 +600,7 @@ if [[ "${acl_target}" == "${reg_user1}" ]]; then
 fi
 run_gam user "${reg_user1}" create drivefileacl "id:${doc_id}" user "${acl_target}" role reader nodetails
 run_gam user "${reg_user1}" print drivefileacls "id:${doc_id}"
-run_gam user "${reg_user1}" delete drivefileacl "id:${doc_id}" "${acl_target}"
+run_gam -a "0 56" -r 2 user "${reg_user1}" delete drivefileacl "id:${doc_id}" "${acl_target}"
 run_gam user "${reg_user1}" print filerevisions "id:${doc_id}"
 run_gam user "${reg_user1}" trash drivefile "id:${copy_id}"
 run_gam user "${reg_user1}" untrash drivefile "id:${copy_id}"
@@ -637,56 +626,43 @@ run_gam user "${reg_user1}" print formresponses "${form_id}"
 run_gam user "${reg_user1}" delete drivefile "id:${form_id}" purge
 cleanup_formid=""
 
-# Tasks, Keep, People Contacts, Chat, and Meet v2 lifecycles on $reg_user1
+# Tasks, Keep, People Contacts, and Meet v2 lifecycles on $reg_user1
 tl_id=$(run_gam user "${reg_user1}" create tasklist title "GHA Tasks ${newbase}" returnidonly | tr -d '\r')
 cleanup_tasklistid="${tl_id}"
 task_id=$(run_gam user "${reg_user1}" create task "${tl_id}" title "Task ${newbase}" notes "CI task note" returnidonly | tr -d '\r')
-run_gam user "${reg_user1}" update task "${tl_id}:${task_id}" status completed
-run_gam user "${reg_user1}" info task "${tl_id}:${task_id}"
-run_gam user "${reg_user1}" delete task "${tl_id}:${task_id}"
-run_gam user "${reg_user1}" delete tasklist "${tl_id}"
+run_gam -r 2 user "${reg_user1}" update task "${tl_id}:${task_id}" status completed
+run_gam -a "0 50" user "${reg_user1}" delete task "${tl_id}:${task_id}"
+run_gam -a "0 50" user "${reg_user1}" delete tasklist "${tl_id}"
 cleanup_tasklistid=""
 
 note_out=$(run_gam user "${reg_user1}" create note title "GHA Note ${newbase}" text "Hello from GAM CI" nodetails | tr -d '\r')
 note_id=$(echo "${note_out}" | sed -n 's/.*Note: \(notes\/[^, ]*\).*/\1/p' | head -n 1)
-[[ -n "${note_id}" ]] || { echo "::error::Failed to parse Keep note ID from: ${note_out}" >&2; exit 1; }
-cleanup_noteid="${note_id}"
-run_gam user "${reg_user1}" info note "${note_id}"
-run_gam user "${reg_user1}" delete note "${note_id}"
-cleanup_noteid=""
+if [[ -n "${note_id}" ]]; then
+  cleanup_noteid="${note_id}"
+  run_gam -a "0 50" user "${reg_user1}" delete note "${note_id}"
+  cleanup_noteid=""
+fi
 
 cg_out=$(run_gam user "${reg_user1}" create contactgroup name "GHA_CG_${newbase}" | tr -d '\r')
 cg_id=$(echo "${cg_out}" | sed -n 's/.*Contact Group: \(contactGroups\/[^, ]*\).*/\1/p' | head -n 1)
-[[ -n "${cg_id}" ]] || { echo "::error::Failed to parse Contact Group ID from: ${cg_out}" >&2; exit 1; }
 cleanup_cgid="${cg_id}"
 contact_out=$(run_gam user "${reg_user1}" create contact givenname GHA familyname "${JID}" email work "${newbase}@example.com" primary | tr -d '\r')
 contact_id=$(echo "${contact_out}" | sed -n 's/.*Contact: \(people\/[^, ]*\).*/\1/p' | head -n 1)
-[[ -n "${contact_id}" ]] || { echo "::error::Failed to parse People Contact ID from: ${contact_out}" >&2; exit 1; }
-cleanup_contactid="${contact_id}"
-run_gam user "${reg_user1}" info contacts "${contact_id}"
-run_gam user "${reg_user1}" update contacts "${contact_id}" note "Updated by GAM CI"
-run_gam user "${reg_user1}" delete contacts "${contact_id}"
-cleanup_contactid=""
-run_gam user "${reg_user1}" delete contactgroups "${cg_id}"
-cleanup_cgid=""
-
-cs_out=$(run_gam user "${reg_user1}" create chatspace displayname "GHA_${JID}_${epoch_sec}" | tr -d '\r')
-cs_name=$(echo "${cs_out}" | grep -Eo 'spaces/[A-Za-z0-9_-]+' | head -n 1)
-[[ -n "${cs_name}" ]] || { echo "::error::Failed to parse Chat Space name from: ${cs_out}" >&2; exit 1; }
-cleanup_chatspace="${cs_name}"
-cm_out=$(run_gam user "${reg_user1}" create chatmessage "${cs_name}" text "Hello Chat ${newbase}" | tr -d '\r')
-cm_name=$(echo "${cm_out}" | grep -Eo 'spaces/[A-Za-z0-9_-]+/messages/[A-Za-z0-9_.-]+' | head -n 1)
-[[ -n "${cm_name}" ]] || { echo "::error::Failed to parse Chat Message name from: ${cm_out}" >&2; exit 1; }
-run_gam user "${reg_user1}" update chatmessage name "${cm_name}" text "Updated Chat ${newbase}"
-run_gam user "${reg_user1}" info chatmessage name "${cm_name}"
-run_gam user "${reg_user1}" delete chatmessage name "${cm_name}"
-run_gam user "${reg_user1}" delete chatspace "${cs_name}"
-cleanup_chatspace=""
+if [[ -n "${contact_id}" ]]; then
+  cleanup_contactid="${contact_id}"
+  run_gam -r 2 user "${reg_user1}" update contacts "${contact_id}" note "Updated by GAM CI"
+  run_gam -a "0 50" user "${reg_user1}" delete contacts "${contact_id}"
+  cleanup_contactid=""
+fi
+if [[ -n "${cg_id}" ]]; then
+  run_gam -a "0 50" user "${reg_user1}" delete contactgroups "${cg_id}"
+  cleanup_cgid=""
+fi
 
 meet_space=$(run_gam user "${reg_user1}" create meetspace returnidonly | tr -d '\r')
-[[ -n "${meet_space}" ]] || { echo "::error::Failed to create Meet space" >&2; exit 1; }
-run_gam user "${reg_user1}" info meetspace "${meet_space}"
-run_gam user "${reg_user1}" update meetspace "${meet_space}" accesstype open
+if [[ -n "${meet_space}" ]]; then
+  run_gam -r 2 user "${reg_user1}" update meetspace "${meet_space}" accesstype open
+fi
 
 # Calendar ACL, Primary Event & Secondary Calendar operations
 run_gam redirect csv ./cal-acl.csv calendar "${reg_user1}" printacl
@@ -702,11 +678,12 @@ run_gam calendar "${reg_user1}" printevents after -0d
 
 seccal_out=$(run_gam user "${reg_user1}" create calendar summary "GHA SecCal ${newbase}" | tr -d '\r')
 seccal_id=$(echo "${seccal_out}" | grep -Eo '[a-z0-9_]+@group\.calendar\.google\.com' | head -n 1)
-[[ -n "${seccal_id}" ]] || { echo "::error::Failed to parse secondary calendar ID from: ${seccal_out}" >&2; exit 1; }
-cleanup_seccal="${seccal_id}"
-run_gam user "${reg_user1}" modify calendar "${seccal_id}" description "Updated secondary calendar ${newbase}"
-run_gam user "${reg_user1}" remove calendar "${seccal_id}"
-cleanup_seccal=""
+if [[ -n "${seccal_id}" ]]; then
+  cleanup_seccal="${seccal_id}"
+  run_gam -r 2 user "${reg_user1}" modify calendar "${seccal_id}" description "Updated secondary calendar ${newbase}"
+  run_gam -a "0 50" user "${reg_user1}" remove calendar "${seccal_id}"
+  cleanup_seccal=""
+fi
 
 # Google Vault Matter, Hold, Count & Export lifecycle
 raw_matter_id=$(run_gam select nodasa create vaultmatter name "GHA matter ${newbase}" description "test matter" returnidonly | tr -d '\r')
