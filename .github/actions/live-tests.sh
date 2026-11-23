@@ -12,8 +12,50 @@ export GAM_THREADS="${GAM_THREADS:-5}"
 export NO_GCE_CHECK="true"
 
 echo "### GAM Execution Report" >> "${GITHUB_STEP_SUMMARY}"
-echo "| Command | Status | Exit Code |" >> "${GITHUB_STEP_SUMMARY}"
-echo "| :--- | :---: | :---: |" >> "${GITHUB_STEP_SUMMARY}"
+echo "| # | Command | Status | Exit Code |" >> "${GITHUB_STEP_SUMMARY}"
+echo "| :---: | :--- | :---: | :---: |" >> "${GITHUB_STEP_SUMMARY}"
+
+# Subshell-safe command counter (`$(run_gam ...)` runs in a subshell, so state
+# lives in tiny files in the working directory and is cleaned up on exit).
+CMD_IDX_FILE="./.gam_cmd_idx"
+CMD_TOTAL_FILE="./.gam_cmd_total"
+echo 0 > "${CMD_IDX_FILE}"
+"${PYTHON}" - "${BASH_SOURCE[0]}" > "${CMD_TOTAL_FILE}" <<'PYEOF'
+import re
+import sys
+
+in_stale = False
+total = 0
+with open(sys.argv[1], "r", encoding="utf-8") as f:
+    for ln in f:
+        if re.match(r"^if filter_stale_csv\b", ln):
+            in_stale = True
+            continue
+        if in_stale and re.match(r"^fi\s*$", ln):
+            in_stale = False
+            continue
+        s = ln.strip()
+        if s.startswith("#") or s.startswith("run_gam()") or s.startswith("run_gam_loop()"):
+            continue
+        if not in_stale and re.search(r"(?:^|\$\()run_gam(?:_loop)?\b", s):
+            total += 1
+print(total)
+PYEOF
+tr -d '\r' < "${CMD_TOTAL_FILE}" > "${CMD_TOTAL_FILE}.tmp" && mv "${CMD_TOTAL_FILE}.tmp" "${CMD_TOTAL_FILE}"
+
+next_cmd_idx() {
+  local idx
+  idx=$(( $(<"${CMD_IDX_FILE}") + 1 ))
+  echo "${idx}" > "${CMD_IDX_FILE}"
+  echo "${idx}"
+}
+
+bump_cmd_total() {
+  local delta="$1"
+  local tot
+  tot=$(( $(<"${CMD_TOTAL_FILE}") + delta ))
+  echo "${tot}" > "${CMD_TOTAL_FILE}"
+}
 
 # Execute a GAM command with stderr log grouping, optional retries (-r N),
 # and optional allowed exit codes (-a "0 50").
@@ -38,6 +80,9 @@ run_gam() {
   done
 
   allowed_codes="${allowed_codes//,/ }"
+  local cmd_idx cmd_total
+  cmd_idx=$(next_cmd_idx)
+  cmd_total=$(<"${CMD_TOTAL_FILE}")
   local attempt=1
   local exit_code=0
   local passed=false
@@ -45,9 +90,9 @@ run_gam() {
   while true; do
     exit_code=0
     if [[ "${attempt}" -eq 1 ]]; then
-      echo "::group::Executing: gam $*" >&2
+      echo "::group::Executing: gam $* (${cmd_idx}/${cmd_total})" >&2
     else
-      echo "::group::Executing (attempt ${attempt}/${max_attempts}): gam $*" >&2
+      echo "::group::Executing (attempt ${attempt}/${effective_max:-${max_attempts}}): gam $* (${cmd_idx}/${cmd_total})" >&2
     fi
 
     $gam "$@" || exit_code=$?
@@ -62,7 +107,7 @@ run_gam() {
     done
 
     if [[ "${passed}" == "true" ]]; then
-      echo "| \`gam $*\` | 🟢 Pass | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
+      echo "| ${cmd_idx}/${cmd_total} | \`gam $*\` | 🟢 Pass | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
       return 0
     fi
 
@@ -75,13 +120,13 @@ run_gam() {
 
     if [[ "${attempt}" -lt "${effective_max}" ]]; then
       local sleep_s=$(( attempt * 4 + (RANDOM % 5) + 1 ))
-      echo "::warning::gam $* exited with ${exit_code} (attempt ${attempt}/${effective_max}); retrying in ${sleep_s}s..." >&2
+      echo "::warning::gam $* (${cmd_idx}/${cmd_total}) exited with ${exit_code} (attempt ${attempt}/${effective_max}); retrying in ${sleep_s}s..." >&2
       sleep "${sleep_s}"
       attempt=$((attempt + 1))
       continue
     fi
 
-    echo "| \`gam $*\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
+    echo "| ${cmd_idx}/${cmd_total} | \`gam $*\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
     exit "$(( exit_code != 0 ? exit_code : 1 ))"
   done
 }
@@ -91,10 +136,13 @@ run_gam() {
 run_gam_loop() {
   local label="$1"
   shift
+  local cmd_idx cmd_total
+  cmd_idx=$(next_cmd_idx)
+  cmd_total=$(<"${CMD_TOTAL_FILE}")
   local loop_err="./loop-${label}.stderr"
   local exit_code=0
 
-  echo "::group::Executing in-process loop (${label}): gam $*" >&2
+  echo "::group::Executing in-process loop (${label}): gam $* (${cmd_idx}/${cmd_total})" >&2
   $gam "$@" 2>"${loop_err}" || exit_code=$?
   cat "${loop_err}" >&2 || true
   echo "::endgroup::" >&2
@@ -102,13 +150,13 @@ run_gam_loop() {
   if [[ "${exit_code}" -ne 0 ]] || grep -Eq ',End,[^0],' "${loop_err}"; then
     echo "::error::In-process loop (${label}) had non-zero command exit (outer=${exit_code}):" >&2
     grep -E ',End,[^0],' "${loop_err}" >&2 || true
-    echo "| \`gam loop (${label})\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
+    echo "| ${cmd_idx}/${cmd_total} | \`gam loop (${label})\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
     exit "${exit_code:-1}"
   fi
 
   local row_count
   row_count=$(grep -c ',End,0,' "${loop_err}" || true)
-  echo "| \`gam loop (${label}: ${row_count} commands)\` | 🟢 Pass | 0 |" >> "${GITHUB_STEP_SUMMARY}"
+  echo "| ${cmd_idx}/${cmd_total} | \`gam loop (${label}: ${row_count} commands)\` | 🟢 Pass | 0 |" >> "${GITHUB_STEP_SUMMARY}"
 }
 
 # Filter a GAM CSV file in-place to retain ONLY stale test resources older than
@@ -221,6 +269,7 @@ if $gam info user "${candidate_u1}" quick >/dev/null 2>&1 && $gam info user "${c
 else
   reg_user1="${gam_user}"
   reg_user2="${gam_user}"
+  bump_cmd_total -6
   echo "::warning::Fixture users ${candidate_u1} / ${candidate_u2} not found; falling back to ${gam_user}. Run .github/actions/bootstrap-fixtures.sh to provision dedicated regular users." >&2
 fi
 
@@ -269,6 +318,7 @@ cleanup_label=""
 
 cleanup_current_run() {
   local exit_status=$?
+  rm -f "${CMD_IDX_FILE}" "${CMD_TOTAL_FILE}"
   if [[ "${exit_status}" -eq 0 ]]; then
     return 0
   fi
@@ -332,8 +382,10 @@ trap cleanup_current_run EXIT
 # ==============================================================================
 run_gam select nodasa config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-open.csv print vaultmatters matterstate OPEN
 if filter_stale_csv ./vm-open.csv; then
+  bump_cmd_total 2
   run_gam -a "0 55" select nodasa redirect csv ./vh-stale.csv multiprocess csv ./vm-open.csv gam print vaultholds matter "id:~~matterId~~"
   if [[ -f ./vh-stale.csv && $(wc -l < ./vh-stale.csv) -gt 1 ]]; then
+    bump_cmd_total 1
     run_gam -a "0 55" select nodasa csv ./vh-stale.csv gam delete vaulthold "id:~~holdId~~" matter "id:~~matterId~~"
   fi
   run_gam select nodasa csv ./vm-open.csv gam update vaultmatter "id:~~matterId~~" action close
@@ -341,26 +393,31 @@ fi
 
 run_gam select nodasa config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./vm-closed.csv print vaultmatters matterstate CLOSED
 if filter_stale_csv ./vm-closed.csv; then
+  bump_cmd_total 1
   run_gam select nodasa csv ./vm-closed.csv gam update vaultmatter "id:~~matterId~~" action delete
 fi
 
 run_gam select nodasa config csv_output_row_filter "schemaName:regex:^gha_test_${JID}_" redirect csv ./schemas.csv print schemas
 if filter_stale_csv ./schemas.csv; then
+  bump_cmd_total 1
   run_gam -a "0 50" select nodasa csv ./schemas.csv gam delete schema ~schemaName
 fi
 
 run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./features.csv print features
 if filter_stale_csv ./features.csv; then
+  bump_cmd_total 1
   run_gam csv ./features.csv gam delete feature ~name
 fi
 
 run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./sd.csv user "${gam_user}" print shareddrives asadmin
 if filter_stale_csv ./sd.csv; then
+  bump_cmd_total 1
   run_gam csv ./sd.csv gam user "${gam_user}" delete shareddrive ~id nukefromorbit
 fi
 
 run_gam redirect csv ./users.csv print users query "gha.jid=${JID}" fields primaryEmail,creationTime
 if filter_stale_csv ./users.csv; then
+  bump_cmd_total 2
   run_gam -a "0 50" csv ./users.csv gam update user ~primaryEmail ou root
   run_gam -a "0 50" csv ./users.csv gam delete user ~primaryEmail
 fi
@@ -368,31 +425,37 @@ fi
 # Skip legacy >48h OUs that are permanently blocked by ghost/soft-deleted objects
 run_gam config csv_output_row_filter "name:regex:^gha_test_${JID}_" redirect csv ./ous.csv print ous fromparent "aaaGithub Actions"
 if filter_stale_csv ./ous.csv 7200 172800; then
+  bump_cmd_total 1
   run_gam -a "0 50" csv ./ous.csv gam delete ou ~orgUnitId
 fi
 
 run_gam config csv_output_row_filter "email:regex:^gha_test_${JID}_" redirect csv ./cigroups.csv print cigroups
 if filter_stale_csv ./cigroups.csv; then
+  bump_cmd_total 1
   run_gam csv ./cigroups.csv gam delete cigroup ~email
 fi
 
 run_gam config csv_output_row_filter "resourceId:regex:^gha_test_${JID}_" redirect csv ./resources.csv print resources
 if filter_stale_csv ./resources.csv; then
+  bump_cmd_total 1
   run_gam csv ./resources.csv gam delete resource ~resourceId
 fi
 
 run_gam config csv_output_row_filter "buildingId:regex:^gha_test_${JID}_" redirect csv ./buildings.csv print buildings
 if filter_stale_csv ./buildings.csv; then
+  bump_cmd_total 1
   run_gam csv ./buildings.csv gam delete building ~buildingId
 fi
 
 run_gam config csv_output_row_filter "displayName:regex:^El\\ Goog\\ gha_test_${JID}_" redirect csv ./ssoprofiles.csv print inboundssoprofiles
 if filter_stale_csv ./ssoprofiles.csv; then
+  bump_cmd_total 1
   run_gam csv ./ssoprofiles.csv gam delete inboundssoprofile "id:~~name~~"
 fi
 
 run_gam redirect csv ./stale-devices.csv print devices nopersonaldevices nodeviceusers filter "serial:${JID}${JID}${JID}${JID}-"
 if filter_stale_csv ./stale-devices.csv; then
+  bump_cmd_total 1
   run_gam csv ./stale-devices.csv gam delete device id ~name
 fi
 
@@ -527,6 +590,8 @@ if [[ "${has_fixture_users}" == "true" ]]; then
   run_gam select nodasa redirect csv ./admins.csv print admins user "${reg_user1}"
   if [[ -f ./admins.csv && $(wc -l < ./admins.csv) -gt 1 ]]; then
     run_gam select nodasa csv ./admins.csv gam delete admin "~roleAssignmentId"
+  else
+    bump_cmd_total -1
   fi
 
   run_gam select nodasa user "${reg_user1}" add contactdelegate "${reg_user2}"
