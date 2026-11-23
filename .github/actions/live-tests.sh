@@ -79,7 +79,7 @@ run_gam() {
     fi
 
     echo "| \`gam $*\` | 🔴 Fail | ${exit_code} |" >> "${GITHUB_STEP_SUMMARY}"
-    exit "${exit_code}"
+    exit "$(( exit_code != 0 ? exit_code : 1 ))"
   done
 }
 
@@ -427,7 +427,6 @@ ${reg_user1},print,othercontacts
 ${reg_user1},print,peopleprofile
 ${reg_user1},show,gmailprofile
 ${reg_user1},show,pop
-${reg_user1},show,language
 ${reg_user1},show,vacation
 ${reg_user1},show,signature
 ${reg_user1},show,forward
@@ -487,10 +486,10 @@ run_gam user "${newuser}" get photo
 run_gam user "${newuser}" delete photo
 run_gam create alias "${newalias}" user "${newuser}"
 
-run_gam suspend user "${newuser}"
+run_gam -r 3 suspend user "${newuser}"
 run_gam -a "26" check suspended "${newuser}"
 run_gam unsuspend user "${newuser}"
-run_gam -a "25" check suspended "${newuser}"
+run_gam check suspended "${newuser}"
 
 run_gam select nodasa user "${newuser}" update backupcodes
 run_gam select nodasa user "${newuser}" print backupcodes
@@ -558,6 +557,8 @@ run_gam user "${reg_user1}" info filters "${filt_id}"
 run_gam user "${reg_user1}" delete filter "${filt_id}"
 cleanup_filterid=""
 
+run_gam user "${reg_user1}" language en
+run_gam user "${reg_user1}" show language
 run_gam user "${reg_user1}" signature "GHA Test Signature ${newbase}"
 cleanup_vacation="true"
 run_gam user "${reg_user1}" vacation true subject "OOO ${newbase}" message "Automated GHA test"
