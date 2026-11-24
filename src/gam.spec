@@ -39,6 +39,7 @@ hiddenimports = [
      'dpop_signer_ecp',
      'dpop_signer_pkcs11',
      'dpop_signer_ephemeral',
+     'dpop_signer_fido2_previewsign',
      ]
 
 if platform == 'darwin':

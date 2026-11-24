@@ -73,6 +73,7 @@ Choose a backend based on your operating system and security requirements:
 | [`windows_certstore`](#windows--certificate-store--tpm-recommended-for-windows-with-tpm) | Windows | Windows Cert Store (TPM via CNG) | Yes (with TPM) | Windows admins with TPM |
 | [`linux_tpm`](#linux--tpm-20-recommended-for-linux-servers) | Linux | TPM 2.0 | Yes | Linux servers with TPM |
 | [`yubikey`](#yubikey--piv-cross-platform) | Any | YubiKey PIV | Yes | Cross-platform, portable key |
+| [`fido2_previewsign`](#fido2-previewsign--security-key-experimental-cross-platform) | Any | YubiKey 5.8+ / CTAP 2.3 (`previewSign`) | Yes | Certificate-free FIDO2 hardware key (experimental) |
 | [`pkcs11`](#pkcs11--hsm--smart-card-cross-platform) | Any | PKCS#11 token (HSM, smart card) | Yes (with HSM/smart card) | Hardware security modules (HSMs), smart cards |
 | [`software`](#software-key-testing-only) | Any | PEM file on disk | No (`WARN` in GAM) | Testing or low-security environments |
 
@@ -372,6 +373,45 @@ Proceed to **[Stage 2: Confirm Local Signing with `gam check dpop`](#stage-2-con
 
 ---
 
+### FIDO2 `previewSign` — Security Key (Experimental, Cross-Platform)
+
+The `fido2_previewsign` backend uses the experimental FIDO2 / CTAP 2.3 [`previewSign`](https://github.com/yubicolabs/webauthn-sign-extension) extension to generate and use an on-chip ECDSA P-256 (`ES256`) key over USB HID without PIV management keys or X.509 certificates.
+
+> [!WARNING]
+> **`previewSign` is an experimental draft extension** and may change in future
+> firmware or library releases. Tested on YubiKey 5 Series firmware **5.8+**.
+
+**Requirements & Real-World Hardware Notes:**
+- **Compatible CTAP 2.3 authenticator over USB HID:** Requires firmware with `previewSign` support (such as YubiKey 5 Series / Yubico Security Key **5.8+**; `ykman info`). Bluetooth and NFC are not supported for CTAP HID.
+- **No private key leaves the YubiKey, but client-side metadata is required:** Unlike PIV slots (`9c`) or TPM persistent handles (`0x81000001`), YubiKey 5.8 uses client-derived ARKG (`_COSE_ESP256_SPLIT_ARKG`) keys. Even with a resident key (`resident_key=True`), CTAP2 `CredentialManagement` cannot return `previewSign`'s inner `key_handle` or the client-side ARKG derivation arguments (`additional_args`), so GAM needs the JSON metadata produced by `generate_signing_credential().to_dict()` (no private key material is stored in it).
+- **Unattended by default:** `generate_signing_credential()` requires **one physical touch** when provisioning (`require_up=False` default), and subsequent DPoP signatures run silently without prompts. Pass `require_up=True` (touch per sign) or `require_uv=True` (PIN/biometric per sign) if desired.
+- **Provisioning Python dependency:** Because GAM does not provision keys and the standalone binary embeds its dependencies, run the one-time `generate_signing_credential()` command with a Python environment that has `dpop-signer-fido2-previewsign` (and `fido2 >= 2.2.0`) installed. Once configured, standard GAM builds run `gam check dpop` and `gam` natively.
+- **Windows WebAuthn caveat:** Windows may intercept direct FIDO2 USB HID access in some sessions (if HID fails with permission errors, run from an elevated shell or check Windows WebAuthn restrictions).
+
+#### 1. Generate Credential Metadata (One-Time Touch) & 2. Configure GAM
+
+**Option A — Store credential metadata inline in `gam.cfg` (no extra file on disk):**
+
+```bash
+# Plug in your YubiKey 5.8+ and touch it once when prompted:
+CRED=$(python3 -c 'import json; from dpop_signer_fido2_previewsign import generate_signing_credential; print(json.dumps(generate_signing_credential().to_dict(), separators=(",", ":")))')
+gam config dpop true dpop_backend fido2_previewsign dpop_backend_config "$CRED" save
+```
+
+**Option B — Store credential metadata in a JSON file inside `~/.gam`:**
+
+```bash
+python3 -c 'import json, os; from dpop_signer_fido2_previewsign import generate_signing_credential; open(os.path.expanduser("~/.gam/fido2_dpop_credential.json"), "w").write(json.dumps(generate_signing_credential().to_dict(), indent=2))'
+chmod 600 ~/.gam/fido2_dpop_credential.json
+gam config dpop true dpop_backend fido2_previewsign dpop_backend_config "fido2_dpop_credential.json" save
+```
+
+*(If your YubiKey uses a FIDO2 PIN and `require_uv=True`, you can append `,<PIN>` after the inline JSON or filename — e.g., `"fido2_dpop_credential.json,<PIN>"`.)*
+
+Proceed to **[Stage 2: Confirm Local Signing with `gam check dpop`](#stage-2-confirm-local-signing-with-gam-check-dpop)**.
+
+---
+
 ### PKCS#11 — HSM / Smart Card (Cross-Platform)
 
 The `pkcs11` backend works with PKCS#11 (Cryptoki) hardware security modules and smart cards across Linux, macOS, and Windows using an [RFC 7512](https://www.rfc-editor.org/rfc/rfc7512) `pkcs11:` URI. Supports `ES256` (P-256), `ES384` (P-384), and `RS256` (RSA).
@@ -468,7 +508,7 @@ What each line checks:
 | Check | `OK` | `WARN` | `ERROR` |
 |-------|------|--------|---------|
 | `Signer Initialization` | Backend loaded & key found | — | Missing key, wrong config/PIN, locked card, or permission error (exits non-zero) |
-| `Key Storage` | Key resides in hardware (`Secure Enclave`, `Microsoft Platform Crypto Provider`, `TPM 2.0 (...)`, `YubiKey PIV`, `PKCS#11 (...)`) | Key is software-backed (`Software TPM`, `Microsoft Software Key Storage Provider`, non-token macOS Keychain, `SoftHSM`, PEM file) or unverified (`ecp`) | — |
+| `Key Storage` | Key resides in hardware (`Secure Enclave`, `Microsoft Platform Crypto Provider`, `TPM 2.0 (...)`, `YubiKey PIV`, `FIDO2 previewSign`, `PKCS#11 (...)`) | Key is software-backed (`Software TPM`, `Microsoft Software Key Storage Provider`, non-token macOS Keychain, `SoftHSM`, PEM file) or unverified (`ecp`) | — |
 | `Public JWK & Thumbprint` | Valid public key, no private fields exposed, valid thumbprint | — | Invalid/corrupt JWK |
 | `Local Test Signature` | Payload signed & signature verified against `public_jwk` | — | Signing failed or verification failed |
 | `DPoP Proof & Signature Verification` | RFC 9449 `dpop+jwt` proof created & cryptographically verified | — | Proof creation or verification failed |
@@ -483,6 +523,7 @@ Common `Signer Initialization` errors:
 | `DPoP Windows Certificate Store error` | Verify the cert exists (`Cert:\CurrentUser\My` or `Cert:\LocalMachine\My` with `,local_machine`), check `certutil` for `Missing stored keyset`, and use `thumbprint:<HEX>` if multiple certs match. |
 | `DPoP Linux TPM error` | Check `ls -l /dev/tpmrm0`, `id` (`tss` group), `tpm2_getcap handles-persistent`, and `tpm2_readpublic -c <handle>`. |
 | `DPoP YubiKey error` | Ensure the YubiKey is plugged in, `pcscd` is running / `scdaemon` isn't locking it, and `serial,slot,pin` is valid. |
+| `DPoP FIDO2 previewSign error` | Ensure a FIDO2 key with firmware 5.8+ (`previewSign`) is plugged in over USB HID and `dpop_backend_config` holds valid `to_dict()` JSON (or JSON file path). |
 | `DPoP PKCS#11 error` | Verify `module-path=`/`module-name=`, `token=`/`object=`/`id=`, and `pin-source=`/`pin-value=` with `pkcs11-tool`. |
 | `DPoP software key error` | Verify the PEM file path and permissions (`chmod 600`). |
 
@@ -568,7 +609,7 @@ All DPoP settings are stored in `gam.cfg`:
 | Setting | Values | Default | Description |
 |---------|--------|---------|-------------|
 | `dpop` | `true` / `false` | `false` | Enable or disable DPoP |
-| `dpop_backend` | `software`, `macos_secureenclave`, `windows_certstore`, `linux_tpm`, `yubikey`, `pkcs11`, `ecp`, `ephemeral` | `software` | Which signer backend to use |
+| `dpop_backend` | `software`, `macos_secureenclave`, `windows_certstore`, `linux_tpm`, `yubikey`, `fido2_previewsign`, `pkcs11`, `ecp`, `ephemeral` | `software` | Which signer backend to use |
 | `dpop_backend_config` | *(varies by backend)* | *(empty)* | Backend-specific configuration |
 
 ### `dpop_backend_config` Format by Backend
@@ -580,6 +621,7 @@ All DPoP settings are stored in `gam.cfg`:
 | `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `thumbprint:A1B2C3...` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000003` |
 | `yubikey` | `serial,slot,pin` | `,,mypin` |
+| `fido2_previewsign` | `<inline_json\|json_file_path>[,pin]` | `{"credential_id":...}` |
 | `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=hsm-slot;object=dpop-key?module-path=/path/to/libpkcs11.so` |
 
 ---

@@ -65,6 +65,9 @@ pkcs11 = [
 ephemeral = [
     "dpop-signer-ephemeral @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=ephemeral",
 ]
+fido2_previewsign = [
+    "dpop-signer-fido2-previewsign @ git+https://github.com/jay0lee/dpop-signers.git#subdirectory=fido2-previewsign",
+]
 
 [project.scripts]
 gam = "gam.__main__:main"

@@ -5309,6 +5309,7 @@ _DPOP_PLUGIN_BACKENDS = {
   'windows_certstore': ('dpop_signer_windows_certstore', 'dpop-signer-windows-certstore', 'WindowsCertStoreDPoPSigner', 'WindowsCertStoreDPoPError', 'Windows Certificate Store'),
   'pkcs11': ('dpop_signer_pkcs11', 'dpop-signer-pkcs11', 'PKCS11DPoPSigner', 'PKCS11DPoPError', 'PKCS#11'),
   'ephemeral': ('dpop_signer_ephemeral', 'dpop-signer-ephemeral', 'EphemeralDPoPSigner', 'EphemeralDPoPError', 'ephemeral'),
+  'fido2_previewsign': ('dpop_signer_fido2_previewsign', 'dpop-signer-fido2-previewsign', 'Fido2PreviewSignDPoPSigner', 'Fido2PreviewSignError', 'FIDO2 previewSign'),
 }
 
 def _resolveDPoPConfigPath(path):
@@ -5350,6 +5351,9 @@ def _getDPoPSigner(exitOnError=True):
   except ImportError:
     _fail(USAGE_ERROR_RC, f'DPoP {backend} backend requires the {pkg_name} package. Install with: pip install "gam7[{backend}]"')
 
+  signer_cls = getattr(mod, cls_name)
+  err_cls = getattr(mod, err_name) if err_name else ()
+  factory = signer_cls
   parts = [p.strip() for p in config.split(',')] if config else []
   def _part(idx, default=None):
     return parts[idx] if len(parts) > idx and parts[idx] else default
@@ -5394,14 +5398,47 @@ def _getDPoPSigner(exitOnError=True):
     if not config:
       _fail(USAGE_ERROR_RC, 'DPoP pkcs11 backend requires dpop_backend_config set to an RFC 7512 pkcs11: URI')
     kwargs = {'uri': config}
+  elif backend == 'fido2_previewsign':
+    if not config:
+      _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign backend requires dpop_backend_config set to inline credential JSON or a JSON file path ([,pin])')
+    pin = None
+    stripped = config.lstrip()
+    if stripped.startswith('{'):
+      try:
+        cred_data, idx = json.JSONDecoder().raw_decode(stripped)
+      except Exception as e:
+        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential JSON invalid: {e}')
+      if not isinstance(cred_data, dict):
+        _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign credential JSON must be an object')
+      tail = stripped[idx:].strip()
+      if tail:
+        if not tail.startswith(','):
+          _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign unexpected trailing config after JSON: {tail}')
+        pin = tail[1:].strip() or None
+    else:
+      cred_path_raw = config
+      if not os.path.isfile(_resolveDPoPConfigPath(config)) and ',' in config:
+        cred_path_raw, pin = config.split(',', 1)
+        cred_path_raw = cred_path_raw.strip()
+        pin = pin.strip() or None
+      cred_path = _resolveDPoPConfigPath(cred_path_raw)
+      if not os.path.isfile(cred_path):
+        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential file not found: {cred_path}')
+      cred_json = readFile(cred_path)
+      if not cred_json:
+        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential file could not be read: {cred_path}')
+      try:
+        cred_data = json.loads(cred_json)
+      except Exception as e:
+        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential JSON invalid ({cred_path}): {e}')
+    factory = signer_cls.from_dict
+    kwargs = {'data': cred_data, 'pin': pin}
   else:  # ephemeral
     kwargs = {}
 
-  signer_cls = getattr(mod, cls_name)
-  err_cls = getattr(mod, err_name) if err_name else ()
   try:
-    return signer_cls(**kwargs)
-  except ValueError as e:
+    return factory(**kwargs)
+  except (KeyError, ValueError) as e:
     _fail(USAGE_ERROR_RC, f'DPoP {backend} dpop_backend_config: {e}')
   except err_cls as e:
     _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP {label} error: {e}')
@@ -5559,6 +5596,8 @@ def _getDPoPSignerBackingInfo(backend, signer):
     return ('software', 'in-memory ephemeral key')
   if backend == 'yubikey':
     return ('hardware', 'YubiKey PIV')
+  if backend == 'fido2_previewsign':
+    return ('hardware', 'FIDO2 previewSign')
   if backend == 'windows_certstore':
     return _inspectWindowsCNGKey(signer)
   if backend == 'macos_secureenclave':

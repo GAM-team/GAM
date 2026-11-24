@@ -600,7 +600,7 @@ VAR_INFO = {
   DEVICE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 200)},
   DOMAIN: {VAR_TYPE: TYPE_STRING, VAR_ENVVAR: 'GA_DOMAIN', VAR_LIMITS: (0, None)},
   DPOP: {VAR_TYPE: TYPE_BOOLEAN},
-  DPOP_BACKEND: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'software': 'software', 'yubikey': 'yubikey', 'ecp': 'ecp', 'macos_secureenclave': 'macos_secureenclave', 'linux_tpm': 'linux_tpm', 'pkcs11': 'pkcs11', 'windows_certstore': 'windows_certstore', 'windows_tpm': 'windows_certstore', 'ephemeral': 'ephemeral'}},
+  DPOP_BACKEND: {VAR_TYPE: TYPE_CHOICE, VAR_CHOICES: {'software': 'software', 'yubikey': 'yubikey', 'ecp': 'ecp', 'macos_secureenclave': 'macos_secureenclave', 'linux_tpm': 'linux_tpm', 'pkcs11': 'pkcs11', 'windows_certstore': 'windows_certstore', 'windows_tpm': 'windows_certstore', 'ephemeral': 'ephemeral', 'fido2_previewsign': 'fido2_previewsign'}},
   DPOP_BACKEND_CONFIG: {VAR_TYPE: TYPE_STRING, VAR_LIMITS: (0, None)},
   DRIVE_DIR: {VAR_TYPE: TYPE_DIRECTORY, VAR_ENVVAR: 'GAMDRIVEDIR'},
   DRIVE_MAX_RESULTS: {VAR_TYPE: TYPE_INTEGER, VAR_LIMITS: (1, 1000)},
