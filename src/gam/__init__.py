@@ -5400,37 +5400,20 @@ def _getDPoPSigner(exitOnError=True):
     kwargs = {'uri': config}
   elif backend == 'fido2_previewsign':
     if not config:
-      _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign backend requires dpop_backend_config set to inline credential JSON or a JSON file path ([,pin])')
+      _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign backend requires dpop_backend_config set to credential JSON ([,pin])')
     pin = None
     stripped = config.lstrip()
-    if stripped.startswith('{'):
-      try:
-        cred_data, idx = json.JSONDecoder().raw_decode(stripped)
-      except Exception as e:
-        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential JSON invalid: {e}')
-      if not isinstance(cred_data, dict):
-        _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign credential JSON must be an object')
-      tail = stripped[idx:].strip()
-      if tail:
-        if not tail.startswith(','):
-          _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign unexpected trailing config after JSON: {tail}')
-        pin = tail[1:].strip() or None
-    else:
-      cred_path_raw = config
-      if not os.path.isfile(_resolveDPoPConfigPath(config)) and ',' in config:
-        cred_path_raw, pin = config.split(',', 1)
-        cred_path_raw = cred_path_raw.strip()
-        pin = pin.strip() or None
-      cred_path = _resolveDPoPConfigPath(cred_path_raw)
-      if not os.path.isfile(cred_path):
-        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential file not found: {cred_path}')
-      cred_json = readFile(cred_path)
-      if not cred_json:
-        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential file could not be read: {cred_path}')
-      try:
-        cred_data = json.loads(cred_json)
-      except Exception as e:
-        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential JSON invalid ({cred_path}): {e}')
+    try:
+      cred_data, idx = json.JSONDecoder().raw_decode(stripped)
+    except Exception as e:
+      _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign credential JSON invalid: {e}')
+    if not isinstance(cred_data, dict):
+      _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign credential JSON must be an object')
+    tail = stripped[idx:].strip()
+    if tail:
+      if not tail.startswith(','):
+        _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign unexpected trailing config after JSON: {tail}')
+      pin = tail[1:].strip() or None
     factory = signer_cls.from_dict
     kwargs = {'data': cred_data, 'pin': pin}
   else:  # ephemeral

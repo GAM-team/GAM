@@ -389,23 +389,13 @@ The `fido2_previewsign` backend uses the experimental FIDO2 / CTAP 2.3 [`preview
 
 #### 1. Create the Key (One-Time Touch) & 2. Configure GAM
 
-**Option A — Store directly in `gam.cfg` (`dpop_backend_config`):**
-
 ```bash
 # Plug in your YubiKey 5.8+ and touch it once when prompted:
 CRED=$(python3 -c 'import json; from dpop_signer_fido2_previewsign import generate_signing_credential; print(json.dumps(generate_signing_credential().to_dict(), separators=(",", ":")))')
 gam config dpop true dpop_backend fido2_previewsign dpop_backend_config "$CRED" save
 ```
 
-**Option B — Or save to a JSON file in `~/.gam`:**
-
-```bash
-python3 -c 'import json, os; from dpop_signer_fido2_previewsign import generate_signing_credential; open(os.path.expanduser("~/.gam/fido2_dpop_credential.json"), "w").write(json.dumps(generate_signing_credential().to_dict(), indent=2))'
-chmod 600 ~/.gam/fido2_dpop_credential.json
-gam config dpop true dpop_backend fido2_previewsign dpop_backend_config "fido2_dpop_credential.json" save
-```
-
-*(If your YubiKey uses a FIDO2 PIN and `require_uv=True`, append `,<PIN>` after the inline JSON or filename.)*
+*(If your YubiKey uses a FIDO2 PIN and `require_uv=True`, append `,<PIN>` after `$CRED`, e.g., `"$CRED,<PIN>"`.)*
 
 Proceed to **[Stage 2: Confirm Local Signing with `gam check dpop`](#stage-2-confirm-local-signing-with-gam-check-dpop)**.
 
@@ -522,7 +512,7 @@ Common `Signer Initialization` errors:
 | `DPoP Windows Certificate Store error` | Verify the cert exists (`Cert:\CurrentUser\My` or `Cert:\LocalMachine\My` with `,local_machine`), check `certutil` for `Missing stored keyset`, and use `thumbprint:<HEX>` if multiple certs match. |
 | `DPoP Linux TPM error` | Check `ls -l /dev/tpmrm0`, `id` (`tss` group), `tpm2_getcap handles-persistent`, and `tpm2_readpublic -c <handle>`. |
 | `DPoP YubiKey error` | Ensure the YubiKey is plugged in, `pcscd` is running / `scdaemon` isn't locking it, and `serial,slot,pin` is valid. |
-| `DPoP FIDO2 previewSign error` | Ensure a FIDO2 key with firmware 5.8+ (`previewSign`) is plugged in over USB HID and `dpop_backend_config` holds valid `to_dict()` JSON (or JSON file path). |
+| `DPoP FIDO2 previewSign error` | Ensure a FIDO2 key with firmware 5.8+ (`previewSign`) is plugged in over USB HID and `dpop_backend_config` holds valid `to_dict()` JSON. |
 | `DPoP PKCS#11 error` | Verify `module-path=`/`module-name=`, `token=`/`object=`/`id=`, and `pin-source=`/`pin-value=` with `pkcs11-tool`. |
 | `DPoP software key error` | Verify the PEM file path and permissions (`chmod 600`). |
 
@@ -620,7 +610,7 @@ All DPoP settings are stored in `gam.cfg`:
 | `windows_certstore` | `<subject\|thumbprint:HEX>[,current_user\|local_machine]` | `thumbprint:A1B2C3...` |
 | `linux_tpm` | `handle[,tcti[,auth]]` | `0x81000003` |
 | `yubikey` | `serial,slot,pin` | `,,mypin` |
-| `fido2_previewsign` | `<inline_json\|json_file_path>[,pin]` | `{"credential_id":...}` |
+| `fido2_previewsign` | `<credential_json>[,pin]` | `{"credential_id":...}` |
 | `pkcs11` | RFC 7512 `pkcs11:` URI | `pkcs11:token=hsm-slot;object=dpop-key?module-path=/path/to/libpkcs11.so` |
 
 ---
