@@ -5015,6 +5015,10 @@ class signjwtSignJwt(google.auth.crypt.Signer):
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
     # refresh here so we can use the proper request from above
     httpObj.credentials.refresh(request)
+    # Load the discovery document without credentials first; getService caches it.
+    # With a quota project in ADC, the authorized request carries x-goog-user-project,
+    # which the discovery endpoint rejects with 403 USER_PROJECT_DENIED.
+    getService(API.IAM_CREDENTIALS, getHttpObj())
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
