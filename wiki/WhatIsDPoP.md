@@ -383,14 +383,13 @@ The `fido2_previewsign` backend uses the experimental FIDO2 / CTAP 2.3 [`preview
 
 **Requirements & Real-World Hardware Notes:**
 - **Compatible CTAP 2.3 authenticator over USB HID:** Requires firmware with `previewSign` support (such as YubiKey 5 Series / Yubico Security Key **5.8+**; `ykman info`). Bluetooth and NFC are not supported for CTAP HID.
-- **No private key leaves the YubiKey, but client-side metadata is required:** Unlike PIV slots (`9c`) or TPM persistent handles (`0x81000001`), YubiKey 5.8 uses client-derived ARKG (`_COSE_ESP256_SPLIT_ARKG`) keys. Even with a resident key (`resident_key=True`), CTAP2 `CredentialManagement` cannot return `previewSign`'s inner `key_handle` or the client-side ARKG derivation arguments (`additional_args`), so GAM needs the JSON metadata produced by `generate_signing_credential().to_dict()` (no private key material is stored in it).
-- **Unattended by default:** `generate_signing_credential()` requires **one physical touch** when provisioning (`require_up=False` default), and subsequent DPoP signatures run silently without prompts. Pass `require_up=True` (touch per sign) or `require_uv=True` (PIN/biometric per sign) if desired.
-- **Provisioning Python dependency:** Because GAM does not provision keys and the standalone binary embeds its dependencies, run the one-time `generate_signing_credential()` command with a Python environment that has `dpop-signer-fido2-previewsign` (and `fido2 >= 2.2.0`) installed. Once configured, standard GAM builds run `gam check dpop` and `gam` natively.
+- **Unattended by default:** Key creation requires **one physical touch**, after which DPoP signatures run silently without prompts (`require_up=False` default; pass `require_up=True` or `require_uv=True` if you want touch or PIN/biometric per sign).
+- **Provisioning Python dependency:** Because GAM does not provision keys, run the one-time key creation command using Python with `dpop-signer-fido2-previewsign` installed (`pip install dpop-signer-fido2-previewsign`), saving the public/wrapped credential descriptor into `dpop_backend_config` (no private key leaves the YubiKey). Once configured, standard GAM builds run `gam check dpop` and `gam` natively.
 - **Windows WebAuthn caveat:** Windows may intercept direct FIDO2 USB HID access in some sessions (if HID fails with permission errors, run from an elevated shell or check Windows WebAuthn restrictions).
 
-#### 1. Generate Credential Metadata (One-Time Touch) & 2. Configure GAM
+#### 1. Create the Key (One-Time Touch) & 2. Configure GAM
 
-**Option A — Store credential metadata inline in `gam.cfg` (no extra file on disk):**
+**Option A — Store directly in `gam.cfg` (`dpop_backend_config`):**
 
 ```bash
 # Plug in your YubiKey 5.8+ and touch it once when prompted:
@@ -398,7 +397,7 @@ CRED=$(python3 -c 'import json; from dpop_signer_fido2_previewsign import genera
 gam config dpop true dpop_backend fido2_previewsign dpop_backend_config "$CRED" save
 ```
 
-**Option B — Store credential metadata in a JSON file inside `~/.gam`:**
+**Option B — Or save to a JSON file in `~/.gam`:**
 
 ```bash
 python3 -c 'import json, os; from dpop_signer_fido2_previewsign import generate_signing_credential; open(os.path.expanduser("~/.gam/fido2_dpop_credential.json"), "w").write(json.dumps(generate_signing_credential().to_dict(), indent=2))'
@@ -406,7 +405,7 @@ chmod 600 ~/.gam/fido2_dpop_credential.json
 gam config dpop true dpop_backend fido2_previewsign dpop_backend_config "fido2_dpop_credential.json" save
 ```
 
-*(If your YubiKey uses a FIDO2 PIN and `require_uv=True`, you can append `,<PIN>` after the inline JSON or filename — e.g., `"fido2_dpop_credential.json,<PIN>"`.)*
+*(If your YubiKey uses a FIDO2 PIN and `require_uv=True`, append `,<PIN>` after the inline JSON or filename.)*
 
 Proceed to **[Stage 2: Confirm Local Signing with `gam check dpop`](#stage-2-confirm-local-signing-with-gam-check-dpop)**.
 
