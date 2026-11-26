@@ -95,6 +95,9 @@ import wsgiref.simple_server
 import wsgiref.util
 import zipfile
 
+# Suppress urllib3 v2 NotOpenSSLWarning when running against BoringSSL Python builds
+warnings.filterwarnings('ignore', message=r'urllib3 v2 only supports OpenSSL.*')
+
 # disable legacy stuff we don't use and isn't secure
 os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = "1"
 from cryptography import x509

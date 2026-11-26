@@ -141,10 +141,10 @@ jobs:
           service_account: github-actions-testing-for-gam@gam-project-wyo-lub-ivl.iam.gserviceaccount.com
           access_token_scopes: https://www.googleapis.com/auth/iam
 
-      - name: Setup Latest Python and OpenSSL
+      - name: Setup Latest Python and BoringSSL
         if: matrix.goal == 'build'
         id: setup-python
-        uses: jay0lee/python-openssl-latest@v1
+        uses: jay0lee/python-boringssl-latest@v1
 
       - name: Use pre-compiled Python for testing
         if: matrix.python != ''
@@ -254,7 +254,7 @@ jobs:
           fi
           echo "staticx=${staticx}" >> $GITHUB_ENV
           echo "COMPILED_PYTHON_VERSION=${{ steps.setup-python.outputs.python-version }}" >> $GITHUB_ENV
-          echo "COMPILED_OPENSSL_VERSION=${{ steps.setup-python.outputs.openssl-version }}" >> $GITHUB_ENV
+          echo "COMPILED_BORINGSSL_VERSION=${{ steps.setup-python.outputs.boringssl-version }}" >> $GITHUB_ENV
 
       - name: Run Python
         run: |
@@ -285,17 +285,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ([ "$RUNNER_OS" == "Windows" ] && [ "$RUNNER_ARCH" == "ARM64" ]); then
-            # custom cryptography wheel for win arm64 since the project doesn't provide one:
-            # https://github.com/pyca/cryptography/issues/14293
-            gh release download --repo "jay0lee/cryptography-wheels" --pattern "*[^t]-win_arm64.whl" --clobber
-            "$PYTHON" -m pip install cryptography-*.whl
-          elif [[ "$RUNNER_OS" == "macOS" && "$RUNNER_ARCH" == "x86_64" ]]; then
-            # custom cryptography wheel for macos x86_64 since it's no longer standard
-            gh release download --repo "jay0lee/cryptography-wheels" --pattern "*[^t]-macosx_15_0_x86_64.whl" --clobber
-            "$PYTHON" -m pip install cryptography-*.whl
+          if [[ "${{ matrix.freethreaded }}" != "true" ]]; then
+            mkdir -p ./cryptography-wheels
+            gh release download --repo "jay0lee/cryptography-wheels" --pattern "*.whl" --dir ./cryptography-wheels --clobber
+            "$PYTHON" -m pip install --no-index --no-deps --find-links ./cryptography-wheels cryptography
+            rm -rf ./cryptography-wheels
           fi
           "$PYTHON" -m pip install ..[yubikey]
+          if [[ "${{ matrix.freethreaded }}" != "true" ]]; then
+            "$PYTHON" -c '
+          from cryptography.hazmat.backends.openssl.backend import backend
+          loaded = backend.openssl_version_text()
+          linked = backend._ffi.string(backend._lib.OPENSSL_VERSION_TEXT).decode("ascii")
+          print(f"cryptography backend: loaded={loaded!r}, linked={linked!r}")
+          assert "BoringSSL" in loaded and "BoringSSL" in linked, f"Expected BoringSSL cryptography backend, got {loaded!r} / {linked!r}"
+          '
+          fi
 
       - name: Install PyInstaller
         if: matrix.goal == 'build'
@@ -312,9 +317,9 @@ jobs:
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             # Tell our gam.spec to use our code sign certificate
             export codesign_identity="Jay Lee"
-           # Point to our compiled OpenSSL so PyInstaller picks it up
+           # Point to our compiled BoringSSL so PyInstaller picks it up
            # instead of Homebrew's version, without breaking pip cryptography
-            export DYLD_LIBRARY_PATH="${OPENSSL_INSTALL_PATH}/lib:${DYLD_LIBRARY_PATH:-}"
+            export DYLD_LIBRARY_PATH="${BORINGSSL_INSTALL_PATH}/lib:${DYLD_LIBRARY_PATH:-}"
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             # Work around issue where PyInstaller picks up python3.dll from other Python versions
             # https://github.com/pyinstaller/pyinstaller/issues/7102
@@ -592,14 +597,27 @@ jobs:
             echo "ERROR: Tried to compile Python ${COMPILED_PYTHON_VERSION} but ended up with ${this_python}"
             exit 1
           fi
-          export openssl_line=$(echo -e "${voutput}" | grep "OpenSSL ")
-          export openssl_arr=($openssl_line)
-          export this_openssl="${openssl_arr[1]}"
-          if [[ "${this_openssl}" != "${COMPILED_OPENSSL_VERSION}" ]]; then
-            echo "ERROR: Tried to compile OpenSSL ${COMPILED_OPENSSL_VERSION} but ended up with ${this_openssl}"
+          export boringssl_line=$(echo -e "${voutput}" | grep "^BoringSSL ")
+          export boringssl_arr=($boringssl_line)
+          export this_boringssl="${boringssl_arr[1]}"
+          if [[ "${this_boringssl}" != "${COMPILED_BORINGSSL_VERSION}" ]]; then
+            echo "ERROR: Tried to compile BoringSSL ${COMPILED_BORINGSSL_VERSION} but ended up with ${this_boringssl}"
             exit 1
           fi
-          echo "We successfully compiled Python ${this_python} and OpenSSL ${this_openssl}"
+          echo "We successfully compiled Python ${this_python} and BoringSSL ${this_boringssl}"
+          echo "Verifying built GAM artifact contains no OpenSSL shared libraries..."
+          "$PYTHON" - <<'PYEOF'
+          import os, pathlib, re, sys
+          toc = pathlib.Path("build/gam/Analysis-00.toc").read_text(encoding="utf-8", errors="replace")
+          pat = re.compile(r"(?:^|[/\\\\'\"])(?:lib)?(?:ssl|crypto)[-_0-9.]*\.(?:so(?:\.[0-9]+)*|dylib|dll)(?:['\"]|$)", re.IGNORECASE | re.MULTILINE)
+          hits = pat.findall(toc)
+          assert not hits, f"Found unexpected OpenSSL shared libraries in Analysis-00.toc: {hits}"
+          gampath = pathlib.Path(os.environ["gampath"])
+          if gampath.is_dir():
+              disk_hits = [str(p) for p in gampath.rglob("*") if p.is_file() and re.match(r"^(?:lib)?(?:ssl|crypto)[-_0-9.]*\.(?:so(?:\.[0-9]+)*|dylib|dll)$", p.name, re.I)]
+              assert not disk_hits, f"Found unexpected OpenSSL shared libraries in {gampath}: {disk_hits}"
+          print("Verified: zero OpenSSL shared libraries in GAM PyInstaller artifact.")
+          PYEOF
 
       - name: Live API tests
         if: (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
