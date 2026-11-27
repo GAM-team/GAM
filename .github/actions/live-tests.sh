@@ -7,9 +7,6 @@
 set -eo pipefail
 
 export GAM_THREADS="${GAM_THREADS:-5}"
-# Skip google-auth GCE metadata server probes (169.254.169.254), which time out
-# for ~4-5s on every SignJWT call on Apple-hosted macOS GitHub runners.
-export NO_GCE_CHECK="true"
 
 echo "### GAM Execution Report" >> "${GITHUB_STEP_SUMMARY}"
 echo "| # | Command | Status | Exit Code |" >> "${GITHUB_STEP_SUMMARY}"
@@ -284,14 +281,12 @@ export newalias="${newbase}-alias@pdl.jaylee.us"
 export newbuilding="${newbase}-building"
 export newresource="${newbase}-resource"
 export newou="aaaGithub Actions/${newbase}"
-export newschema="gha_test_${JID}_${epoch_sec}"
 
 # Track current-run ephemeral resources for best-effort EXIT trap cleanup if a step fails mid-run.
 cleanup_ou=""
 cleanup_user=""
 cleanup_group=""
 cleanup_cigroup=""
-cleanup_schema=""
 cleanup_building=""
 cleanup_resource=""
 cleanup_feat1=""
@@ -358,7 +353,6 @@ cleanup_current_run() {
     $gam redirect csv ./trap-devices.csv print devices nopersonaldevices nodeviceusers filter "serial:${cleanup_devicesn}" >/dev/null 2>&1
     $gam csv ./trap-devices.csv gam delete device id ~name >/dev/null 2>&1
   fi
-  [[ -n "${cleanup_schema}" ]] && $gam select nodasa delete schema "${cleanup_schema}" >/dev/null 2>&1
   [[ -n "${cleanup_resource}" ]] && $gam delete resource "${cleanup_resource}" >/dev/null 2>&1
   [[ -n "${cleanup_feat1}" ]] && $gam delete feature "${cleanup_feat1}" >/dev/null 2>&1
   [[ -n "${cleanup_feat2}" ]] && $gam delete feature "${cleanup_feat2}" >/dev/null 2>&1
@@ -395,12 +389,6 @@ run_gam select nodasa config csv_output_row_filter "name:regex:gha_test_${JID}_"
 if filter_stale_csv ./vm-closed.csv; then
   bump_cmd_total 1
   run_gam select nodasa csv ./vm-closed.csv gam update vaultmatter "id:~~matterId~~" action delete
-fi
-
-run_gam select nodasa config csv_output_row_filter "schemaName:regex:^gha_test_${JID}_" redirect csv ./schemas.csv print schemas
-if filter_stale_csv ./schemas.csv; then
-  bump_cmd_total 1
-  run_gam -a "0 50" select nodasa csv ./schemas.csv gam delete schema ~schemaName
 fi
 
 run_gam config csv_output_row_filter "name:regex:gha_test_${JID}_" redirect csv ./features.csv print features
@@ -538,12 +526,9 @@ run_gam select nodasa redirect csv ./chromepolicies.csv print chromepolicies ou 
 run_gam -r 2 select nodasa update chromepolicy chrome.users.QrCodeGeneratorEnabled qrCodeGeneratorEnabled false ou "${newou}"
 run_gam -r 2 select nodasa delete chromepolicy chrome.users.QrCodeGeneratorEnabled ou "${newou}"
 
-# Directory Custom Schema (read permanent `gha` schema; create/delete ephemeral schema without immediate read-back)
+# Directory Custom Schema (read-only against permanent `gha` schema; deleted schemas
+# retain hidden tombstones in Google Directory that exhaust the 100-schema cap)
 run_gam select nodasa info schema gha
-run_gam -r 2 select nodasa create schema "${newschema}" field badge type string endfield
-cleanup_schema="${newschema}"
-run_gam -a "0 56" -r 2 select nodasa delete schema "${newschema}"
-cleanup_schema=""
 
 # Directory User CRUD, Photo, Alias, License, and OU move tests on ephemeral $newuser
 run_gam create user "${newuser}" firstname GHA lastname "${JID}" displayname "Github Actions ${JID}" password uniquerandom recoveryphone 12125121110 recoveryemail jay0lee@gmail.com gha.jid "${JID}" languages en+,en-GB- ou "${newou}"
