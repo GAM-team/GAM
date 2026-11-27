@@ -87,7 +87,7 @@ import threading
 import time
 from traceback import print_exc
 import types
-from urllib.parse import quote, quote_plus, unquote, urlencode, urlparse, parse_qs
+from urllib.parse import quote, quote_plus, unquote, urlencode, urlparse
 import uuid
 import warnings
 import webbrowser
@@ -11549,7 +11549,7 @@ def _waitForHttpClient(d):
     webbrowser.open(d['auth_url'], new=1, autoraise=True)
   try:
     local_server.handle_request()
-    authorization_response = wsgi_app.last_request_uri.replace("http", "https")
+    authorization_response = wsgi_app.last_request_uri.replace('http://', 'https://', 1)
     d['code'] = authorization_response
   except:
     pass
@@ -11600,28 +11600,20 @@ class _GamOauthFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     if 'code' not in d:
       systemErrorExit(SYSTEM_ERROR_RC, Msg.AUTHENTICATION_FLOW_FAILED)
     while True:
-      code = d['code']
-      if code.startswith('http'):
-        parsed_url = urlparse(code)
-        parsed_params = parse_qs(parsed_url.query)
-        code = parsed_params.get('code', [None])[0]
+      code_or_response = d['code'].strip()
       try:
-        fetch_args = {'code': code}
+        if code_or_response.startswith(('http://', 'https://')):
+          # Pass the full callback URL (normalized to https:// for oauthlib) so fetch_token
+          # validates the returned OAuth state parameter instead of discarding it.
+          # See https://github.com/GAM-team/GAM/issues/2014
+          fetch_args = {'authorization_response': code_or_response.replace('http://', 'https://', 1)}
+        else:
+          # Preserve manual raw authorization code input fallback.
+          fetch_args = {'code': code_or_response}
         if GC.Values[GC.CACERTS_PEM]:
           fetch_args['verify'] = GC.Values[GC.CACERTS_PEM]
         self.fetch_token(**fetch_args)
         break
-#      code_or_response = d['code']
-#      try:
-#        if code_or_response.startswith('http'):
-#          fetch_args = {'authorization_response': code_or_response}
-#        else:
-#          # Preserve the legacy/manual raw-code input path.
-#          fetch_args = {'code': code_or_response}
-#        if GC.Values[GC.CACERTS_PEM]:
-#          fetch_args['verify'] = GC.Values[GC.CACERTS_PEM]
-#        self.fetch_token(**fetch_args)
-#        break
       except Exception as e:
         if not userInput:
           systemErrorExit(INVALID_TOKEN_RC, str(e))
