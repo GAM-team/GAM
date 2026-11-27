@@ -5043,8 +5043,12 @@ class signjwtSignJwt(google.auth.crypt.Signer):
           credentials.refresh(request)
         except google.auth.exceptions.RefreshError as e:
           systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-    httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
+    # Fetch iamcredentials discovery unauthenticated first; ADC with a quota_project_id
+    # sends x-goog-user-project which $discovery/rest rejects with 403 USER_PROJECT_DENIED.
+    # See https://github.com/GAM-team/GAM/issues/2018
+    httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
+    iamc._http = transportAuthorizedHttp(credentials, http=httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
     signed_jwt = response.get('signedJwt')
