@@ -21,6 +21,8 @@
 # The following GM_XXX constants are arbitrary but must be unique
 # Most errors print a message and bail out with a return code
 # Some commands want to set a non-zero return code but not bail
+# Cached Application Default Credentials for SignJWT
+ADC_CREDENTIALS = 'adcc'
 # GAM admin user from oauth2.txt or oauth2service.json
 ADMIN = 'admn'
 # Number/length of API call retries
@@ -229,6 +231,7 @@ REDIRECT_QUEUE_END = 'end'
 REDIRECT_QUEUE_EOF = 'eof'
 #
 Globals = {
+  ADC_CREDENTIALS: None,
   ADMIN: None,
   API_CALLS_RETRY_DATA: {},
   CACHE_DIR: None,
@@ -287,7 +290,7 @@ Globals = {
   GAM_PATH: '.',
   GAM_TYPE: '',
   HTTP_OBJECT: None,
-  IS_ON_GCE: False,
+  IS_ON_GCE: None,
   LAST_GOT_MSG_LEN: 0,
   LICENSE_SKUS: [],
   MAKE_BUILDING_ID_NAME_MAP: True,

@@ -25,7 +25,7 @@ https://github.com/GAM-team/GAM/wiki
 """
 
 __author__ = 'GAM Team <google-apps-manager@googlegroups.com>'
-__version__ = '7.52.05'
+__version__ = '7.53.00'
 __license__ = 'Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)'
 
 # pylint: disable=wrong-import-position
@@ -87,13 +87,16 @@ import threading
 import time
 from traceback import print_exc
 import types
-from urllib.parse import quote, quote_plus, unquote, urlencode, urlparse, parse_qs
+from urllib.parse import quote, quote_plus, unquote, urlencode, urlparse
 import uuid
 import warnings
 import webbrowser
 import wsgiref.simple_server
 import wsgiref.util
 import zipfile
+
+# Suppress urllib3 v2 NotOpenSSLWarning when running against BoringSSL Python builds
+warnings.filterwarnings('ignore', message=r'urllib3 v2 only supports OpenSSL.*')
 
 # disable legacy stuff we don't use and isn't secure
 os.environ['CRYPTOGRAPHY_OPENSSL_NO_LEGACY'] = "1"
@@ -5039,13 +5042,31 @@ class signjwtCredentials(google.oauth2.service_account.Credentials):
     token = self._signer(payload)
     return token
 
+_ADC_LOCK = threading.RLock()
+
+def _has_local_adc_file():
+  ''' Return True if explicit or gcloud ADC credentials file is present. '''
+  if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'):
+    return True
+  try:
+    from google.auth import _cloud_sdk
+    return os.path.isfile(_cloud_sdk.get_application_default_credentials_path())
+  except Exception:  # pylint: disable=broad-exception-caught
+    return False
+
 def get_adc_request():
-  request = google.auth.transport.requests.Request()
-  if GM.Globals[GM.IS_ON_GCE]:
-    return request
-  if gce_metadata.is_on_gce(request):
-    GM.Globals[GM.IS_ON_GCE] = True
-    return request
+  # Explicit GOOGLE_APPLICATION_CREDENTIALS or gcloud ADC file takes precedence
+  # over GCE metadata in google.auth.default(), so skip probing 169.254.169.254.
+  if _has_local_adc_file():
+    return transportCreateRequest()
+  with _ADC_LOCK:
+    if GM.Globals[GM.IS_ON_GCE] is None:
+      request = google.auth.transport.requests.Request()
+      GM.Globals[GM.IS_ON_GCE] = gce_metadata.is_on_gce(request)
+      if GM.Globals[GM.IS_ON_GCE]:
+        return request
+    elif GM.Globals[GM.IS_ON_GCE]:
+      return google.auth.transport.requests.Request()
   return transportCreateRequest()
 
 class signjwtSignJwt(google.auth.crypt.Signer):
@@ -5062,14 +5083,26 @@ class signjwtSignJwt(google.auth.crypt.Signer):
   def sign(self, message):
     ''' Call IAM Credentials SignJWT API to get our signed JWT '''
     request = get_adc_request()
-    try:
-      credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
-    except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
-      systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-    httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
-    # refresh here so we can use the proper request from above
-    httpObj.credentials.refresh(request)
+    with _ADC_LOCK:
+      credentials = GM.Globals[GM.ADC_CREDENTIALS]
+      if credentials is None:
+        try:
+          credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
+        except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
+          systemErrorExit(API_ACCESS_DENIED_RC, str(e))
+        GM.Globals[GM.ADC_CREDENTIALS] = credentials
+      # refresh here so we can use the proper request from above
+      if not credentials.valid:
+        try:
+          credentials.refresh(request)
+        except google.auth.exceptions.RefreshError as e:
+          systemErrorExit(API_ACCESS_DENIED_RC, str(e))
+    # Fetch iamcredentials discovery unauthenticated first; ADC with a quota_project_id
+    # sends x-goog-user-project which $discovery/rest rejects with 403 USER_PROJECT_DENIED.
+    # See https://github.com/GAM-team/GAM/issues/2018
+    httpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
+    iamc._http = transportAuthorizedHttp(credentials, http=httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
     signed_jwt = response.get('signedJwt')
@@ -12093,7 +12126,7 @@ def _waitForHttpClient(d):
     webbrowser.open(d['auth_url'], new=1, autoraise=True)
   try:
     local_server.handle_request()
-    authorization_response = wsgi_app.last_request_uri.replace("http", "https")
+    authorization_response = wsgi_app.last_request_uri.replace('http://', 'https://', 1)
     d['code'] = authorization_response
   except:
     pass
@@ -12144,28 +12177,20 @@ class _GamOauthFlow(google_auth_oauthlib.flow.InstalledAppFlow):
     if 'code' not in d:
       systemErrorExit(SYSTEM_ERROR_RC, Msg.AUTHENTICATION_FLOW_FAILED)
     while True:
-      code = d['code']
-      if code.startswith('http'):
-        parsed_url = urlparse(code)
-        parsed_params = parse_qs(parsed_url.query)
-        code = parsed_params.get('code', [None])[0]
+      code_or_response = d['code'].strip()
       try:
-        fetch_args = {'code': code}
+        if code_or_response.startswith(('http://', 'https://')):
+          # Pass the full callback URL (normalized to https:// for oauthlib) so fetch_token
+          # validates the returned OAuth state parameter instead of discarding it.
+          # See https://github.com/GAM-team/GAM/issues/2014
+          fetch_args = {'authorization_response': code_or_response.replace('http://', 'https://', 1)}
+        else:
+          # Preserve manual raw authorization code input fallback.
+          fetch_args = {'code': code_or_response}
         if GC.Values[GC.CACERTS_PEM]:
           fetch_args['verify'] = GC.Values[GC.CACERTS_PEM]
         self.fetch_token(**fetch_args)
         break
-#      code_or_response = d['code']
-#      try:
-#        if code_or_response.startswith('http'):
-#          fetch_args = {'authorization_response': code_or_response}
-#        else:
-#          # Preserve the legacy/manual raw-code input path.
-#          fetch_args = {'code': code_or_response}
-#        if GC.Values[GC.CACERTS_PEM]:
-#          fetch_args['verify'] = GC.Values[GC.CACERTS_PEM]
-#        self.fetch_token(**fetch_args)
-#        break
       except Exception as e:
         if not userInput:
           systemErrorExit(INVALID_TOKEN_RC, str(e))
@@ -14493,7 +14518,8 @@ def doCreateGCPServiceAccount():
     credentials, sa_info['project_id'] = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-  credentials.refresh(request)
+  if not credentials.valid:
+    credentials.refresh(request)
   sa_info['client_email'] = credentials.service_account_email
   oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
   try:

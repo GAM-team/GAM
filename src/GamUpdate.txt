@@ -1,3 +1,7 @@
+7.53.00
+
+Replaced OpenSSL with BoringSSL.
+
 7.52.05
 
 Added option `fields <DrivePermissionsFieldNameList>` to the following commands to provide
