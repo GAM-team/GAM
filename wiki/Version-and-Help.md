@@ -4,7 +4,7 @@
 Print the current version of Gam with details
 ```
 gam version
-GAM 7.52.05 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.53.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.15.2 64-bit final
 macOS Golden Gate 27.2.1 arm64
@@ -18,7 +18,7 @@ By default, Gam checks the time offset to `admin.googleapis.com`, use `location 
 the time offset to `<HostName>`.
 ```
 gam version timeoffset
-GAM 7.52.05 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.53.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.15.2 64-bit final
 macOS Golden Gate 27.2.1 arm64
@@ -32,7 +32,7 @@ By default, Gam checks the time offset to `admin.googleapis.com`, use `location 
 the time offset to `<HostName>`.
 ```
 gam version extended
-GAM 7.52.05 - https://github.com/GAM-team/GAM - pyinstaller
+GAM 7.53.00 - https://github.com/GAM-team/GAM - pyinstaller
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.15.2 64-bit final
 macOS Golden Gate 27.2.1 arm64
@@ -40,7 +40,7 @@ Path: /Users/gamteam/bin/gam7
 Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my_customer, domain: domain.com
 Time: 2026-11-11T07:51:00-08:00
 Your system time differs from admin.googleapis.com by less than 1 second
-OpenSSL 3.5.7 9 Jun 2026
+BoringSSL 20261124-2e33b24cdb5b (API v45)
 arrow 1.4.0
 chardet 7.4.3
 charset_normalizer 3.4.7
@@ -75,7 +75,7 @@ MacOS High Sierra 10.13.6 x86_64
 Path: /Users/gamteam/bin/gam7
 Version Check:
   Current: 5.35.08
-   Latest: 7.52.05
+   Latest: 7.53.00
 echo $?
 1
 ```
@@ -101,9 +101,9 @@ Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my
 Time: 2026-11-11T07:51:00-08:00
 Version Check:
   Current: 7.52.01
-   Latest: 7.52.05
-Downloading: https://github.com/GAM-team/GAM/releases/download/v7.52.05/gam-7.52.05-macos27.0-arm64.tar.xz
-GAM updated to version 7.52.05: /Users/gamteam/bin/gam7
+   Latest: 7.53.00
+Downloading: https://github.com/GAM-team/GAM/releases/download/v7.53.00/gam-7.53.00-macos27.0-arm64.tar.xz
+GAM updated to version 7.53.00: /Users/gamteam/bin/gam7
 ```
 
 Print the current and latest versions of Gam and download the latest version and install it in `<Path>`.
@@ -121,15 +121,15 @@ Config File: /Users/gamteam/GamConfig/gam.cfg, Section: DEFAULT, customer_id: my
 Time: 2026-11-11T07:51:00-08:00
 Version Check:
   Current: None
-   Latest: 7.52.05
-Downloading: https://github.com/GAM-team/GAM/releases/download/v7.52.05/gam-7.52.05-macos27.0-arm64.tar.xz
-GAM 7.52.05 installed: <Path>
+   Latest: 7.53.00
+Downloading: https://github.com/GAM-team/GAM/releases/download/v7.53.00/gam-7.53.00-macos27.0-arm64.tar.xz
+GAM 7.53.00 installed: <Path>
 ```
 
 Print the current version number without details
 ```
 gam version simple
-7.52.05
+7.53.00
 ```
 In Linux/MacOS you can do:
 ```
@@ -139,7 +139,7 @@ echo $VER
 Print the current version of Gam and address of this Wiki
 ```
 gam help
-GAM 7.52.05 - https://github.com/GAM-team/GAM
+GAM 7.53.00 - https://github.com/GAM-team/GAM
 GAM Team <google-apps-manager@googlegroups.com>
 Python 3.15.2 64-bit final
 macOS Golden Gate 27.2.1 arm64
