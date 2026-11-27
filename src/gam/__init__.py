@@ -4985,13 +4985,31 @@ class signjwtCredentials(google.oauth2.service_account.Credentials):
     token = self._signer(payload)
     return token
 
+_ADC_LOCK = threading.RLock()
+
+def _has_local_adc_file():
+  ''' Return True if explicit or gcloud ADC credentials file is present. '''
+  if os.environ.get('GOOGLE_APPLICATION_CREDENTIALS'):
+    return True
+  try:
+    from google.auth import _cloud_sdk
+    return os.path.isfile(_cloud_sdk.get_application_default_credentials_path())
+  except Exception:  # pylint: disable=broad-exception-caught
+    return False
+
 def get_adc_request():
-  request = google.auth.transport.requests.Request()
-  if GM.Globals[GM.IS_ON_GCE]:
-    return request
-  if gce_metadata.is_on_gce(request):
-    GM.Globals[GM.IS_ON_GCE] = True
-    return request
+  # Explicit GOOGLE_APPLICATION_CREDENTIALS or gcloud ADC file takes precedence
+  # over GCE metadata in google.auth.default(), so skip probing 169.254.169.254.
+  if _has_local_adc_file():
+    return transportCreateRequest()
+  with _ADC_LOCK:
+    if GM.Globals[GM.IS_ON_GCE] is None:
+      request = google.auth.transport.requests.Request()
+      GM.Globals[GM.IS_ON_GCE] = gce_metadata.is_on_gce(request)
+      if GM.Globals[GM.IS_ON_GCE]:
+        return request
+    elif GM.Globals[GM.IS_ON_GCE]:
+      return google.auth.transport.requests.Request()
   return transportCreateRequest()
 
 class signjwtSignJwt(google.auth.crypt.Signer):
@@ -5008,13 +5026,21 @@ class signjwtSignJwt(google.auth.crypt.Signer):
   def sign(self, message):
     ''' Call IAM Credentials SignJWT API to get our signed JWT '''
     request = get_adc_request()
-    try:
-      credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
-    except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
-      systemErrorExit(API_ACCESS_DENIED_RC, str(e))
+    with _ADC_LOCK:
+      credentials = GM.Globals[GM.ADC_CREDENTIALS]
+      if credentials is None:
+        try:
+          credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
+        except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
+          systemErrorExit(API_ACCESS_DENIED_RC, str(e))
+        GM.Globals[GM.ADC_CREDENTIALS] = credentials
+      # refresh here so we can use the proper request from above
+      if not credentials.valid:
+        try:
+          credentials.refresh(request)
+        except google.auth.exceptions.RefreshError as e:
+          systemErrorExit(API_ACCESS_DENIED_RC, str(e))
     httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
-    # refresh here so we can use the proper request from above
-    httpObj.credentials.refresh(request)
     iamc = getService(API.IAM_CREDENTIALS, httpObj)
     response = callGAPI(iamc.projects().serviceAccounts(), 'signJwt',
                         name=self.name, body={'payload': json.dumps(message)})
@@ -13711,7 +13737,8 @@ def doCreateGCPServiceAccount():
     credentials, sa_info['project_id'] = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-  credentials.refresh(request)
+  if not credentials.valid:
+    credentials.refresh(request)
   sa_info['client_email'] = credentials.service_account_email
   oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
   try:
