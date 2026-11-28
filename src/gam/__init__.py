@@ -4496,7 +4496,13 @@ class transportAgentRequest(google_auth_httplib2.Request):
   @_force_user_agent(GAM_USER_AGENT)
   def __call__(self, *args, **kwargs): #pylint: disable=arguments-differ
     """Inserts the GAM user-agent header in requests."""
-    return super().__call__(*args, **kwargs)
+    try:
+      return super().__call__(*args, **kwargs)
+    except OSError as exc:
+      # google_auth_httplib2.Request only catches HttpLib2Error/HTTPException; wrap raw socket
+      # OSErrors (e.g. Errno 64 Host is down on macOS) as TransportError.
+      # See https://github.com/GAM-team/GAM/issues/2012
+      raise google.auth.exceptions.TransportError(exc) from exc
 
 class transportAuthorizedHttp(google_auth_httplib2.AuthorizedHttp):
   """An AuthorizedHttp which forces a user agent during requests."""
@@ -5000,6 +5006,13 @@ def _has_local_adc_file():
   except Exception:  # pylint: disable=broad-exception-caught
     return False
 
+def _extractProjectIdFromSAEmail(sa_email):
+  ''' Extract GCP project_id from <name>@<project_id>.iam.gserviceaccount.com if possible. '''
+  if not sa_email:
+    return None
+  mg = re.match(r'^[^@]+@([a-z][a-z0-9-]{4,28}[a-z0-9])\.iam\.gserviceaccount\.com$', sa_email.strip().lower())
+  return mg.group(1) if mg else None
+
 def get_adc_request():
   # Explicit GOOGLE_APPLICATION_CREDENTIALS or gcloud ADC file takes precedence
   # over GCE metadata in google.auth.default(), so skip probing 169.254.169.254.
@@ -5015,6 +5028,21 @@ def get_adc_request():
       return google.auth.transport.requests.Request()
   return transportCreateRequest()
 
+def get_adc_credentials_and_project(scopes):
+  ''' Load ADC credentials and project_id without double-probing GCE metadata on non-GCE hosts.
+      See https://github.com/GAM-team/GAM/issues/2012 '''
+  request = get_adc_request()
+  if not _has_local_adc_file() and GM.Globals[GM.IS_ON_GCE] is False and not os.environ.get('GAE_ENV'):
+    raise google.auth.exceptions.DefaultCredentialsError('No Application Default Credentials found.')
+  credentials, project_id = google.auth.default(scopes=scopes, request=request)
+  if not project_id:
+    sa_email = getattr(credentials, 'service_account_email', None)
+    if sa_email and sa_email != 'default':
+      project_id = _extractProjectIdFromSAEmail(sa_email)
+    if not project_id:
+      project_id = getattr(credentials, 'quota_project_id', None)
+  return credentials, project_id, request
+
 class signjwtSignJwt(google.auth.crypt.Signer):
   ''' Signer class for SignJWT '''
   def __init__(self, service_account_info):
@@ -5028,15 +5056,16 @@ class signjwtSignJwt(google.auth.crypt.Signer):
 
   def sign(self, message):
     ''' Call IAM Credentials SignJWT API to get our signed JWT '''
-    request = get_adc_request()
     with _ADC_LOCK:
       credentials = GM.Globals[GM.ADC_CREDENTIALS]
       if credentials is None:
         try:
-          credentials, _ = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
+          credentials, _, request = get_adc_credentials_and_project([API.IAM_SCOPE])
         except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
           systemErrorExit(API_ACCESS_DENIED_RC, str(e))
         GM.Globals[GM.ADC_CREDENTIALS] = credentials
+      else:
+        request = get_adc_request()
       # refresh here so we can use the proper request from above
       if not credentials.valid:
         try:
@@ -5330,8 +5359,11 @@ DEVELOPER_PREVIEW_DISCOVERY_URI = "https://{api}.googleapis.com/$discovery/rest?
 # Used for API.CLOUDRESOURCEMANAGER, API.SERVICEUSAGE, API.IAM
 def getAPIService(api, httpObj):
   api, version, v2discovery = API.getVersion(api)
-  return googleapiclient.discovery.build(api, version, http=httpObj, cache_discovery=False,
-                                         discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
+  discHttpObj = getHttpObj(cache=GM.Globals[GM.CACHE_DIR])
+  service = googleapiclient.discovery.build(api, version, http=discHttpObj, cache_discovery=False,
+                                            discoveryServiceUrl=DISCOVERY_URIS[v2discovery], static_discovery=False)
+  service._http = httpObj
+  return service
 
 def getService(api, httpObj):
   hasLocalJSON = API.hasLocalJSON(api)
@@ -12073,7 +12105,7 @@ def getCRMService(login_hint):
   httpObj = transportAuthorizedHttp(credentials, http=getHttpObj())
   return (httpObj, getAPIService(API.CLOUDRESOURCEMANAGER, httpObj))
 
-def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, count=0):
+def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, count=0, abortOnAuthError=False):
   apis = API.PROJECT_APIS[:]
   projectName = f'projects/{projectId}'
   serveu = getAPIService(API.SERVICEUSAGE, httpObj)
@@ -12100,6 +12132,8 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
             printEntityKVList([Ent.API, serviceName], ['Already enabled (non-GAM which is fine)'], j, jcount)
       Ind.Decrement()
     except (GAPI.notFound, GAPI.permissionDenied) as e:
+      if abortOnAuthError:
+        return None
       entityActionFailedWarning([Ent.PROJECT, projectId], str(e), i, count)
       status = False
   jcount = len(apis)
@@ -12122,8 +12156,11 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
           break
         except GAPI.failedPrecondition as e:
           entityActionFailedWarning([Ent.API, api], str(e), j, jcount)
-          readStdin(Msg.ACCEPT_CLOUD_TOS.format(login_hint))
+          readStdin(Msg.ACCEPT_CLOUD_TOS.format(login_hint or 'admin'))
         except (GAPI.forbidden, GAPI.permissionDenied, GAPI.internalError) as e:
+          if abortOnAuthError and not isinstance(e, GAPI.internalError):
+            Ind.Decrement()
+            return None
           entityActionFailedWarning([Ent.API, api], str(e), j, jcount)
           failed += 1
           break
@@ -12134,21 +12171,37 @@ def enableGAMProjectAPIs(httpObj, projectId, login_hint, checkEnabled, i=0, coun
       status = failed == 0
   return status
 
-# gam enable apis [auto|manual]
+# gam enable apis [project <ProjectID>] [auto|manual]
 def doEnableAPIs():
   automatic = None
+  projectId = None
   while Cmd.ArgumentsRemaining():
     myarg = getArgument()
     if myarg == 'auto':
       automatic = True
     elif myarg == 'manual':
       automatic = False
+    elif myarg == 'project':
+      projectId = getString(Cmd.OB_PROJECT_ID, minLen=6, maxLen=30).strip()
+      _checkProjectId(projectId)
     else:
       unknownArgumentExit()
-  request = get_adc_request()
+  adc_credentials = None
+  adc_request = None
   try:
-    _, projectId = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
+    adc_credentials, adc_project_id, adc_request = get_adc_credentials_and_project([API.CLOUD_PLATFORM_SCOPE])
+    if not projectId:
+      projectId = adc_project_id
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError):
+    pass
+  if not projectId:
+    jsonData = readFile(GC.Values[GC.OAUTH2SERVICE_JSON], continueOnError=True, displayError=False)
+    if jsonData:
+      try:
+        projectId = json.loads(jsonData).get('project_id')
+      except (AttributeError, TypeError, ValueError):
+        pass
+  while not projectId or not PROJECTID_PATTERN.match(projectId):
     projectId = readStdin(Msg.WHAT_IS_YOUR_PROJECT_ID).strip()
   while automatic is None:
     a_or_m = readStdin(Msg.ENABLE_PROJECT_APIS_AUTOMATICALLY_OR_MANUALLY).strip().lower()
@@ -12160,6 +12213,18 @@ def doEnableAPIs():
       break
     writeStdout(Msg.PLEASE_ENTER_A_OR_M)
   if automatic:
+    if adc_credentials is not None:
+      try:
+        if isinstance(adc_credentials, google.oauth2.credentials.Credentials) and not adc_credentials.quota_project_id:
+          adc_credentials = adc_credentials.with_quota_project(projectId)
+        if not adc_credentials.valid:
+          adc_credentials.refresh(adc_request)
+        adcHttpObj = transportAuthorizedHttp(adc_credentials, http=getHttpObj())
+        if enableGAMProjectAPIs(adcHttpObj, projectId, '', True, abortOnAuthError=True) is not None:
+          return
+        writeStderr(f'ADC credentials lack permission to enable APIs on {projectId}; falling back to interactive OAuth...\n')
+      except google.auth.exceptions.RefreshError:
+        pass
     login_hint = _getValidateLoginHint(None)
     httpObj, _ = getCRMService(login_hint)
     enableGAMProjectAPIs(httpObj, projectId, login_hint, True)
@@ -13726,24 +13791,57 @@ def doShowSvcAcctKeys():
   if count > 0:
     _showSAKeys(keys, count, currentPrivateKeyId)
 
-# gam create gcpserviceaccount|signjwtserviceaccount
+# gam create gcpserviceaccount|signjwtserviceaccount [<EmailAddress>] [project <ProjectID>]
 def doCreateGCPServiceAccount():
-  checkForExtraneousArguments()
+  cli_sa_email = None
+  cli_project_id = None
+  while Cmd.ArgumentsRemaining():
+    myarg = getArgument()
+    if myarg == 'project':
+      cli_project_id = getString(Cmd.OB_PROJECT_ID, minLen=6, maxLen=30).strip()
+      _checkProjectId(cli_project_id)
+    elif not cli_sa_email and '@' in myarg:
+      cli_sa_email = myarg.strip().lower()
+    else:
+      unknownArgumentExit()
   _checkForExistingProjectFiles([GC.Values[GC.OAUTH2SERVICE_JSON]])
   sa_info = {'key_type': 'signjwt', 'token_uri': API.GOOGLE_OAUTH2_TOKEN_ENDPOINT, 'type': 'service_account'}
-  request = get_adc_request()
   try:
-    credentials, sa_info['project_id'] = google.auth.default(scopes=[API.IAM_SCOPE], request=request)
+    credentials, adc_project_id, request = get_adc_credentials_and_project([API.IAM_SCOPE])
+    if not credentials.valid:
+      credentials.refresh(request)
   except (google.auth.exceptions.DefaultCredentialsError, google.auth.exceptions.RefreshError) as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
-  if not credentials.valid:
-    credentials.refresh(request)
-  sa_info['client_email'] = credentials.service_account_email
+  adc_sa_email = getattr(credentials, 'service_account_email', None)
+  if adc_sa_email == 'default':
+    adc_sa_email = None
+  client_email = cli_sa_email or adc_sa_email
+  while not client_email or '@' not in client_email:
+    client_email = readStdin(Msg.WHAT_IS_YOUR_SVCACCT_EMAIL).strip().lower()
+  sa_info['client_email'] = client_email
+  # Prefer explicit project, then project encoded in <sa>@<project>.iam.gserviceaccount.com
+  # (since WIF Bunker / gcloud ADC may live in a different project or return None), then ADC project, then prompt.
+  project_id = cli_project_id or _extractProjectIdFromSAEmail(client_email) or adc_project_id
+  while not project_id or not PROJECTID_PATTERN.match(project_id):
+    project_id = readStdin(Msg.WHAT_IS_YOUR_PROJECT_ID).strip()
+  sa_info['project_id'] = project_id
+  if adc_sa_email == client_email:
+    sa_access_token = credentials.token
+  else:
+    GM.Globals[GM.ADC_CREDENTIALS] = credentials
+    sjsigner = signjwtSignJwt({'client_email': client_email})
+    sa_creds = signjwtCredentials(sjsigner, service_account_email=client_email,
+                                  token_uri=API.GOOGLE_OAUTH2_TOKEN_ENDPOINT, scopes=[API.IAM_SCOPE])
+    try:
+      sa_creds.refresh(transportCreateRequest())
+    except google.auth.exceptions.RefreshError as e:
+      systemErrorExit(API_ACCESS_DENIED_RC, str(e))
+    sa_access_token = sa_creds.token
   oa2 = buildGAPIObjectNoAuthentication(API.OAUTH2)
   try:
     token_info = callGAPI(oa2, 'tokeninfo',
                           throwReasons=[GAPI.INVALID],
-                          access_token=credentials.token)
+                          access_token=sa_access_token)
   except GAPI.invalid as e:
     systemErrorExit(API_ACCESS_DENIED_RC, str(e))
   sa_info['client_id'] = token_info['issued_to']

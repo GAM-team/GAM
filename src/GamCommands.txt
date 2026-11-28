@@ -1535,8 +1535,8 @@ gam show sakeys [all|system|user]
 gam yubikey resetpvi [yubikey_serialnumber <Number>]
 gam rotate sakey yubikey yubikey_pin yubikey_slot AUTHENTICATION|SIGNATURE yubikey_serialnumber <Number>
 
-gam create [gcpserviceaccount|signjwtserviceaccount]
-gam enable apis [auto|manual]
+gam create [gcpserviceaccount|signjwtserviceaccount] [<EmailAddress>] [project <ProjectID>]
+gam enable apis [project <ProjectID>] [auto|manual]
 
 gam oauth|oauth2 create|request [<EmailAddress>]
 gam oauth|oauth2 create|request [admin <EmailAddress>] [scopes <APIScopeURLList>]
