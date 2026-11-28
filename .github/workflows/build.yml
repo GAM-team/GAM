@@ -815,18 +815,45 @@ jobs:
             exit 1
           fi
           echo "We successfully compiled Python ${this_python} and BoringSSL ${this_boringssl}"
-          echo "Verifying built GAM artifact contains no OpenSSL shared libraries..."
+          echo "Verifying built GAM artifact contains no unexpected OpenSSL shared libraries..."
           "$PYTHON" - <<'PYEOF'
-          import os, pathlib, re, sys
+          import os, pathlib, re, subprocess, sys
           toc = pathlib.Path("build/gam/Analysis-00.toc").read_text(encoding="utf-8", errors="replace")
-          pat = re.compile(r"(?:^|[/\\\\'\"])(?:lib)?(?:ssl|crypto)[-_0-9.]*\.(?:so(?:\.[0-9]+)*|dylib|dll)(?:['\"]|$)", re.IGNORECASE | re.MULTILINE)
+          pat = re.compile(r"(?:^|[/\\\\'\"])((?:lib)?(?:ssl|crypto)[-_0-9.]*\.(?:so(?:\.[0-9]+)*|dylib|dll))(?:['\"]|$)", re.IGNORECASE | re.MULTILINE)
+          binary_entries = re.findall(r"\('([^']+)',\s*'([^']+)',\s*'BINARY'\)", toc)
+          def _is_linux_tss_libcrypto(names):
+              if not sys.platform.startswith("linux"):
+                  return False
+              if not all(re.match(r"^libcrypto[-_0-9.]*\.so(?:\.[0-9]+)*$", os.path.basename(n), re.I) for n in names):
+                  return False
+              if not any(os.path.basename(dest).startswith("libtss2-") for dest, _ in binary_entries):
+                  return False
+              bad_requirers = []
+              for dest, src in binary_entries:
+                  base = os.path.basename(dest)
+                  if base.startswith("libtss2-") or re.match(r"^libcrypto[-_0-9.]*\.so", base, re.I):
+                      continue
+                  if not os.path.isfile(src):
+                      continue
+                  with open(src, "rb") as f:
+                      if f.read(4) != b"\x7fELF":
+                          continue
+                  out = subprocess.check_output(["readelf", "-d", src], text=True, stderr=subprocess.DEVNULL)
+                  needed = re.findall(r"\(NEEDED\)\s+Shared library:\s+\[([^\]]+)\]", out)
+                  if any(re.match(r"^(?:lib)?(?:ssl|crypto)", lib, re.I) for lib in needed):
+                      bad_requirers.append(f"{dest}: {needed}")
+              assert not bad_requirers, f"Unexpected binaries directly linking OpenSSL on Linux: {bad_requirers}"
+              return True
+
           hits = pat.findall(toc)
-          assert not hits, f"Found unexpected OpenSSL shared libraries in Analysis-00.toc: {hits}"
+          if hits and not _is_linux_tss_libcrypto(hits):
+              raise AssertionError(f"Found unexpected OpenSSL shared libraries in Analysis-00.toc: {hits}")
           gampath = pathlib.Path(os.environ["gampath"])
           if gampath.is_dir():
               disk_hits = [str(p) for p in gampath.rglob("*") if p.is_file() and re.match(r"^(?:lib)?(?:ssl|crypto)[-_0-9.]*\.(?:so(?:\.[0-9]+)*|dylib|dll)$", p.name, re.I)]
-              assert not disk_hits, f"Found unexpected OpenSSL shared libraries in {gampath}: {disk_hits}"
-          print("Verified: zero OpenSSL shared libraries in GAM PyInstaller artifact.")
+              if disk_hits and not _is_linux_tss_libcrypto([pathlib.Path(p).name for p in disk_hits]):
+                  raise AssertionError(f"Found unexpected OpenSSL shared libraries in {gampath}: {disk_hits}")
+          print("Verified: zero non-libtss2 OpenSSL shared libraries in GAM PyInstaller artifact.")
           PYEOF
 
       - name: Live API tests
