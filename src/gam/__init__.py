@@ -46,6 +46,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from email.policy import SMTP as policySMTP
+import getpass
 import hashlib
 from html.entities import name2codepoint
 from html.parser import HTMLParser
@@ -132,8 +133,8 @@ class _DeferredSignerDPoPCredentials(DPoPCredentials):
   """DPoPCredentials subclass that integrates GAM signer loading and errors.
 
   Re-attaches _getDPoPSigner() when signer state was cleared by pickling, and
-  translates ValueError from signer/thumbprint validation into RefreshError
-  so GAM exits cleanly through handleOAuthTokenError instead of crashing.
+  translates ValueError / DPoP backend signer errors into RefreshError or
+  DPoPSignerError so GAM exits cleanly instead of crashing.
   """
 
   def _call_refresh_grant(self, request, scopes=None):
@@ -144,6 +145,13 @@ class _DeferredSignerDPoPCredentials(DPoPCredentials):
       return super()._call_refresh_grant(request, scopes=scopes)
     except ValueError as e:
       raise google.auth.exceptions.RefreshError(str(e))
+    except Exception as e:
+      backend_errors = _getDPoPBackendErrorTuple()
+      if isinstance(e, DPoPSignerError) or (backend_errors and isinstance(e, backend_errors)):
+        if _isDPoPPinError(e):
+          clearDPoPPin()
+        raise DPoPSignerError(str(e)) from e
+      raise
 import modern_httplib2.auto
 import modern_httplib2 as httplib2
 
@@ -5374,6 +5382,139 @@ _DPOP_PLUGIN_BACKENDS = {
   'fido2_previewsign': ('dpop_signer_fido2_previewsign', 'dpop-signer-fido2-previewsign', 'Fido2PreviewSignDPoPSigner', 'Fido2PreviewSignError', 'FIDO2 previewSign'),
 }
 
+_SECRET_PROMPT_LOCK = threading.RLock()
+_YUBIKEY_INVALID_PIN_RC = 83
+
+
+def _hasInteractiveTTY():
+  """Return True when stdin is attached to an interactive terminal."""
+  return bool(sys.stdin is not None and hasattr(sys.stdin, 'isatty') and sys.stdin.isatty())
+
+
+def _resolveSecretPin(gmKey, envVar, promptText, label, rc, allow_prompt=True, exitOnError=True):
+  """Resolve a PIN/passphrase once per command from cache, env var, or TTY getpass."""
+  def _abort(msg):
+    if exitOnError:
+      systemErrorExit(rc, msg)
+    raise DPoPSignerError(msg)
+
+  with _SECRET_PROMPT_LOCK:
+    cached = GM.Globals[gmKey]
+    if cached is not None:
+      return cached
+    env_val = os.environ.get(envVar) if envVar else None
+    if env_val:
+      GM.Globals[gmKey] = env_val
+      return env_val
+    if not allow_prompt:
+      return None
+    if not _hasInteractiveTTY():
+      _abort(f'{label} requires a PIN prompt, but no interactive TTY is available (set {envVar} or configure a PIN).')
+    try:
+      entered = getpass.getpass(promptText)
+    except (EOFError, KeyboardInterrupt, OSError) as e:
+      _abort(f'{label} PIN prompt aborted: {e}')
+    if not entered:
+      _abort(f'{label} PIN cannot be empty.')
+    GM.Globals[gmKey] = entered
+    return entered
+
+
+def resolveYubiKeyPin(allow_prompt=True):
+  """Resolve the YubiKey service account PIV PIN (#2021) via cache, GAM_YUBIKEY_PIN, or getpass."""
+  return _resolveSecretPin(
+    GM.YUBIKEY_PIN,
+    'GAM_YUBIKEY_PIN',
+    'Enter YubiKey PIV PIN: ',
+    'YubiKey',
+    _YUBIKEY_INVALID_PIN_RC,
+    allow_prompt=allow_prompt,
+    exitOnError=True)
+
+
+def clearYubiKeyPin():
+  """Clear any cached YubiKey service account PIV PIN."""
+  GM.Globals[GM.YUBIKEY_PIN] = None
+
+
+def clearDPoPPin():
+  """Clear any cached DPoP backend PIN/passphrase."""
+  GM.Globals[GM.DPOP_PIN] = None
+
+
+def _isDPoPPinError(err):
+  """Return True if *err* looks like a DPoP PIN/authorization error."""
+  cls_name = type(err).__name__.lower()
+  if 'pin' in cls_name or 'auth' in cls_name:
+    return True
+  msg = str(err).lower()
+  return any(tok in msg for tok in ('pin ', ' pin', 'pin:', 'authorization', 'bad_auth', 'auth_fail'))
+
+
+def _getDPoPBackendErrorTuple():
+  """Return tuple of imported DPoP plugin exception classes."""
+  errs = []
+  for mod_name, _, _, err_name, _ in _DPOP_PLUGIN_BACKENDS.values():
+    mod = sys.modules.get(mod_name)
+    if mod is not None and err_name:
+      err_cls = getattr(mod, err_name, None)
+      if isinstance(err_cls, type) and issubclass(err_cls, BaseException):
+        errs.append(err_cls)
+  return tuple(errs)
+
+
+def _resolveDPoPPINArg(config_pin, label, exitOnError=True):
+  """Resolve a DPoP PIN/auth value from literal config, explicit 'prompt', or GAM_DPOP_PIN."""
+  if config_pin is not None and config_pin.lower() == 'prompt':
+    return lambda: _resolveSecretPin(
+      GM.DPOP_PIN,
+      'GAM_DPOP_PIN',
+      f'Enter DPoP {label} PIN: ',
+      f'DPoP {label}',
+      AUTHENTICATION_TOKEN_REFRESH_ERROR_RC,
+      allow_prompt=True,
+      exitOnError=exitOnError)
+  if config_pin is not None:
+    return config_pin
+  return _resolveSecretPin(
+    GM.DPOP_PIN,
+    'GAM_DPOP_PIN',
+    '',
+    f'DPoP {label}',
+    AUTHENTICATION_TOKEN_REFRESH_ERROR_RC,
+    allow_prompt=False,
+    exitOnError=exitOnError)
+
+
+def _dpopBackendUsesPrompt():
+  """Return True if configured DPoP backend explicitly requests 'prompt'."""
+  if not GC.Values[GC.DPOP]:
+    return False
+  backend = GC.Values[GC.DPOP_BACKEND]
+  config = GC.Values[GC.DPOP_BACKEND_CONFIG] or ''
+  if backend in {'yubikey', 'linux_tpm'}:
+    parts = [p.strip() for p in config.split(',')] if config else []
+    return len(parts) > 2 and parts[2].lower() == 'prompt'
+  if backend == 'fido2_previewsign' and config:
+    try:
+      cred_data, idx = json.JSONDecoder().raw_decode(config.lstrip())
+      if isinstance(cred_data, dict):
+        tail = config.lstrip()[idx:].strip()
+        return tail.startswith(',') and tail[1:].strip().lower() == 'prompt'
+    except Exception:
+      return False
+  if backend == 'pkcs11' and config:
+    try:
+      mod = importlib.import_module(_DPOP_PLUGIN_BACKENDS['pkcs11'][0])
+      attrs = mod.parse_pkcs11_uri(config)
+      return (str(attrs.get('pin', '')).lower() == 'prompt' or
+              str(attrs.get('pin_source', '')).lower() == 'prompt')
+    except Exception:
+      lower_cfg = config.lower()
+      return 'pin-value=prompt' in lower_cfg or 'pin-source=prompt' in lower_cfg
+  return False
+
+
 def _resolveDPoPConfigPath(path):
   """Resolve a DPoP config file path, anchoring relative paths in GC.CONFIG_DIR."""
   resolved = os.path.expanduser(path)
@@ -5426,7 +5567,8 @@ def _getDPoPSigner(exitOnError=True):
       serial = int(serial_str) if serial_str else None
     except ValueError:
       _fail(USAGE_ERROR_RC, f'DPoP yubikey dpop_backend_config: serial must be an integer, got: {serial_str}')
-    kwargs = {'serial': serial, 'slot': _part(1, '9c'), 'pin': _part(2)}
+    pin_arg = _resolveDPoPPINArg(_part(2), label, exitOnError=exitOnError)
+    kwargs = {'serial': serial, 'slot': _part(1, '9c'), 'pin': pin_arg}
   elif backend == 'ecp':
     kwargs = {'config_path': _resolveDPoPConfigPath(config) if config else None}
   elif backend == 'macos_secureenclave':
@@ -5441,7 +5583,8 @@ def _getDPoPSigner(exitOnError=True):
       handle = int(handle_str, 0) if handle_str else 0x81000001
     except ValueError:
       _fail(USAGE_ERROR_RC, f'DPoP linux_tpm dpop_backend_config: handle must be a hex integer, got: {handle_str}')
-    kwargs = {'handle': handle, 'tcti': _part(1), 'auth': _part(2)}
+    auth_arg = _resolveDPoPPINArg(_part(2), label, exitOnError=exitOnError)
+    kwargs = {'handle': handle, 'tcti': _part(1), 'auth': auth_arg}
   elif backend == 'windows_certstore':
     target = _part(0)
     store_location = _part(1)
@@ -5459,7 +5602,20 @@ def _getDPoPSigner(exitOnError=True):
   elif backend == 'pkcs11':
     if not config:
       _fail(USAGE_ERROR_RC, 'DPoP pkcs11 backend requires dpop_backend_config set to an RFC 7512 pkcs11: URI')
+    try:
+      uri_attrs = mod.parse_pkcs11_uri(config)
+    except ValueError as e:
+      _fail(USAGE_ERROR_RC, f'DPoP {backend} dpop_backend_config: {e}')
     kwargs = {'uri': config}
+    uri_pin = uri_attrs.get('pin')
+    uri_pin_src = uri_attrs.get('pin_source')
+    if (isinstance(uri_pin, str) and uri_pin.lower() == 'prompt') or (
+        isinstance(uri_pin_src, str) and uri_pin_src.lower() == 'prompt'):
+      kwargs['pin'] = _resolveDPoPPINArg('prompt', label, exitOnError=exitOnError)
+    elif uri_pin is None and uri_pin_src is None:
+      env_pin = _resolveDPoPPINArg(None, label, exitOnError=exitOnError)
+      if env_pin is not None:
+        kwargs['pin'] = env_pin
   elif backend == 'fido2_previewsign':
     if not config:
       _fail(USAGE_ERROR_RC, 'DPoP fido2_previewsign backend requires dpop_backend_config set to credential JSON ([,pin])')
@@ -5477,15 +5633,20 @@ def _getDPoPSigner(exitOnError=True):
         _fail(USAGE_ERROR_RC, f'DPoP fido2_previewsign unexpected trailing config after JSON: {tail}')
       pin = tail[1:].strip() or None
     factory = signer_cls.from_dict
-    kwargs = {'data': cred_data, 'pin': pin}
+    kwargs = {'data': cred_data, 'pin': _resolveDPoPPINArg(pin, label, exitOnError=exitOnError)}
   else:  # ephemeral
     kwargs = {}
 
   try:
     return factory(**kwargs)
+  except DPoPSignerError:
+    clearDPoPPin()
+    raise
   except (KeyError, ValueError) as e:
     _fail(USAGE_ERROR_RC, f'DPoP {backend} dpop_backend_config: {e}')
   except err_cls as e:
+    if _isDPoPPinError(e):
+      clearDPoPPin()
     _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP {label} error: {e}')
   except Exception as e:
     _fail(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP {label} unexpected error: {e}')
@@ -5892,6 +6053,8 @@ def getClientCredentials(forceRefresh=False, forceWrite=False, filename=None, ap
           if writeCreds or forceWrite:
             writeClientCredentials(credentials, filename or GC.Values[GC.OAUTH2_TXT])
           break
+        except DPoPSignerError as e:
+          systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, str(e))
         except (httplib2.HttpLib2Error, google.auth.exceptions.TransportError, RuntimeError) as e:
           if n != triesLimit:
             waitOnFailure(n, triesLimit, NETWORK_ERROR_RC, str(e))
@@ -11112,6 +11275,35 @@ def terminateStdQueueHandler(mpQueue, mpQueueHandler):
   mpQueue.put((0, GM.REDIRECT_QUEUE_EOF, None))
   mpQueueHandler.join()
 
+def _prepareBatchPinSecrets(items=None):
+  """Prompt/verify YubiKey (#2021) and DPoP PINs once in parent before spawning batch/csv workers."""
+  sa_data = GM.Globals[GM.OAUTH2SERVICE_JSON_DATA]
+  if not sa_data:
+    sa_file = GC.Values[GC.OAUTH2SERVICE_JSON]
+    if sa_file and os.path.isfile(sa_file):
+      raw = readFile(sa_file, continueOnError=True, displayError=False)
+      if raw:
+        try:
+          sa_data = json.loads(raw)
+        except (ValueError, TypeError):
+          sa_data = None
+  if isinstance(sa_data, dict) and sa_data.get('key_type') == 'yubikey' and GM.Globals[GM.YUBIKEY_PIN] is None:
+    pin_cfg = sa_data.get('yubikey_pin')
+    if (isinstance(pin_cfg, str) and pin_cfg.lower() == 'prompt') or os.environ.get('GAM_YUBIKEY_PIN'):
+      yubikey.YubiKey(sa_data).verify_pin()
+
+  if GC.Values[GC.DPOP] and GM.Globals[GM.DPOP_PIN] is None:
+    env_dpop = os.environ.get('GAM_DPOP_PIN')
+    if env_dpop:
+      GM.Globals[GM.DPOP_PIN] = env_dpop
+    elif _dpopBackendUsesPrompt():
+      _, creds = getOauth2TxtCredentials(exitOnError=False, noDASA=True, refreshOnly=True)
+      if creds is not None and creds.expired:
+        getClientCredentials(noDASA=True, refreshOnly=True)
+      elif items and any(len(it) > 1 and it[1].lower() in {'oauth', 'oauth2', 'check'} for it in items):
+        _resolveDPoPPINArg('prompt', _DPOP_PLUGIN_BACKENDS.get(GC.Values[GC.DPOP_BACKEND], ('', '', '', '', GC.Values[GC.DPOP_BACKEND]))[4])()
+
+
 def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout, mpQueueStderr,
                            debugLevel, todrive, printAguDomains,
                            printCrosOUs, printCrosOUsAndChildren,
@@ -11123,13 +11315,16 @@ def ProcessGAMCommandMulti(pid, numItems, logCmd, mpQueueCSVFile, mpQueueStdout,
                            csvRowFilter, csvRowFilterMode, csvRowDropFilter, csvRowDropFilterMode,
                            csvRowLimit,
                            showGettings, showGettingsGotNL,
-                           args):
+                           args,
+                           dpopPin=None, yubikeyPin=None):
   global mplock
 
   with mplock:
     initializeLogging()
     if multiprocessing.get_start_method() != 'fork':
       signal.signal(signal.SIGINT, signal.SIG_IGN)
+    GM.Globals[GM.DPOP_PIN] = dpopPin
+    GM.Globals[GM.YUBIKEY_PIN] = yubikeyPin
     GM.Globals[GM.API_CALLS_RETRY_DATA] = {}
     GM.Globals[GM.CMDLOG_LOGGER] = None
     GM.Globals[GM.CSVFILE] = {}
@@ -11253,6 +11448,7 @@ def MultiprocessGAMCommands(items, showCmds):
 
   if not items:
     return
+  _prepareBatchPinSecrets(items)
   GM.Globals[GM.NUM_BATCH_ITEMS] = numItems = len(items)
   numPoolProcesses = min(numItems, GC.Values[GC.NUM_THREADS])
   if GC.Values[GC.MULTIPROCESS_POOL_LIMIT] == -1:
@@ -11371,7 +11567,8 @@ def MultiprocessGAMCommands(items, showCmds):
                                                   GC.Values[GC.CSV_OUTPUT_ROW_DROP_FILTER_MODE],
                                                   GC.Values[GC.CSV_OUTPUT_ROW_LIMIT],
                                                   GC.Values[GC.SHOW_GETTINGS], GC.Values[GC.SHOW_GETTINGS_GOT_NL],
-                                                  item])
+                                                  item,
+                                                  GM.Globals[GM.DPOP_PIN], GM.Globals[GM.YUBIKEY_PIN]])
       poolProcessResults[0] += 1
       if parallelPoolProcesses > 0:
         while poolProcessResults[0] == parallelPoolProcesses:
@@ -11439,10 +11636,11 @@ def MultiprocessGAMCommands(items, showCmds):
 
 def threadBatchWorker(showCmds=False, numItems=0):
   while True:
-    pid, item, logCmd = GM.Globals[GM.TBATCH_QUEUE].get()
+    pid, item, logCmd, childEnv = GM.Globals[GM.TBATCH_QUEUE].get()
     try:
       sysRC = subprocess.call(item, stdout=GM.Globals[GM.STDOUT].get(GM.REDIRECT_MULTI_FD, sys.stdout),
-                              stderr=GM.Globals[GM.STDERR].get(GM.REDIRECT_MULTI_FD, sys.stderr))
+                              stderr=GM.Globals[GM.STDERR].get(GM.REDIRECT_MULTI_FD, sys.stderr),
+                              env=childEnv)
       if showCmds:
         batchWriteStderr(f'{currentISOformatTimeStamp()},{pid}/{numItems},End,{sysRC},{logCmd}\n')
       if GM.Globals[GM.MULTIPROCESS_EXIT_CONDITION] is not None and checkChildProcessRC(sysRC):
@@ -11457,6 +11655,14 @@ TBATCH_COMMANDS = [Cmd.GAM_CMD, Cmd.COMMIT_BATCH_CMD, Cmd.EXECUTE_CMD, Cmd.PRINT
 def ThreadBatchGAMCommands(items, showCmds):
   if not items:
     return
+  _prepareBatchPinSecrets(items)
+  gamChildEnv = None
+  if GM.Globals[GM.DPOP_PIN] is not None or GM.Globals[GM.YUBIKEY_PIN] is not None:
+    gamChildEnv = os.environ.copy()
+    if GM.Globals[GM.DPOP_PIN] is not None:
+      gamChildEnv['GAM_DPOP_PIN'] = GM.Globals[GM.DPOP_PIN]
+    if GM.Globals[GM.YUBIKEY_PIN] is not None:
+      gamChildEnv['GAM_YUBIKEY_PIN'] = GM.Globals[GM.YUBIKEY_PIN]
   pythonCmd = [sys.executable]
   if not getattr(sys, 'frozen', False): # we're not frozen
     pythonCmd.append(os.path.realpath(Cmd.Argument(0)))
@@ -11502,9 +11708,9 @@ def ThreadBatchGAMCommands(items, showCmds):
     else:
       logCmd = ''
     if item[0] == Cmd.GAM_CMD:
-      GM.Globals[GM.TBATCH_QUEUE].put((pid, pythonCmd+item[1:], logCmd))
+      GM.Globals[GM.TBATCH_QUEUE].put((pid, pythonCmd+item[1:], logCmd, gamChildEnv))
     else:
-      GM.Globals[GM.TBATCH_QUEUE].put((pid, item[1:], logCmd))
+      GM.Globals[GM.TBATCH_QUEUE].put((pid, item[1:], logCmd, None))
     numThreadsInUse += 1
   GM.Globals[GM.TBATCH_QUEUE].join()
   if showCmds:
@@ -12428,7 +12634,15 @@ class Credentials(google.oauth2.credentials.Credentials):
                    'open_browser': open_browser}
     if login_hint:
       flow_kwargs['login_hint'] = login_hint
-    flow.run_dual(**flow_kwargs)
+    try:
+      flow.run_dual(**flow_kwargs)
+    except Exception as e:
+      backend_errors = _getDPoPBackendErrorTuple()
+      if isinstance(e, DPoPSignerError) or (backend_errors and isinstance(e, backend_errors)):
+        if _isDPoPPinError(e):
+          clearDPoPPin()
+        systemErrorExit(AUTHENTICATION_TOKEN_REFRESH_ERROR_RC, f'DPoP error: {e}')
+      raise
     creds = cls.from_google_oauth2_credentials(flow.credentials, filename=filename)
     if dpop_signer is not None:
       resolved_signer = getattr(flow.credentials, 'dpop_signer', None) or dpop_signer
@@ -14304,7 +14518,7 @@ def doProcessSvcAcctKeys(mode=None, iam=None, projectId=None, clientEmail=None, 
       elif myarg == 'yubikeyslot':
         new_data['yubikey_slot'] = getString(Cmd.OB_STRING).upper()
       elif myarg == 'yubikeypin':
-        new_data['yubikey_pin'] = readStdin('Enter your YubiKey PIN: ')
+        new_data['yubikey_pin'] = readStdin('Enter your YubiKey PIN (or "prompt" to ask at runtime): ')
       elif myarg == 'yubikeyserialnumber':
         new_data['yubikey_serial_number'] = getInteger()
       else:

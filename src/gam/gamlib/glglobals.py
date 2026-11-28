@@ -201,6 +201,9 @@ STDOUT = 'stdo'
 SVCACCT_SCOPES = 'sasc'
 # Were scopes values retrieved from oauth2service.json
 SVCACCT_SCOPES_DEFINED = 'sasd'
+# Cached runtime PINs (never persisted to disk)
+DPOP_PIN = 'dppn'
+YUBIKEY_PIN = 'ykpn'
 # Most errors print a message and bail out with a return code
 # Some commands want to set a non-zero return code but not bail
 SYSEXITRC = 'sxrc'
@@ -280,6 +283,7 @@ Globals = {
   DEBUG_REDACTION: True,
   DECODED_ID_TOKEN: None,
   DEVELOPER_PREVIEW_APIS: set(),
+  DPOP_PIN: None,
   ENTITY_CL_DELAY_START: 1,
   ENTITY_CL_START: 1,
   EXTRA_ARGS_LIST: [],
@@ -328,5 +332,6 @@ Globals = {
   SVCACCT_SCOPES_DEFINED: False,
   SYSEXITRC: 0,
   SYS_ENCODING: 'utf-8',
-  TBATCH_QUEUE: None
+  TBATCH_QUEUE: None,
+  YUBIKEY_PIN: None
   }

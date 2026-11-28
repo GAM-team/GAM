@@ -29,6 +29,8 @@ from gam import mplock
 from gam import systemErrorExit
 from gam import readStdin
 from gam import writeStdout
+from gam import resolveYubiKeyPin
+from gam import clearYubiKeyPin
 
 from gam.gamlib import glmsgs as Msg
 
@@ -90,29 +92,47 @@ class YubiKey():
     except CardConnectionException as err:
       systemErrorExit(YUBIKEY_CONNECTION_ERROR_RC, f'YubiKey - {err}')
 
-  def get_certificate(self):
+  def _resolve_pin(self):
+    """Resolve PIV PIN from literal config, GAM_YUBIKEY_PIN/cache, or interactive prompt."""
+    if isinstance(self.pin, str) and self.pin.lower() == 'prompt':
+      return resolveYubiKeyPin(allow_prompt=True)
+    if not self.pin:
+      return resolveYubiKeyPin(allow_prompt=False)
+    return self.pin
+
+  def _run_with_piv(self, action):
+    """Open a PIV session, verify PIN if configured, and run action(session)."""
     try:
       conn = self._connect()
       with conn:
         session = PivSession(conn)
-        if self.pin:
+        pin = self._resolve_pin()
+        if pin:
           try:
-            session.verify_pin(self.pin)
+            session.verify_pin(pin)
           except InvalidPinError as err:
+            clearYubiKeyPin()
             systemErrorExit(YUBIKEY_INVALID_PIN_RC, f'YubiKey - {err}')
         try:
-          cert = session.get_certificate(self.slot)
+          return action(session)
         except ApduError as err:
           systemErrorExit(YUBIKEY_APDU_ERROR_RC, f'YubiKey - {err}')
-      cert_pem = cert.public_bytes(serialization.Encoding.PEM).decode()
-      publicKeyData = base64.b64encode(cert_pem.encode())
-      if isinstance(publicKeyData, bytes):
-        publicKeyData = publicKeyData.decode()
-      return publicKeyData
     except ValueError as err:
       systemErrorExit(YUBIKEY_VALUE_ERROR_RC, f'YubiKey - {err}')
     except TypeError as err:
       systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
+
+  def verify_pin(self):
+    """Prompt (if configured) and verify the YubiKey PIV PIN once against the token."""
+    self._run_with_piv(lambda _session: None)
+
+  def get_certificate(self):
+    cert = self._run_with_piv(lambda session: session.get_certificate(self.slot))
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM).decode()
+    publicKeyData = base64.b64encode(cert_pem.encode())
+    if isinstance(publicKeyData, bytes):
+      publicKeyData = publicKeyData.decode()
+    return publicKeyData
 
   def get_serial_number(self):
     try:
@@ -176,26 +196,12 @@ class YubiKey():
     if mplock is not None:
       mplock.acquire()
     try:
-      conn = self._connect()
-      with conn:
-        session = PivSession(conn)
-        if self.pin:
-          try:
-            session.verify_pin(self.pin)
-          except InvalidPinError as err:
-            systemErrorExit(YUBIKEY_INVALID_PIN_RC, f'YubiKey - {err}')
-        try:
-          signed = session.sign(slot=self.slot,
-                                key_type=self.key_type,
-                                message=message,
-                                hash_algorithm=hashes.SHA256(),
-                                padding=padding.PKCS1v15())
-        except ApduError as err:
-          systemErrorExit(YUBIKEY_APDU_ERROR_RC, f'YubiKey - {err}')
-    except ValueError as err:
-      systemErrorExit(YUBIKEY_VALUE_ERROR_RC, f'YubiKey - {err}')
-    except TypeError as err:
-      systemErrorExit(YUBIKEY_NOT_FOUND_RC, f'YubiKey - {err} - {Msg.IS_YUBIKEY_INSERTED}')
-    if mplock is not None:
-      mplock.release()
-    return signed
+      return self._run_with_piv(
+        lambda session: session.sign(slot=self.slot,
+                                     key_type=self.key_type,
+                                     message=message,
+                                     hash_algorithm=hashes.SHA256(),
+                                     padding=padding.PKCS1v15()))
+    finally:
+      if mplock is not None:
+        mplock.release()
