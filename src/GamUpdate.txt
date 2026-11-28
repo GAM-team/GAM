@@ -1,6 +1,12 @@
+7.53.01
+
+Fixed `gam enable apis problem` #2012.
+
 7.53.00
 
 Replaced OpenSSL with BoringSSL.
+
+Fixed: Fetch the IAM Credentials discovery document without ADC credentials #2034
 
 7.52.05
 
