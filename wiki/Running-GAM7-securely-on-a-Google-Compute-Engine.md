@@ -58,14 +58,14 @@ gam version
 
 7. Create the special `oauth2service.json` file GAM7 will use:
 ```
-gam create gcpserviceaccount
+gam create gcpserviceaccount|signjwtserviceaccount [<EmailAddress>] [project <ProjectID>]
 ```
 If you'd like, take a look at the generated ```oauth2service.json``` file;
 you'll notice that while the file has some fields similar to a normal service account file, there is no `private_key` attribute containing an RSA private key. Instead, when GAM needs to use the service account credentials, [it will ask the VM metadata server for a token](https://cloud.google.com/compute/docs/access/authenticate-workloads#applications). This exposes short term credentials to GAM and the VM without exposing the long-term service account private key credentials.
 
 8. Enable the Google APIs GAM7 will use:
 ```
-gam enable apis
+gam enable apis [project <ProjectID>] [auto|manual]
 ```
 You are given the option to enable them automatically or manually. Automatic enablement will ask you to authenticate to GAM7. You should authenticate as a user with rights to manage project APIs, probably a project owner. If you are not the project owner you can choose manual enablement and GAM7 will provide two or more URLs which you can send to the project owner. When the owner opens these URLs, they'll be prompted to enable all the APIs GAM7 needs.
 
