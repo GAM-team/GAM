@@ -539,13 +539,30 @@ jobs:
       - name: Create Secure Enclave key
         if: matrix.goal == 'build' && runner.os == 'macOS' && runner.arch == 'ARM64'
         run: |
-          sc_auth create-ctk-identity -l gam-dpop-ci -k p-256-ne -t none
+          SE_LABEL="gam-dpop-ci-${GITHUB_RUN_ID}-${JID}"
+          echo "SE_LABEL=${SE_LABEL}" >> "$GITHUB_ENV"
+          sc_auth create-ctk-identity -l "$SE_LABEL" -k p-256-ne -t none
+          sc_auth list-ctk-identities
+          if ! sc_auth list-ctk-identities | grep -F "p-256-ne" | grep -Fq "$SE_LABEL"; then
+            echo "ERROR: Secure Enclave p-256-ne identity '$SE_LABEL' was not created."
+            exit 1
+          fi
 
       - name: Test DPoP macOS Secure Enclave backend
         if: matrix.goal == 'build' && runner.os == 'macOS' && runner.arch == 'ARM64'
         run: |
-          $gam config dpop_backend macos_secureenclave dpop_backend_config "gam-dpop-ci" save
+          $gam config dpop_backend macos_secureenclave dpop_backend_config "$SE_LABEL" save
           $gam check dpop
+
+      - name: Cleanup Secure Enclave key
+        if: always() && env.SE_LABEL != '' && matrix.goal == 'build' && runner.os == 'macOS' && runner.arch == 'ARM64'
+        run: |
+          if [ -n "${SE_LABEL:-}" ]; then
+            HASH=$(sc_auth list-ctk-identities | awk -v lbl="$SE_LABEL" 'index($0, lbl) > 0 {print $2; exit}')
+            if [ -n "$HASH" ]; then
+              sc_auth delete-ctk-identity -h "$HASH" || true
+            fi
+          fi
 
       - name: Configure DPoP key for Live API tests
         id: dpop-live
